@@ -48,7 +48,9 @@ LABEL org.opencontainers.image.licenses="Proprietary"
 # Security Hardening - Create Non-Root User
 # ==============================================================================
 RUN groupadd --gid 1000 appuser && \
-    useradd --uid 1000 --gid appuser --shell /bin/bash --create-home appuser
+    useradd --uid 1000 --gid appuser --shell /bin/bash --create-home appuser && \
+    # Lock the account to prevent login
+    usermod --lock appuser
 
 # ==============================================================================
 # System Dependencies & Security Updates
@@ -152,9 +154,13 @@ RUN apt-get autoremove -y && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/ && \
     # Remove potential security risks
     rm -rf /tmp/* /var/tmp/* && \
+    # Remove shell history and unnecessary files
+    rm -rf /root/.bash_history /home/appuser/.bash_history && \
     # Secure file permissions
     find /app -type f -name "*.py" -exec chmod 644 {} \; && \
-    find /app -type d -exec chmod 755 {} \;
+    find /app -type d -exec chmod 755 {} \; && \
+    # Remove SUID/SGID bits from system binaries for security
+    find /usr/bin /usr/sbin /bin /sbin -perm /6000 -type f -exec chmod a-s {} \; || true
 
 # ==============================================================================
 # Runtime Configuration
@@ -171,9 +177,9 @@ ENV APP_ENV=production \
     WORKERS=1 \
     LOG_LEVEL=info
 
-# Health check
+# Health check with enhanced security
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:$PORT/health || exit 1
+    CMD curl -f http://localhost:$PORT/healthz || exit 1
 
 # Expose port
 EXPOSE $PORT

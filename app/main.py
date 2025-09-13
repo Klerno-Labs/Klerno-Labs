@@ -153,6 +153,8 @@ def _row_score(r: Dict[str, Any]) -> float:
 # =========================
 # Security hardening
 # =========================
+from .security_middleware import TLSEnforcementMiddleware, EnhancedSecurityHeadersMiddleware
+from .audit_logger import log_auth_success, log_auth_failure, log_security_event, AuditEventType
 REQ_ID_HEADER = "X-Request-ID"
 CSRF_COOKIE = "csrf_token"
 CSRF_HEADER = "X-CSRF-Token"
@@ -209,7 +211,22 @@ def verify_csrf(request: Request):
 
 async def csrf_protect_ui(request: Request):
     if request.method in ("POST", "PUT", "PATCH", "DELETE"):
-        verify_csrf(request)
+        try:
+            verify_csrf(request)
+        except HTTPException as e:
+            # Log CSRF violation for security monitoring
+            log_security_event(
+                AuditEventType.CSRF_VIOLATION,
+                {
+                    "endpoint": str(request.url.path),
+                    "method": request.method,
+                    "has_csrf_cookie": bool(request.cookies.get(CSRF_COOKIE)),
+                    "has_csrf_header": bool(request.headers.get(CSRF_HEADER))
+                },
+                request,
+                risk_score=0.8
+            )
+            raise e
     return True
 
 
@@ -220,8 +237,11 @@ app = FastAPI(
     title="Klerno Labs API (MVP) — XRPL First",
     default_response_class=DEFAULT_RESP_CLS,
 )
+
+# Enhanced security middleware
+app.add_middleware(TLSEnforcementMiddleware)
+app.add_middleware(EnhancedSecurityHeadersMiddleware)
 app.add_middleware(RequestIDMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=512)
 
 # Static & templates
@@ -436,7 +456,12 @@ def login_submit(request: Request, email: str = Form(...), password: str = Form(
     e = (email or "").lower().strip()
     user = store.get_user_by_email(e)
     if not user or not verify_pw(password, user["password_hash"]):
+        log_auth_failure(e, "invalid_credentials", request)
         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"}, status_code=400)
+    
+    # Log successful authentication
+    log_auth_success(str(user["id"]), user["email"], user["role"], request)
+    
     token = issue_jwt(user["id"], user["email"], user["role"])
     is_paid = bool(user.get("subscription_active")) or user.get("role") == "admin" or DEMO_MODE
     dest = "/dashboard" if is_paid else "/paywall"
