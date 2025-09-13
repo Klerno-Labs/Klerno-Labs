@@ -1,10 +1,14 @@
-import os, requests
-from typing import List, Dict, Any
+import os
 from datetime import datetime
+from typing import Any
+
+import requests
+
 from ..models import Transaction
 
 BSC_API = "https://publicapi.dev/bscscan-api/api"
 BSC_KEY = os.getenv("BSC_API_KEY", "").strip()  # set me
+
 
 def _ts(sec: str | int) -> str:
     try:
@@ -12,7 +16,8 @@ def _ts(sec: str | int) -> str:
     except Exception:
         return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
 
-def fetch_account_tx(address: str, limit: int = 10) -> List[Dict[str, Any]]:
+
+def fetch_account_tx(address: str, limit: int = 10) -> list[dict[str, Any]]:
     """Uses bscscan 'txlist' equivalent (publicapi.dev route)."""
     params = {
         "module": "account",
@@ -31,29 +36,32 @@ def fetch_account_tx(address: str, limit: int = 10) -> List[Dict[str, Any]]:
     # Both bscscan and publicapi.dev return {"status":"1","message":"OK","result":[...]} or similar
     return data.get("result") or []
 
-def bsc_json_to_transactions(address: str, payload: List[Dict[str, Any]]) -> List[Transaction]:
-    out: List[Transaction] = []
+
+def bsc_json_to_transactions(address: str, payload: list[dict[str, Any]]) -> list[Transaction]:
+    out: list[Transaction] = []
     addr = (address or "").lower()
     for it in payload:
         try:
-            from_addr = str(it.get("from","")).lower()
-            to_addr   = str(it.get("to","")).lower()
+            from_addr = str(it.get("from", "")).lower()
+            to_addr = str(it.get("to", "")).lower()
             # native BNB transfer value is in wei
             value_wei = int(it.get("value", 0))
             amount = value_wei / 10**18
-            fee = (int(it.get("gasPrice", 0)) * int(it.get("gasUsed", it.get("gas", 0) or 0))) / 10**18
+            fee = (
+                int(it.get("gasPrice", 0)) * int(it.get("gasUsed", it.get("gas", 0) or 0))
+            ) / 10**18
             direction = "in" if to_addr == addr else ("out" if from_addr == addr else "")
             tx = Transaction(
-                tx_id = it.get("hash") or "",
-                timestamp = _ts(it.get("timeStamp")),
-                chain = "BSC",
-                from_addr = from_addr,
-                to_addr = to_addr,
-                amount = float(amount),
-                symbol = "BNB",
-                direction = direction,
-                memo = "",
-                fee = float(fee),
+                tx_id=it.get("hash") or "",
+                timestamp=_ts(it.get("timeStamp")),
+                chain="BSC",
+                from_addr=from_addr,
+                to_addr=to_addr,
+                amount=float(amount),
+                symbol="BNB",
+                direction=direction,
+                memo="",
+                fee=float(fee),
             )
             out.append(tx)
         except Exception:
