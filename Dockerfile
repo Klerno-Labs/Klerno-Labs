@@ -26,6 +26,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_DEFAULT_TIMEOUT=100 \
+    PIP_ROOT_USER_ACTION=ignore \
     POETRY_NO_INTERACTION=1 \
     POETRY_VENV_IN_PROJECT=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
@@ -80,11 +81,14 @@ FROM base AS builder
 WORKDIR /app
 
 # Copy dependency files first (for better caching)
-COPY requirements.txt /app/
+COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir --user -r requirements.txt
+RUN python -m pip install --upgrade pip setuptools wheel \
+    && pip install -r requirements.txt
+
+# Validate dependencies
+RUN pip check
 
 # ==============================================================================
 # Development Stage (Optional)
@@ -92,7 +96,7 @@ RUN pip install --upgrade pip setuptools wheel && \
 FROM builder AS development
 
 # Install development dependencies
-RUN pip install --no-cache-dir --user \
+RUN pip install \
     pytest \
     pytest-asyncio \
     pytest-cov \
@@ -132,7 +136,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy Python dependencies from builder stage
-COPY --from=builder /root/.local /home/appuser/.local
+COPY --from=builder /usr/local /usr/local
 
 # Copy application code
 COPY --chown=appuser:appuser app/ /app/app/
@@ -162,8 +166,8 @@ RUN apt-get autoremove -y && \
 # Switch to non-root user
 USER appuser
 
-# Add user's local bin to PATH
-ENV PATH="/home/appuser/.local/bin:$PATH"
+# Make sure PATH includes system Python packages
+ENV PATH="/usr/local/bin:$PATH"
 
 # Application configuration
 ENV APP_ENV=production \
