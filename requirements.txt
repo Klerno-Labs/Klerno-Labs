@@ -66,6 +66,7 @@ openai==0.28.1                # OpenAI API client (compatible with xrpl-py)
 # ==============================================================================
 PyJWT==2.8.0                  # JSON Web Token implementation
 passlib[bcrypt]==1.7.4        # Password hashing with bcrypt support
+bcrypt==4.0.1                 # Cryptographic hashing for passlib compatibility
 
 # ==============================================================================
 # Database & Persistence
@@ -81,7 +82,7 @@ pytest>=8.0.0                 # Testing framework
 pytest-asyncio>=0.23.0        # Async testing support
 pytest-cov>=4.0.0             # Coverage reporting
 pytest-mock>=3.12.0           # Mocking utilities
-httpx-test>=0.24.0            # HTTP testing utilities
+# httpx-test>=0.24.0          # HTTP testing utilities (removed - non-existent package)
 
 # ==============================================================================
 # Code Quality & Formatting
@@ -120,6 +121,7 @@ python-json-logger>=2.0.7     # JSON logging formatter
 # ==============================================================================
 cryptography>=41.0.0          # Cryptographic recipes and primitives
 python-jose[cryptography]>=3.3.0  # JSON Web Signature implementation
+argon2-cffi>=23.1.0           # Argon2 password hashing (migration option)
 
 # ==============================================================================
 # Performance & Optimization

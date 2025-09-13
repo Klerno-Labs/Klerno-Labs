@@ -163,24 +163,49 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         self.enable_hsts = (os.getenv("ENABLE_HSTS", "true").lower() == "true")
 
     async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[HTMLResponse]]):
+        # Generate nonce for inline scripts
+        nonce = secrets.token_urlsafe(16)
+        request.state.csp_nonce = nonce
+        
         resp = await call_next(request)
-        # UPDATED CSP: allow jsDelivr for Bootstrap & Chart.js
-        csp = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "style-src  'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "img-src 'self' data:; "
-            "font-src 'self' data: https://cdn.jsdelivr.net; "
-            "connect-src 'self' ws: wss:; "
-            "object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
-        )
+        
+        # Enhanced CSP with precise CDN sources and nonce support
+        csp_directives = [
+            "default-src 'self'",
+            f"script-src 'self' 'nonce-{nonce}' https://cdn.jsdelivr.net https://unpkg.com",
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com",
+            "img-src 'self' data: https://cdn.jsdelivr.net",
+            "font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com",
+            "connect-src 'self' ws: wss:",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "frame-ancestors 'none'",
+            "form-action 'self'",
+            "upgrade-insecure-requests"
+        ]
+        
+        csp = "; ".join(csp_directives)
         resp.headers.setdefault("Content-Security-Policy", csp)
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
         resp.headers.setdefault("X-Frame-Options", "DENY")
         resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        resp.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        resp.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()")
+        
+        # HSTS only on HTTPS
         if self.enable_hsts and request.url.scheme == "https":
             resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+        
+        # Cache control for static assets
+        if request.url.path.startswith("/static/"):
+            # Long cache for static assets (1 year)
+            resp.headers.setdefault("Cache-Control", "public, max-age=31536000, immutable")
+            resp.headers.setdefault("ETag", f'"{hash(request.url.path)}"')
+        elif request.url.path.endswith((".html", ".htm")) or "ui" in request.url.path:
+            # No cache for HTML/UI routes
+            resp.headers.setdefault("Cache-Control", "no-cache, no-store, must-revalidate")
+            resp.headers.setdefault("Pragma", "no-cache")
+            resp.headers.setdefault("Expires", "0")
+        
         return resp
 
 class RequestIDMiddleware(BaseHTTPMiddleware):

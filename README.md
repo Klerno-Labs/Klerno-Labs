@@ -15,20 +15,33 @@
 
 ## 🚀 Quick Start
 
+### One-Command Setup
+
+#### Option 1: Using uvicorn (Development)
+```bash
+# Clone, install, and run in one command
+git clone https://github.com/Klerno-Labs/Klerno-Labs.git && \
+cd Klerno-Labs && \
+pip install -r requirements.txt && \
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+#### Option 2: Using Docker (Production-like)
+```bash
+# Clone and run with Docker
+git clone https://github.com/Klerno-Labs/Klerno-Labs.git && \
+cd Klerno-Labs && \
+docker build -t klerno-labs . && \
+docker run -p 8000:8000 klerno-labs
+```
+
 ### Prerequisites
 - **Python 3.11+** (3.12 recommended)
 - **Docker** (optional, for containerized deployment)
 - **PostgreSQL** (for production deployments)
 
-### Development Setup
+### Manual Development Setup
 
-#### Option 1: Automated Setup (Windows)
-```powershell
-# Clone and run the quick starter
-.\start.ps1
-```
-
-#### Option 2: Manual Setup (All Platforms)
 ```bash
 # Clone the repository
 git clone https://github.com/Klerno-Labs/Klerno-Labs.git
@@ -44,9 +57,41 @@ source .venv/bin/activate  # Linux/Mac
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
+# Run the application
+uvicorn app.main:app --reload
+
+# Application will be available at:
+# - Main app: http://localhost:8000
+# - Dashboard: http://localhost:8000/dashboard-ui?key=admin_key_here
+# - API docs: http://localhost:8000/docs
+# - Health check: http://localhost:8000/health
+```
+
+### Environment Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ADMIN_KEY` | `klerno_admin_2024` | Admin access key for protected endpoints |
+| `DATABASE_URL` | SQLite | PostgreSQL connection string for production |
+| `OPENAI_API_KEY` | - | OpenAI API key for AI features |
+| `SENDGRID_API_KEY` | - | SendGrid API key for email notifications |
+| `ENABLE_HSTS` | `true` | Enable HTTP Strict Transport Security |
+| `LOG_LEVEL` | `INFO` | Application logging level |
+
+### Local Admin Credentials
+
+**Default Admin Access:**
+- **Key:** `klerno_admin_2024` (set via `?key=` parameter)
+- **Dashboard:** http://localhost:8000/dashboard-ui?key=klerno_admin_2024
+- **Admin Panel:** http://localhost:8000/admin?key=klerno_admin_2024
+
+**Local Development URLs:**
+- **Landing Page:** http://localhost:8000/
+- **Login:** http://localhost:8000/login-ui
+- **Signup:** http://localhost:8000/signup-ui
+- **Alerts:** http://localhost:8000/alerts-ui?key=klerno_admin_2024
+- **API Documentation:** http://localhost:8000/docs
+- **WebSocket Test:** ws://localhost:8000/ws/alerts
 
 # Run the application
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000

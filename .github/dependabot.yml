@@ -1,0 +1,102 @@
+version: 2
+
+updates:
+  # Python dependencies
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "klerno-security-team"
+    assignees:
+      - "klerno-dev-team"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    
+    # Group related updates
+    groups:
+      fastapi-stack:
+        patterns:
+          - "fastapi*"
+          - "starlette*"
+          - "uvicorn*"
+          - "pydantic*"
+      
+      security-stack:
+        patterns:
+          - "passlib*"
+          - "bcrypt*"
+          - "cryptography*"
+          - "pyjwt*"
+          - "python-jose*"
+      
+      data-stack:
+        patterns:
+          - "pandas*"
+          - "numpy*"
+          - "orjson*"
+      
+      testing-stack:
+        patterns:
+          - "pytest*"
+          - "httpx*"
+      
+      dev-tools:
+        patterns:
+          - "black*"
+          - "ruff*"
+          - "mypy*"
+          - "isort*"
+          - "flake8*"
+          - "bandit*"
+    
+    # Security-only updates for production dependencies
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    
+    # Allow security updates and minor/patch updates
+    allow:
+      - dependency-type: "direct"
+        update-type: "security"
+      - dependency-type: "direct" 
+        update-type: "version-update:semver-minor"
+      - dependency-type: "direct"
+        update-type: "version-update:semver-patch"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "klerno-security-team"
+    assignees:
+      - "klerno-dev-team"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Docker dependencies (if using Dockerfile)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "klerno-security-team"
+    assignees:
+      - "klerno-dev-team"
+    commit-message:
+      prefix: "docker"
+      include: "scope"

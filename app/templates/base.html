@@ -51,10 +51,10 @@
         <div id="mainNav" class="collapse navbar-collapse">
           <ul class="navbar-nav ms-auto gap-2">
             <li class="nav-item">
-              <a id="nav-dashboard" class="nav-link text-light chip" href="{{ url_path_for('ui_dashboard') }}">Dashboard</a>
+              <a id="nav-dashboard" class="nav-link text-light chip" href="{{ url_path_for('ui_dashboard') }}" data-carry-key>Dashboard</a>
             </li>
             <li class="nav-item">
-              <a id="nav-alerts" class="nav-link text-light chip" href="{{ url_path_for('ui_alerts') }}">Alerts</a>
+              <a id="nav-alerts" class="nav-link text-light chip" href="{{ url_path_for('ui_alerts') }}" data-carry-key>Alerts</a>
             </li>
             <li class="nav-item">
               <a class="nav-link text-light chip" href="/docs" target="_blank" rel="noopener">API Docs</a>
@@ -78,14 +78,15 @@
     </div>
   </footer>
 
-  <!-- Carry ?key=... through internal links so UI pages remain authorized -->
-  <script>
+  <!-- Carry ?key=... only through links with data-carry-key attribute -->
+  <script{% if request.state.csp_nonce %} nonce="{{ request.state.csp_nonce }}"{% endif %}>
   (function attachKeyToLinks(){
     try{
       const params = new URLSearchParams(window.location.search);
       const key = params.get("key");
       if(!key) return;
-      for(const a of document.querySelectorAll('a[href^="/"]')){
+      // Only add key to links explicitly marked with data-carry-key
+      for(const a of document.querySelectorAll('a[data-carry-key][href^="/"]')){
         const url = new URL(a.getAttribute("href"), window.location.origin);
         url.searchParams.set("key", key);
         a.setAttribute("href", url.toString());
