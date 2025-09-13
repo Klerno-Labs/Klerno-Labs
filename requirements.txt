@@ -29,7 +29,7 @@ orjson==3.9.8                 # Ultra-fast JSON serialization
 # Web & HTTP Libraries
 # ==============================================================================
 requests==2.31.0              # HTTP library for API integrations
-httpx==0.24.1                 # Async HTTP client
+httpx>=0.18.1,<0.25.0         # Async HTTP client (compatible with xrpl-py)
 httpcore==0.17.3              # HTTP core library
 aiohttp>=3.8.0                # Async HTTP client/server
 
@@ -135,4 +135,4 @@ aiofiles>=23.2.0              # Async file operations
 
 # pandas==2.2.1
 # numpy<=2.0.0.dev0,>1.22.4
-pytest-httpx==0.30.0
+# pytest-httpx>=0.21.0         # HTTP testing support (temporarily disabled due to httpx version conflict)
