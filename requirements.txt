@@ -62,6 +62,12 @@ xrpl-py==2.6.0                # Official XRPL library for Python
 openai==0.28.1                # OpenAI API client (compatible with xrpl-py)
 
 # ==============================================================================
+# Security & Compliance
+# ==============================================================================
+cryptography>=42.0.0          # Latest security patches for cryptographic recipes
+python-jose[cryptography]>=3.3.0  # JSON Web Signature implementation
+
+# ==============================================================================
 # Authentication & Security
 # ==============================================================================
 PyJWT==2.8.0                  # JSON Web Token implementation
@@ -92,10 +98,18 @@ mypy>=1.8.0                   # Static type checking
 bandit>=1.7.5                 # Security linting
 
 # ==============================================================================
-# Monitoring & Observability
+# Security & Compliance
+# ==============================================================================
+cryptography>=42.0.0          # Latest security patches for cryptographic recipes
+python-jose[cryptography]>=3.3.0  # JSON Web Signature implementation
+bandit>=1.7.5                 # Security linting
+safety>=3.0.0                 # Dependency vulnerability scanning
+
+# ==============================================================================
+# Monitoring & Observability  
 # ==============================================================================
 prometheus-client>=0.19.0     # Metrics collection
-structlog>=23.2.0             # Structured logging
+structlog>=24.1.0             # Structured logging for audit trails
 
 # ==============================================================================
 # Task Queue & Background Jobs
@@ -117,7 +131,7 @@ python-json-logger>=2.0.7     # JSON logging formatter
 # ==============================================================================
 # Security & Compliance
 # ==============================================================================
-cryptography>=41.0.0          # Cryptographic recipes and primitives
+cryptography>=42.0.0          # Latest security patches for cryptographic recipes  
 python-jose[cryptography]>=3.3.0  # JSON Web Signature implementation
 
 # ==============================================================================
