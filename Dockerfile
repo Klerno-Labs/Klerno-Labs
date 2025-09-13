@@ -230,3 +230,7 @@ CMD ["sh", "-c", "\
 # docker scout cves klerno-labs:latest
 # 
 # ==============================================================================
+
+# Install Python dependencies in the build image
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
