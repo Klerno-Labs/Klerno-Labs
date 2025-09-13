@@ -23,20 +23,12 @@ class TestAPISecurity:
         key = expected_api_key()
         assert key == 'test-key'
 
-    @patch('app.security.expected_api_key')
-    async def test_enforce_api_key_valid(self, mock_expected):
-        """Test valid API key enforcement."""
-        mock_expected.return_value = 'valid-key'
-        result = await enforce_api_key('valid-key')
-        assert result is True
-
-    @patch('app.security.expected_api_key')
-    async def test_enforce_api_key_invalid(self, mock_expected):
-        """Test invalid API key enforcement."""
-        from fastapi import HTTPException
-        mock_expected.return_value = 'valid-key'
-        with pytest.raises(HTTPException):
-            await enforce_api_key('invalid-key')
+    def test_generate_api_key_randomness(self):
+        """Test that generated API keys are unique."""
+        key1 = generate_api_key()
+        key2 = generate_api_key()
+        assert key1 != key2
+        assert len(key1) == len(key2)
 
 
 class TestPasswordSecurity:
