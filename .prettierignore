@@ -1,0 +1,46 @@
+# ==============================================================================
+# Klerno Labs - Prettier Ignore
+# ==============================================================================
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+env/
+
+# Build outputs
+dist/
+build/
+htmlcov/
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite*
+
+# Cache
+.cache/
+.pytest_cache/
+__pycache__/
+
+# Generated files
+coverage.xml
+.coverage
+*.pyc
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Specific files that shouldn't be formatted
+requirements.txt
+*.md
+*.py
+Dockerfile*

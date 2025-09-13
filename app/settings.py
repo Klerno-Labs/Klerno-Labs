@@ -2,6 +2,7 @@
 import os
 from functools import lru_cache
 
+
 class Settings:
     # Env is read at import time; fine for simple configs
     app_env = os.getenv("APP_ENV", "dev")
@@ -31,6 +32,7 @@ class Settings:
     api_key = os.getenv("API_KEY", "dev-api-key")
     risk_threshold = float(os.getenv("RISK_THRESHOLD", "0.75"))
     xrpl_rpc_url = os.getenv("XRPL_RPC_URL", "https://s2.ripple.com:51234")
+
 
 @lru_cache
 def get_settings() -> Settings:

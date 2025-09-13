@@ -1,0 +1,53 @@
+# ==============================================================================
+# Klerno Labs - Flake8 Configuration  
+# ==============================================================================
+# World-class Python linting for enterprise SaaS applications
+
+[flake8]
+max-line-length = 88
+max-complexity = 12
+exclude = 
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    .env,
+    env,
+    build,
+    dist,
+    .eggs,
+    *.egg,
+    migrations,
+    node_modules,
+    .mypy_cache,
+    .pytest_cache,
+    .tox
+
+# Error codes to ignore
+ignore = 
+    # E203: whitespace before ':' (conflicts with Black)
+    E203,
+    # W503: line break before binary operator (conflicts with Black)
+    W503,
+    # E501: line too long (handled by Black)
+    E501
+
+# Error codes to select
+select = E,W,F,C
+
+# Per-file ignores
+per-file-ignores =
+    # Tests can have longer lines and more complex structures
+    */tests/*:E501,C901
+    # __init__.py files can have unused imports
+    __init__.py:F401
+    # Configuration files can have longer lines
+    settings.py:E501
+    conftest.py:E501
+
+# Docstring conventions (pep257)
+docstring-convention = google
+
+# Import order checking (if using flake8-import-order)
+import-order-style = google
+application-import-names = app

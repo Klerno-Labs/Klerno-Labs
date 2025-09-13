@@ -1,14 +1,14 @@
 # app/hardening.py
 from __future__ import annotations
 
-import os
 import hmac
+import os
 import secrets
-from typing import Optional, Callable, Awaitable
+from typing import Awaitable, Callable, Optional
 
-from fastapi import Request, HTTPException
-from starlette.responses import Response
+from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
 REQ_ID_HEADER = "X-Request-ID"
 CSRF_COOKIE = "csrf_token"
@@ -17,7 +17,10 @@ CSRF_HEADER = "X-CSRF-Token"
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Sets a strict, but UI-friendly baseline of security headers."""
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]):
+
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ):
         resp: Response = await call_next(request)
         csp = (
             "default-src 'self'; "
@@ -31,15 +34,25 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
         resp.headers.setdefault("X-Frame-Options", "DENY")
         resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        resp.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-        if (os.getenv("ENABLE_HSTS", "true").lower() == "true") and request.url.scheme == "https":
-            resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+        resp.headers.setdefault(
+            "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
+        )
+        if (
+            os.getenv("ENABLE_HSTS", "true").lower() == "true"
+        ) and request.url.scheme == "https":
+            resp.headers.setdefault(
+                "Strict-Transport-Security",
+                "max-age=31536000; includeSubDomains; preload",
+            )
         return resp
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):
     """Adds/propagates a stable request id for traceability."""
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]):
+
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ):
         rid = request.headers.get(REQ_ID_HEADER) or secrets.token_hex(8)
         request.state.request_id = rid
         resp: Response = await call_next(request)
@@ -51,7 +64,15 @@ def issue_csrf_cookie(resp: Response) -> str:
     """Mint a CSRF token cookie (readable by JS; header-only is checked server-side)."""
     token = secrets.token_urlsafe(32)
     # NOTE: SameSite=Strict and Secure; not HttpOnly because client JS must reflect it into header.
-    resp.set_cookie("csrf_token", token, secure=True, samesite="Strict", httponly=False, path="/", max_age=60 * 60 * 8)
+    resp.set_cookie(
+        "csrf_token",
+        token,
+        secure=True,
+        samesite="Strict",
+        httponly=False,
+        path="/",
+        max_age=60 * 60 * 8,
+    )
     return token
 
 
@@ -80,6 +101,7 @@ def install_security(app) -> None:
 
 # ---- Optional rate limiting (no warnings if library absent) ------------------
 
+
 def rate_limit(spec: str):
     """
     Returns a dependency suitable for FastAPI route `dependencies=[Depends(rate_limit("10/min"))]`.
@@ -88,11 +110,14 @@ def rate_limit(spec: str):
     """
     try:
         from starlette_limiter import RateLimiter  # type: ignore
+
         # Parse "10/min", "100/hour", or raw seconds like "20/30"
         parts = spec.split("/")
         times = int(parts[0])
         per = parts[1].lower() if len(parts) > 1 else "min"
-        seconds = {"sec": 1, "second": 1, "min": 60, "minute": 60, "hour": 3600}.get(per, 60)
+        seconds = {"sec": 1, "second": 1, "min": 60, "minute": 60, "hour": 3600}.get(
+            per, 60
+        )
         # Require redis URL to actually enable limiter
         if not os.getenv("REDIS_URL"):
             # RateLimiter without Redis will fail; fall back to no-op
@@ -102,4 +127,5 @@ def rate_limit(spec: str):
         # No-op dependency
         async def _noop():
             return True
+
         return _noop

@@ -5,26 +5,27 @@ import os
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
-from fastapi import APIRouter, Depends, HTTPException, Request, Body
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from . import store
+from .compliance import tag_category
 from .deps import require_user
 from .guardian import score_risk
-from .compliance import tag_category
-from .security import rotate_api_key, preview_api_key
+from .security import preview_api_key, rotate_api_key
 
 # ---------- Email (SendGrid) ----------
 SENDGRID_KEY = os.getenv("SENDGRID_API_KEY", "").strip()
-ALERT_FROM   = os.getenv("ALERT_EMAIL_FROM", "").strip()
-DEFAULT_TO   = os.getenv("ALERT_EMAIL_TO", "").strip()
+ALERT_FROM = os.getenv("ALERT_EMAIL_FROM", "").strip()
+DEFAULT_TO = os.getenv("ALERT_EMAIL_TO", "").strip()
 
 BASE_DIR = os.path.dirname(__file__)
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
+
 
 # ---------- Auth helpers ----------
 def require_admin(user=Depends(require_user)):
@@ -32,6 +33,7 @@ def require_admin(user=Depends(require_user)):
     if (user.get("role") or "").lower() != "admin":
         raise HTTPException(status_code=403, detail="Admins only")
     return user
+
 
 # ---------- Utils ----------
 def _row_score(r: Dict[str, Any]) -> float:
@@ -46,14 +48,21 @@ def _row_score(r: Dict[str, Any]) -> float:
     except Exception:
         return 0.0
 
-def _send_email(subject: str, text: str, to_email: Optional[str] = None) -> Dict[str, Any]:
+
+def _send_email(
+    subject: str, text: str, to_email: Optional[str] = None
+) -> Dict[str, Any]:
     """Lightweight SendGrid helper used only in admin routes."""
     recipient = (to_email or DEFAULT_TO).strip()
     if not (SENDGRID_KEY and ALERT_FROM and recipient):
-        return {"sent": False, "reason": "missing SENDGRID_API_KEY/ALERT_EMAIL_FROM/ALERT_EMAIL_TO"}
+        return {
+            "sent": False,
+            "reason": "missing SENDGRID_API_KEY/ALERT_EMAIL_FROM/ALERT_EMAIL_TO",
+        }
     try:
         from sendgrid import SendGridAPIClient
-        from sendgrid.helpers.mail import Mail, Email, To, Content
+        from sendgrid.helpers.mail import Content, Email, Mail, To
+
         msg = Mail(
             from_email=Email(ALERT_FROM),
             to_emails=To(recipient),
@@ -67,10 +76,14 @@ def _send_email(subject: str, text: str, to_email: Optional[str] = None) -> Dict
     except Exception as e:
         return {"sent": False, "error": str(e)}
 
+
 # ---------- UI ----------
 @router.get("", include_in_schema=False)
 def admin_home(request: Request, user=Depends(require_admin)):
-    return templates.TemplateResponse("admin.html", {"request": request, "title": "Admin"})
+    return templates.TemplateResponse(
+        "admin.html", {"request": request, "title": "Admin"}
+    )
+
 
 # ---------- Stats ----------
 @router.get("/api/stats")
@@ -97,15 +110,18 @@ def admin_stats(user=Depends(require_admin)):
         "server_time": pd.Timestamp.utcnow().isoformat(),
     }
 
+
 # ---------- Users ----------
 def _list_users() -> List[Dict[str, Any]]:
     con = store._conn()
     cur = con.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         SELECT id, email, password_hash, role, subscription_active, created_at
         FROM users
         ORDER BY created_at DESC
-    """)
+    """
+    )
     rows = cur.fetchall()
     con.close()
 
@@ -119,26 +135,36 @@ def _list_users() -> List[Dict[str, Any]]:
             # Fallback to positional tuple order
             id_, email, password_hash, role, sub_active, created_at = r
             d = {
-                "id": id_, "email": email, "password_hash": password_hash,
-                "role": role, "subscription_active": sub_active, "created_at": created_at,
+                "id": id_,
+                "email": email,
+                "password_hash": password_hash,
+                "role": role,
+                "subscription_active": sub_active,
+                "created_at": created_at,
             }
         d["subscription_active"] = bool(d.get("subscription_active"))
         d.pop("password_hash", None)  # never expose hashes
         out.append(d)
     return out
 
+
 @router.get("/api/users")
 def admin_users(user=Depends(require_admin)):
     return {"items": _list_users()}
 
+
 class UpdateRolePayload(BaseModel):
     role: str
+
 
 class UpdateSubPayload(BaseModel):
     active: bool
 
+
 @router.post("/api/users/{user_id}/role")
-def admin_set_role(user_id: int, payload: UpdateRolePayload, user=Depends(require_admin)):
+def admin_set_role(
+    user_id: int, payload: UpdateRolePayload, user=Depends(require_admin)
+):
     u = store.get_user_by_id(user_id)
     if not u:
         raise HTTPException(status_code=404, detail="User not found")
@@ -148,20 +174,27 @@ def admin_set_role(user_id: int, payload: UpdateRolePayload, user=Depends(requir
     store.set_role(u["email"], role)
     return {"ok": True, "user": store.get_user_by_id(user_id)}
 
+
 @router.post("/api/users/{user_id}/subscription")
-def admin_set_subscription(user_id: int, payload: UpdateSubPayload, user=Depends(require_admin)):
+def admin_set_subscription(
+    user_id: int, payload: UpdateSubPayload, user=Depends(require_admin)
+):
     u = store.get_user_by_id(user_id)
     if not u:
         raise HTTPException(status_code=404, detail="User not found")
     store.set_subscription_active(u["email"], bool(payload.active))
     return {"ok": True, "user": store.get_user_by_id(user_id)}
 
+
 # ---------- Data tools ----------
 class SeedDemoPayload(BaseModel):
     limit: Optional[int] = None  # rows to import from sample
 
+
 @router.post("/api/data/seed_demo")
-def admin_seed_demo(payload: SeedDemoPayload = Body(default=None), user=Depends(require_admin)):
+def admin_seed_demo(
+    payload: SeedDemoPayload = Body(default=None), user=Depends(require_admin)
+):
     data_path = os.path.join(BASE_DIR, "..", "data", "sample_transactions.csv")
     if not os.path.exists(data_path):
         raise HTTPException(status_code=404, detail="sample_transactions.csv not found")
@@ -171,8 +204,19 @@ def admin_seed_demo(payload: SeedDemoPayload = Body(default=None), user=Depends(
         df = df.head(int(payload.limit))
 
     if "timestamp" in df.columns:
-        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce").dt.strftime("%Y-%m-%dT%H:%M:%S")
-    for col in ("memo", "notes", "symbol", "direction", "chain", "tx_id", "from_addr", "to_addr"):
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce").dt.strftime(
+            "%Y-%m-%dT%H:%M:%S"
+        )
+    for col in (
+        "memo",
+        "notes",
+        "symbol",
+        "direction",
+        "chain",
+        "tx_id",
+        "from_addr",
+        "to_addr",
+    ):
         if col in df.columns:
             df[col] = df[col].fillna("").astype(str)
     for col in ("amount", "fee"):
@@ -203,8 +247,10 @@ def admin_seed_demo(payload: SeedDemoPayload = Body(default=None), user=Depends(
 
     return {"ok": True, "saved": saved}
 
+
 class PurgePayload(BaseModel):
     confirm: str
+
 
 @router.post("/api/data/purge")
 def admin_purge(payload: PurgePayload, user=Depends(require_admin)):
@@ -217,23 +263,30 @@ def admin_purge(payload: PurgePayload, user=Depends(require_admin)):
     con.close()
     return {"ok": True, "deleted": True}
 
+
 # ---------- Utilities ----------
 class TestEmailPayload(BaseModel):
     email: Optional[str] = None
 
+
 @router.post("/api/email/test")
-def admin_email_test(payload: TestEmailPayload = Body(default=None), user=Depends(require_admin)):
+def admin_email_test(
+    payload: TestEmailPayload = Body(default=None), user=Depends(require_admin)
+):
     to_addr = payload.email if payload and payload.email else DEFAULT_TO
     res = _send_email("Klerno Admin Test", "✅ Admin test email from Klerno.", to_addr)
     return {"ok": bool(res.get("sent")), "result": res}
+
 
 class XRPLPingPayload(BaseModel):
     account: str
     limit: Optional[int] = 1
 
+
 @router.post("/api/xrpl/ping")
 def admin_xrpl_ping(payload: XRPLPingPayload, user=Depends(require_admin)):
     from .integrations.xrp import fetch_account_tx
+
     try:
         raw = fetch_account_tx(payload.account, limit=int(payload.limit or 1))
         n = len(raw or [])
@@ -241,14 +294,17 @@ def admin_xrpl_ping(payload: XRPLPingPayload, user=Depends(require_admin)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"ok": False, "error": str(e)})
 
+
 # ---------- API Key management ----------
 class ApiKeyRotateResponse(BaseModel):
     api_key: str  # returned ONCE so the admin can copy it
+
 
 @router.post("/api-key/rotate", response_model=ApiKeyRotateResponse)
 def admin_rotate_api_key(user=Depends(require_admin)):
     new_key = rotate_api_key()
     return {"api_key": new_key}
+
 
 @router.get("/api-key/preview")
 def admin_preview_api_key(user=Depends(require_admin)):

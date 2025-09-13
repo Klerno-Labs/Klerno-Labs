@@ -1,12 +1,14 @@
 from typing import Optional
+
 from fastapi import Depends, HTTPException, Request, status
-from jwt import ExpiredSignatureError, InvalidTokenError, DecodeError
+from jwt import DecodeError, ExpiredSignatureError, InvalidTokenError
 
 from . import store
 from .security_session import decode_jwt
 from .settings import get_settings
 
 S = get_settings()
+
 
 def _lookup_user_by_sub(sub: str) -> Optional[dict]:
     """
@@ -42,6 +44,7 @@ def _lookup_user_by_sub(sub: str) -> Optional[dict]:
 
     return None
 
+
 def current_user(request: Request) -> Optional[dict]:
     """
     Reads JWT from cookie 'session' or Authorization: Bearer <jwt>.
@@ -67,6 +70,7 @@ def current_user(request: Request) -> Optional[dict]:
         # invalid/expired token
         return None
 
+
 def require_user(user: Optional[dict] = Depends(current_user)) -> dict:
     if not user:
         raise HTTPException(
@@ -74,6 +78,7 @@ def require_user(user: Optional[dict] = Depends(current_user)) -> dict:
             detail="Login required",
         )
     return user
+
 
 def require_paid_or_admin(user: dict = Depends(require_user)) -> dict:
     if S.demo_mode:
@@ -84,6 +89,7 @@ def require_paid_or_admin(user: dict = Depends(require_user)) -> dict:
         status_code=status.HTTP_402_PAYMENT_REQUIRED,
         detail="Subscription required",
     )
+
 
 def require_admin(user: dict = Depends(require_user)) -> dict:
     if user.get("role") != "admin":

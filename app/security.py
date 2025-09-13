@@ -1,15 +1,15 @@
 # app/security.py
 from __future__ import annotations
 
-import os
 import hmac
+import os
 import secrets
 import time
 from pathlib import Path
 from typing import Optional
 
+from dotenv import find_dotenv, load_dotenv
 from fastapi import Header, HTTPException, Request, status
-from dotenv import load_dotenv, find_dotenv
 
 # --- Load .env robustly (works from OneDrive, nested folders, etc.) ---
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -17,7 +17,7 @@ DOTENV_PATH = find_dotenv(usecwd=True) or str(PROJECT_ROOT / ".env")
 load_dotenv(dotenv_path=DOTENV_PATH, override=False)
 
 # --- File-based key storage (used when ENV key is not set) ---
-_DATA_DIR = (PROJECT_ROOT / "data")
+_DATA_DIR = PROJECT_ROOT / "data"
 _DATA_DIR.mkdir(parents=True, exist_ok=True)
 _KEY_FILE = _DATA_DIR / "api_key.secret"
 _META_FILE = _DATA_DIR / "api_key.meta"

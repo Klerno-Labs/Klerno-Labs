@@ -1,26 +1,29 @@
 """
 Safe Auto-Improver (proposal-only).
 """
+
 from __future__ import annotations
 
 import difflib
 import sys
 import uuid
 from dataclasses import dataclass
-from pathlib import Path
-from typing import List, Dict, Any
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List
 
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 
+
 @dataclass
 class Suggestion:
-    file: str         # repo-relative, POSIX
+    file: str  # repo-relative, POSIX
     before: str
     after: str
     rationale: str
+
 
 def load_policy() -> Dict[str, Any]:
     p = ROOT / "automation" / "policy.yaml"
@@ -33,6 +36,7 @@ def load_policy() -> Dict[str, Any]:
         # Malformed policy -> deny all
         print(f"[policy] Failed to load policy.yaml: {e}")
         return {"allowed_paths": []}
+
 
 def _insert_future_annotations(content: str) -> str:
     """
@@ -68,6 +72,7 @@ def _insert_future_annotations(content: str) -> str:
     new_lines = lines[:i] + [insert_line, ""] + lines[i:]
     return "\n".join(new_lines) + ("\n" if content.endswith("\n") else "")
 
+
 def llm_suggest(file_path: Path, content: str) -> List[Suggestion]:
     suggestions: List[Suggestion] = []
 
@@ -89,6 +94,7 @@ def llm_suggest(file_path: Path, content: str) -> List[Suggestion]:
 
     return suggestions
 
+
 def bounded_change_allowed(policy: Dict[str, Any], abs_path: Path) -> bool:
     allowed = policy.get("allowed_paths", []) or []
     # Convert allowed entries to absolute paths under the repo root
@@ -101,9 +107,11 @@ def bounded_change_allowed(policy: Dict[str, Any], abs_path: Path) -> bool:
         except AttributeError:
             # Python < 3.9 fallback
             from os.path import commonpath
+
             if commonpath([str(abs_path), str(base)]) == str(base):
                 return True
     return False
+
 
 def make_patch(before: str, after: str, file_label: str) -> str:
     before_lines = before.splitlines(keepends=True)
@@ -116,6 +124,7 @@ def make_patch(before: str, after: str, file_label: str) -> str:
         n=3,
     )
     return "".join(diff)
+
 
 def propose_changes() -> None:
     policy = load_policy()
@@ -145,6 +154,7 @@ def propose_changes() -> None:
                 encoding="utf-8",
             )
             patches_path.write_text(patch, encoding="utf-8")
+
 
 if __name__ == "__main__":
     propose_changes()
