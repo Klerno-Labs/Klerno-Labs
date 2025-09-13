@@ -1,30 +1,150 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Sign up — Klerno Labs</title>
-  <link rel="stylesheet" href="/static/styles.css"/>
-</head>
-<body>
-  <main class="auth-page">
-    <h1>Create an account</h1>
+{% extends "base.html" %}
 
-    {% if error %}
-      <p class="error" style="color:#c00">{{ error }}</p>
-    {% endif %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-4">
+    <div class="card">
+      <div class="card-body p-4">
+        <div class="text-center mb-4">
+          <h1 class="h4 fw-bold">Join Klerno Labs</h1>
+          <p class="text-muted">Create your account to start monitoring XRPL risks</p>
+        </div>
 
-    <form method="post" action="/signup">
-      <label for="email">Email</label>
-      <input id="email" type="email" name="email" required autofocus autocomplete="email"/>
+        {% if error %}
+          <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+          </div>
+        {% endif %}
 
-      <label for="password">Password</label>
-      <input id="password" type="password" name="password" required autocomplete="new-password"/>
+        <form method="post" action="/signup" class="needs-validation" novalidate>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email address</label>
+            <input 
+              id="email" 
+              name="email" 
+              type="email" 
+              class="form-control" 
+              required 
+              autocomplete="email" 
+              autofocus 
+              placeholder="Enter your email"
+            />
+            <div class="invalid-feedback">
+              Please provide a valid email address.
+            </div>
+            <div class="form-text">We'll never share your email with anyone else.</div>
+          </div>
 
-      <button type="submit">Sign up</button>
-    </form>
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input 
+              id="password" 
+              name="password" 
+              type="password" 
+              class="form-control" 
+              required 
+              autocomplete="new-password"
+              minlength="8"
+              placeholder="Create a strong password"
+            />
+            <div class="invalid-feedback">
+              Password must be at least 8 characters long.
+            </div>
+            <div class="form-text">Use at least 8 characters with a mix of letters and numbers.</div>
+          </div>
 
-    <p>Already have an account? <a href="/login">Sign in</a></p>
-  </main>
-</body>
-</html>
+          <div class="mb-4">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="terms" required>
+              <label class="form-check-label text-sm" for="terms">
+                I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> and 
+                <a href="#" class="text-decoration-none">Privacy Policy</a>
+              </label>
+              <div class="invalid-feedback">
+                You must agree to the terms and privacy policy.
+              </div>
+            </div>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary">
+              Create account
+            </button>
+          </div>
+        </form>
+
+        <div class="text-center mt-4">
+          <p class="text-muted mb-2">Already have an account?</p>
+          <a href="/login-ui" class="btn btn-outline-light btn-sm" data-carry-key>Sign in</a>
+        </div>
+
+        <div class="text-center mt-3">
+          <a href="/" class="text-muted text-decoration-none">
+            <i class="bi bi-arrow-left me-1"></i>Back to home
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script{% if request.state.csp_nonce %} nonce="{{ request.state.csp_nonce }}"{% endif %}>
+// Form validation and password strength
+(function() {
+  'use strict';
+  
+  const forms = document.querySelectorAll('.needs-validation');
+  const passwordInput = document.getElementById('password');
+  
+  // Form validation
+  forms.forEach(function(form) {
+    form.addEventListener('submit', function(event) {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    });
+  });
+  
+  // Password strength indicator
+  if (passwordInput) {
+    passwordInput.addEventListener('input', function() {
+      const password = this.value;
+      const strength = calculatePasswordStrength(password);
+      updatePasswordFeedback(this, strength);
+    });
+  }
+  
+  function calculatePasswordStrength(password) {
+    let score = 0;
+    if (password.length >= 8) score += 1;
+    if (password.length >= 12) score += 1;
+    if (/[a-z]/.test(password)) score += 1;
+    if (/[A-Z]/.test(password)) score += 1;
+    if (/[0-9]/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+    return Math.min(score, 4);
+  }
+  
+  function updatePasswordFeedback(input, strength) {
+    const colors = ['#dc3545', '#fd7e14', '#ffc107', '#198754'];
+    const labels = ['Weak', 'Fair', 'Good', 'Strong'];
+    
+    if (strength > 0) {
+      input.style.borderLeftColor = colors[strength - 1];
+      input.style.borderLeftWidth = '4px';
+      
+      let feedback = input.parentNode.querySelector('.password-strength');
+      if (!feedback) {
+        feedback = document.createElement('div');
+        feedback.className = 'password-strength form-text';
+        input.parentNode.appendChild(feedback);
+      }
+      feedback.textContent = `Password strength: ${labels[strength - 1]}`;
+      feedback.style.color = colors[strength - 1];
+    }
+  }
+})();
+</script>
+{% endblock %}

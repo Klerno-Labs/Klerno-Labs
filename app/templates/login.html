@@ -1,29 +1,92 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sign in</title>
-  <link rel="stylesheet" href="/static/styles.css" />
-</head>
-<body>
-  <h1>Sign in</h1>
+{% extends "base.html" %}
 
-  {% if error %}
-    <p style="color:#c00">{{ error }}</p>
-  {% endif %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-4">
+    <div class="card">
+      <div class="card-body p-4">
+        <div class="text-center mb-4">
+          <h1 class="h4 fw-bold">Sign in to Klerno</h1>
+          <p class="text-muted">Access your risk intelligence dashboard</p>
+        </div>
 
-  <form method="post" action="/login">
-    <label for="email">Email</label><br />
-    <input id="email" name="email" type="email" required autocomplete="email" autofocus /><br /><br />
+        {% if error %}
+          <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+          </div>
+        {% endif %}
 
-    <label for="password">Password</label><br />
-    <input id="password" name="password" type="password" required autocomplete="current-password" /><br /><br />
+        <form method="post" action="/login" class="needs-validation" novalidate>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email address</label>
+            <input 
+              id="email" 
+              name="email" 
+              type="email" 
+              class="form-control" 
+              required 
+              autocomplete="email" 
+              autofocus 
+              placeholder="Enter your email"
+            />
+            <div class="invalid-feedback">
+              Please provide a valid email address.
+            </div>
+          </div>
 
-    <button type="submit">Sign in</button>
-  </form>
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input 
+              id="password" 
+              name="password" 
+              type="password" 
+              class="form-control" 
+              required 
+              autocomplete="current-password"
+              placeholder="Enter your password"
+            />
+            <div class="invalid-feedback">
+              Please provide your password.
+            </div>
+          </div>
 
-  <p>No account? <a href="/signup">Create one</a></p>
-  <p><a href="/">Back to home</a></p>
-</body>
-</html>
+          <div class="d-grid">
+            <button type="submit" class="btn btn-primary">
+              Sign in
+            </button>
+          </div>
+        </form>
+
+        <div class="text-center mt-4">
+          <p class="text-muted mb-2">Don't have an account?</p>
+          <a href="/signup-ui" class="btn btn-outline-light btn-sm" data-carry-key>Create account</a>
+        </div>
+
+        <div class="text-center mt-3">
+          <a href="/" class="text-muted text-decoration-none">
+            <i class="bi bi-arrow-left me-1"></i>Back to home
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script{% if request.state.csp_nonce %} nonce="{{ request.state.csp_nonce }}"{% endif %}>
+// Form validation
+(function() {
+  'use strict';
+  const forms = document.querySelectorAll('.needs-validation');
+  
+  forms.forEach(function(form) {
+    form.addEventListener('submit', function(event) {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    });
+  });
+})();
+</script>
+{% endblock %}

@@ -706,8 +706,39 @@ def export_csv_download(wallet: str | None = None, limit: int = 1000, key: Optio
     df = pd.DataFrame(rows)
     buf = StringIO()
     df.to_csv(buf, index=False)
-    buf.seek(0)
-    return StreamingResponse(iter([buf.read()]), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=klerno-export.csv"})
+    csv_content = buf.getvalue()
+    
+    # Generate ETag based on content hash and Last-Modified from most recent data
+    import hashlib
+    etag = f'"{hashlib.md5(csv_content.encode()).hexdigest()}"'
+    
+    # Get most recent timestamp from data for Last-Modified
+    last_modified = None
+    if rows:
+        timestamps = [row.get('timestamp') for row in rows if row.get('timestamp')]
+        if timestamps:
+            try:
+                latest = max(timestamps)
+                if isinstance(latest, str):
+                    from datetime import datetime
+                    latest_dt = datetime.fromisoformat(latest.replace('Z', ''))
+                    last_modified = latest_dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
+            except (ValueError, TypeError):
+                pass
+    
+    headers = {
+        "Content-Disposition": "attachment; filename=klerno-export.csv",
+        "ETag": etag,
+        "Cache-Control": "public, max-age=300"  # 5 minutes cache
+    }
+    if last_modified:
+        headers["Last-Modified"] = last_modified
+    
+    return StreamingResponse(
+        iter([csv_content]), 
+        media_type="text/csv", 
+        headers=headers
+    )
 
 
 # ---------------- CSV export (UI, session-protected) ----------------
@@ -721,11 +752,36 @@ def ui_export_csv_download(
     df = pd.DataFrame(rows)
     buf = StringIO()
     df.to_csv(buf, index=False)
-    buf.seek(0)
+    csv_content = buf.getvalue()
+    
+    # Generate ETag and Last-Modified for better caching
+    import hashlib
+    etag = f'"{hashlib.md5(csv_content.encode()).hexdigest()}"'
+    
+    last_modified = None
+    if rows:
+        timestamps = [row.get('timestamp') for row in rows if row.get('timestamp')]
+        if timestamps:
+            try:
+                latest = max(timestamps)
+                if isinstance(latest, str):
+                    latest_dt = datetime.fromisoformat(latest.replace('Z', ''))
+                    last_modified = latest_dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
+            except (ValueError, TypeError):
+                pass
+    
+    headers = {
+        "Content-Disposition": "attachment; filename=klerno-export.csv",
+        "ETag": etag,
+        "Cache-Control": "public, max-age=300"
+    }
+    if last_modified:
+        headers["Last-Modified"] = last_modified
+    
     return StreamingResponse(
-        iter([buf.read()]),
+        iter([csv_content]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=klerno-export.csv"},
+        headers=headers,
     )
 
 
@@ -734,6 +790,7 @@ def ui_export_csv_download(
 # tiny in-proc TTL cache to avoid heavy recompute
 _METRICS_CACHE: Dict[Tuple[Optional[float], Optional[int]], Tuple[float, Dict[str, Any]]] = {}
 _METRICS_TTL_SEC = 5.0
+_METRICS_CACHE_MAX_SIZE = 100  # Bound cache size
 
 def _metrics_cached(threshold: Optional[float], days: Optional[int]) -> Optional[Dict[str, Any]]:
     key = (threshold, days)
@@ -745,7 +802,23 @@ def _metrics_cached(threshold: Optional[float], days: Optional[int]) -> Optional
 
 def _metrics_put(threshold: Optional[float], days: Optional[int], data: Dict[str, Any]):
     key = (threshold, days)
-    _METRICS_CACHE[key] = (datetime.utcnow().timestamp(), data)
+    now = datetime.utcnow().timestamp()
+    
+    # Bound cache size - remove oldest entries if over limit
+    if len(_METRICS_CACHE) >= _METRICS_CACHE_MAX_SIZE:
+        # Remove expired entries first
+        expired_keys = [k for k, (ts, _) in _METRICS_CACHE.items() if (now - ts) > _METRICS_TTL_SEC]
+        for k in expired_keys:
+            _METRICS_CACHE.pop(k, None)
+        
+        # If still over limit, remove oldest entries
+        if len(_METRICS_CACHE) >= _METRICS_CACHE_MAX_SIZE:
+            sorted_items = sorted(_METRICS_CACHE.items(), key=lambda x: x[1][0])
+            keys_to_remove = sorted_items[:len(_METRICS_CACHE) - _METRICS_CACHE_MAX_SIZE + 1]
+            for k, _ in keys_to_remove:
+                _METRICS_CACHE.pop(k, None)
+    
+    _METRICS_CACHE[key] = (now, data)
 
 @app.get("/metrics")
 def metrics(threshold: float | None = None, days: int | None = None, _auth: bool = Security(enforce_api_key)):
@@ -1179,17 +1252,25 @@ def ai_search(req: NLQRequest, _user=Depends(require_paid_or_admin)):
 # simple anomaly scoring (z-score on amounts)
 @app.get("/ai/anomaly/scores", include_in_schema=False)
 def ai_anomaly_scores(limit: int = 100, _user=Depends(require_paid_or_admin)):
+    # Use larger dataset for statistical accuracy but limit processing
     rows = store.list_all(limit=20000)
     if not rows: return {"count": 0, "items": []}
+    
+    # Use head() for preview if dataset is very large and only preview needed
     df = pd.DataFrame(rows)
     if "amount" not in df.columns: return {"count": 0, "items": []}
+    
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
     df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0.0)
+    
     if df["amount"].std(ddof=0) == 0:
         df["anomaly_score"] = 0.0
     else:
         df["anomaly_score"] = (df["amount"] - df["amount"].mean()) / (df["amount"].std(ddof=0) or 1)
+    
     df["anomaly_score"] = df["anomaly_score"].abs()
     df.sort_values(["anomaly_score", "timestamp"], ascending=[False, False], inplace=True)
+    
+    # Return top results efficiently with head()
     items = df.head(limit).to_dict(orient="records")
     return {"count": len(items), "items": items}
