@@ -96,6 +96,7 @@ bandit>=1.7.5                 # Security linting
 # ==============================================================================
 prometheus-client>=0.19.0     # Metrics collection
 structlog>=23.2.0             # Structured logging
+psutil>=5.9.0                 # System and process monitoring
 
 # ==============================================================================
 # Task Queue & Background Jobs

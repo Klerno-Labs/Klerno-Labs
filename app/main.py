@@ -224,6 +224,10 @@ app.add_middleware(RequestIDMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=512)
 
+# Initialize enhanced health checking
+from .health import init_health_checker, get_health_checker
+init_health_checker(app)
+
 # Static & templates
 BASE_DIR = os.path.dirname(__file__)
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
@@ -416,12 +420,78 @@ def root_head():
     return HTMLResponse(status_code=200)
 
 @app.get("/health")
-def health(_auth: bool = Security(enforce_api_key)):
-    return {"status": "ok", "time": datetime.utcnow().isoformat()}
+async def health(_auth: bool = Security(enforce_api_key)):
+    """Enhanced health check endpoint for load balancers"""
+    health_checker = get_health_checker()
+    health_status = await health_checker.comprehensive_health_check()
+    
+    # Return appropriate HTTP status based on health
+    if health_status.status == "healthy":
+        return health_status
+    else:
+        raise HTTPException(
+            status_code=503,
+            detail=health_status.dict()
+        )
 
 @app.get("/healthz", include_in_schema=False)
-def healthz():
-    return {"status": "ok"}
+async def healthz():
+    """Simple health check for Kubernetes probes"""
+    try:
+        health_checker = get_health_checker()
+        health_status = await health_checker.comprehensive_health_check()
+        
+        # Simple response for k8s probes
+        if health_status.status == "healthy":
+            return {"status": "ok"}
+        else:
+            raise HTTPException(status_code=503, detail="Service unhealthy")
+    except Exception:
+        # Fallback for basic liveness check
+        return {"status": "ok"}
+
+@app.get("/readiness", include_in_schema=False)
+async def readiness():
+    """Readiness probe for Kubernetes"""
+    try:
+        health_checker = get_health_checker()
+        
+        # Check critical dependencies
+        db_check = await health_checker.check_database()
+        cache_check = await health_checker.check_cache()
+        
+        if (db_check.get("status") == "healthy" and 
+            cache_check.get("status") == "healthy"):
+            return {"status": "ready"}
+        else:
+            raise HTTPException(status_code=503, detail="Service not ready")
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Readiness check failed: {str(e)}")
+
+@app.get("/liveness", include_in_schema=False)
+def liveness():
+    """Liveness probe for Kubernetes"""
+    return {"status": "alive", "timestamp": datetime.utcnow().isoformat()}
+
+@app.get("/startup", include_in_schema=False)
+async def startup():
+    """Startup probe for Kubernetes"""
+    try:
+        health_checker = get_health_checker()
+        
+        # Basic startup check - just verify we can instantiate health checker
+        if health_checker:
+            return {"status": "started"}
+        else:
+            raise HTTPException(status_code=503, detail="Service starting")
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Startup check failed: {str(e)}")
+
+@app.get("/metrics-detailed")
+async def metrics_detailed(_auth: bool = Security(enforce_api_key)):
+    """Detailed metrics endpoint for monitoring systems"""
+    health_checker = get_health_checker()
+    return await health_checker.get_metrics()
 
 
 # ---------------- UI Login / Signup / Logout ----------------
