@@ -48,6 +48,13 @@ from functools import lru_cache
 
 from . import store
 from .models import Transaction, TaggedTransaction, ReportRequest
+from .performance import (
+    performance_monitor, 
+    PerformanceMiddleware, 
+    app_cache, 
+    performance_cache,
+    OptimizedLiveHub
+)
 from .guardian import score_risk
 from .compliance import tag_category
 from .reporter import csv_export, summary
@@ -222,6 +229,7 @@ app = FastAPI(
 )
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(PerformanceMiddleware, monitor=performance_monitor)
 app.add_middleware(GZipMiddleware, minimum_size=512)
 
 # Static & templates
@@ -291,59 +299,30 @@ if not existing:
     )
 
 # ---- Live push hub (WebSocket) ----------------------------------------------
-class LiveHub:
-    """In-process pub/sub for real-time pushes."""
-    def __init__(self):
-        self._clients: dict[WebSocket, set[str]] = {}
-        self._lock = asyncio.Lock()
-
-    async def add(self, ws: WebSocket):
-        await ws.accept()
-        async with self._lock:
-            self._clients[ws] = set()
-
-    async def remove(self, ws: WebSocket):
-        async with self._lock:
-            self._clients.pop(ws, None)
-
-    async def update_watch(self, ws: WebSocket, watch: set[str]):
-        async with self._lock:
-            if ws in self._clients:
-                self._clients[ws] = {w.strip().lower() for w in watch if w}
-
-    async def publish(self, item: dict):
-        fa = (item.get("from_addr") or "").lower()
-        ta = (item.get("to_addr") or "").lower()
-        async with self._lock:
-            targets = []
-            for ws, watch in self._clients.items():
-                if not watch or fa in watch or ta in watch:
-                    targets.append(ws)
-        dead = []
-        for ws in targets:
-            try:
-                await ws.send_json({"type": "tx", "item": item})
-            except Exception:
-                dead.append(ws)
-        for ws in dead:
-            await self.remove(ws)
-
-live = LiveHub()
+# Use optimized LiveHub instead of basic implementation
+live = OptimizedLiveHub()
 
 @app.websocket("/ws/alerts")
 async def ws_alerts(ws: WebSocket):
     await live.add(ws)
     try:
+        # Send immediate connection confirmation
+        await ws.send_json({"type": "connected", "timestamp": datetime.utcnow().isoformat()})
+        
         while True:
             msg = await ws.receive_text()
             try:
                 data = json.loads(msg) if msg else {}
             except Exception:
                 data = {}
+            
             if "watch" in data and isinstance(data["watch"], list):
                 watch = {str(x).strip().lower() for x in data["watch"] if isinstance(x, str)}
                 await live.update_watch(ws, watch)
                 await ws.send_json({"type": "ack", "watch": sorted(list(watch))})
+            elif "ping" in data:
+                # Immediate pong response for latency testing
+                await ws.send_json({"type": "pong", "timestamp": datetime.utcnow().isoformat()})
             else:
                 await ws.send_json({"type": "pong"})
     finally:
@@ -422,6 +401,26 @@ def health(_auth: bool = Security(enforce_api_key)):
 @app.get("/healthz", include_in_schema=False)
 def healthz():
     return {"status": "ok"}
+
+@app.get("/performance", include_in_schema=False)
+def performance_metrics(_auth: bool = Security(enforce_api_key)):
+    """Get real-time performance metrics."""
+    return {
+        "monitor": performance_monitor.get_summary(),
+        "slow_endpoints": performance_monitor.get_slow_endpoints(),
+        "websocket_stats": live.get_stats(),
+        "cache_stats": app_cache.stats()
+    }
+
+@app.get("/performance/slow", include_in_schema=False) 
+def slow_endpoints(_auth: bool = Security(enforce_api_key)):
+    """Get endpoints that exceed 100ms response time."""
+    return performance_monitor.get_slow_endpoints()
+
+@app.get("/performance/websocket", include_in_schema=False)
+def websocket_stats(_auth: bool = Security(enforce_api_key)):
+    """Get WebSocket performance statistics."""
+    return live.get_stats()
 
 
 # ---------------- UI Login / Signup / Logout ----------------
@@ -880,8 +879,9 @@ async def ui_xrpl_fetch_and_save(account: str, limit: int = 10, _user=Depends(re
         "emails": emails,
     }
 
-# Recent items for the dashboard (all or only alerts)
+# Recent items for the dashboard (all or only alerts) - Optimized with caching
 @app.get("/uiapi/recent", include_in_schema=False)
+@performance_cache(ttl=30, key_func=lambda limit, only_alerts, _user=None: f"recent:{limit}:{only_alerts}")
 def ui_recent(limit: int = 50, only_alerts: bool = False, _user=Depends(require_paid_or_admin)):
     if only_alerts:
         thr = float(os.getenv("RISK_THRESHOLD", "0.75"))

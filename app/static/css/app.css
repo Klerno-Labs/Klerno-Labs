@@ -347,6 +347,183 @@ canvas {
   100% { background-position: 200% 0; }
 }
 
+/* Skeleton loading states */
+.skeleton-loader {
+  padding: 1rem;
+}
+
+.skeleton-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+
+.skeleton-cell {
+  height: 1rem;
+  background: linear-gradient(90deg, var(--bg-glass) 25%, var(--bg-glass-light) 50%, var(--bg-glass) 75%);
+  border-radius: 4px;
+}
+
+.skeleton-cell.animate {
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-short { width: 20%; }
+.skeleton-medium { width: 35%; }
+.skeleton-long { width: 45%; }
+
+/* Optimistic update states */
+.optimistic-update {
+  opacity: 0.7;
+  position: relative;
+}
+
+.optimistic-update::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(123, 108, 255, 0.1), transparent);
+  animation: loading-sweep 1.5s infinite;
+  pointer-events: none;
+}
+
+.confirmed-update {
+  animation: confirmed-flash 0.3s ease;
+}
+
+.rollback-update {
+  animation: rollback-flash 0.3s ease;
+}
+
+@keyframes loading-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes confirmed-flash {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(40, 167, 69, 0.2); }
+}
+
+@keyframes rollback-flash {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(220, 53, 69, 0.2); }
+}
+
+/* WebSocket connection status */
+.ws-status {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+}
+
+.ws-status.connected {
+  border-color: var(--success);
+  background: rgba(40, 167, 69, 0.1);
+}
+
+.ws-status.connecting {
+  border-color: var(--warning);
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.ws-status.disconnected {
+  border-color: var(--danger);
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.ws-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+}
+
+.ws-status.connected .ws-status-indicator {
+  background: var(--success);
+  animation: pulse 2s infinite;
+}
+
+.ws-status.connecting .ws-status-indicator {
+  background: var(--warning);
+  animation: blink 1s infinite;
+}
+
+.ws-status.disconnected .ws-status-indicator {
+  background: var(--danger);
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+/* Performance indicators */
+.perf-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.perf-indicator.fast {
+  color: var(--success);
+}
+
+.perf-indicator.slow {
+  color: var(--warning);
+}
+
+.perf-indicator.very-slow {
+  color: var(--danger);
+}
+
+/* Loading overlay for instant feedback */
+.loading-overlay {
+  position: relative;
+}
+
+.loading-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-overlay::after {
+  content: '⏳';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 11;
+  font-size: 1.5rem;
+  animation: spin 1s linear infinite;
+}
+
 /* Animation for new data */
 @keyframes slideInUp {
   from {
