@@ -1,0 +1,196 @@
+# ==============================================================================
+# Klerno Labs - Docker Compose Configuration
+# ==============================================================================
+# Local development environment setup with all services
+# Use: docker-compose up -d
+
+version: '3.8'
+
+services:
+  # ==============================================================================
+  # Main Application Service
+  # ==============================================================================
+  klerno-labs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development  # Use development stage from Dockerfile
+    container_name: klerno-labs-app
+    ports:
+      - "8000:8000"
+    environment:
+      # Application Settings
+      - APP_ENV=development
+      - PORT=8000
+      - WORKERS=1
+      - LOG_LEVEL=debug
+      - DEMO_MODE=true
+      - DEBUG=true
+      
+      # Security (Development only - change in production!)
+      - SECRET_KEY=dev-secret-key-change-in-production-32-chars
+      - JWT_SECRET=dev-jwt-secret-change-in-production
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+      
+      # Admin Bootstrap
+      - BOOTSTRAP_ADMIN_EMAIL=admin@klerno.dev
+      - BOOTSTRAP_ADMIN_PASSWORD=KlernoLabs2025!
+      
+      # Database
+      - DATABASE_URL=postgresql://klerno_user:klerno_pass@postgres:5432/klerno_labs_db
+      
+      # XRPL Configuration
+      - XRPL_RPC_URL=wss://s.altnet.rippletest.net:51233
+      
+      # External Services (Optional - Add your keys)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_PRICE_ID=${STRIPE_PRICE_ID:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      
+      # Email Configuration
+      - ALERT_EMAIL_FROM=alerts@klerno.dev
+      - ALERT_EMAIL_TO=you@example.com
+      
+      # Performance & Monitoring
+      - ENABLE_METRICS=true
+      - RISK_THRESHOLD=0.75
+      
+    volumes:
+      - ./app:/app/app  # Mount app directory for hot reload
+      - ./data:/app/data  # Mount data directory
+      - ./logs:/app/logs  # Mount logs directory
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - klerno-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ==============================================================================
+  # PostgreSQL Database Service
+  # ==============================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: klerno-labs-postgres
+    environment:
+      - POSTGRES_DB=klerno_labs_db
+      - POSTGRES_USER=klerno_user
+      - POSTGRES_PASSWORD=klerno_pass
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres_init:/docker-entrypoint-initdb.d  # Optional init scripts
+    ports:
+      - "5432:5432"  # Expose for external connections if needed
+    networks:
+      - klerno-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U klerno_user -d klerno_labs_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==============================================================================
+  # Redis Cache Service
+  # ==============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: klerno-labs-redis
+    command: redis-server --appendonly yes --requirepass klerno_redis_pass
+    ports:
+      - "6379:6379"  # Expose for external connections if needed
+    volumes:
+      - redis_data:/data
+    networks:
+      - klerno-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ==============================================================================
+  # Development Tools (Optional)
+  # ==============================================================================
+  # Uncomment these services for enhanced development experience
+  
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: klerno-labs-pgadmin
+  #   environment:
+  #     - PGADMIN_DEFAULT_EMAIL=admin@klerno.dev
+  #     - PGADMIN_DEFAULT_PASSWORD=admin123
+  #   ports:
+  #     - "8080:80"
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - klerno-network
+  #   restart: unless-stopped
+
+  # redis-commander:
+  #   image: rediscommander/redis-commander:latest
+  #   container_name: klerno-labs-redis-commander
+  #   environment:
+  #     - REDIS_HOSTS=local:redis:6379:0:klerno_redis_pass
+  #   ports:
+  #     - "8081:8081"
+  #   depends_on:
+  #     - redis
+  #   networks:
+  #     - klerno-network
+  #   restart: unless-stopped
+
+# ==============================================================================
+# Networks
+# ==============================================================================
+networks:
+  klerno-network:
+    driver: bridge
+    name: klerno-labs-network
+
+# ==============================================================================
+# Persistent Volumes
+# ==============================================================================
+volumes:
+  postgres_data:
+    name: klerno-labs-postgres-data
+  redis_data:
+    name: klerno-labs-redis-data
+
+# ==============================================================================
+# Usage Instructions
+# ==============================================================================
+# 
+# Quick Start:
+#   docker-compose up -d              # Start all services in background
+#   docker-compose logs -f            # Follow logs from all services
+#   docker-compose down               # Stop all services
+#   docker-compose down -v            # Stop and remove volumes (data loss!)
+# 
+# Development:
+#   docker-compose up klerno-labs     # Start only the app (with dependencies)
+#   docker-compose exec klerno-labs bash  # Access app container shell
+#   docker-compose restart klerno-labs    # Restart just the app
+# 
+# Database:
+#   docker-compose exec postgres psql -U klerno_user -d klerno_labs_db
+# 
+# Monitoring:
+#   Application: http://localhost:8000
+#   Health Check: http://localhost:8000/healthz
+#   API Docs: http://localhost:8000/docs
+#   PgAdmin: http://localhost:8080 (if enabled)
+#   Redis Commander: http://localhost:8081 (if enabled)
+# 
+# ==============================================================================

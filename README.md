@@ -191,6 +191,18 @@ If you discover a security vulnerability, please email: **security@klerno.com**
 - **AWS/Azure/GCP** (with Docker)
 - **Self-hosted** (Linux/Windows/macOS)
 
+### Quick Deploy to Render.com
+
+1. **Fork/Clone** this repository
+2. **Connect to Render**: Link your GitHub repo in [Render Dashboard](https://dashboard.render.com)
+3. **Auto-Deploy**: Render will detect `render.yaml` and configure services automatically
+4. **Set Environment Variables**: Add required variables in Render Dashboard (see `render.yaml` comments)
+5. **Deploy**: Click deploy and monitor the build logs
+
+🔧 **Troubleshooting**: Run `python scripts/render-diagnostic.py` to check configuration
+
+📖 **Detailed Guide**: See [docs/render-deployment.md](docs/render-deployment.md)
+
 ### Environment Variables
 ```bash
 # Application Settings

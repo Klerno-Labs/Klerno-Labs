@@ -1,0 +1,144 @@
+# ==============================================================================
+# Klerno Labs - Render.com Deployment Configuration
+# ==============================================================================
+# Comprehensive configuration for deploying the AI-Powered AML Risk Intelligence Platform
+# on Render.com with production-ready settings
+
+services:
+  # ==============================================================================
+  # Main Web Application Service
+  # ==============================================================================
+  - type: web
+    name: klerno-labs-api
+    runtime: docker
+    region: oregon # or your preferred region
+    plan: starter # Change to 'standard' or 'pro' for production
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerBuildTarget: production  # Explicitly use production stage
+    
+    # Environment Configuration
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PORT
+        value: 8000
+      - key: WORKERS
+        value: 1
+      - key: LOG_LEVEL
+        value: info
+      - key: DEMO_MODE
+        value: false
+      - key: ENABLE_HSTS
+        value: true
+      - key: COOKIE_SECURE
+        value: auto
+      - key: COOKIE_SAMESITE
+        value: lax
+      
+      # Security Configuration (Set these in Render Dashboard)
+      - key: SECRET_KEY
+        generateValue: true # Render will auto-generate
+      - key: JWT_SECRET
+        generateValue: true # Render will auto-generate
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 60
+      
+      # Database Configuration
+      # Note: Add DATABASE_URL in Render Dashboard with your PostgreSQL connection string
+      # Format: postgresql://user:password@host:port/dbname
+      
+      # XRPL Configuration
+      - key: XRPL_RPC_URL
+        value: wss://xrplcluster.com/
+      
+      # Email Configuration (Add in Render Dashboard)
+      # - SENDGRID_API_KEY
+      # - ALERT_EMAIL_FROM
+      # - ALERT_EMAIL_TO
+      
+      # AI Configuration (Optional - Add in Render Dashboard)
+      # - OPENAI_API_KEY
+      # - OPENAI_MODEL
+      
+      # Payment Configuration (Add in Render Dashboard if using Stripe)
+      # - STRIPE_SECRET_KEY
+      # - STRIPE_PRICE_ID
+      # - STRIPE_WEBHOOK_SECRET
+      
+      # Performance & Monitoring
+      - key: ENABLE_METRICS
+        value: true
+      - key: RISK_THRESHOLD
+        value: 0.75
+    
+    # Health Check Configuration
+    healthCheckPath: /healthz
+    
+    # Auto Deploy Configuration
+    autoDeploy: true # Deploy automatically on git push
+    
+    # Scaling Configuration
+    numInstances: 1 # Increase for production
+    
+    # Build Configuration
+    buildFilter:
+      paths:
+        - app/**
+        - requirements.txt
+        - Dockerfile
+        - render.yaml
+      ignoredPaths:
+        - docs/**
+        - launch/**
+        - automation/**
+        - "*.md"
+
+  # ==============================================================================
+  # PostgreSQL Database Service
+  # ==============================================================================
+  - type: pserv
+    name: klerno-labs-postgres
+    runtime: postgresql
+    region: oregon # Same region as web service
+    plan: starter # Change to 'standard' or 'pro' for production
+    databaseName: klerno_labs_db
+    databaseUser: klerno_user
+    
+    # Database will be accessible via DATABASE_URL environment variable
+    # automatically injected into the web service
+
+# ==============================================================================
+# Additional Configuration Notes
+# ==============================================================================
+# 
+# REQUIRED MANUAL STEPS IN RENDER DASHBOARD:
+# 
+# 1. Environment Variables to Add Manually:
+#    - DATABASE_URL (auto-generated when you create PostgreSQL service)
+#    - SENDGRID_API_KEY (for email notifications)
+#    - ALERT_EMAIL_FROM (your alert sender email)
+#    - ALERT_EMAIL_TO (alert recipient email)
+#    - OPENAI_API_KEY (optional, for AI features)
+#    - STRIPE_SECRET_KEY (optional, for payments)
+#    - STRIPE_PRICE_ID (optional, for payments)
+#    - STRIPE_WEBHOOK_SECRET (optional, for payments)
+# 
+# 2. Domain Configuration:
+#    - Add your custom domain in Render Dashboard
+#    - SSL certificates are automatically managed by Render
+# 
+# 3. Scaling for Production:
+#    - Change web service plan to 'standard' or 'pro'
+#    - Change database plan to 'standard' or 'pro'
+#    - Increase numInstances for web service as needed
+# 
+# 4. Monitoring:
+#    - Render provides built-in monitoring and logging
+#    - Application metrics available at /metrics endpoint
+# 
+# 5. Custom API Key:
+#    - Set X_API_KEY or API_KEY environment variable
+#    - Or use the auto-generated key management in the application
+# 
+# ==============================================================================
