@@ -294,8 +294,17 @@ app.include_router(paywall_hooks.router)
 app.include_router(analyze_tags_router)
 app.include_router(admin_router)
 
+# Import analytics, plugin system, onboarding, and community
+from .analytics import analytics_engine, insights_engine
+from .plugin_system import initialize_plugin_system, get_plugin_manager
+from .onboarding import onboarding_manager, contextual_help
+from .community import community_manager, collaboration_features
+
 # Init DB
 store.init_db()
+
+# Initialize plugin system
+plugin_manager = initialize_plugin_system(app)
 
 # --- Bootstrap single admin account (email/password) ---
 BOOT_ADMIN_EMAIL = "klerno@outlook.com".lower().strip()
@@ -531,12 +540,347 @@ def me_settings_post(payload: SettingsPayload, user=Depends(require_user)):
     return {"ok": True, "settings": settings}
 
 
-# ---------------- Core API ----------------
+# ---------------- Advanced Analytics API ----------------
+@app.get("/analytics/comprehensive")
+def get_comprehensive_analytics(days: int = 30, _auth: bool = Security(enforce_api_key)):
+    """Get comprehensive analytics metrics for the specified time period"""
+    try:
+        metrics = analytics_engine.generate_comprehensive_metrics(days=days)
+        insights = insights_engine.generate_insights(metrics)
+        
+        return {
+            "period_days": days,
+            "metrics": {
+                "total_transactions": metrics.total_transactions,
+                "total_volume": metrics.total_volume,
+                "avg_risk_score": metrics.avg_risk_score,
+                "risk_distribution": {
+                    "high": metrics.high_risk_count,
+                    "medium": metrics.medium_risk_count,
+                    "low": metrics.low_risk_count
+                },
+                "unique_addresses": metrics.unique_addresses,
+                "anomaly_score": metrics.anomaly_score
+            },
+            "trends": {
+                "risk_trend": metrics.risk_trend,
+                "hourly_activity": metrics.hourly_activity
+            },
+            "analysis": {
+                "top_risk_addresses": metrics.top_risk_addresses,
+                "category_distribution": metrics.category_distribution,
+                "network_analysis": metrics.network_analysis
+            },
+            "insights": insights
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/analytics/insights")
+def get_ai_insights(days: int = 7, _auth: bool = Security(enforce_api_key)):
+    """Get AI-powered insights for the specified time period"""
+    try:
+        metrics = analytics_engine.generate_comprehensive_metrics(days=days)
+        insights = insights_engine.generate_insights(metrics)
+        return {"insights": insights, "generated_at": datetime.utcnow().isoformat()}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/analytics/network-analysis") 
+def get_network_analysis(days: int = 30, _auth: bool = Security(enforce_api_key)):
+    """Get detailed network analysis of transaction patterns"""
+    try:
+        metrics = analytics_engine.generate_comprehensive_metrics(days=days)
+        return {
+            "network_analysis": metrics.network_analysis,
+            "top_risk_addresses": metrics.top_risk_addresses,
+            "analysis_period": f"{days} days"
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/analytics/risk-trends")
+def get_risk_trends(days: int = 30, _auth: bool = Security(enforce_api_key)):
+    """Get risk trend analysis over time"""
+    try:
+        metrics = analytics_engine.generate_comprehensive_metrics(days=days)
+        return {
+            "risk_trend": metrics.risk_trend,
+            "hourly_activity": metrics.hourly_activity,
+            "current_avg_risk": metrics.avg_risk_score,
+            "anomaly_score": metrics.anomaly_score
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+# ---------------- Enhanced UI Analytics (session-protected) ----------------
+@app.get("/analytics/comprehensive-ui", include_in_schema=False)
+def get_comprehensive_analytics_ui(days: int = 30, _user=Depends(require_paid_or_admin)):
+    """UI endpoint for comprehensive analytics"""
+    try:
+        metrics = analytics_engine.generate_comprehensive_metrics(days=days)
+        insights = insights_engine.generate_insights(metrics)
+        
+        resp = FastJSON(content={
+            "period_days": days,
+            "metrics": {
+                "total_transactions": metrics.total_transactions,
+                "total_volume": metrics.total_volume,
+                "avg_risk_score": metrics.avg_risk_score,
+                "risk_distribution": {
+                    "high": metrics.high_risk_count,
+                    "medium": metrics.medium_risk_count,
+                    "low": metrics.low_risk_count
+                },
+                "unique_addresses": metrics.unique_addresses,
+                "anomaly_score": metrics.anomaly_score
+            },
+            "trends": {
+                "risk_trend": metrics.risk_trend,
+                "hourly_activity": metrics.hourly_activity
+            },
+            "analysis": {
+                "top_risk_addresses": metrics.top_risk_addresses,
+                "category_distribution": metrics.category_distribution,
+                "network_analysis": metrics.network_analysis
+            },
+            "insights": insights
+        })
+        resp.headers["Cache-Control"] = "private, max-age=60"
+        return resp
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+# ---------------- Plugin Management API ----------------
+@app.get("/plugins")
+def list_plugins(_auth: bool = Security(enforce_api_key)):
+    """List all registered plugins"""
+    pm = get_plugin_manager()
+    if not pm:
+        return {"plugins": [], "message": "Plugin system not initialized"}
+    return {"plugins": pm.list_plugins()}
+
+@app.get("/plugins/{plugin_name}")
+def get_plugin_info(plugin_name: str, _auth: bool = Security(enforce_api_key)):
+    """Get information about a specific plugin"""
+    pm = get_plugin_manager()
+    if not pm:
+        raise HTTPException(status_code=503, detail="Plugin system not available")
+    
+    info = pm.get_plugin_info(plugin_name)
+    if not info:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+    return info
+
+@app.post("/plugins/hooks/{hook_name}/execute")
+def execute_plugin_hook(hook_name: str, payload: Dict[str, Any] = Body(...), _auth: bool = Security(enforce_api_key)):
+    """Execute a plugin hook with the given payload"""
+    pm = get_plugin_manager()
+    if not pm:
+        raise HTTPException(status_code=503, detail="Plugin system not available")
+    
+    results = pm.execute_hook(hook_name, payload)
+    return {"hook": hook_name, "results": results}
+
+
+# ---------------- Onboarding and User Experience API ----------------
+@app.get("/onboarding/progress", include_in_schema=False)
+def get_onboarding_progress(user=Depends(require_user)):
+    """Get user's onboarding progress"""
+    progress = onboarding_manager.get_user_progress(user["id"])
+    if not progress:
+        progress = onboarding_manager.start_onboarding(user["id"])
+    return {
+        "progress": {
+            "current_step": progress.current_step,
+            "completed_steps": progress.completed_steps,
+            "completion_percentage": len(progress.completed_steps) / len(list(OnboardingStep)) * 100
+        },
+        "next_action": onboarding_manager.get_next_suggested_action(user["id"])
+    }
+
+@app.post("/onboarding/advance", include_in_schema=False)
+def advance_onboarding(step: str, skipped: bool = False, user=Depends(require_user)):
+    """Advance user's onboarding progress"""
+    try:
+        from .onboarding import OnboardingStep
+        step_enum = OnboardingStep(step)
+        progress = onboarding_manager.advance_step(user["id"], step_enum, skipped)
+        return {
+            "success": True,
+            "current_step": progress.current_step,
+            "next_action": onboarding_manager.get_next_suggested_action(user["id"])
+        }
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid onboarding step")
+
+@app.get("/guides/available", include_in_schema=False)
+def get_available_guides(user=Depends(require_user)):
+    """Get guides available to the user"""
+    guides = onboarding_manager.get_available_guides(user["id"])
+    return {"guides": [guide.dict() for guide in guides]}
+
+@app.post("/guides/{guide_id}/complete", include_in_schema=False)
+def complete_guide(guide_id: str, user=Depends(require_user)):
+    """Mark a guide as completed"""
+    onboarding_manager.mark_guide_completed(user["id"], guide_id)
+    return {"success": True, "guide_id": guide_id}
+
+@app.get("/help/contextual/{section}", include_in_schema=False) 
+def get_contextual_help(section: str):
+    """Get contextual help for a specific section"""
+    help_data = contextual_help.get_tips_for_section(section)
+    if not help_data:
+        raise HTTPException(status_code=404, detail="Help section not found")
+    return help_data
+
+@app.get("/help/quick-tip", include_in_schema=False)
+def get_quick_tip(level: str = "beginner"):
+    """Get a quick tip based on user experience level"""
+    return contextual_help.get_quick_tip(level)
+
+
+# ---------------- Community and Collaboration API ----------------
+@app.get("/community/featured", include_in_schema=False)
+def get_featured_community_content():
+    """Get featured community content"""
+    return community_manager.get_featured_content()
+
+@app.get("/community/search", include_in_schema=False)
+def search_community_content(q: str, type: str = "all"):
+    """Search community content"""
+    results = community_manager.search_content(q, type)
+    return {"query": q, "results": results}
+
+@app.get("/community/trending", include_in_schema=False)
+def get_trending_topics():
+    """Get trending topics and tags"""
+    return {"trending_topics": community_manager.get_trending_topics()}
+
+@app.post("/community/posts", include_in_schema=False)
+def create_community_post(
+    title: str = Body(...),
+    content: str = Body(...),
+    post_type: str = Body(...),
+    tags: List[str] = Body(default=[]),
+    user=Depends(require_user)
+):
+    """Create a new community post"""
+    from .community import PostType
+    try:
+        post_type_enum = PostType(post_type)
+        post = community_manager.create_post(
+            title=title,
+            content=content,
+            post_type=post_type_enum,
+            author_id=user["id"],
+            author_name=user["email"],
+            tags=tags
+        )
+        return {"success": True, "post": post.dict()}
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid post type")
+
+@app.post("/community/posts/{post_id}/replies", include_in_schema=False)
+def add_post_reply(
+    post_id: int,
+    content: str = Body(...),
+    parent_reply_id: Optional[int] = Body(default=None),
+    user=Depends(require_user)
+):
+    """Add a reply to a community post"""
+    try:
+        reply = community_manager.add_reply(
+            post_id=post_id,
+            content=content,
+            author_id=user["id"],
+            author_name=user["email"],
+            parent_reply_id=parent_reply_id
+        )
+        return {"success": True, "reply": reply.dict()}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.post("/community/posts/{post_id}/vote", include_in_schema=False)
+def vote_on_post(
+    post_id: int,
+    vote_type: str = Body(...),
+    user=Depends(require_user)
+):
+    """Vote on a community post"""
+    from .community import VoteType
+    try:
+        vote_type_enum = VoteType(vote_type)
+        community_manager.vote_on_post(user["id"], post_id, vote_type_enum)
+        return {"success": True}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/community/knowledge/{article_id}", include_in_schema=False)
+def get_knowledge_article(article_id: int):
+    """Get a specific knowledge base article"""
+    article = community_manager.knowledge_articles.get(article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    
+    # Increment view count
+    article.view_count += 1
+    return article.dict()
+
+@app.post("/collaboration/workspaces", include_in_schema=False)
+def create_shared_workspace(
+    name: str = Body(...),
+    description: str = Body(...),
+    team_members: List[int] = Body(default=[]),
+    user=Depends(require_user)
+):
+    """Create a shared workspace for team collaboration"""
+    workspace = collaboration_features.create_shared_workspace(
+        name=name,
+        description=description,
+        owner_id=user["id"],
+        team_members=team_members
+    )
+    return {"success": True, "workspace": workspace}
+
+@app.post("/collaboration/annotations", include_in_schema=False)
+def add_transaction_annotation(
+    transaction_id: str = Body(...),
+    annotation: str = Body(...),
+    annotation_type: str = Body(default="note"),
+    user=Depends(require_user)
+):
+    """Add annotation to a transaction for team collaboration"""
+    annotation_obj = collaboration_features.add_annotation(
+        transaction_id=transaction_id,
+        user_id=user["id"],
+        annotation=annotation,
+        annotation_type=annotation_type
+    )
+    return {"success": True, "annotation": annotation_obj}
+
+@app.get("/collaboration/workspaces/{workspace_id}/insights", include_in_schema=False)
+def get_team_insights(workspace_id: int, user=Depends(require_user)):
+    """Get collaborative insights for a team workspace"""
+    insights = collaboration_features.get_team_insights(workspace_id)
+    return insights
+
+
 @app.post("/analyze/tx", response_model=TaggedTransaction)
 def analyze_tx(tx: Transaction, _auth: bool = Security(enforce_api_key)):
     risk, flags = score_risk(tx)
     category = tag_category(tx)
-    return TaggedTransaction(**_dump(tx), score=risk, flags=flags, category=category)
+    tagged = TaggedTransaction(**_dump(tx), score=risk, flags=flags, category=category)
+    
+    # Execute plugin hooks
+    pm = get_plugin_manager()
+    if pm:
+        pm.execute_hook('transaction_analyzed', _dump(tagged))
+        pm.execute_hook('risk_calculated', {"transaction": _dump(tx), "risk_score": risk, "flags": flags})
+    
+    return tagged
 
 @app.post("/analyze/batch")
 def analyze_batch(txs: List[Transaction], _auth: bool = Security(enforce_api_key)):

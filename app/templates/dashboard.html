@@ -313,9 +313,17 @@
     el.className = 'toast text-bg-'+kind+' border-0';
     el.innerHTML = `<div class="d-flex"><div class="toast-body">${msg}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>`;
     toasts.appendChild(el);
-    const t = new bootstrap.Toast(el, { delay: ms });
-    t.show();
-    el.addEventListener('hidden.bs.toast', ()=> el.remove());
+    
+    // Check if bootstrap is available before using it
+    if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+      const t = new bootstrap.Toast(el, { delay: ms });
+      t.show();
+      el.addEventListener('hidden.bs.toast', ()=> el.remove());
+    } else {
+      // Fallback: show without bootstrap animation, auto-remove after delay
+      el.style.display = 'block';
+      setTimeout(() => el.remove(), ms);
+    }
   }
 
   // ---- CSRF helper (send header on session POSTs)
