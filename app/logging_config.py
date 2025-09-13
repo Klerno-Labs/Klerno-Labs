@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict
 
 import structlog
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger.json import JsonFormatter
 
 from app.settings import get_settings
 
@@ -26,7 +26,7 @@ def configure_logging() -> None:
         logging.root.removeHandler(handler)
     
     # JSON formatter for structured logs
-    json_formatter = jsonlogger.JsonFormatter(
+    json_formatter = JsonFormatter(
         fmt="%(asctime)s %(name)s %(levelname)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
     )
@@ -54,7 +54,6 @@ def configure_logging() -> None:
     # Configure structlog
     structlog.configure(
         processors=[
-            structlog.processors.filter_by_level,
             structlog.processors.add_logger_name,
             structlog.processors.add_log_level,
             structlog.processors.StackInfoRenderer(),
@@ -214,4 +213,9 @@ def log_performance_metric(
 
 
 # Initialize logging when module is imported
-configure_logging()
+if __name__ != "__main__":
+    try:
+        configure_logging()
+    except Exception:
+        # Fallback to basic logging if configuration fails
+        logging.basicConfig(level=logging.INFO)
