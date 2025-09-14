@@ -72,15 +72,20 @@ async def enforce_api_key(
       • a valid session (so the web dashboard works without pasting a key)
 
     Dev-friendly: if no key is configured at all, allow requests.
+    Enhanced with audit logging for security events.
     """
+    from .audit_logger import log_api_access, log_security_event, AuditEventType
+    
     exp = expected_api_key()
 
     # 0) Dev mode: if no key configured, allow.
     if not exp:
+        log_api_access(str(request.url.path), request.method, None, False, request)
         return True
 
     # 1) Header path for external clients/integrations.
     if x_api_key and hmac.compare_digest(x_api_key.strip(), exp):
+        log_api_access(str(request.url.path), request.method, None, True, request)
         return True
 
     # 2) Session fallback for browser dashboard (valid JWT cookie).
@@ -90,15 +95,28 @@ async def enforce_api_key(
 
         try:
             # Many implementations accept Request; if not, call without args.
-            _ = require_user(request)  # may raise HTTPException
+            user = require_user(request)  # may raise HTTPException
+            log_api_access(str(request.url.path), request.method, str(user.get("id")), False, request)
         except TypeError:
-            _ = require_user()  # type: ignore
+            user = require_user()  # type: ignore
+            log_api_access(str(request.url.path), request.method, str(user.get("id")), False, request)
 
         return True
     except Exception:
         pass
 
-    # 3) Deny if neither header nor session validated.
+    # 3) Log unauthorized access attempt and deny
+    log_security_event(
+        AuditEventType.API_ACCESS_DENIED,
+        {
+            "endpoint": str(request.url.path),
+            "method": request.method,
+            "has_api_key": bool(x_api_key),
+            "reason": "invalid_credentials"
+        },
+        request
+    )
+    
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Unauthorized: missing or invalid API key / session",
@@ -106,9 +124,25 @@ async def enforce_api_key(
 
 
 def rotate_api_key() -> str:
-    """Admin-only: generate and persist a new API key (file)."""
+    """Admin-only: generate and persist a new API key (file). Includes audit logging."""
+    from .audit_logger import audit_logger, AuditEvent, AuditEventType
+    
+    old_key_preview = preview_api_key().get("preview", "none")
     key = generate_api_key()
     _write_api_key(key)
+    
+    # Log the key rotation for security auditing
+    audit_logger.log_event(
+        AuditEvent(
+            event_type=AuditEventType.API_KEY_ROTATION,
+            outcome="success",
+            details={
+                "old_key_preview": old_key_preview,
+                "new_key_preview": key[:4] + "..." + key[-4:] if len(key) >= 8 else "***"
+            }
+        )
+    )
+    
     return key
 
 
