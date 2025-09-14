@@ -1,0 +1,100 @@
+# ==============================================================================
+# Prometheus Configuration for Klerno Labs Monitoring
+# ==============================================================================
+# Comprehensive monitoring setup for horizontal scaling
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'klerno-labs'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Rules for alerting
+rule_files:
+  # - "alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Application instances
+  - job_name: 'klerno-app'
+    static_configs:
+      - targets: 
+        - 'app1:8000'
+        - 'app2:8000'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    honor_labels: true
+    params:
+      module: [http_2xx]
+
+  # Nginx load balancer
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:80']
+    metrics_path: '/nginx_status'
+    scrape_interval: 30s
+
+  # PostgreSQL database
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    params:
+      target: ['postgres:5432']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: postgres-exporter:9187
+
+  # Redis cache
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    params:
+      target: ['redis:6379']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: redis-exporter:9121
+
+  # Node/container metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+
+  # Docker container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 30s
+
+  # Health check endpoints
+  - job_name: 'health-checks'
+    static_configs:
+      - targets:
+        - 'app1:8000'
+        - 'app2:8000'
+        - 'nginx:80'
+    metrics_path: '/healthz'
+    scrape_interval: 10s
+    scrape_timeout: 5s

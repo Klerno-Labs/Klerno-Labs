@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends
-from decimal import Decimal
 from typing import Any
 
+from fastapi import APIRouter, Depends
+
+from ..compliance import AddressBook, tag_categories
 from ..deps import require_user
 from ..schemas import TagResultOut
-from ..compliance import tag_categories, AddressBook
 
 router = APIRouter(prefix="/compliance", tags=["compliance"])
+
 
 @router.post("/tx", response_model=list[TagResultOut])
 def analyze_tx(tx: dict[str, Any], user=Depends(require_user)):
@@ -18,6 +19,7 @@ def analyze_tx(tx: dict[str, Any], user=Depends(require_user)):
     direction: "in" | "out" | ...
     from_address/to_address: optional
     """
+
     class Tx:
         # lightweight adapter; your real Transaction model works too
         memo = tx.get("memo")

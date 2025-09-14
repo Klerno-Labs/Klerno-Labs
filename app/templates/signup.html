@@ -1,30 +1,506 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Sign up — Klerno Labs</title>
-  <link rel="stylesheet" href="/static/styles.css"/>
-</head>
-<body>
-  <main class="auth-page">
-    <h1>Create an account</h1>
+{% extends "base.html" %}
+{% block content %}
+<style>
+  /* Enhanced authentication page styling */
+  .auth-container {
+    max-width: 480px;
+    margin: var(--space-2xl) auto;
+    padding: 0 var(--space-lg);
+  }
+  
+  .auth-card {
+    background: var(--bg-glass);
+    border: var(--glass-border);
+    border-radius: 24px;
+    backdrop-filter: blur(var(--blur));
+    -webkit-backdrop-filter: blur(var(--blur));
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-2xl);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-gradient);
+    opacity: 0.8;
+  }
+  
+  .auth-header {
+    margin-bottom: var(--space-2xl);
+  }
+  
+  .auth-title {
+    font-size: var(--text-3xl);
+    font-weight: 800;
+    margin-bottom: var(--space-sm);
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  
+  .auth-subtitle {
+    color: var(--text-secondary);
+    font-size: var(--text-lg);
+    margin-bottom: 0;
+  }
+  
+  .auth-form {
+    display: grid;
+    gap: var(--space-lg);
+    text-align: left;
+  }
+  
+  .form-group {
+    position: relative;
+  }
+  
+  .form-label {
+    display: block;
+    margin-bottom: var(--space-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .form-input {
+    width: 100%;
+    padding: var(--space-lg);
+    background: var(--bg-glass);
+    border: var(--glass-border);
+    border-radius: 16px;
+    color: var(--text-primary);
+    font-size: var(--text-base);
+    transition: all var(--transition-base);
+    min-height: 56px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  .form-input:focus {
+    outline: none;
+    background: var(--bg-glass-light);
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(123,108,255,.2);
+    transform: translateY(-1px);
+  }
+  
+  .form-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.8;
+  }
+  
+  .form-input:invalid:not(:focus):not(:placeholder-shown) {
+    border-color: var(--danger);
+    background: var(--danger-bg);
+  }
+  
+  .submit-button {
+    background: var(--accent-gradient);
+    border: none;
+    border-radius: 16px;
+    color: #0f172a;
+    font-weight: 700;
+    font-size: var(--text-lg);
+    padding: var(--space-lg) var(--space-xl);
+    cursor: pointer;
+    transition: all var(--transition-base) var(--spring);
+    min-height: 56px;
+    position: relative;
+    overflow: hidden;
+    margin-top: var(--space-md);
+  }
+  
+  .submit-button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent-gradient-hover);
+    opacity: 0;
+    transition: opacity var(--transition-base);
+  }
+  
+  .submit-button:hover::before {
+    opacity: 1;
+  }
+  
+  .submit-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-button-hover);
+  }
+  
+  .submit-button:focus {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+  }
+  
+  .submit-button:active {
+    transform: translateY(0);
+  }
+  
+  .submit-button.loading {
+    pointer-events: none;
+    opacity: 0.8;
+  }
+  
+  .submit-button.loading::after {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    right: var(--space-lg);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .auth-links {
+    margin-top: var(--space-xl);
+    text-align: center;
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--border-light);
+  }
+  
+  .auth-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color var(--transition-base);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+  
+  .auth-link:hover {
+    color: var(--accent-primary);
+  }
+  
+  .auth-link:focus {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+    border-radius: 8px;
+    padding: var(--space-xs) var(--space-sm);
+  }
+  
+  .error-message {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger);
+    border-radius: 12px;
+    padding: var(--space-md) var(--space-lg);
+    margin-bottom: var(--space-lg);
+    color: var(--danger);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    animation: slideInUp 0.3s ease-out;
+  }
+  
+  .error-message::before {
+    content: '⚠';
+    font-size: var(--text-lg);
+  }
+  
+  .success-message {
+    background: var(--success-bg);
+    border: 1px solid var(--success);
+    border-radius: 12px;
+    padding: var(--space-md) var(--space-lg);
+    margin-bottom: var(--space-lg);
+    color: var(--success);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    animation: slideInUp 0.3s ease-out;
+  }
+  
+  .success-message::before {
+    content: '✓';
+    font-size: var(--text-lg);
+  }
+  
+  /* Enhanced responsive design */
+  @media (max-width: 768px) {
+    .auth-container {
+      margin: var(--space-lg) auto;
+      padding: 0 var(--space-md);
+    }
+    
+    .auth-card {
+      padding: var(--space-xl);
+      border-radius: 20px;
+    }
+    
+    .auth-title {
+      font-size: var(--text-2xl);
+    }
+    
+    .auth-subtitle {
+      font-size: var(--text-base);
+    }
+    
+    .form-input,
+    .submit-button {
+      min-height: 52px;
+      padding: var(--space-md) var(--space-lg);
+    }
+  }
+  
+  /* Animation keyframes */
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes spin {
+    to {
+      transform: translateY(-50%) rotate(360deg);
+    }
+  }
+  
+  /* Focus visible enhancement */
+  .form-input:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+  }
+  
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .auth-card {
+      border-width: 2px;
+    }
+    
+    .form-input {
+      border-width: 2px;
+    }
+  }
+</style>
+
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1 class="auth-title">Create Account</h1>
+      <p class="auth-subtitle">Join Klerno Labs and start monitoring crypto transactions with AI-powered risk intelligence</p>
+    </div>
 
     {% if error %}
-      <p class="error" style="color:#c00">{{ error }}</p>
+      <div class="error-message" role="alert" aria-live="polite">
+        {{ error }}
+      </div>
     {% endif %}
 
-    <form method="post" action="/signup">
-      <label for="email">Email</label>
-      <input id="email" type="email" name="email" required autofocus autocomplete="email"/>
+    <form method="post" action="/signup" class="auth-form" novalidate>
+      <div class="form-group">
+        <label for="email" class="form-label">Email Address</label>
+        <input 
+          id="email" 
+          type="email" 
+          name="email" 
+          class="form-input"
+          placeholder="Enter your email address"
+          required 
+          autofocus 
+          autocomplete="email"
+          aria-describedby="email-error"
+          value=""
+        />
+        <div id="email-error" class="form-error" role="alert" aria-live="polite"></div>
+      </div>
 
-      <label for="password">Password</label>
-      <input id="password" type="password" name="password" required autocomplete="new-password"/>
+      <div class="form-group">
+        <label for="password" class="form-label">Password</label>
+        <input 
+          id="password" 
+          type="password" 
+          name="password" 
+          class="form-input"
+          placeholder="Create a secure password"
+          required 
+          autocomplete="new-password"
+          aria-describedby="password-error password-help"
+          minlength="8"
+        />
+        <div id="password-help" class="form-help">
+          <small>Minimum 8 characters with letters and numbers</small>
+        </div>
+        <div id="password-error" class="form-error" role="alert" aria-live="polite"></div>
+      </div>
 
-      <button type="submit">Sign up</button>
+      <button type="submit" class="submit-button" id="signup-button">
+        <span>Create Account</span>
+      </button>
     </form>
 
-    <p>Already have an account? <a href="/login">Sign in</a></p>
-  </main>
-</body>
-</html>
+    <div class="auth-links">
+      <p>Already have an account? <a href="/login" class="auth-link">Sign in →</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function enhanceSignupForm() {
+  const form = document.querySelector('.auth-form');
+  const submitButton = document.getElementById('signup-button');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  
+  // Enhanced form validation
+  function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
+  
+  function validatePassword(password) {
+    return password.length >= 8 && /[a-zA-Z]/.test(password) && /[0-9]/.test(password);
+  }
+  
+  function showFieldError(field, message) {
+    const errorDiv = document.getElementById(field + '-error');
+    if (errorDiv) {
+      errorDiv.textContent = message;
+      errorDiv.className = 'form-error active';
+      field.setAttribute('aria-invalid', 'true');
+    }
+  }
+  
+  function clearFieldError(field) {
+    const errorDiv = document.getElementById(field.id + '-error');
+    if (errorDiv) {
+      errorDiv.textContent = '';
+      errorDiv.className = 'form-error';
+      field.removeAttribute('aria-invalid');
+    }
+  }
+  
+  // Real-time validation
+  emailInput.addEventListener('blur', () => {
+    const email = emailInput.value.trim();
+    if (email && !validateEmail(email)) {
+      showFieldError(emailInput, 'Please enter a valid email address');
+    } else {
+      clearFieldError(emailInput);
+    }
+  });
+  
+  passwordInput.addEventListener('blur', () => {
+    const password = passwordInput.value;
+    if (password && !validatePassword(password)) {
+      showFieldError(passwordInput, 'Password must be at least 8 characters with letters and numbers');
+    } else {
+      clearFieldError(passwordInput);
+    }
+  });
+  
+  // Enhanced form submission
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    let hasErrors = false;
+    
+    // Validate email
+    if (!email) {
+      showFieldError(emailInput, 'Email address is required');
+      hasErrors = true;
+    } else if (!validateEmail(email)) {
+      showFieldError(emailInput, 'Please enter a valid email address');
+      hasErrors = true;
+    } else {
+      clearFieldError(emailInput);
+    }
+    
+    // Validate password
+    if (!password) {
+      showFieldError(passwordInput, 'Password is required');
+      hasErrors = true;
+    } else if (!validatePassword(password)) {
+      showFieldError(passwordInput, 'Password must be at least 8 characters with letters and numbers');
+      hasErrors = true;
+    } else {
+      clearFieldError(passwordInput);
+    }
+    
+    if (hasErrors) {
+      // Focus on first error field
+      const firstError = form.querySelector('[aria-invalid="true"]');
+      if (firstError) {
+        firstError.focus();
+      }
+      return;
+    }
+    
+    // Show loading state
+    submitButton.classList.add('loading');
+    submitButton.setAttribute('aria-busy', 'true');
+    submitButton.disabled = true;
+    
+    // Submit form
+    const formData = new FormData(form);
+    fetch('/signup', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include'
+    })
+    .then(response => {
+      if (response.redirected) {
+        window.location.href = response.url;
+        return;
+      }
+      return response.text();
+    })
+    .then(html => {
+      if (typeof html === 'string') {
+        // Handle server-side validation errors
+        document.body.innerHTML = html;
+      }
+    })
+    .catch(error => {
+      console.error('Signup error:', error);
+      showFieldError(emailInput, 'An error occurred. Please try again.');
+    })
+    .finally(() => {
+      submitButton.classList.remove('loading');
+      submitButton.removeAttribute('aria-busy');
+      submitButton.disabled = false;
+    });
+  });
+  
+  // Enhanced accessibility
+  emailInput.addEventListener('input', () => clearFieldError(emailInput));
+  passwordInput.addEventListener('input', () => clearFieldError(passwordInput));
+  
+  // Focus management
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+      const inputs = Array.from(form.querySelectorAll('input'));
+      const currentIndex = inputs.indexOf(e.target);
+      const nextInput = inputs[currentIndex + 1];
+      
+      if (nextInput) {
+        e.preventDefault();
+        nextInput.focus();
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

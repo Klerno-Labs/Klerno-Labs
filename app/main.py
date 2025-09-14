@@ -1,91 +1,112 @@
+# ==============================================================================
+# Klerno Labs - Main Application (resolved)
+# ==============================================================================
+
 from __future__ import annotations
 
+import asyncio
+import os
+import secrets
+from collections.abc import Awaitable, Callable
+from dataclasses import asdict, fields as dc_fields, is_dataclass
 from datetime import datetime, timedelta
 from io import StringIO
-from typing import List, Dict, Any, Optional, Callable, Awaitable, Tuple
+from typing import Any, Optional, List, Dict, Tuple
 
-import os
-import hmac
-import secrets
 import pandas as pd
 import sqlite3
-from dataclasses import asdict, is_dataclass, fields as dc_fields
 
-from fastapi import FastAPI, Security, Header, Request, Body, HTTPException, Depends, Form, WebSocket, Response
-from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse, RedirectResponse, FileResponse
-from fastapi.templating import Jinja2Templates
+from fastapi import (
+    Body,
+    Depends,
+    FastAPI,
+    Form,
+    Header,
+    HTTPException,
+    Request,
+    Security,
+    WebSocket,
+)
+from fastapi.responses import (
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+    StreamingResponse,
+    FileResponse,
+)
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
-# Fast JSON (fallback to default if ORJSON not installed)
+# ---------- Optional high-performance JSON ----------
 try:
-    from fastapi.responses import ORJSONResponse as FastJSON
+    from fastapi.responses import ORJSONResponse as FastJSON  # type: ignore
     DEFAULT_RESP_CLS = FastJSON
-except ImportError:
-    FastJSON = JSONResponse
+except Exception:
+    FastJSON = JSONResponse  # type: ignore
     DEFAULT_RESP_CLS = JSONResponse
 
-# NEW: for live push hub
-import asyncio, json
-from functools import lru_cache
-
+# ---------- Local modules ----------
+from . import auth as auth_router
+from . import paywall_hooks as paywall_hooks
 from . import store
-from .models import Transaction, TaggedTransaction, ReportRequest
-from .guardian import score_risk
+from .admin import router as admin_router
 from .compliance import tag_category
+from .deps import require_paid_or_admin, require_user, require_admin
+from .guardian import score_risk
+from .integrations.xrp import fetch_account_tx, xrpl_json_to_transactions
+from .models import ReportRequest, TaggedTransaction, Transaction
 from .reporter import csv_export, summary
-from .integrations.xrp import xrpl_json_to_transactions, fetch_account_tx
+from .routes.analyze_tags import router as analyze_tags_router
 from .security import enforce_api_key, expected_api_key
-from .security_session import hash_pw, verify_pw, issue_jwt
+from .security_session import (
+    hash_pw,
+    issue_jwt,
+    verify_pw,
+    SESSION_COOKIE,
+    issue_csrf_cookie,
+    csrf_protect_ui,
+)
 
-# XRPL Payment and Subscription modules
+# XRPL Subscription/Payments + settings
 from .config import settings
 from .xrpl_payments import create_payment_request, verify_payment, get_network_info
 from .subscriptions import (
-    SubscriptionTier, TierDetails, Subscription, get_tier_details,
-    get_all_tiers, get_user_subscription, create_subscription,
-    has_active_subscription, require_active_subscription
+    SubscriptionTier,
+    Subscription,
+    get_user_subscription,
+    create_subscription,
 )
-
-# Auth/Paywall routers
-from . import auth as auth_router
-from . import paywall_hooks as paywall_hooks
-from .deps import require_paid_or_admin, require_user, require_admin
-from .routes.analyze_tags import router as analyze_tags_router
-from .admin import router as admin_router  # admin dashboard
 
 # ---------- Optional LLM helpers ----------
 try:
-    from .llm import (
-        explain_tx,
-        explain_batch,
-        ask_to_filters,
-        explain_selection,
-        summarize_rows,
-        apply_filters as _llm_apply_filters,  # optional
-    )
-except ImportError:
-    from .llm import (
-        explain_tx,
-        explain_batch,
-        ask_to_filters,
-        explain_selection,
-        summarize_rows,
-    )
-    _llm_apply_filters = None
+    from .llm import apply_filters as _llm_apply_filters
+    from .llm import ask_to_filters, explain_batch, explain_selection, explain_tx, summarize_rows
+except Exception:
+    # Fallback if apply_filters isn't present
+    from .llm import ask_to_filters, explain_batch, explain_selection, explain_tx, summarize_rows
+    _llm_apply_filters = None  # type: ignore
 
+# ==============================================================================
+# Config derived from environment (safe defaults for dev)
+# ==============================================================================
+DEMO_MODE = os.getenv("DEMO_MODE", "true").strip().lower() == "true"
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@klerno.dev").lower().strip()
 
-def _apply_filters_safe(rows: List[Dict[str, Any]], spec: Dict[str, Any]) -> List[Dict[str, Any]]:
+# ==============================================================================
+# Utilities
+# ==============================================================================
+
+def _apply_filters_safe(rows: list[dict[str, Any]], spec: dict[str, Any]) -> list[dict[str, Any]]:
     """Fallback if llm.apply_filters isn't available."""
     if _llm_apply_filters:
-        return _llm_apply_filters(rows, spec)
+        return _llm_apply_filters(rows, spec)  # type: ignore
     if not spec:
         return rows
     out = rows
     for k, v in spec.items():
-        # simple numeric/date operators
         if k in ("min_amount", "max_amount"):
             key = "amount"
             if k == "min_amount":
@@ -107,8 +128,7 @@ def _apply_filters_safe(rows: List[Dict[str, Any]], spec: Dict[str, Any]) -> Lis
     return out
 
 
-def _dump(obj: Any) -> Dict[str, Any]:
-    """Return a dict from either a Pydantic model or a dataclass (or mapping-like)."""
+def _dump(obj: Any) -> dict[str, Any]:
     if hasattr(obj, "model_dump"):
         return obj.model_dump()
     if is_dataclass(obj):
@@ -118,21 +138,24 @@ def _dump(obj: Any) -> Dict[str, Any]:
     except Exception:
         return {"value": obj}
 
-# ---- helpers
+
 def _safe_dt(x) -> datetime:
     try:
         return datetime.fromisoformat(str(x).replace("Z", ""))
     except Exception:
         return datetime.min
 
+
 def _risk_bucket(score: float) -> str:
     s = float(score or 0)
-    if s < 0.33: return "low"
-    if s < 0.66: return "medium"
+    if s < 0.33:
+        return "low"
+    if s < 0.66:
+        return "medium"
     return "high"
 
-# unified, NaN-safe reader for old/new score keys
-def _row_score(r: Dict[str, Any]) -> float:
+
+def _row_score(r: dict[str, Any]) -> float:
     try:
         val = r.get("score", None)
         if val is None or (isinstance(val, float) and pd.isna(val)):
@@ -143,26 +166,21 @@ def _row_score(r: Dict[str, Any]) -> float:
     except Exception:
         return 0.0
 
-
-# =========================
-# Security hardening
-# =========================
-REQ_ID_HEADER = "X-Request-ID"
-CSRF_COOKIE = "csrf_token"
-CSRF_HEADER = "X-CSRF-Token"
+# ==============================================================================
+# Middleware
+# ==============================================================================
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
         super().__init__(app)
-        self.enable_hsts = (os.getenv("ENABLE_HSTS", "true").lower() == "true")
+        self.enable_hsts = os.getenv("ENABLE_HSTS", "true").lower() == "true"
 
     async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[HTMLResponse]]):
         resp = await call_next(request)
-        # UPDATED CSP: allow jsDelivr for Bootstrap & Chart.js
         csp = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "style-src  'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
             "img-src 'self' data:; "
             "font-src 'self' data: https://cdn.jsdelivr.net; "
             "connect-src 'self' ws: wss:; "
@@ -177,43 +195,24 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
         return resp
 
+
 class RequestIDMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        rid = request.headers.get(REQ_ID_HEADER) or secrets.token_hex(8)
+        rid = request.headers.get("X-Request-ID") or secrets.token_hex(8)
         request.state.request_id = rid
         resp = await call_next(request)
-        resp.headers.setdefault(REQ_ID_HEADER, rid)
+        resp.headers.setdefault("X-Request-ID", rid)
         return resp
 
-def issue_csrf_cookie(resp: HTMLResponse):
-    token = secrets.token_urlsafe(32)
-    resp.set_cookie(
-        CSRF_COOKIE, token,
-        secure=True, samesite="Strict", httponly=False, path="/", max_age=60*60*8
-    )
-    return token
+# ==============================================================================
+# App Setup
+# ==============================================================================
 
-def verify_csrf(request: Request):
-    token_cookie = request.cookies.get(CSRF_COOKIE)
-    token_hdr = request.headers.get(CSRF_HEADER)
-    if not token_cookie or not token_hdr:
-        raise HTTPException(status_code=403, detail="CSRF token missing")
-    if not hmac.compare_digest(token_cookie, token_hdr):
-        raise HTTPException(status_code=403, detail="Bad CSRF token")
-
-async def csrf_protect_ui(request: Request):
-    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
-        verify_csrf(request)
-    return True
-
-
-# =========================
-# FastAPI app + templates
-# =========================
 app = FastAPI(
     title="Klerno Labs API (MVP) — XRPL First",
     default_response_class=DEFAULT_RESP_CLS,
 )
+
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=512)
@@ -228,59 +227,23 @@ async def _log_startup_info():
 # Static & templates
 BASE_DIR = os.path.dirname(__file__)
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
-
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 templates.env.globals["url_path_for"] = app.url_path_for
 
-# Config flags for UI auth redirects
-ADMIN_EMAIL = (os.getenv("ADMIN_EMAIL") or "").strip().lower()
-DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
-
-# ---- Session cookie config
-SESSION_COOKIE = os.getenv("SESSION_COOKIE_NAME", "session")
-COOKIE_SECURE_MODE = os.getenv("COOKIE_SECURE", "auto").lower()  # "auto" | "true" | "false"
-COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax").lower()   # "lax" | "strict" | "none"
-
-def _is_secure_request(request: Request) -> bool:
-    xf = (request.headers.get("x-forwarded-proto") or "").lower()
-    if xf:
-        return "https" in xf
-    return request.url.scheme == "https"
-
-def _cookie_kwargs(request: Request) -> Dict[str, Any]:
-    if COOKIE_SECURE_MODE in ("true", "1", "yes"):
-        secure = True
-    elif COOKIE_SECURE_MODE in ("false", "0", "no"):
-        secure = False
-    else:
-        secure = _is_secure_request(request)
-
-    samesite = COOKIE_SAMESITE if COOKIE_SAMESITE in ("lax", "strict", "none") else "lax"
-    if samesite == "none" and not secure:
-        secure = True
-
-    return {
-        "httponly": True,
-        "secure": secure,
-        "samesite": samesite,
-        "max_age": 60 * 60 * 24 * 7,  # 7 days
-        "path": "/",
-    }
-
-# Include routers
-from . import paywall  # noqa: E402
-app.include_router(paywall.router)
+# Routers
 app.include_router(auth_router.router)
 app.include_router(paywall_hooks.router)
 app.include_router(analyze_tags_router)
 app.include_router(admin_router)
 
-# Init DB
+# DB init
 store.init_db()
 
-# --- Bootstrap single admin account (email/password) ---
-BOOT_ADMIN_EMAIL = "klerno@outlook.com".lower().strip()
-BOOT_ADMIN_PASSWORD = "Labs2025"
+# ==============================================================================
+# Bootstrap admin (local/dev convenience)
+# ==============================================================================
+BOOT_ADMIN_EMAIL = os.getenv("BOOTSTRAP_ADMIN_EMAIL", ADMIN_EMAIL).lower().strip()
+BOOT_ADMIN_PASSWORD = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "ChangeMe123!")
 
 existing = store.get_user_by_email(BOOT_ADMIN_EMAIL)
 if not existing:
@@ -291,9 +254,10 @@ if not existing:
         subscription_active=True,
     )
 
-# ---- Live push hub (WebSocket) ----------------------------------------------
+# ==============================================================================
+# Live push hub (WebSocket)
+# ==============================================================================
 class LiveHub:
-    """In-process pub/sub for real-time pushes."""
     def __init__(self):
         self._clients: dict[WebSocket, set[str]] = {}
         self._lock = asyncio.Lock()
@@ -338,6 +302,7 @@ async def ws_alerts(ws: WebSocket):
         while True:
             msg = await ws.receive_text()
             try:
+                import json
                 data = json.loads(msg) if msg else {}
             except Exception:
                 data = {}
@@ -350,15 +315,13 @@ async def ws_alerts(ws: WebSocket):
     finally:
         await live.remove(ws)
 
-# Tiny HTTP probe so hitting /ws/alerts with GET doesn't 404
 @app.get("/ws/alerts", include_in_schema=False)
 def ws_alerts_probe():
     return {"ok": True, "hint": "connect with WebSocket at ws(s)://<host>/ws/alerts"}
 
-
-# =========================
-# Email (SendGrid)
-# =========================
+# ==============================================================================
+# Email (SendGrid) — optional
+# ==============================================================================
 SENDGRID_KEY = os.getenv("SENDGRID_API_KEY", "").strip()
 ALERT_FROM = os.getenv("ALERT_EMAIL_FROM", "").strip()
 ALERT_TO = os.getenv("ALERT_EMAIL_TO", "").strip()
@@ -368,8 +331,8 @@ def _send_email(subject: str, text: str, to_email: Optional[str] = None) -> Dict
     if not (SENDGRID_KEY and ALERT_FROM and recipient):
         return {"sent": False, "reason": "missing SENDGRID_API_KEY/ALERT_EMAIL_FROM/ALERT_EMAIL_TO"}
     try:
-        from sendgrid import SendGridAPIClient
-        from sendgrid.helpers.mail import Mail, Email, To, Content
+        from sendgrid import SendGridAPIClient  # type: ignore
+        from sendgrid.helpers.mail import Mail, Email, To, Content  # type: ignore
         msg = Mail(
             from_email=Email(ALERT_FROM),
             to_emails=To(recipient),
@@ -404,32 +367,21 @@ def notify_if_alert(tagged: TaggedTransaction) -> Dict[str, Any]:
     ]
     return _send_email(subject, "\n".join(lines))
 
-
-# ---------------- Root, Landing & health ----------------
+# ==============================================================================
+# Root & health & favicon
+# ==============================================================================
 @app.get("/", include_in_schema=False)
 def root_page():
-    """Simple root page for uptime checks and human confirmation.
-    Shows a link to interactive API docs.
-    """
     html = (
-        "<!doctype html>\n"
-        "<html><head><meta charset='utf-8'><title>Klerno Labs</title>"
-        "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+        "<!doctype html><html><head><meta charset='utf-8'>"
+        "<title>Klerno Labs</title><meta name='viewport' content='width=device-width,initial-scale=1'>"
         "<link rel='icon' href='/favicon.ico'></head>"
-        "<body style=\"font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;"
-        " line-height:1.4; padding:2rem; max-width: 720px; margin: 0 auto;\">"
-        "<h1 style='margin:0 0 0.5rem 0'>Klerno Labs is running ✅</h1>"
-        "<p>This instance is healthy. Explore the API using the interactive docs:</p>"
-        "<p><a href='/docs' style='font-weight:600'>Open /docs</a></p>"
+        "<body style=\"font-family:system-ui;padding:2rem;max-width:760px;margin:0 auto\">"
+        "<h1>Klerno Labs is running ✅</h1>"
+        "<p>Open the interactive API: <a href='/docs'>/docs</a></p>"
         "</body></html>"
     )
     return HTMLResponse(content=html, status_code=200)
-
-@app.get("/landing", include_in_schema=False)
-def landing(request: Request):
-    resp = templates.TemplateResponse("landing.html", {"request": request})
-    issue_csrf_cookie(resp)
-    return resp
 
 @app.head("/", include_in_schema=False)
 def root_head():
@@ -443,17 +395,16 @@ def health(_auth: bool = Security(enforce_api_key)):
 def healthz():
     return {"status": "ok"}
 
-# --------------- Favicon & static -----------------
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     ico_path = os.path.join(BASE_DIR, "static", "favicon.ico")
     if os.path.exists(ico_path):
         return FileResponse(ico_path, media_type="image/x-icon")
-    # If not present, 404 clearly instead of HTML error page
     raise HTTPException(status_code=404, detail="favicon not found")
 
-
-# ---------------- UI Login / Signup / Logout ----------------
+# ==============================================================================
+# UI: auth pages
+# ==============================================================================
 @app.get("/login", include_in_schema=False)
 def login_page(request: Request, error: str | None = None):
     resp = templates.TemplateResponse("login.html", {"request": request, "error": error})
@@ -470,7 +421,7 @@ def login_submit(request: Request, email: str = Form(...), password: str = Form(
     is_paid = bool(user.get("subscription_active")) or user.get("role") == "admin" or DEMO_MODE
     dest = "/dashboard" if is_paid else "/paywall"
     resp = RedirectResponse(url=dest, status_code=303)
-    resp.set_cookie(SESSION_COOKIE, token, **_cookie_kwargs(request))
+    resp.set_cookie(SESSION_COOKIE, token, path="/", httponly=True, secure=False)  # cookie args can be refined in security_session
     return resp
 
 @app.get("/signup", include_in_schema=False)
@@ -492,7 +443,7 @@ def signup_submit(request: Request, email: str = Form(...), password: str = Form
     token = issue_jwt(user["id"], user["email"], user["role"])
     dest = "/dashboard" if (sub_active or role == "admin" or DEMO_MODE) else "/paywall"
     resp = RedirectResponse(url=dest, status_code=303)
-    resp.set_cookie(SESSION_COOKIE, token, **_cookie_kwargs(request))
+    resp.set_cookie(SESSION_COOKIE, token, path="/", httponly=True, secure=False)
     return resp
 
 @app.get("/logout", include_in_schema=False)
@@ -501,8 +452,9 @@ def logout_ui():
     resp.delete_cookie(SESSION_COOKIE, path="/")
     return resp
 
-
-# --- User & Settings API ---
+# ==============================================================================
+# User settings
+# ==============================================================================
 class SettingsPayload(BaseModel):
     x_api_key: Optional[str] = None
     risk_threshold: Optional[float] = None
@@ -531,11 +483,11 @@ def me_settings_post(payload: SettingsPayload, user=Depends(require_user)):
     if "time_range_days" in patch:
         patch["time_range_days"] = max(1, int(patch["time_range_days"]))
     store.save_settings(user["id"], patch)
-    settings = store.get_settings(user["id"])
-    return {"ok": True, "settings": settings}
+    return {"ok": True, "settings": store.get_settings(user["id"])}
 
-
-# ---------------- Core API ----------------
+# ==============================================================================
+# Core APIs
+# ==============================================================================
 @app.post("/analyze/tx", response_model=TaggedTransaction)
 def analyze_tx(tx: Transaction, _auth: bool = Security(enforce_api_key)):
     risk, flags = score_risk(tx)
@@ -576,18 +528,6 @@ def report_csv(req: ReportRequest, _auth: bool = Security(enforce_api_key)):
         items.append(TaggedTransaction(**_dump(tx), score=risk, flags=flags, category=category))
     return {"csv": csv_export(items)}
 
-
-# ---------------- XRPL parse (posted JSON) ----------------
-@app.post("/integrations/xrpl/parse")
-def parse_xrpl(account: str, payload: List[Dict[str, Any]], _auth: bool = Security(enforce_api_key)):
-    txs = xrpl_json_to_transactions(account, payload)
-    tagged: List[TaggedTransaction] = []
-    for tx in txs:
-        risk, flags = score_risk(tx)
-        category = tag_category(tx)
-        tagged.append(TaggedTransaction(**_dump(tx), score=risk, flags=flags, category=category))
-    return {"summary": summary(tagged).model_dump(), "items": [t.model_dump() for t in tagged]}
-
 @app.post("/analyze/sample")
 def analyze_sample(_auth: bool = Security(enforce_api_key)):
     data_path = os.path.join(BASE_DIR, "..", "data", "sample_transactions.csv")
@@ -615,8 +555,7 @@ def analyze_sample(_auth: bool = Security(enforce_api_key)):
         tagged.append(TaggedTransaction(**_dump(tx), score=risk, flags=flags, category=category))
     return {"summary": summary(tagged).model_dump(), "items": [t.model_dump() for t in tagged]}
 
-
-# ---------------- “Memory” (DB) + email on save ----------------
+# Save + alert + live publish
 @app.post("/analyze_and_save/tx")
 async def analyze_and_save_tx(tx: Transaction, _auth: bool = Security(enforce_api_key)):
     risk, flags = score_risk(tx)
@@ -642,8 +581,7 @@ def get_alerts(limit: int = 100, _auth: bool = Security(enforce_api_key)):
     rows = store.list_alerts(threshold, limit=limit)
     return {"threshold": threshold, "count": len(rows), "items": rows}
 
-
-# ---------------- XRPL fetch (read-only) ----------------
+# XRPL
 @app.get("/integrations/xrpl/fetch")
 def xrpl_fetch(account: str, limit: int = 10, _auth: bool = Security(enforce_api_key)):
     raw = fetch_account_tx(account, limit=limit)
@@ -685,8 +623,13 @@ async def xrpl_fetch_and_save(account: str, limit: int = 10, _auth: bool = Secur
         "emails": emails,
     }
 
+# CSV exports
+def _check_key_param_or_header(key: Optional[str] = None, x_api_key: Optional[str] = Header(default=None)):
+    exp = expected_api_key() or ""
+    incoming = (key or "").strip() or (x_api_key or "").strip()
+    if exp and incoming != exp:
+        raise HTTPException(status_code=401, detail="unauthorized")
 
-# ---------------- CSV export (DB) ----------------
 @app.get("/export/csv")
 def export_csv_from_db(wallet: str | None = None, limit: int = 1000, _auth: bool = Security(enforce_api_key)):
     rows = store.list_by_wallet(wallet, limit=limit) if wallet else store.list_all(limit=limit)
@@ -694,14 +637,6 @@ def export_csv_from_db(wallet: str | None = None, limit: int = 1000, _auth: bool
         return {"rows": 0, "csv": ""}
     df = pd.DataFrame(rows)
     return {"rows": len(rows), "csv": df.to_csv(index=False)}
-
-
-# ---- helper: allow ?key=... or x-api-key header for download ----
-def _check_key_param_or_header(key: Optional[str] = None, x_api_key: Optional[str] = Header(default=None)):
-    exp = expected_api_key() or ""
-    incoming = (key or "").strip() or (x_api_key or "").strip()
-    if exp and incoming != exp:
-        raise HTTPException(status_code=401, detail="unauthorized")
 
 @app.get("/export/csv/download")
 def export_csv_download(wallet: str | None = None, limit: int = 1000, key: Optional[str] = None, x_api_key: Optional[str] = Header(None)):
@@ -713,29 +648,19 @@ def export_csv_download(wallet: str | None = None, limit: int = 1000, key: Optio
     buf.seek(0)
     return StreamingResponse(iter([buf.read()]), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=klerno-export.csv"})
 
-
-# ---------------- CSV export (UI, session-protected) ----------------
+# UI API export (session)
 @app.get("/uiapi/export/csv/download", include_in_schema=False)
-def ui_export_csv_download(
-    wallet: str | None = None,
-    limit: int = 1000,
-    _user = Depends(require_paid_or_admin),
-):
+def ui_export_csv_download(wallet: str | None = None, limit: int = 1000, _user = Depends(require_paid_or_admin)):
     rows = store.list_by_wallet(wallet, limit=limit) if wallet else store.list_all(limit=limit)
     df = pd.DataFrame(rows)
     buf = StringIO()
     df.to_csv(buf, index=False)
     buf.seek(0)
-    return StreamingResponse(
-        iter([buf.read()]),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=klerno-export.csv"},
-    )
+    return StreamingResponse(iter([buf.read()]), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=klerno-export.csv"})
 
-
-# ---------------- Metrics (JSON) ----------------
-
-# tiny in-proc TTL cache to avoid heavy recompute
+# ==============================================================================
+# Metrics
+# ==============================================================================
 _METRICS_CACHE: Dict[Tuple[Optional[float], Optional[int]], Tuple[float, Dict[str, Any]]] = {}
 _METRICS_TTL_SEC = 5.0
 
@@ -789,7 +714,6 @@ def metrics(threshold: float | None = None, days: int | None = None, _auth: bool
     alerts = int((df["risk_score"] >= thr).sum())
     avg_risk = float(df["risk_score"].mean())
 
-    # categories
     categories: Dict[str, int] = {}
     cats_series = (df["category"].fillna("unknown") if "category" in df.columns else pd.Series(["unknown"] * total))
     for cat, cnt in cats_series.value_counts().items():
@@ -799,33 +723,21 @@ def metrics(threshold: float | None = None, days: int | None = None, _auth: bool
     grp = df.groupby("day").agg(avg_risk=("risk_score", "mean")).reset_index()
     series = [{"date": str(d), "avg_risk": round(float(v), 3)} for d, v in zip(grp["day"], grp["avg_risk"])]
 
-    # Low/Med/High daily counts for stacked chart
     df["bucket"] = df["risk_score"].apply(_risk_bucket)
     crosstab = df.pivot_table(index="day", columns="bucket", values="risk_score", aggfunc="count").fillna(0)
     crosstab = crosstab.reindex(sorted(crosstab.index))
     series_lmh = []
     for d, row in crosstab.iterrows():
-        series_lmh.append({
-            "date": str(d),
-            "low": int(row.get("low", 0)),
-            "medium": int(row.get("medium", 0)),
-            "high": int(row.get("high", 0)),
-        })
+        series_lmh.append({"date": str(d), "low": int(row.get("low", 0)), "medium": int(row.get("medium", 0)), "high": int(row.get("high", 0))})
 
     data = {"total": total, "alerts": alerts, "avg_risk": round(avg_risk, 3), "categories": categories, "series_by_day": series, "series_by_day_lmh": series_lmh}
     _metrics_put(threshold, days, data)
     return data
 
-
-# ---------------- UI API (session-protected; no x-api-key) ----------------
+# UI metrics (session)
 @app.get("/metrics-ui", include_in_schema=False)
-def metrics_ui(
-    threshold: float | None = None,
-    days: int | None = None,
-    _user=Depends(require_paid_or_admin),
-):
+def metrics_ui(threshold: float | None = None, days: int | None = None, _user=Depends(require_paid_or_admin)):
     resp = FastJSON(content=metrics(threshold=threshold, days=days, _auth=True))
-    # short client-side caching to cut churn
     resp.headers["Cache-Control"] = "private, max-age=10"
     return resp
 
@@ -835,39 +747,34 @@ def alerts_ui_data(limit: int = 100, _user=Depends(require_paid_or_admin)):
     rows = store.list_alerts(threshold, limit=limit)
     return {"threshold": threshold, "count": len(rows), "items": rows}
 
-# Save demo/sample data to DB so dashboard shows data, and live-push
+# ==============================================================================
+# UI helpers & search
+# ==============================================================================
 @app.post("/uiapi/analyze/sample", include_in_schema=False)
 async def ui_analyze_sample(_user=Depends(require_paid_or_admin), _=Depends(csrf_protect_ui)):
     data_path = os.path.join(BASE_DIR, "..", "data", "sample_transactions.csv")
     df = pd.read_csv(data_path)
-
     text_cols = ("memo", "notes", "symbol", "direction", "chain", "tx_id", "from_addr", "to_addr")
     for col in text_cols:
         if col in df.columns:
             df[col] = df[col].fillna("").astype(str)
-
     if "timestamp" in df.columns:
         df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce").dt.strftime("%Y-%m-%dT%H:%M:%S")
-
     for col in ("amount", "fee", "risk_score"):
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
-
     tx_field_names = {f.name for f in dc_fields(Transaction)}
     tagged: List[TaggedTransaction] = []
     saved = 0
-
     for _, row in df.iterrows():
         raw = {k: (None if pd.isna(v) else v) for k, v in row.to_dict().items()}
         raw.setdefault("memo", ""); raw.setdefault("notes", "")
         clean = {k: v for k, v in raw.items() if k in tx_field_names}
         tx = Transaction(**clean)
-
         risk, flags = score_risk(tx)
         category = tag_category(tx)
         t = TaggedTransaction(**_dump(tx), score=risk, flags=flags, category=category)
         tagged.append(t)
-
         d = t.model_dump()
         d["risk_score"] = d.get("score")
         d["risk_flags"] = d.get("flags")
@@ -875,10 +782,8 @@ async def ui_analyze_sample(_user=Depends(require_paid_or_admin), _=Depends(csrf
         store.save_tagged(d)
         saved += 1
         await live.publish(d)
-
     return {"summary": summary(tagged).model_dump(), "saved": saved, "items": [t.model_dump() for t in tagged]}
 
-# Session-protected XRPL fetch used by the dashboard button
 @app.post("/uiapi/integrations/xrpl/fetch_and_save", include_in_schema=False)
 async def ui_xrpl_fetch_and_save(account: str, limit: int = 10, _user=Depends(require_paid_or_admin), _=Depends(csrf_protect_ui)):
     raw = fetch_account_tx(account, limit=limit)
@@ -899,17 +804,8 @@ async def ui_xrpl_fetch_and_save(account: str, limit: int = 10, _user=Depends(re
         tagged_items.append(d)
         emails.append(notify_if_alert(tagged))
         await live.publish(d)
-    return {
-        "account": account,
-        "requested": limit,
-        "fetched": len(txs),
-        "saved": saved,
-        "threshold": float(os.getenv("RISK_THRESHOLD", "0.75")),
-        "items": tagged_items,
-        "emails": emails,
-    }
+    return {"account": account, "requested": limit, "fetched": len(txs), "saved": saved, "threshold": float(os.getenv("RISK_THRESHOLD", "0.75")), "items": tagged_items, "emails": emails}
 
-# Recent items for the dashboard (all or only alerts)
 @app.get("/uiapi/recent", include_in_schema=False)
 def ui_recent(limit: int = 50, only_alerts: bool = False, _user=Depends(require_paid_or_admin)):
     if only_alerts:
@@ -919,7 +815,6 @@ def ui_recent(limit: int = 50, only_alerts: bool = False, _user=Depends(require_
         rows = store.list_all(limit=limit)
     return {"items": rows}
 
-# Powerful transactions search for folders + filters UI
 @app.get("/uiapi/transactions/search", include_in_schema=False)
 def ui_search_transactions(
     wallet_from: Optional[str] = None,
@@ -937,10 +832,11 @@ def ui_search_transactions(
     rows = store.list_all(limit=10000)
 
     def _type_ok(r):
-        if not tx_type: return True
+        if not tx_type:
+            return True
         t = tx_type.lower().strip()
         want = {"sale": "out", "purchase": "in"}.get(t, t)
-        return str(r.get("direction","")).lower() == want
+        return str(r.get("direction", "")).lower() == want
 
     def _between_dt(r):
         ts = _safe_dt(r.get("timestamp"))
@@ -955,7 +851,8 @@ def ui_search_transactions(
         return True
 
     def _bucket_ok(r):
-        if not risk_bucket: return True
+        if not risk_bucket:
+            return True
         b = r.get("risk_bucket") or _risk_bucket(_row_score(r))
         return str(b).lower() == risk_bucket.lower()
 
@@ -973,12 +870,11 @@ def ui_search_transactions(
     sel.sort(key=lambda x: _safe_dt(x.get("timestamp")), reverse=True)
     return {"count": len(sel[:limit]), "items": sel[:limit]}
 
-# Profile / Transactions / Years + QuickBooks export
 @app.get("/uiapi/profile/years", include_in_schema=False)
 def ui_profile_years(_user=Depends(require_paid_or_admin)):
     rows = store.list_all(limit=50000)
     years = set()
-    cutoff = datetime.utcnow() - timedelta(days=730)  # 2 years window
+    cutoff = datetime.utcnow() - timedelta(days=730)
     for r in rows:
         ts = _safe_dt(r.get("timestamp"))
         if ts >= cutoff:
@@ -1002,10 +898,8 @@ def ui_profile_year_export(year: int, format: str = "qb", _user=Depends(require_
     if not rows:
         return StreamingResponse(iter([""]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=Transactions-{year}.csv"})
     df = pd.DataFrame(rows)
-
     for c in ("timestamp","tx_id","from_addr","to_addr","amount","symbol","direction","fee","category","memo","notes","risk_score"):
         if c not in df.columns: df[c] = None
-
     out = pd.DataFrame({
         "Date": pd.to_datetime(df["timestamp"], errors="coerce").dt.strftime("%Y-%m-%d"),
         "Time": pd.to_datetime(df["timestamp"], errors="coerce").dt.strftime("%H:%M:%S"),
@@ -1021,49 +915,14 @@ def ui_profile_year_export(year: int, format: str = "qb", _user=Depends(require_
         "Description": df["memo"].fillna("") + (" " + df["notes"].fillna("")),
         "Tx ID": df["tx_id"].fillna(""),
     })
-
     buf = StringIO()
     out.to_csv(buf, index=False)
     buf.seek(0)
-    return StreamingResponse(
-        iter([buf.read()]),
-        media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=Transactions-{year}-QuickBooks.csv"},
-    )
+    return StreamingResponse(iter([buf.read()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=Transactions-{year}-QuickBooks.csv"})
 
-
-# ---------------- UI: Dashboard & Alerts ----------------
-@app.get("/dashboard", name="ui_dashboard", include_in_schema=False)
-def ui_dashboard(request: Request, _user=Depends(require_paid_or_admin)):
-    rows = store.list_all(limit=200)
-    total = len(rows)
-    threshold = float(os.getenv("RISK_THRESHOLD", "0.75"))
-    alerts = [r for r in rows if _row_score(r) >= threshold]
-    avg_risk = round(sum(_row_score(r) for r in rows) / total, 3) if total else 0.0
-    cats: Dict[str, int] = {}
-    for r in rows:
-        c = r.get("category") or "unknown"
-        cats[c] = cats.get(c, 0) + 1
-    metrics_data = {"total": total, "alerts": len(alerts), "avg_risk": avg_risk, "categories": cats}
-    resp = templates.TemplateResponse("dashboard.html", {
-        "request": request,
-        "title": "Dashboard",
-        "key": None,
-        "metrics": metrics_data,
-        "rows": rows,
-        "threshold": threshold
-    })
-    issue_csrf_cookie(resp)
-    return resp
-
-@app.get("/alerts-ui", name="ui_alerts", include_in_schema=False)
-def ui_alerts(request: Request, _user=Depends(require_paid_or_admin)):
-    threshold = float(os.getenv("RISK_THRESHOLD", "0.75"))
-    rows = store.list_alerts(threshold=threshold, limit=500)
-    return templates.TemplateResponse("alerts.html", {"request": request, "title": f"Alerts (≥ {threshold})", "key": None, "rows": rows})
-
-
-# ---------------- Admin / Email tests ----------------
+# ==============================================================================
+# Admin test helpers
+# ==============================================================================
 @app.get("/admin/test-email", include_in_schema=False)
 def admin_test_email(request: Request):
     key = request.query_params.get("key") or ""
@@ -1092,8 +951,7 @@ class NotifyRequest(BaseModel):
 def notify_test(payload: NotifyRequest = Body(...), _auth: bool = Security(enforce_api_key)):
     return _send_email("Klerno Labs Test", "✅ Your Klerno Labs email system is working!", payload.email)
 
-
-# ---------------- Debug ----------------
+# Debug
 @app.get("/_debug/api_key")
 def debug_api_key(x_api_key: str | None = Header(default=None)):
     exp = expected_api_key()
@@ -1104,8 +962,9 @@ def debug_api_key(x_api_key: str | None = Header(default=None)):
 def list_routes():
     return {"routes": [r.path for r in app.router.routes]}
 
-
-# ---------------- LLM Explain & AI Endpoints ----------------
+# ==============================================================================
+# LLM endpoints
+# ==============================================================================
 class AskRequest(BaseModel):
     question: str
 
@@ -1158,35 +1017,32 @@ def explain_summary(days: int = 7, wallet: str | None = None, _auth: bool = Secu
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-# NLQ → filters + AI search wrappers (session-protected for UI)
-class NLQRequest(BaseModel):
-    query: str
-
 @app.post("/ai/nlq-to-filters", include_in_schema=False)
-def ai_nlq_to_filters(req: NLQRequest, _user=Depends(require_paid_or_admin)):
+def ai_nlq_to_filters(req: AskRequest, _user=Depends(require_paid_or_admin)):
     try:
-        spec = ask_to_filters(req.query)
+        spec = ask_to_filters(req.question)
         return {"filters": spec}
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 @app.post("/ai/search", include_in_schema=False)
-def ai_search(req: NLQRequest, _user=Depends(require_paid_or_admin)):
+def ai_search(req: AskRequest, _user=Depends(require_paid_or_admin)):
     try:
-        spec = ask_to_filters(req.query)
+        spec = ask_to_filters(req.question)
         rows = store.list_all(limit=10000)
         filtered = _apply_filters_safe(rows, spec)
         return {"filters": spec, "count": len(filtered), "items": filtered[:1000]}
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-# simple anomaly scoring (z-score on amounts)
 @app.get("/ai/anomaly/scores", include_in_schema=False)
 def ai_anomaly_scores(limit: int = 100, _user=Depends(require_paid_or_admin)):
     rows = store.list_all(limit=20000)
-    if not rows: return {"count": 0, "items": []}
+    if not rows:
+        return {"count": 0, "items": []}
     df = pd.DataFrame(rows)
-    if "amount" not in df.columns: return {"count": 0, "items": []}
+    if "amount" not in df.columns:
+        return {"count": 0, "items": []}
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
     df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0.0)
     if df["amount"].std(ddof=0) == 0:
@@ -1198,138 +1054,59 @@ def ai_anomaly_scores(limit: int = 100, _user=Depends(require_paid_or_admin)):
     items = df.head(limit).to_dict(orient="records")
     return {"count": len(items), "items": items}
 
-
-# ---- XRPL Payment Routes ----
-
+# ==============================================================================
+# XRPL payments & subscriptions
+# ==============================================================================
 @app.get("/xrpl/network-info")
 def xrpl_network_info(_user=Depends(require_user)):
-    """Get information about the XRPL network configuration."""
     return get_network_info()
 
 @app.post("/xrpl/payment-request")
 def create_xrpl_payment(amount_xrp: Optional[float] = None, _user=Depends(require_user)):
-    """Create a payment request for XRPL."""
     payment = create_payment_request(
         user_id=_user["id"],
         amount_xrp=amount_xrp or settings.SUB_PRICE_XRP,
-        description="Klerno Labs Subscription"
+        description="Klerno Labs Subscription",
     )
     return payment
 
 @app.post("/xrpl/verify-payment")
-def verify_xrpl_payment(
-    payment_id: str,
-    tx_hash: Optional[str] = None,
-    _user=Depends(require_user)
-):
-    """Verify an XRPL payment and activate subscription if valid."""
-    # Get payment request (this would come from your database in a real app)
-    # For demo, we create a new one with the same ID
+def verify_xrpl_payment(payment_id: str, tx_hash: Optional[str] = None, _user=Depends(require_user)):
     payment_request = create_payment_request(
         user_id=_user["id"],
         amount_xrp=settings.SUB_PRICE_XRP,
-        description="Klerno Labs Subscription"
+        description="Klerno Labs Subscription",
     )
     payment_request["id"] = payment_id
-    
-    # Verify the payment
+
     verified, message, tx_details = verify_payment(payment_request, tx_hash)
-    
     if verified and tx_details:
-        # Create or extend subscription
         subscription = create_subscription(
             user_id=_user["id"],
             tier=SubscriptionTier.BASIC,
             tx_hash=tx_details["tx_hash"],
-            payment_id=payment_id
+            payment_id=payment_id,
         )
-        
-        return {
-            "verified": True,
-            "message": message,
-            "transaction": tx_details,
-            "subscription": subscription.model_dump()
-        }
-    
-    return {
-        "verified": False,
-        "message": message
-    }
-
-
-# ---- Subscription Management Routes ----
+        return {"verified": True, "message": message, "transaction": tx_details, "subscription": subscription.model_dump()}
+    return {"verified": False, "message": message}
 
 @app.get("/api/subscription/tiers")
 async def list_subscription_tiers():
-    """Get all available subscription tiers and their details."""
-    tiers = []
-    
-    # Basic tier
-    tiers.append({
-        "id": SubscriptionTier.BASIC.value,
-        "name": "Basic",
-        "price_xrp": settings.SUB_PRICE_XRP,
-        "features": [
-            "Access to basic analysis tools",
-            "Up to 100 transactions per month",
-            "Email support"
-        ],
-        "description": "Perfect for individual users starting their journey."
-    })
-    
-    # Premium tier
-    tiers.append({
-        "id": SubscriptionTier.PREMIUM.value,
-        "name": "Premium",
-        "price_xrp": settings.SUB_PRICE_XRP * 2.5,
-        "features": [
-            "Access to all analysis tools",
-            "Unlimited transactions",
-            "Priority email support",
-            "Advanced reporting features",
-            "API access"
-        ],
-        "description": "Ideal for power users and small businesses."
-    })
-    
-    # Enterprise tier
-    tiers.append({
-        "id": SubscriptionTier.ENTERPRISE.value,
-        "name": "Enterprise",
-        "price_xrp": settings.SUB_PRICE_XRP * 5,
-        "features": [
-            "All Premium features",
-            "Dedicated account manager",
-            "Custom integrations",
-            "Compliance reporting",
-            "Multi-user access",
-            "White-label options"
-        ],
-        "description": "Complete solution for businesses with advanced needs."
-    })
-    
-    return {"tiers": tiers}
+    price = settings.SUB_PRICE_XRP
+    return {
+        "tiers": [
+            {"id": SubscriptionTier.BASIC.value, "name": "Basic", "price_xrp": price, "features": ["Basic analysis tools", "Up to 100 tx/mo", "Email support"]},
+            {"id": SubscriptionTier.PREMIUM.value, "name": "Premium", "price_xrp": price * 2.5, "features": ["All tools", "Unlimited tx", "Priority support", "Advanced reports", "API access"]},
+            {"id": SubscriptionTier.ENTERPRISE.value, "name": "Enterprise", "price_xrp": price * 5, "features": ["All Premium", "Dedicated AM", "Custom integrations", "Compliance reporting", "Multi-user", "White-label"]},
+        ]
+    }
 
 @app.get("/api/subscription/my")
 async def get_my_subscription(_user=Depends(require_user)):
-    """Get the current user's subscription details."""
-    user_id = _user["id"]
-    subscription = get_user_subscription(user_id)
-    
+    subscription = get_user_subscription(_user["id"])
     if not subscription:
-        return {
-            "has_subscription": False,
-            "message": "No active subscription found."
-        }
-    
-    tier_name = "Unknown"
-    if subscription.tier == SubscriptionTier.BASIC:
-        tier_name = "Basic"
-    elif subscription.tier == SubscriptionTier.PREMIUM:
-        tier_name = "Premium"
-    elif subscription.tier == SubscriptionTier.ENTERPRISE:
-        tier_name = "Enterprise"
-    
+        return {"has_subscription": False, "message": "No active subscription found."}
+    tier_name = {SubscriptionTier.BASIC: "Basic", SubscriptionTier.PREMIUM: "Premium", SubscriptionTier.ENTERPRISE: "Enterprise"}.get(subscription.tier, "Unknown")
     return {
         "has_subscription": True,
         "subscription": {
@@ -1338,108 +1115,41 @@ async def get_my_subscription(_user=Depends(require_user)):
             "active": subscription.is_active,
             "expires_at": subscription.expires_at.isoformat() if subscription.expires_at else None,
             "created_at": subscription.created_at.isoformat(),
-            "transaction_hash": subscription.tx_hash
-        }
+            "transaction_hash": subscription.tx_hash,
+        },
     }
 
 @app.post("/api/subscription/upgrade")
-async def upgrade_subscription(
-    tier_id: int = Body(...),
-    _user=Depends(require_user)
-):
-    """Create a payment request to upgrade to a specific subscription tier."""
-    # Validate tier
+async def upgrade_subscription(tier_id: int = Body(...), _user=Depends(require_user)):
     try:
         tier = SubscriptionTier(tier_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid subscription tier")
-    
-    # Calculate price based on tier
-    if tier == SubscriptionTier.BASIC:
-        amount_xrp = settings.SUB_PRICE_XRP
-    elif tier == SubscriptionTier.PREMIUM:
-        amount_xrp = settings.SUB_PRICE_XRP * 2.5
-    elif tier == SubscriptionTier.ENTERPRISE:
-        amount_xrp = settings.SUB_PRICE_XRP * 5
-    else:
-        amount_xrp = settings.SUB_PRICE_XRP
-    
-    # Create payment request
-    payment = create_payment_request(
-        user_id=_user["id"],
-        amount_xrp=amount_xrp,
-        description=f"Klerno Labs {tier.name.capitalize()} Subscription"
-    )
-    
-    return {
-        "payment_request": payment,
-        "tier": {
-            "id": tier.value,
-            "name": tier.name.capitalize()
-        }
-    }
+    price = settings.SUB_PRICE_XRP
+    amount_xrp = {SubscriptionTier.BASIC: price, SubscriptionTier.PREMIUM: price * 2.5, SubscriptionTier.ENTERPRISE: price * 5}.get(tier, price)
+    payment = create_payment_request(user_id=_user["id"], amount_xrp=amount_xrp, description=f"Klerno Labs {tier.name.capitalize()} Subscription")
+    return {"payment_request": payment, "tier": {"id": tier.value, "name": tier.name.capitalize()}}
 
-# Admin-only subscription management endpoints
 @app.get("/api/subscription/list", include_in_schema=False)
 async def list_subscriptions(_user=Depends(require_admin)):
-    """List all subscriptions (admin only)."""
     try:
-        # Connect to SQLite database
         db_path = os.path.join(os.path.dirname(__file__), "..", "data", "klerno.db")
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
-        query = "SELECT * FROM subscriptions ORDER BY created_at DESC"
-        cursor.execute(query)
+        cursor.execute("SELECT * FROM subscriptions ORDER BY created_at DESC")
         rows = cursor.fetchall()
-        
-        # Convert rows to dictionaries
-        subscriptions = []
-        for row in rows:
-            subscriptions.append({
-                "id": row["id"],
-                "user_id": row["user_id"],
-                "tier": row["tier"],
-                "created_at": row["created_at"],
-                "expires_at": row["expires_at"],
-                "tx_hash": row["tx_hash"]
-            })
-            
+        subscriptions = [{"id": r["id"], "user_id": r["user_id"], "tier": r["tier"], "created_at": r["created_at"], "expires_at": r["expires_at"], "tx_hash": r["tx_hash"]} for r in rows]
         conn.close()
         return {"subscriptions": subscriptions}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to list subscriptions: {str(e)}")
 
 @app.post("/api/subscription/create", include_in_schema=False)
-async def admin_create_subscription(
-    user_id: str = Body(...),
-    tier: int = Body(...),
-    duration_days: int = Body(30),
-    _user=Depends(require_admin)
-):
-    """Create a subscription for a user (admin only)."""
+async def admin_create_subscription(user_id: str = Body(...), tier: int = Body(...), duration_days: int = Body(30), _user=Depends(require_admin)):
     try:
-        # Validate tier
         tier_enum = SubscriptionTier(tier)
-        
-        # Create subscription
-        subscription = create_subscription(
-            user_id=user_id,
-            tier=tier_enum,
-            tx_hash="admin-created",
-            payment_id="admin-created",
-            duration_days=duration_days
-        )
-        
-        return {
-            "success": True,
-            "subscription": {
-                "user_id": subscription.user_id,
-                "tier": subscription.tier.value,
-                "created_at": subscription.created_at.isoformat(),
-                "expires_at": subscription.expires_at.isoformat() if subscription.expires_at else None
-            }
-        }
+        subscription = create_subscription(user_id=user_id, tier=tier_enum, tx_hash="admin-created", payment_id="admin-created", duration_days=duration_days)
+        return {"success": True, "subscription": {"user_id": subscription.user_id, "tier": subscription.tier.value, "created_at": subscription.created_at.isoformat(), "expires_at": subscription.expires_at.isoformat() if subscription.expires_at else None}}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create subscription: {str(e)}")
