@@ -35,3 +35,29 @@ def issue_jwt(uid: int, email: str, role: str, minutes: int | None = None) -> st
 
 def decode_jwt(token: str) -> dict:
     return jwt.decode(token, SECRET_KEY, algorithms=[ALGO])
+
+# Add get_current_user function for dependency injection
+from fastapi import Depends, HTTPException, status, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+security = HTTPBearer()
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Extracts and validates the JWT token from the request.
+    Returns the user information if valid.
+    """
+    token = credentials.credentials
+    try:
+        payload = decode_jwt(token)
+        return {
+            "uid": payload.get("uid"),
+            "email": payload.get("sub"),
+            "role": payload.get("role", "user")
+        }
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

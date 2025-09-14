@@ -8,26 +8,11 @@ import os
 import hmac
 import secrets
 import pandas as pd
+import sqlite3
 from dataclasses import asdict, is_dataclass, fields as dc_fields
 
-from fastapi import (
-    FastAPI,
-    Security,
-    Header,
-    Request,
-    Body,
-    HTTPException,
-    Depends,
-    Form,
-    WebSocket,
-    Response,
-)
-from fastapi.responses import (
-    StreamingResponse,
-    HTMLResponse,
-    JSONResponse,
-    RedirectResponse,
-)
+from fastapi import FastAPI, Security, Header, Request, Body, HTTPException, Depends, Form, WebSocket, Response
+from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
@@ -38,7 +23,7 @@ from starlette.middleware.gzip import GZipMiddleware
 try:
     from fastapi.responses import ORJSONResponse as FastJSON
     DEFAULT_RESP_CLS = FastJSON
-except Exception:
+except ImportError:
     FastJSON = JSONResponse
     DEFAULT_RESP_CLS = JSONResponse
 
@@ -55,10 +40,19 @@ from .integrations.xrp import xrpl_json_to_transactions, fetch_account_tx
 from .security import enforce_api_key, expected_api_key
 from .security_session import hash_pw, verify_pw, issue_jwt
 
+# XRPL Payment and Subscription modules
+from .config import settings
+from .xrpl_payments import create_payment_request, verify_payment, get_network_info
+from .subscriptions import (
+    SubscriptionTier, TierDetails, Subscription, get_tier_details,
+    get_all_tiers, get_user_subscription, create_subscription,
+    has_active_subscription, require_active_subscription
+)
+
 # Auth/Paywall routers
 from . import auth as auth_router
 from . import paywall_hooks as paywall_hooks
-from .deps import require_paid_or_admin, require_user
+from .deps import require_paid_or_admin, require_user, require_admin
 from .routes.analyze_tags import router as analyze_tags_router
 from .admin import router as admin_router  # admin dashboard
 
@@ -223,6 +217,13 @@ app = FastAPI(
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=512)
+
+@app.on_event("startup")
+async def _log_startup_info():
+    env = os.getenv("APP_ENV", "dev")
+    port = os.getenv("PORT", "8000")
+    workers = os.getenv("WORKERS", "1")
+    print(f"[startup] APP_ENV={env} PORT={port} WORKERS={workers}")
 
 # Static & templates
 BASE_DIR = os.path.dirname(__file__)
@@ -404,8 +405,27 @@ def notify_if_alert(tagged: TaggedTransaction) -> Dict[str, Any]:
     return _send_email(subject, "\n".join(lines))
 
 
-# ---------------- Landing & health ----------------
+# ---------------- Root, Landing & health ----------------
 @app.get("/", include_in_schema=False)
+def root_page():
+    """Simple root page for uptime checks and human confirmation.
+    Shows a link to interactive API docs.
+    """
+    html = (
+        "<!doctype html>\n"
+        "<html><head><meta charset='utf-8'><title>Klerno Labs</title>"
+        "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+        "<link rel='icon' href='/favicon.ico'></head>"
+        "<body style=\"font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;"
+        " line-height:1.4; padding:2rem; max-width: 720px; margin: 0 auto;\">"
+        "<h1 style='margin:0 0 0.5rem 0'>Klerno Labs is running ✅</h1>"
+        "<p>This instance is healthy. Explore the API using the interactive docs:</p>"
+        "<p><a href='/docs' style='font-weight:600'>Open /docs</a></p>"
+        "</body></html>"
+    )
+    return HTMLResponse(content=html, status_code=200)
+
+@app.get("/landing", include_in_schema=False)
 def landing(request: Request):
     resp = templates.TemplateResponse("landing.html", {"request": request})
     issue_csrf_cookie(resp)
@@ -422,6 +442,15 @@ def health(_auth: bool = Security(enforce_api_key)):
 @app.get("/healthz", include_in_schema=False)
 def healthz():
     return {"status": "ok"}
+
+# --------------- Favicon & static -----------------
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    ico_path = os.path.join(BASE_DIR, "static", "favicon.ico")
+    if os.path.exists(ico_path):
+        return FileResponse(ico_path, media_type="image/x-icon")
+    # If not present, 404 clearly instead of HTML error page
+    raise HTTPException(status_code=404, detail="favicon not found")
 
 
 # ---------------- UI Login / Signup / Logout ----------------
@@ -1168,3 +1197,249 @@ def ai_anomaly_scores(limit: int = 100, _user=Depends(require_paid_or_admin)):
     df.sort_values(["anomaly_score", "timestamp"], ascending=[False, False], inplace=True)
     items = df.head(limit).to_dict(orient="records")
     return {"count": len(items), "items": items}
+
+
+# ---- XRPL Payment Routes ----
+
+@app.get("/xrpl/network-info")
+def xrpl_network_info(_user=Depends(require_user)):
+    """Get information about the XRPL network configuration."""
+    return get_network_info()
+
+@app.post("/xrpl/payment-request")
+def create_xrpl_payment(amount_xrp: Optional[float] = None, _user=Depends(require_user)):
+    """Create a payment request for XRPL."""
+    payment = create_payment_request(
+        user_id=_user["id"],
+        amount_xrp=amount_xrp or settings.SUB_PRICE_XRP,
+        description="Klerno Labs Subscription"
+    )
+    return payment
+
+@app.post("/xrpl/verify-payment")
+def verify_xrpl_payment(
+    payment_id: str,
+    tx_hash: Optional[str] = None,
+    _user=Depends(require_user)
+):
+    """Verify an XRPL payment and activate subscription if valid."""
+    # Get payment request (this would come from your database in a real app)
+    # For demo, we create a new one with the same ID
+    payment_request = create_payment_request(
+        user_id=_user["id"],
+        amount_xrp=settings.SUB_PRICE_XRP,
+        description="Klerno Labs Subscription"
+    )
+    payment_request["id"] = payment_id
+    
+    # Verify the payment
+    verified, message, tx_details = verify_payment(payment_request, tx_hash)
+    
+    if verified and tx_details:
+        # Create or extend subscription
+        subscription = create_subscription(
+            user_id=_user["id"],
+            tier=SubscriptionTier.BASIC,
+            tx_hash=tx_details["tx_hash"],
+            payment_id=payment_id
+        )
+        
+        return {
+            "verified": True,
+            "message": message,
+            "transaction": tx_details,
+            "subscription": subscription.model_dump()
+        }
+    
+    return {
+        "verified": False,
+        "message": message
+    }
+
+
+# ---- Subscription Management Routes ----
+
+@app.get("/api/subscription/tiers")
+async def list_subscription_tiers():
+    """Get all available subscription tiers and their details."""
+    tiers = []
+    
+    # Basic tier
+    tiers.append({
+        "id": SubscriptionTier.BASIC.value,
+        "name": "Basic",
+        "price_xrp": settings.SUB_PRICE_XRP,
+        "features": [
+            "Access to basic analysis tools",
+            "Up to 100 transactions per month",
+            "Email support"
+        ],
+        "description": "Perfect for individual users starting their journey."
+    })
+    
+    # Premium tier
+    tiers.append({
+        "id": SubscriptionTier.PREMIUM.value,
+        "name": "Premium",
+        "price_xrp": settings.SUB_PRICE_XRP * 2.5,
+        "features": [
+            "Access to all analysis tools",
+            "Unlimited transactions",
+            "Priority email support",
+            "Advanced reporting features",
+            "API access"
+        ],
+        "description": "Ideal for power users and small businesses."
+    })
+    
+    # Enterprise tier
+    tiers.append({
+        "id": SubscriptionTier.ENTERPRISE.value,
+        "name": "Enterprise",
+        "price_xrp": settings.SUB_PRICE_XRP * 5,
+        "features": [
+            "All Premium features",
+            "Dedicated account manager",
+            "Custom integrations",
+            "Compliance reporting",
+            "Multi-user access",
+            "White-label options"
+        ],
+        "description": "Complete solution for businesses with advanced needs."
+    })
+    
+    return {"tiers": tiers}
+
+@app.get("/api/subscription/my")
+async def get_my_subscription(_user=Depends(require_user)):
+    """Get the current user's subscription details."""
+    user_id = _user["id"]
+    subscription = get_user_subscription(user_id)
+    
+    if not subscription:
+        return {
+            "has_subscription": False,
+            "message": "No active subscription found."
+        }
+    
+    tier_name = "Unknown"
+    if subscription.tier == SubscriptionTier.BASIC:
+        tier_name = "Basic"
+    elif subscription.tier == SubscriptionTier.PREMIUM:
+        tier_name = "Premium"
+    elif subscription.tier == SubscriptionTier.ENTERPRISE:
+        tier_name = "Enterprise"
+    
+    return {
+        "has_subscription": True,
+        "subscription": {
+            "tier": subscription.tier.value,
+            "tier_name": tier_name,
+            "active": subscription.is_active,
+            "expires_at": subscription.expires_at.isoformat() if subscription.expires_at else None,
+            "created_at": subscription.created_at.isoformat(),
+            "transaction_hash": subscription.tx_hash
+        }
+    }
+
+@app.post("/api/subscription/upgrade")
+async def upgrade_subscription(
+    tier_id: int = Body(...),
+    _user=Depends(require_user)
+):
+    """Create a payment request to upgrade to a specific subscription tier."""
+    # Validate tier
+    try:
+        tier = SubscriptionTier(tier_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid subscription tier")
+    
+    # Calculate price based on tier
+    if tier == SubscriptionTier.BASIC:
+        amount_xrp = settings.SUB_PRICE_XRP
+    elif tier == SubscriptionTier.PREMIUM:
+        amount_xrp = settings.SUB_PRICE_XRP * 2.5
+    elif tier == SubscriptionTier.ENTERPRISE:
+        amount_xrp = settings.SUB_PRICE_XRP * 5
+    else:
+        amount_xrp = settings.SUB_PRICE_XRP
+    
+    # Create payment request
+    payment = create_payment_request(
+        user_id=_user["id"],
+        amount_xrp=amount_xrp,
+        description=f"Klerno Labs {tier.name.capitalize()} Subscription"
+    )
+    
+    return {
+        "payment_request": payment,
+        "tier": {
+            "id": tier.value,
+            "name": tier.name.capitalize()
+        }
+    }
+
+# Admin-only subscription management endpoints
+@app.get("/api/subscription/list", include_in_schema=False)
+async def list_subscriptions(_user=Depends(require_admin)):
+    """List all subscriptions (admin only)."""
+    try:
+        # Connect to SQLite database
+        db_path = os.path.join(os.path.dirname(__file__), "..", "data", "klerno.db")
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        query = "SELECT * FROM subscriptions ORDER BY created_at DESC"
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        
+        # Convert rows to dictionaries
+        subscriptions = []
+        for row in rows:
+            subscriptions.append({
+                "id": row["id"],
+                "user_id": row["user_id"],
+                "tier": row["tier"],
+                "created_at": row["created_at"],
+                "expires_at": row["expires_at"],
+                "tx_hash": row["tx_hash"]
+            })
+            
+        conn.close()
+        return {"subscriptions": subscriptions}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list subscriptions: {str(e)}")
+
+@app.post("/api/subscription/create", include_in_schema=False)
+async def admin_create_subscription(
+    user_id: str = Body(...),
+    tier: int = Body(...),
+    duration_days: int = Body(30),
+    _user=Depends(require_admin)
+):
+    """Create a subscription for a user (admin only)."""
+    try:
+        # Validate tier
+        tier_enum = SubscriptionTier(tier)
+        
+        # Create subscription
+        subscription = create_subscription(
+            user_id=user_id,
+            tier=tier_enum,
+            tx_hash="admin-created",
+            payment_id="admin-created",
+            duration_days=duration_days
+        )
+        
+        return {
+            "success": True,
+            "subscription": {
+                "user_id": subscription.user_id,
+                "tier": subscription.tier.value,
+                "created_at": subscription.created_at.isoformat(),
+                "expires_at": subscription.expires_at.isoformat() if subscription.expires_at else None
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create subscription: {str(e)}")

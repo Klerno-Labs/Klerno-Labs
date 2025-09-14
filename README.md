@@ -24,8 +24,16 @@
 
 #### Option 1: Automated Setup (Windows)
 ```powershell
-# Clone and run the quick starter
+# Run with PowerShell
 .\start.ps1
+
+# Or use the batch file
+.\start.bat
+
+# To specify a custom port (default is 10000)
+.\start.ps1 -Port 8080
+# or
+.\start.bat 8080
 ```
 
 #### Option 2: Manual Setup (All Platforms)
@@ -69,6 +77,16 @@ docker-compose up -d
 3. **Configure API keys**: Go to `/admin` → API Key Management
 4. **Test integration**: Use the built-in XRPL sandbox
 
+### XRPL Integration
+
+Klerno Labs features native XRPL integration for payments and subscriptions:
+
+- **Subscription Tiers**: Basic, Premium, and Enterprise tiers with XRP payments
+- **Payment Processing**: Generate and verify XRPL payments
+- **Admin Management**: Manage subscriptions via admin panel or CLI tools
+
+For detailed information, see [XRPL Integration Documentation](docs/XRPL_INTEGRATION.md).
+
 ## 🏗️ Architecture
 
 ### Core Components
@@ -80,6 +98,9 @@ docker-compose up -d
 │   ├── security/          # Authentication & authorization
 │   ├── hardening.py       # Security middleware
 │   ├── integrations/      # Blockchain integrations
+│   ├── xrpl_payments.py   # XRPL payment processing
+│   ├── subscriptions.py   # Subscription management
+│   ├── config.py          # Environment-based configuration
 │   └── routes/            # API endpoints
 ├── automation/            # AI-powered automation
 ├── data/                  # Data storage & samples
