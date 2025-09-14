@@ -197,14 +197,22 @@
     }
 
     async function loadStats(){
-      const r = await fetch('/admin/api/stats', {credentials:'include'});
-      const j = await r.json();
-      if(!r.ok){ pill.classList.add('bad'); pillText.textContent = 'error'; return; }
-      pill.classList.add('ok');
-      pillText.textContent = (j.backend || 'db') + (j.db_path ? ' • ' + j.db_path.split('/').slice(-2).join('/') : '');
-      kTotal.textContent = Intl.NumberFormat().format(j.total || 0);
-      kAlerts.textContent = Intl.NumberFormat().format(j.alerts || 0);
-      kAvg.textContent = (j.avg_risk || 0).toFixed(3);
+      const pill = $('#pill'), pillText = $('#pillText');
+      const kTotal = $('#kTotal'), kAlerts = $('#kAlerts'), kAvg = $('#kAvg');
+      
+      try {
+        const r = await KlernoOptimization.optimizedFetch('/admin/api/stats', {credentials:'include'});
+        const j = await r.json();
+        if(!r.ok){ pill.classList.add('bad'); pillText.textContent = 'error'; return; }
+        pill.classList.add('ok');
+        pillText.textContent = (j.backend || 'db') + (j.db_path ? ' • ' + j.db_path.split('/').slice(-2).join('/') : '');
+        kTotal.textContent = Intl.NumberFormat().format(j.total || 0);
+        kAlerts.textContent = Intl.NumberFormat().format(j.alerts || 0);
+        kAvg.textContent = (j.avg_risk || 0).toFixed(3);
+      } catch (error) {
+        pill.classList.add('bad'); 
+        pillText.textContent = 'error';
+      }
     }
 
     async function loadUsers(){
@@ -383,16 +391,16 @@
     $('#btnRefreshSubs').addEventListener('click', () => {
       loadSubscriptions();
     });
-    
-    // Initial load
-    loadSubscriptions();
 
-    // Live feed (WebSocket)
+    // Live feed (WebSocket) - Optimized
     let ws;
     function connectWS(){
       try{
         ws = new WebSocket((location.protocol==='https:'?'wss':'ws') + '://' + location.host + '/ws/alerts');
-        ws.onopen = ()=> { /* ready */ };
+        ws.onopen = ()=> { 
+          console.log('Admin WebSocket connected');
+          ws.send(JSON.stringify({ping: Date.now()}));
+        };
         ws.onmessage = (ev)=>{
           try{
             const msg = JSON.parse(ev.data);
@@ -405,14 +413,15 @@
               const div = document.createElement('div');
               div.style.padding='8px 10px'; div.style.borderBottom='1px solid var(--line)';
               div.innerHTML = `<span class="small muted">${t}</span> · <strong>${risk}</strong> · ${who} · ${amt} · <span class="small">${it.category||'unknown'}</span>`;
+              div.classList.add('slide-in-up');
               liveList.prepend(div);
               while(liveList.children.length > 80){ liveList.removeChild(liveList.lastChild); }
             }
           }catch(e){}
         };
-        ws.onclose = ()=> setTimeout(connectWS, 1200);
+        ws.onclose = ()=> setTimeout(connectWS, 800);  // Faster reconnect
       }catch(e){
-        setTimeout(connectWS, 2000);
+        setTimeout(connectWS, 1500);  // Slightly faster fallback
       }
     }
     connectWS();
@@ -422,11 +431,19 @@
       if(ws && ws.readyState===1){ ws.send(JSON.stringify({watch:v})); toast('Watch applied'); }
     });
 
-    // boot
+    // boot with optimized polling
     (async function(){
       await loadStats();
       await loadUsers();
-      setInterval(loadStats, 15000);
+      await loadSubscriptions(); // Load subscriptions on page load
+      
+      // Smart polling for admin stats - less frequent updates
+      new KlernoOptimization.SmartPoller(loadStats, {
+        baseInterval: 10000,     // 10 seconds base
+        activeInterval: 5000,    // 5 seconds when active  
+        inactiveInterval: 30000, // 30 seconds when inactive
+        maxInterval: 60000       // Max 1 minute
+      });
     })();
   })();
   </script>
