@@ -1,14 +1,16 @@
 # app/paywall_hooks.py
-import os
 import importlib
-from typing import Any, Optional
+import os
+from typing import Any
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+
 from . import store  # ← fixed: was `from .. import store`
 
 router = APIRouter(prefix="/paywall", tags=["paywall"])
 
-def _stripe() -> Optional[Any]:
+
+def _stripe() -> Any | None:
     """
     Lazy loader for the Stripe SDK that won't trigger static 'missing import'
     warnings if stripe isn't installed yet.
@@ -19,6 +21,7 @@ def _stripe() -> Optional[Any]:
         return stripe_sdk
     except Exception:
         return None
+
 
 @router.post("/create-checkout-session")
 async def create_checkout_session(req: Request):
@@ -42,6 +45,7 @@ async def create_checkout_session(req: Request):
     )
     return {"id": session.id, "url": session.url}
 
+
 @router.post("/stripe/webhook")
 async def stripe_webhook(request: Request):
     stripe_sdk = _stripe()
@@ -61,14 +65,19 @@ async def stripe_webhook(request: Request):
 
     if event.get("type") in ("checkout.session.completed", "customer.subscription.updated"):
         session = event["data"]["object"]
-        email = (session.get("customer_details", {}) or {}).get("email") or session.get("customer_email")
+        email = (session.get("customer_details", {}) or {}).get("email") or session.get(
+            "customer_email"
+        )
         if email:
             email_l = email.lower()
             # upsert user if not exists; activate subscription
             u = store.get_user_by_email(email_l)
             if not u:
                 from .security_session import hash_pw
-                store.create_user(email_l, hash_pw(os.urandom(8).hex()), role="viewer", subscription_active=True)
+
+                store.create_user(
+                    email_l, hash_pw(os.urandom(8).hex()), role="viewer", subscription_active=True
+                )
             else:
                 store.set_subscription_active(email_l, True)
 

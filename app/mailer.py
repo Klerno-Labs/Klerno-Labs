@@ -1,5 +1,6 @@
 # app/mailer.py
 import os
+
 import sendgrid
 from sendgrid.helpers.mail import Mail
 
@@ -8,6 +9,7 @@ FROM_EMAIL = os.getenv("SENDGRID_FROM")
 FROM_NAME = os.getenv("SENDGRID_NAME", "Klerno Labs")
 
 sg = sendgrid.SendGridAPIClient(SENDGRID_KEY)
+
 
 def send_email(to_email: str, subject: str, content: str):
     """Send a simple email using SendGrid."""

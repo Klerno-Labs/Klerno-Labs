@@ -1,33 +1,38 @@
-from fastapi import APIRouter, Response, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, EmailStr
 
 from . import store
-from .security_session import hash_pw, verify_pw, issue_jwt
 from .deps import require_user
-from .settings import get_settings, Settings
+from .security_session import hash_pw, issue_jwt, verify_pw
+from .settings import Settings, get_settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 # Single source of truth for config
 S: Settings = get_settings()
 
+
 # ---------- Schemas ----------
 class SignupReq(BaseModel):
     email: EmailStr
     password: str
 
+
 class LoginReq(BaseModel):
     email: EmailStr
     password: str
+
 
 class UserOut(BaseModel):
     email: EmailStr
     role: str
     subscription_active: bool
 
+
 class AuthResponse(BaseModel):
     ok: bool
     user: UserOut
+
 
 # ---------- Helpers ----------
 def _set_session_cookie(res: Response, token: str) -> None:
@@ -36,11 +41,12 @@ def _set_session_cookie(res: Response, token: str) -> None:
         key="session",
         value=token,
         httponly=True,
-        secure=(S.app_env != "dev"),   # HTTPS in staging/prod
-        samesite="lax",                # use "none" if cross-site SPA
-        max_age=60 * 60 * 24 * 7,      # 7 days
+        secure=(S.app_env != "dev"),  # HTTPS in staging/prod
+        samesite="lax",  # use "none" if cross-site SPA
+        max_age=60 * 60 * 24 * 7,  # 7 days
         path="/",
     )
+
 
 # ---------- Routes ----------
 @router.post("/signup", response_model=AuthResponse, status_code=201)
@@ -66,7 +72,15 @@ def signup(payload: SignupReq, res: Response):
     token = issue_jwt(user["id"], user["email"], user["role"])
     _set_session_cookie(res, token)
 
-    return {"ok": True, "user": {"email": user["email"], "role": user["role"], "subscription_active": user["subscription_active"]}}
+    return {
+        "ok": True,
+        "user": {
+            "email": user["email"],
+            "role": user["role"],
+            "subscription_active": user["subscription_active"],
+        },
+    }
+
 
 @router.post("/login", response_model=AuthResponse)
 def login(payload: LoginReq, res: Response):
@@ -80,7 +94,15 @@ def login(payload: LoginReq, res: Response):
     token = issue_jwt(user["id"], user["email"], user["role"])
     _set_session_cookie(res, token)
 
-    return {"ok": True, "user": {"email": user["email"], "role": user["role"], "subscription_active": user["subscription_active"]}}
+    return {
+        "ok": True,
+        "user": {
+            "email": user["email"],
+            "role": user["role"],
+            "subscription_active": user["subscription_active"],
+        },
+    }
+
 
 @router.post("/logout", status_code=204)
 def logout(res: Response, user=Depends(require_user)):
@@ -88,9 +110,15 @@ def logout(res: Response, user=Depends(require_user)):
     # 204 No Content
     return Response(status_code=204)
 
+
 @router.get("/me", response_model=UserOut)
 def me(user=Depends(require_user)):
-    return {"email": user["email"], "role": user["role"], "subscription_active": user["subscription_active"]}
+    return {
+        "email": user["email"],
+        "role": user["role"],
+        "subscription_active": user["subscription_active"],
+    }
+
 
 # ---- DEV helpers while Stripe isn't live ----
 @router.post("/mock/activate")

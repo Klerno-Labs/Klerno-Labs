@@ -1,12 +1,13 @@
 # app/llm.py
-import os
 import json
 import math
+import os
 import statistics as stats
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # ===== OpenAI client (compatible with both legacy 0.28.x and v1+) =====
@@ -20,6 +21,7 @@ _client_v1 = None
 # Try the modern SDK first (v1+)
 try:
     from openai import OpenAI  # only in v1+
+
     _client_v1 = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else OpenAI()
     _use_v1 = True
 except Exception:
@@ -28,6 +30,7 @@ except Exception:
 if not _use_v1:
     # Fall back to legacy 0.28.x
     import openai as _openai_legacy
+
     if OPENAI_API_KEY:
         _openai_legacy.api_key = OPENAI_API_KEY
 
@@ -89,7 +92,7 @@ def _parse_iso(ts: Any) -> datetime | None:
 # =========================================================
 # 1) Single-transaction explanation
 # =========================================================
-def explain_tx(tx: Dict[str, Any]) -> str:
+def explain_tx(tx: dict[str, Any]) -> str:
     """
     Return a natural-language explanation of a single transaction.
     """
@@ -106,7 +109,9 @@ def explain_tx(tx: Dict[str, Any]) -> str:
         "Explain the transaction succinctly (5-8 sentences), focusing on risk-relevant details, "
         "direction, counterparties, and any anomalies. Avoid hedging."
     )
-    user = "Explain this JSON transaction for a compliance analyst:\n" + json.dumps(tx, ensure_ascii=False, indent=2)
+    user = "Explain this JSON transaction for a compliance analyst:\n" + json.dumps(
+        tx, ensure_ascii=False, indent=2
+    )
     llm = _safe_llm(system, user)
     return preface + "\n\n" + llm
 
@@ -114,7 +119,7 @@ def explain_tx(tx: Dict[str, Any]) -> str:
 # =========================================================
 # 2) Batch explanation
 # =========================================================
-def explain_batch(txs: List[Dict[str, Any]]) -> Dict[str, Any]:
+def explain_batch(txs: list[dict[str, Any]]) -> dict[str, Any]:
     """
     For a list of tx dicts, return:
       { items: [ {tx_id, explanation}, ... ], summary: "..." }
@@ -124,7 +129,11 @@ def explain_batch(txs: List[Dict[str, Any]]) -> Dict[str, Any]:
         text = explain_tx(t)
         items.append({"tx_id": t.get("tx_id"), "explanation": text})
 
-    amounts = [float(t.get("amount", 0) or 0) for t in txs if isinstance(t.get("amount", 0), (int, float, str))]
+    amounts = [
+        float(t.get("amount", 0) or 0)
+        for t in txs
+        if isinstance(t.get("amount", 0), (int, float, str))
+    ]
     risk_scores = [float(t.get("risk_score", 0) or 0) for t in txs]
 
     total = len(txs)
@@ -148,7 +157,7 @@ def explain_batch(txs: List[Dict[str, Any]]) -> Dict[str, Any]:
 # =========================================================
 # 3) Natural-language filters spec
 # =========================================================
-def ask_to_filters(question: str) -> Dict[str, Any]:
+def ask_to_filters(question: str) -> dict[str, Any]:
     """
     Convert a question into a JSON filter spec.
     Keys: date_from, date_to, min_risk, max_risk, categories, include_wallets, exclude_wallets.
@@ -172,18 +181,18 @@ def ask_to_filters(question: str) -> Dict[str, Any]:
 # =========================================================
 # 4) Apply filters to local rows
 # =========================================================
-def apply_filters(rows: List[Dict[str, Any]], spec: Dict[str, Any]) -> List[Dict[str, Any]]:
+def apply_filters(rows: list[dict[str, Any]], spec: dict[str, Any]) -> list[dict[str, Any]]:
     if not rows:
         return []
 
     df = spec  # shorthand
     date_from = _parse_iso(df.get("date_from")) if df.get("date_from") else None
-    date_to   = _parse_iso(df.get("date_to"))   if df.get("date_to")   else None
-    min_risk  = float(df.get("min_risk", 0)) if df.get("min_risk") is not None else None
-    max_risk  = float(df.get("max_risk", 1)) if df.get("max_risk") is not None else None
-    cats      = set([str(c).lower() for c in (df.get("categories") or [])])
-    inc_w     = set([str(w) for w in (df.get("include_wallets") or [])])
-    exc_w     = set([str(w) for w in (df.get("exclude_wallets") or [])])
+    date_to = _parse_iso(df.get("date_to")) if df.get("date_to") else None
+    min_risk = float(df.get("min_risk", 0)) if df.get("min_risk") is not None else None
+    max_risk = float(df.get("max_risk", 1)) if df.get("max_risk") is not None else None
+    cats = set([str(c).lower() for c in (df.get("categories") or [])])
+    inc_w = set([str(w) for w in (df.get("include_wallets") or [])])
+    exc_w = set([str(w) for w in (df.get("exclude_wallets") or [])])
 
     out = []
     for r in rows:
@@ -224,14 +233,14 @@ def apply_filters(rows: List[Dict[str, Any]], spec: Dict[str, Any]) -> List[Dict
 # =========================================================
 # 5) Explain a filtered selection
 # =========================================================
-def explain_selection(question: str, rows: List[Dict[str, Any]]) -> str:
+def explain_selection(question: str, rows: list[dict[str, Any]]) -> str:
     n = len(rows)
     if n == 0:
         return "No rows matched the criteria."
 
     risks = [float(r.get("risk_score", 0) or 0) for r in rows]
     avg_risk = round(sum(risks) / len(risks), 3) if risks else 0.0
-    cats: Dict[str, int] = {}
+    cats: dict[str, int] = {}
     for r in rows:
         c = r.get("category") or "unknown"
         cats[c] = cats.get(c, 0) + 1
@@ -251,14 +260,14 @@ def explain_selection(question: str, rows: List[Dict[str, Any]]) -> str:
 # =========================================================
 # 6) Summarize rows for dashboard
 # =========================================================
-def summarize_rows(rows: List[Dict[str, Any]], title: str = "Summary") -> Dict[str, Any]:
+def summarize_rows(rows: list[dict[str, Any]], title: str = "Summary") -> dict[str, Any]:
     n = len(rows)
     if n == 0:
         return {"title": title, "count": 0, "kpis": {}, "commentary": "No recent activity."}
 
     amounts = []
     risks = []
-    cats: Dict[str, int] = {}
+    cats: dict[str, int] = {}
     for r in rows:
         try:
             amounts.append(float(r.get("amount", 0) or 0))
@@ -273,7 +282,11 @@ def summarize_rows(rows: List[Dict[str, Any]], title: str = "Summary") -> Dict[s
 
     total_amt = sum(amounts) if amounts else 0.0
     avg_risk = round(sum(risks) / len(risks), 3) if risks else 0.0
-    p95_risk = round(stats.quantiles(risks, n=20)[-1], 3) if len(risks) >= 20 else (max(risks) if risks else 0.0)
+    p95_risk = (
+        round(stats.quantiles(risks, n=20)[-1], 3)
+        if len(risks) >= 20
+        else (max(risks) if risks else 0.0)
+    )
 
     kpis = {
         "transactions": n,
