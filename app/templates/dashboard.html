@@ -470,44 +470,92 @@
     tbody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="5" class="text-muted">No data yet. Try “Analyze sample”.</td></tr>`;
   }
   async function loadRecent(){
-    const r = await fetch('/uiapi/recent?limit=50&only_alerts=false', {credentials:'include'});
-    if(!r.ok) return;
-    const data = await r.json();
-    const items = (data.items || []).slice(0,50).sort((a,b)=> new Date(b.timestamp) - new Date(a.timestamp));
-    renderRows(items);
+    const tbody = $('#tblRecent');
+    const skeleton = KlernoOptimization.SkeletonLoader.create(tbody, { rows: 5 });
+    
+    try {
+      const r = await KlernoOptimization.optimizedFetch('/uiapi/recent?limit=50&only_alerts=false', {credentials:'include'});
+      if (!r.ok) return;
+      
+      const data = await r.json();
+      const items = (data.items || []).slice(0,50).sort((a,b)=> new Date(b.timestamp) - new Date(a.timestamp));
+      
+      skeleton.remove();
+      renderRows(items);
+    } catch (error) {
+      skeleton.remove();
+      tbody.innerHTML = `<tr><td colspan="5" class="text-muted">Failed to load data. Retrying...</td></tr>`;
+    }
   }
   $('#onlyThresh').addEventListener('change', loadRecent);
 
-  // --- WebSocket live insert
-  function connectWS(){
-    try{
-      const wsUrl = (location.protocol==='https:'?'wss':'ws') + '://' + location.host + '/ws/alerts';
-      const ws = new WebSocket(wsUrl);
-      ws.onopen = ()=> ws.send(JSON.stringify({ping: Date.now()}));
-      ws.onmessage = (ev)=>{
-        try{
-          const msg = JSON.parse(ev.data||'{}');
-          if(msg.type==='tx' && msg.item){
-            const it = msg.item;
-            const k = keyFor(it);
-            if(!dedupe.has(k) && passesFilter(it)){
-              dedupe.add(k);
-              const tbody = $('#tblRecent');
-              const row = document.createElement('tr');
-              row.innerHTML = formatRow(it).replace(/^<tr>|<\/tr>$/g,'');
-              if (tbody.firstElementChild && tbody.firstElementChild.children.length===5) {
-                tbody.insertBefore(row, tbody.firstElementChild);
-              } else {
-                tbody.innerHTML = ''; tbody.appendChild(row);
-              }
-              while(tbody.children.length > 50) tbody.lastElementChild.remove();
-            }
+  // --- WebSocket live insert - Optimized with instant reconnection
+  let optimizedWS;
+  let wsStatusEl;
+  
+  function initOptimizedWebSocket() {
+    // Create WebSocket status indicator
+    if (!wsStatusEl) {
+      wsStatusEl = document.createElement('div');
+      wsStatusEl.className = 'ws-status connecting';
+      wsStatusEl.innerHTML = `
+        <div class="ws-status-indicator"></div>
+        <span class="ws-status-text">Connecting...</span>
+      `;
+      document.body.appendChild(wsStatusEl);
+    }
+    
+    const wsUrl = (location.protocol==='https:'?'wss':'ws') + '://' + location.host + '/ws/alerts';
+    optimizedWS = new KlernoOptimization.OptimizedWebSocket(wsUrl, {
+      maxReconnectAttempts: 10,
+      baseDelay: 100,    // Fast initial reconnect
+      maxDelay: 5000,    // Cap at 5 seconds instead of 30
+      pingInterval: 15000
+    });
+    
+    optimizedWS.on('connected', ({ latency }) => {
+      wsStatusEl.className = 'ws-status connected';
+      wsStatusEl.querySelector('.ws-status-text').textContent = `Connected (${Math.round(latency)}ms)`;
+    });
+    
+    optimizedWS.on('disconnected', () => {
+      wsStatusEl.className = 'ws-status connecting';
+      wsStatusEl.querySelector('.ws-status-text').textContent = 'Reconnecting...';
+    });
+    
+    optimizedWS.on('latency', ({ latency }) => {
+      // Update status with latest latency
+      if (wsStatusEl.classList.contains('connected')) {
+        wsStatusEl.querySelector('.ws-status-text').textContent = `Connected (${Math.round(latency)}ms)`;
+      }
+      
+      // Record WebSocket performance
+      window.frontendPerf.recordWebSocketLatency(latency);
+    });
+    
+    optimizedWS.on('message', (msg) => {
+      if (msg.type === 'tx' && msg.item) {
+        const it = msg.item;
+        const k = keyFor(it);
+        if (!dedupe.has(k) && passesFilter(it)) {
+          dedupe.add(k);
+          const tbody = $('#tblRecent');
+          const row = document.createElement('tr');
+          row.innerHTML = formatRow(it).replace(/^<tr>|<\/tr>$/g,'');
+          
+          // Add slide-in animation
+          row.classList.add('slide-in-up');
+          
+          if (tbody.firstElementChild && tbody.firstElementChild.children.length === 5) {
+            tbody.insertBefore(row, tbody.firstElementChild);
+          } else {
+            tbody.innerHTML = '';
+            tbody.appendChild(row);
           }
-        }catch{}
-      };
-      ws.onclose = ()=> setTimeout(connectWS, 1500);
-      ws.onerror = ()=> ws.close();
-    }catch{}
+          while (tbody.children.length > 50) tbody.lastElementChild.remove();
+        }
+      }
+    });
   }
 
   // --- Quick actions
@@ -613,7 +661,7 @@
 
   async function loadMetricsOnce(){
     try{
-      const r = await fetch(`/metrics-ui?days=7`, { credentials:'include' });
+      const r = await KlernoOptimization.optimizedFetch(`/metrics-ui?days=7`, { credentials:'include' });
       if(!r.ok) throw 0;
       const data = await r.json();
       paintKPIs(data);
@@ -652,15 +700,31 @@
     await loadMetricsOnce();
     await loadRecent();
     await refreshWalletList();
-    connectWS();
+    // Initialize optimized WebSocket
+    initOptimizedWebSocket();
+    
+    // Initialize smart polling with activity-based intervals
+    const smartPoller = new KlernoOptimization.SmartPoller(
+      () => {
+        loadMetricsOnce();
+        loadRecent();
+      },
+      {
+        baseInterval: 3000,      // 3 seconds when active
+        activeInterval: 2000,    // 2 seconds when user is active
+        inactiveInterval: 10000, // 10 seconds when inactive
+        maxInterval: 30000,      // Cap at 30 seconds
+        inactivityThreshold: 60000 // 1 minute of inactivity
+      }
+    );
     
     // Auto-load demo data if dashboard is empty
     setTimeout(async () => {
-      const currentMetrics = await (await fetch(`/metrics-ui?days=7`, { credentials:'include' })).json().catch(() => ({total: 0}));
+      const currentMetrics = await (await KlernoOptimization.optimizedFetch(`/metrics-ui?days=7`, { credentials:'include' })).json().catch(() => ({total: 0}));
       if (currentMetrics.total === 0) {
         console.log('Dashboard is empty, auto-loading demo data...');
         try {
-          const r = await fetch('/uiapi/analyze/sample', withCsrf({ method:'POST' }));
+          const r = await KlernoOptimization.optimizedFetch('/uiapi/analyze/sample', withCsrf({ method:'POST' }));
           if (r.ok) {
             toast('✨ Demo data loaded automatically', 'ok');
             await loadMetricsOnce(); 
@@ -671,8 +735,6 @@
         }
       }
     }, 2000);
-    
-    setInterval(()=>{ if(!document.hidden){ loadMetricsOnce(); loadRecent(); } }, 5000);
     routeFromHash();
   })();
 
