@@ -121,6 +121,16 @@ api_keys.txt
 .ssh/
 .gnupg/
 
+# Security Reports & Audit Logs
+security_report.json
+bandit-report.json
+safety-report.json
+audit.log
+logs/
+*.security
+vulnerability-report.*
+penetration-test-results.*
+
 # Docker & Containers
 .dockerignore
 docker-compose.override.yml
