@@ -158,14 +158,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[HTMLResponse]]):
         resp = await call_next(request)
-        # UPDATED CSP: allow jsDelivr for Bootstrap & Chart.js
+        # UPDATED CSP: allow jsDelivr for Bootstrap & Chart.js, and allow Render's domains
         csp = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "style-src  'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "img-src 'self' data:; "
-            "font-src 'self' data: https://cdn.jsdelivr.net; "
-            "connect-src 'self' ws: wss:; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.render.com; "
+            "style-src  'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.render.com; "
+            "img-src 'self' data: https://*.render.com; "
+            "font-src 'self' data: https://cdn.jsdelivr.net https://*.render.com; "
+            "connect-src 'self' ws: wss: https://*.render.com; "
             "object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
         )
         resp.headers.setdefault("Content-Security-Policy", csp)

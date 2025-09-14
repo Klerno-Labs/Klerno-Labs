@@ -10,6 +10,11 @@ services:
     healthCheckPath: /healthz
     numInstances: 1
     autoDeploy: true
+    staticPublishPath: ./app/static
+    routes:
+      - type: rewrite
+        source: /static/*
+        destination: /static/*
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
