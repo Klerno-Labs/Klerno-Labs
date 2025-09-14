@@ -1060,7 +1060,13 @@ def ui_dashboard(request: Request, _user=Depends(require_paid_or_admin)):
 def ui_alerts(request: Request, _user=Depends(require_paid_or_admin)):
     threshold = float(os.getenv("RISK_THRESHOLD", "0.75"))
     rows = store.list_alerts(threshold=threshold, limit=500)
-    return templates.TemplateResponse("alerts.html", {"request": request, "title": f"Alerts (≥ {threshold})", "key": None, "rows": rows})
+    return templates.TemplateResponse("alerts.html", {
+        "request": request, 
+        "title": f"Alerts (≥ {threshold})", 
+        "key": None, 
+        "rows": rows,
+        "threshold": threshold
+    })
 
 
 # ---------------- Admin / Email tests ----------------
