@@ -1,10 +1,8 @@
 # ==============================================================================
 # Klerno Labs - Main Application
 # ==============================================================================
-# This Python script has been rewritten for clarity and to ensure no conflicts.
-# It merges logic cleanly, removes redundant code, and organizes imports and 
-# functionality in a structured manner.
-
+# This Python script ensures clarity and correctness. It merges logic cleanly,
+# removes redundant code, and organizes imports and functionality in a structured manner.
 from __future__ import annotations
 
 import asyncio
@@ -15,7 +13,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import asdict, fields as dc_fields, is_dataclass
 from datetime import datetime, timedelta
 from io import StringIO
-from typing import Any
+from typing import Any, Optional, List, Dict, Tuple
 
 import pandas as pd
 from fastapi import (
@@ -236,5 +234,4 @@ app.include_router(admin_router)
 # Database initialization
 store.init_db()
 
-# Additional functionality (e.g., WebSocket, APIs, etc.) will be defined below.
-# ==============================================================================
+# Additional functionality (e.g., WebSocket, APIs, etc.) will be defined here.

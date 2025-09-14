@@ -8,8 +8,8 @@
 # Core Web Framework & Server
 # ==============================================================================
 fastapi==0.110.0              # High-performance async web framework
-uvicorn[standard]==0.27.1      # ASGI server with production features
-starlette>=0.36.3              # Core ASGI framework (FastAPI dependency)
+uvicorn[standard]==0.27.1     # ASGI server with production features
+starlette>=0.36.3             # Core ASGI framework (FastAPI dependency)
 
 # ==============================================================================
 # Data Validation & Settings Management
@@ -100,16 +100,14 @@ bandit>=1.7.5                 # Security linting
 # ==============================================================================
 # Security & Compliance
 # ==============================================================================
-cryptography>=42.0.0          # Latest security patches for cryptographic recipes
-python-jose[cryptography]>=3.3.0  # JSON Web Signature implementation
-bandit>=1.7.5                 # Security linting
 safety>=3.0.0                 # Dependency vulnerability scanning
 
 # ==============================================================================
-# Monitoring & Observability  
+# Monitoring & Observability
 # ==============================================================================
 prometheus-client>=0.19.0     # Metrics collection
 structlog>=24.1.0             # Structured logging for audit trails
+psutil>=5.9.0                 # System and process monitoring
 
 # ==============================================================================
 # Task Queue & Background Jobs
@@ -129,12 +127,6 @@ gunicorn>=21.2.0              # WSGI HTTP Server (alternative to uvicorn)
 python-json-logger>=2.0.7     # JSON logging formatter
 
 # ==============================================================================
-# Security & Compliance
-# ==============================================================================
-cryptography>=42.0.0          # Latest security patches for cryptographic recipes  
-python-jose[cryptography]>=3.3.0  # JSON Web Signature implementation
-
-# ==============================================================================
 # Performance & Optimization
 # ==============================================================================
 uvloop>=0.19.0; sys_platform != "win32"  # Fast event loop (Unix only)
@@ -147,6 +139,8 @@ aiofiles>=23.2.0              # Async file operations
 # jupyter>=1.0.0              # Interactive development
 # ipdb>=0.13.13               # Enhanced debugger
 
-# pandas==2.2.1
-# numpy<=2.0.0.dev0,>1.22.4
-# pytest-httpx>=0.21.0         # HTTP testing support (temporarily disabled due to httpx version conflict)
+# ==============================================================================
+# Notes
+# ==============================================================================
+# Temporarily disabled dependencies:
+# pytest-httpx>=0.21.0         # HTTP testing support (conflict with httpx version)
