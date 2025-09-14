@@ -1,4 +1,7 @@
-# app/admin.py
+# ==============================================================================
+# Klerno Labs - Admin API
+# ==============================================================================
+
 from __future__ import annotations
 
 import os
@@ -15,6 +18,7 @@ from .compliance import tag_category
 from .deps import require_user
 from .guardian import score_risk
 from .security import preview_api_key, rotate_api_key
+from .performance import performance_cache
 
 # ---------- Email (SendGrid) ----------
 SENDGRID_KEY = os.getenv("SENDGRID_API_KEY", "").strip()
@@ -80,6 +84,7 @@ def admin_home(request: Request, user=Depends(require_admin)):
 
 # ---------- Stats ----------
 @router.get("/api/stats")
+@performance_cache(ttl=60, key_func=lambda user=None: "admin_stats")
 def admin_stats(user=Depends(require_admin)):
     rows = store.list_all(limit=100000)
     total = len(rows)
@@ -113,7 +118,7 @@ def _list_users() -> list[dict[str, Any]]:
         SELECT id, email, password_hash, role, subscription_active, created_at
         FROM users
         ORDER BY created_at DESC
-    """
+        """
     )
     rows = cur.fetchall()
     con.close()
@@ -125,7 +130,6 @@ def _list_users() -> list[dict[str, Any]]:
         elif hasattr(r, "keys"):
             d = {k: r[k] for k in r.keys()}
         else:
-            # Fallback to positional tuple order
             id_, email, password_hash, role, sub_active, created_at = r
             d = {
                 "id": id_,
@@ -136,7 +140,7 @@ def _list_users() -> list[dict[str, Any]]:
                 "created_at": created_at,
             }
         d["subscription_active"] = bool(d.get("subscription_active"))
-        d.pop("password_hash", None)  # never expose hashes
+        d.pop("password_hash", None)
         out.append(d)
     return out
 
@@ -177,7 +181,7 @@ def admin_set_subscription(user_id: int, payload: UpdateSubPayload, user=Depends
 
 # ---------- Data tools ----------
 class SeedDemoPayload(BaseModel):
-    limit: int | None = None  # rows to import from sample
+    limit: int | None = None
 
 
 @router.post("/api/data/seed_demo")
@@ -273,7 +277,7 @@ def admin_xrpl_ping(payload: XRPLPingPayload, user=Depends(require_admin)):
 
 # ---------- API Key management ----------
 class ApiKeyRotateResponse(BaseModel):
-    api_key: str  # returned ONCE so the admin can copy it
+    api_key: str
 
 
 @router.post("/api-key/rotate", response_model=ApiKeyRotateResponse)
