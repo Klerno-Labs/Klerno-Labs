@@ -2,12 +2,159 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=devi      <!-- Paywall form -->
+      <section class="card"          <div class="row">
+            <button class="btn" type="submit">🚀 Continue to app</button>
+          </div>
+
+          <div class="muted">
+            Don't have a code yet? <a href="/" style="color:#bfe2ff; text-decoration:none">Back to home</a>
+          </div>
+        </form>
+        
+        <hr style="margin: 30px 0; border: 0; border-top: 1px solid var(--stroke);">
+        
+        <h2>Or Subscribe with XRP</h2>
+        <p class="lead">Choose a subscription tier to unlock full access with XRP payment.</p>
+        
+        <div id="subscription-tiers" style="margin-bottom: 20px;">
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
+            <div class="tier-card active" data-tier="1">
+              <h3 style="margin: 0 0 8px;">Basic</h3>
+              <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">10 XRP</div>
+              <ul style="margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px;">
+                <li>Basic analysis tools</li>
+                <li>100 transactions/month</li>
+                <li>Email support</li>
+              </ul>
+            </div>
+            <div class="tier-card" data-tier="2">
+              <h3 style="margin: 0 0 8px;">Premium</h3>
+              <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">25 XRP</div>
+              <ul style="margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px;">
+                <li>All analysis tools</li>
+                <li>Unlimited transactions</li>
+                <li>Priority support</li>
+                <li>API access</li>
+              </ul>
+            </div>
+            <div class="tier-card" data-tier="3">
+              <h3 style="margin: 0 0 8px;">Enterprise</h3>
+              <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">50 XRP</div>
+              <ul style="margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px;">
+                <li>All Premium features</li>
+                <li>Dedicated support</li>
+                <li>Custom integrations</li>
+                <li>Multi-user access</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div id="payment-flow">
+          <div id="step-1">
+            <div class="row">
+              <button id="create-payment-btn" class="btn" type="button">🚀 Create Payment Request</button>
+            </div>
+          </div>
+          
+          <div id="step-2" style="display: none;">
+            <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+              <h3 style="margin: 0 0 12px;">Payment Instructions</h3>
+              <div id="payment-details" style="font-family: monospace; font-size: 14px; margin-bottom: 16px; word-break: break-all;">
+                <div><strong>To Address:</strong> <span id="destination-address"></span></div>
+                <div><strong>Amount:</strong> <span id="payment-amount"></span> XRP</div>
+                <div><strong>Destination Tag:</strong> <span id="destination-tag"></span> (REQUIRED)</div>
+              </div>
+              <div class="muted" style="text-align: left; margin-bottom: 8px;">
+                1. Send the exact amount to the address above using your XRP wallet
+              </div>
+              <div class="muted" style="text-align: left; margin-bottom: 8px;">
+                2. Include the destination tag when sending your payment
+              </div>
+              <div class="muted" style="text-align: left;">
+                3. After sending, enter your transaction hash below to verify
+              </div>
+            </div>
+            
+            <div>
+              <label for="tx-hash">XRP Transaction Hash</label>
+              <input id="tx-hash" type="text" placeholder="Enter the transaction hash" required />
+            </div>
+
+            <div class="row" style="margin-top: 16px;">
+              <button id="verify-payment-btn" class="btn" type="button">✅ Verify Payment</button>
+              <button id="back-btn" style="background: transparent; color: var(--muted); border: 1px solid var(--stroke);" class="btn" type="button">Back</button>
+            </div>
+          </div>
+          
+          <div id="step-3" style="display: none;">
+            <div id="success-message" style="display: none; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); border-radius: 12px; padding: 16px; margin-bottom: 16px; color: var(--ok);">
+              <h3 style="margin: 0 0 12px;">Payment Verified!</h3>
+              <p style="margin: 0;">Your subscription has been activated successfully.</p>
+            </div>
+            
+            <div id="error-message" style="display: none; background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); border-radius: 12px; padding: 16px; margin-bottom: 16px; color: var(--danger);">
+              <h3 style="margin: 0 0 12px;">Payment Verification Failed</h3>
+              <p id="error-details" style="margin: 0;"></p>
+            </div>
+            
+            <div class="row">
+              <a href="/dashboard" class="btn" id="continue-btn" style="display: none;">Continue to Dashboard</a>
+              <button id="try-again-btn" class="btn" style="display: none; background: transparent; color: var(--muted); border: 1px solid var(--stroke);" type="button">Try Again</button>
+            </div>
+          </div>
+        </div>
+      </section>  <h2>Subscribe with XRP</h2>
+        <p class="lead">Choose a subscription tier to unlock full access to Klerno Labs.</p>
+
+        {% if error %}
+          <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <div id="subscription-tiers" style="margin-bottom: 20px;">
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
+            <div class="tier-card active" data-tier="1">
+              <h3 style="margin: 0 0 8px;">Basic</h3>
+              <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">10 XRP</div>
+              <ul style="margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px;">
+                <li>Basic analysis tools</li>
+                <li>100 transactions/month</li>
+                <li>Email support</li>
+              </ul>
+            </div>
+            <div class="tier-card" data-tier="2">
+              <h3 style="margin: 0 0 8px;">Premium</h3>
+              <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">25 XRP</div>
+              <ul style="margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px;">
+                <li>All analysis tools</li>
+                <li>Unlimited transactions</li>
+                <li>Priority support</li>
+                <li>API access</li>
+              </ul>
+            </div>
+            <div class="tier-card" data-tier="3">
+              <h3 style="margin: 0 0 8px;">Enterprise</h3>
+              <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">50 XRP</div>
+              <ul style="margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px;">
+                <li>All Premium features</li>
+                <li>Dedicated support</li>
+                <li>Custom integrations</li>
+                <li>Multi-user access</li>
+              </ul>
+            </div>
+          </div>
+        </div>-scale=1"/>
   <title>Klerno Labs — Access</title>
   <style>
     :root{
       --bg:#060913; --ink:#eaf0ff; --muted:#9fb0d3;
       --accent:#7b6cff; --accent-2:#00e1ff;
+      --glass:rgba(255,255,255,0.06); --stroke:rgba(255,255,255,0.12);
+      --blur:14px;
+      --danger:#ff6b6b;
+      --ok:#22c55e;
+    }
       --glass:rgba(255,255,255,0.06); --stroke:rgba(255,255,255,0.12);
       --blur:14px;
       --danger:#ff6b6b;
@@ -70,6 +217,25 @@
       margin-top:4px; padding:10px 12px; border-radius:10px;
       border:1px solid rgba(255,107,107,.35); background:rgba(255,107,107,.08);
       color:#ffd6d6; font-size:14px;
+    }
+    
+    /* tier cards */
+    .tier-card { 
+      flex: 1; 
+      min-width: 140px; 
+      border: 1px solid var(--stroke); 
+      border-radius: 12px; 
+      padding: 16px; 
+      cursor: pointer; 
+      transition: all 0.2s;
+    }
+    .tier-card.active {
+      border-color: var(--accent);
+      background: rgba(123,108,255,0.1);
+    }
+    .tier-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
     footer{position:fixed; left:0; right:0; bottom:10px; z-index:2; display:grid; place-items:center; color:var(--muted); font-size:12px; opacity:.8}
@@ -152,6 +318,142 @@
     }
     resize(); requestAnimationFrame(step); addEventListener('resize', resize);
     document.getElementById('yr').textContent = new Date().getFullYear();
+    
+    // XRPL Payment Flow
+    document.addEventListener('DOMContentLoaded', function() {
+      // Variables
+      let selectedTier = 1;
+      let paymentRequest = null;
+      
+      // Select elements
+      const tierCards = document.querySelectorAll('.tier-card');
+      const createPaymentBtn = document.getElementById('create-payment-btn');
+      const verifyPaymentBtn = document.getElementById('verify-payment-btn');
+      const backBtn = document.getElementById('back-btn');
+      const tryAgainBtn = document.getElementById('try-again-btn');
+      const txHashInput = document.getElementById('tx-hash');
+      
+      // Steps
+      const step1 = document.getElementById('step-1');
+      const step2 = document.getElementById('step-2');
+      const step3 = document.getElementById('step-3');
+      
+      // Select tier
+      tierCards.forEach(card => {
+        card.addEventListener('click', function() {
+          // Remove active class from all cards
+          tierCards.forEach(c => c.classList.remove('active'));
+          // Add active class to clicked card
+          this.classList.add('active');
+          // Update selected tier
+          selectedTier = parseInt(this.dataset.tier);
+        });
+      });
+      
+      // Create payment request
+      createPaymentBtn.addEventListener('click', function() {
+        // Show loading state
+        this.textContent = 'Creating...';
+        this.disabled = true;
+        
+        // Call API to create payment request
+        fetch(`/api/paywall/xrp-payment`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ amount_xrp: selectedTier === 1 ? 10 : selectedTier === 2 ? 25 : 50 })
+        })
+        .then(response => response.json())
+        .then(data => {
+          // Save payment request
+          paymentRequest = data.payment_request;
+          
+          // Fill payment details
+          document.getElementById('destination-address').textContent = paymentRequest.destination_address;
+          document.getElementById('payment-amount').textContent = paymentRequest.amount_xrp;
+          document.getElementById('destination-tag').textContent = paymentRequest.destination_tag;
+          
+          // Show step 2
+          step1.style.display = 'none';
+          step2.style.display = 'block';
+        })
+        .catch(error => {
+          console.error('Error creating payment request:', error);
+          this.textContent = 'Create Payment Request';
+          this.disabled = false;
+          alert('Error creating payment request. Please try again.');
+        });
+      });
+      
+      // Verify payment
+      verifyPaymentBtn.addEventListener('click', function() {
+        const txHash = txHashInput.value.trim();
+        if (!txHash) {
+          alert('Please enter a transaction hash');
+          return;
+        }
+        
+        // Show loading state
+        this.textContent = 'Verifying...';
+        this.disabled = true;
+        
+        // Call API to verify payment
+        fetch(`/api/paywall/verify-xrp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            payment_id: paymentRequest.id,
+            tx_hash: txHash
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          // Show step 3
+          step2.style.display = 'none';
+          step3.style.display = 'block';
+          
+          if (data.verified) {
+            // Show success message
+            document.getElementById('success-message').style.display = 'block';
+            document.getElementById('continue-btn').style.display = 'inline-flex';
+          } else {
+            // Show error message
+            document.getElementById('error-message').style.display = 'block';
+            document.getElementById('error-details').textContent = data.message;
+            document.getElementById('try-again-btn').style.display = 'inline-flex';
+          }
+        })
+        .catch(error => {
+          console.error('Error verifying payment:', error);
+          this.textContent = 'Verify Payment';
+          this.disabled = false;
+          alert('Error verifying payment. Please try again.');
+        });
+      });
+      
+      // Back button
+      backBtn.addEventListener('click', function() {
+        step2.style.display = 'none';
+        step1.style.display = 'block';
+        createPaymentBtn.textContent = 'Create Payment Request';
+        createPaymentBtn.disabled = false;
+      });
+      
+      // Try again button
+      tryAgainBtn.addEventListener('click', function() {
+        step3.style.display = 'none';
+        step1.style.display = 'block';
+        createPaymentBtn.textContent = 'Create Payment Request';
+        createPaymentBtn.disabled = false;
+        document.getElementById('success-message').style.display = 'none';
+        document.getElementById('error-message').style.display = 'none';
+        document.getElementById('continue-btn').style.display = 'none';
+        document.getElementById('try-again-btn').style.display = 'none';
+      });
+    });
   </script>
 </body>
 </html>

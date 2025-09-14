@@ -78,8 +78,26 @@ def require_user(user: Optional[dict] = Depends(current_user)) -> dict:
 def require_paid_or_admin(user: dict = Depends(require_user)) -> dict:
     if S.demo_mode:
         return user
-    if user.get("role") == "admin" or user.get("subscription_active"):
+    
+    # Admin check
+    if user.get("role") == "admin":
         return user
+    
+    # Legacy check
+    if user.get("subscription_active"):
+        return user
+    
+    # XRPL subscription check
+    from .subscriptions import get_user_subscription
+    subscription = get_user_subscription(user["id"])
+    if subscription and subscription.is_active:
+        # Add subscription info to user dict
+        user["xrpl_subscription"] = {
+            "tier": subscription.tier.value,
+            "expires_at": subscription.expires_at.isoformat() if subscription.expires_at else None
+        }
+        return user
+    
     raise HTTPException(
         status_code=status.HTTP_402_PAYMENT_REQUIRED,
         detail="Subscription required",

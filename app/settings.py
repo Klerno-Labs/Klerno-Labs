@@ -35,3 +35,6 @@ class Settings:
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+# Create a global settings instance
+settings = get_settings()
