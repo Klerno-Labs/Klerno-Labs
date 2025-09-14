@@ -332,6 +332,9 @@
     onerror="this.removeAttribute('onerror'); this.src=this.dataset.fallback">
   </script>
 
+  <!-- Real-time optimization utilities -->
+  <script src="{{ url_path_for('static', path='js/optimization.js') }}"></script>
+
   {% block scripts %}{% endblock %}
 </body>
 </html>

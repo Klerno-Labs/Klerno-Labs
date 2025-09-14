@@ -15,6 +15,7 @@ from .deps import require_user
 from .guardian import score_risk
 from .compliance import tag_category
 from .security import rotate_api_key, preview_api_key
+from .performance import performance_cache
 
 # ---------- Email (SendGrid) ----------
 SENDGRID_KEY = os.getenv("SENDGRID_API_KEY", "").strip()
@@ -74,6 +75,7 @@ def admin_home(request: Request, user=Depends(require_admin)):
 
 # ---------- Stats ----------
 @router.get("/api/stats")
+@performance_cache(ttl=60, key_func=lambda user=None: "admin_stats")
 def admin_stats(user=Depends(require_admin)):
     rows = store.list_all(limit=100000)
     total = len(rows)
