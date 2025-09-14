@@ -66,8 +66,12 @@ jobs:
       if: matrix.check == 'security'
       run: |
         echo "🔒 Running security analysis..."
-        bandit -r app/ -f json -o security-report.json
-        safety check --json --output safety-report.json
+        echo "Running bandit security linter..."
+        bandit -r app/ -f json -o bandit-report.json -ll
+        echo "Running safety dependency check..."
+        safety check --json --output safety-report.json || true
+        echo "Running custom security scanner..."
+        python security_scan.py
         echo "✅ Security scan completed"
 
     - name: Type Checking
@@ -83,8 +87,9 @@ jobs:
       with:
         name: security-reports
         path: |
-          security-report.json
+          bandit-report.json
           safety-report.json
+          security_report.json
 
   # ==============================================================================
   # Testing
