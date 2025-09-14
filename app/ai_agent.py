@@ -1,28 +1,31 @@
 """
 Safe Auto-Improver (proposal-only).
 """
+
 from __future__ import annotations
 
 import difflib
 import sys
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import List, Dict, Any
-from datetime import datetime, timezone
+from typing import Any
 
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 
+
 @dataclass
 class Suggestion:
-    file: str         # repo-relative, POSIX
+    file: str  # repo-relative, POSIX
     before: str
     after: str
     rationale: str
 
-def load_policy() -> Dict[str, Any]:
+
+def load_policy() -> dict[str, Any]:
     p = ROOT / "automation" / "policy.yaml"
     if not p.exists():
         # No policy? Act as "deny all" to be safe.
@@ -33,6 +36,7 @@ def load_policy() -> Dict[str, Any]:
         # Malformed policy -> deny all
         print(f"[policy] Failed to load policy.yaml: {e}")
         return {"allowed_paths": []}
+
 
 def _insert_future_annotations(content: str) -> str:
     """
@@ -68,8 +72,9 @@ def _insert_future_annotations(content: str) -> str:
     new_lines = lines[:i] + [insert_line, ""] + lines[i:]
     return "\n".join(new_lines) + ("\n" if content.endswith("\n") else "")
 
-def llm_suggest(file_path: Path, content: str) -> List[Suggestion]:
-    suggestions: List[Suggestion] = []
+
+def llm_suggest(file_path: Path, content: str) -> list[Suggestion]:
+    suggestions: list[Suggestion] = []
 
     # Only suggest future import on Python < 3.11
     if sys.version_info < (3, 11) and file_path.suffix == ".py":
@@ -89,7 +94,8 @@ def llm_suggest(file_path: Path, content: str) -> List[Suggestion]:
 
     return suggestions
 
-def bounded_change_allowed(policy: Dict[str, Any], abs_path: Path) -> bool:
+
+def bounded_change_allowed(policy: dict[str, Any], abs_path: Path) -> bool:
     allowed = policy.get("allowed_paths", []) or []
     # Convert allowed entries to absolute paths under the repo root
     allowed_dirs = [(ROOT / a).resolve() for a in allowed]
@@ -101,9 +107,11 @@ def bounded_change_allowed(policy: Dict[str, Any], abs_path: Path) -> bool:
         except AttributeError:
             # Python < 3.9 fallback
             from os.path import commonpath
+
             if commonpath([str(abs_path), str(base)]) == str(base):
                 return True
     return False
+
 
 def make_patch(before: str, after: str, file_label: str) -> str:
     before_lines = before.splitlines(keepends=True)
@@ -116,6 +124,7 @@ def make_patch(before: str, after: str, file_label: str) -> str:
         n=3,
     )
     return "".join(diff)
+
 
 def propose_changes() -> None:
     policy = load_policy()
@@ -131,7 +140,7 @@ def propose_changes() -> None:
         content = p.read_text(encoding="utf-8")
         for sug in llm_suggest(p, content):
             patch = make_patch(sug.before, sug.after, sug.file)
-            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
             uid = uuid.uuid4().hex[:8]
             proposals_path = proposals_dir / f"proposal_{stamp}_{uid}_{p.stem}.md"
             patches_path = patches_dir / f"patch_{stamp}_{uid}_{p.stem}.patch"
@@ -145,6 +154,7 @@ def propose_changes() -> None:
                 encoding="utf-8",
             )
             patches_path.write_text(patch, encoding="utf-8")
+
 
 if __name__ == "__main__":
     propose_changes()
