@@ -171,9 +171,9 @@ ENV APP_ENV=production \
     WORKERS=1 \
     LOG_LEVEL=info
 
-# Health check
+# Health check (use unauthenticated endpoint to avoid requiring X-API-KEY)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:$PORT/health || exit 1
+    CMD curl -fsS http://localhost:$PORT/healthz || exit 1
 
 # Expose port
 EXPOSE $PORT
@@ -196,8 +196,6 @@ CMD ["sh", "-c", "\
         --workers $WORKERS \
         --log-level $LOG_LEVEL \
         --access-log \
-        --loop uvloop \
-        --http httptools \
         || (echo 'Application failed to start' && exit 1) \
 "]
 

@@ -1,0 +1,49 @@
+services:
+  # Primary web service
+  - type: web
+    name: klerno-labs
+    env: python
+    region: oregon
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers
+    healthCheckPath: /healthz
+    numInstances: 1
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: APP_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        fromService:
+          name: klerno-labs
+          type: web
+          property: port
+      - key: WORKERS
+        value: 1
+      - key: USE_SQLITE
+        value: true
+      - key: DEMO_MODE
+        value: false
+      - key: XRPL_NET
+        value: testnet
+      - key: SECRET_KEY
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: true
+      - key: COOKIE_SAMESITE
+        value: lax
+      - key: ENABLE_HSTS
+        value: true
+      - key: RISK_THRESHOLD
+        value: 0.75
+      - key: DESTINATION_WALLET
+        # This should be replaced with your actual XRPL wallet address
+        value: rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe
+      - key: SUB_PRICE_XRP
+        value: 10.0
+      - key: SUB_DURATION_DAYS
+        value: 30
