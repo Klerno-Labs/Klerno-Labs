@@ -1,4 +1,3 @@
-# app/settings.py
 import os
 from functools import lru_cache
 from typing import List, Optional
@@ -112,3 +111,6 @@ def get_settings() -> Settings:
             raise ValueError(f"Missing required production settings: {missing_settings}")
     
     return settings
+
+# Create a global settings instance
+settings = get_settings()

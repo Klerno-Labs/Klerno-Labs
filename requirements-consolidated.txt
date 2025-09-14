@@ -1,0 +1,70 @@
+# ===== Klerno Labs Requirements =====
+# Last updated: September 14, 2025
+# Consolidated dependencies file with proper pinning and compatibility notes
+
+# ===== Core Web Framework =====
+fastapi==0.110.0            # Main API framework
+starlette==0.36.3           # Must match FastAPI 0.110.x requirements
+uvicorn[standard]==0.27.1   # ASGI server
+
+# ===== Validation & Settings =====
+pydantic==2.6.1             # Data validation
+pydantic-settings==2.2.1    # Environment settings management
+pydantic-core==2.16.2       # Required by pydantic
+
+# ===== Data Processing =====
+pandas==2.2.1               # Data analysis and manipulation
+numpy==1.26.4               # Numerical computing
+orjson==3.9.8               # Fast JSON parsing
+
+# ===== HTTP / Networking =====
+# NOTE: httpx/httpcore versions specifically pinned for xrpl-py compatibility
+httpx==0.24.1               # Modern HTTP client (xrpl-py needs < 0.25)
+httpcore==0.17.3            # HTTP core for httpx
+aiohttp==3.9.3              # Async HTTP client/server
+requests==2.31.0            # Synchronous HTTP client
+
+# ===== Templates / Forms =====
+jinja2==3.1.3               # Template engine
+python-multipart==0.0.9     # Multipart form parsing
+
+# ===== Configuration =====
+python-dotenv==1.0.1        # .env file loading
+PyYAML==6.0.2               # YAML parsing for config files
+
+# ===== Email =====
+sendgrid==6.11.0            # Email sending via SendGrid
+email-validator==2.2.0      # Email validation
+
+# ===== Blockchain Integration =====
+xrpl-py==2.6.0              # XRP Ledger Python client
+
+# ===== Authentication / Security =====
+PyJWT==2.8.0                # JWT token handling
+passlib[bcrypt]==1.7.4      # Password hashing
+bcrypt==4.0.1               # Explicit bcrypt dependency to avoid passlib issues
+
+# ===== Database / ORM =====
+SQLAlchemy==2.0.27          # SQL toolkit and ORM
+alembic==1.13.1             # Database migrations
+psycopg2-binary==2.9.9      # PostgreSQL driver (production)
+
+# ===== Observability =====
+structlog==24.1.0           # Structured logging
+prometheus-client==0.19.0   # Metrics collection
+python-json-logger==2.0.7   # JSON logging
+
+# ===== Performance =====
+uvloop==0.19.0 ; sys_platform != "win32"  # Fast event loop (non-Windows)
+aiofiles==23.2.0            # Async file operations
+
+# ===== Development Tools =====
+pytest==8.0.0               # Testing framework
+pytest-asyncio==0.23.3      # Async testing support
+black==23.11.0              # Code formatting
+isort==5.12.0               # Import sorting
+flake8==6.1.0               # Linting
+mypy==1.7.1                 # Type checking
+
+# ===== AI Integration =====
+openai==0.28.1              # OpenAI API client
