@@ -1,0 +1,385 @@
+# Klerno Labs - AI-Powered AML Risk Intelligence Platform
+
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg)](https://fastapi.tiangolo.com)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](Dockerfile)
+[![Security](https://img.shields.io/badge/Security-Enhanced-brightgreen.svg)](#security)
+[![XRPL](https://img.shields.io/badge/XRPL-Native-orange.svg)](https://xrpl.org)
+
+> **World-class AML risk intelligence for XRPL & beyond**  
+> Real-time transaction tagging, risk scoring, alerts, and explainable insights designed for compliance teams that demand speed, clarity, and confidence.
+
+## 📋 Table of Contents
+
+- [Quick Start](#-quick-start)
+- [Architecture](#-architecture)
+- [Features](#-features)
+- [XRPL Integration](#-xrpl-integration)
+- [Environment Configuration](#-environment-configuration)
+- [API Documentation](#-api-documentation)
+- [Development Guide](#-development-guide)
+- [Deployment](#-deployment)
+- [Security](#-security)
+- [Testing](#-testing)
+- [Contributing](#-contributing)
+- [Support](#-support)
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Python 3.11+** (3.12 recommended)
+- **Docker** (optional, for containerized deployment)
+- **PostgreSQL** (for production deployments)
+
+### Development Setup
+
+#### Option 1: Automated Setup (Windows)
+```powershell
+# Run with PowerShell
+.\start.ps1
+
+# Or use the batch file
+.\start.bat
+
+# To specify a custom port (default is 10000)
+.\start.ps1 -Port 8080
+# or
+.\start.bat 8080
+```
+
+#### Option 2: Manual Setup (All Platforms)
+```bash
+# Clone the repository
+git clone https://github.com/Klerno-Labs/Klerno-Labs.git
+cd Klerno-Labs
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# or
+.venv\Scripts\activate     # Windows
+
+# Install dependencies
+pip install --upgrade pip
+pip install -r requirements-consolidated.txt  # Recommended
+# or
+pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your configuration
+
+# Run the application
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+#### Option 3: Docker Deployment
+```bash
+# Build and run with Docker
+docker build -t klerno-labs .
+docker run -p 8000:8000 -e APP_ENV=dev klerno-labs
+
+# Or with Docker Compose
+docker-compose up -d
+```
+
+### First Run Configuration
+
+1. **Navigate to**: `http://localhost:8000`
+2. **Set up admin account**: Follow the on-screen setup wizard
+3. **Configure API keys**: Go to `/admin` → API Key Management
+4. **Test integration**: Use the built-in XRPL sandbox
+
+## 🏗️ Architecture
+
+### Core Components
+
+```
+├── app/                    # Core application
+│   ├── main.py            # FastAPI application entry point
+│   ├── models.py          # Pydantic data models
+│   ├── security/          # Authentication & authorization
+│   ├── hardening.py       # Security middleware
+│   ├── integrations/      # Blockchain integrations
+│   │   ├── xrp.py         # XRP Ledger integration
+│   │   └── blockchain_api.py # Abstract blockchain API
+│   ├── xrpl_payments.py   # XRPL payment processing
+│   ├── subscriptions.py   # Subscription management
+│   ├── templates/         # Jinja2 HTML templates
+│   └── static/            # Static assets
+├── tests/                 # Test suite
+├── scripts/               # Utility scripts
+│   └── check_environment.ps1 # Environment validation
+├── docs/                  # Documentation
+├── data/                  # Data storage (dev)
+└── deploy/                # Deployment configurations
+```
+
+### Technology Stack
+
+- **Web Framework**: FastAPI + Starlette
+- **ASGI Server**: Uvicorn with optional Gunicorn
+- **Database**: SQLAlchemy ORM with SQLite (dev) or PostgreSQL (prod)
+- **Authentication**: JWT token-based auth with role-based access control
+- **Templates**: Jinja2 for server-side rendering
+- **Blockchain**: XRPL-py for XRP Ledger integration
+- **Validation**: Pydantic for data validation and settings management
+- **Security**: Comprehensive security middleware with rate limiting
+
+### Design Principles
+
+1. **API-First Design**: RESTful API design with automatic OpenAPI documentation
+2. **Modular Architecture**: Clean separation of concerns for maintainability
+3. **Security by Design**: Security controls at every layer
+4. **Performance Optimization**: Async operations for I/O-bound tasks
+5. **Testability**: Comprehensive test coverage
+
+## ✨ Features
+
+### Core Features
+
+- **User Management**: Authentication, authorization, roles, and permissions
+- **Admin Dashboard**: Comprehensive admin interface for platform management
+- **Subscription Management**: Tiered subscription model with XRPL payments
+- **Transaction Analysis**: Real-time transaction monitoring and risk scoring
+- **Reporting**: Compliance reporting and audit trails
+- **API Integration**: Comprehensive API for third-party integration
+
+### Security Features
+
+- **JWT Authentication**: Secure token-based authentication
+- **Role-Based Access Control**: Granular permission management
+- **Rate Limiting**: Protection against abuse and DoS attacks
+- **Input Validation**: Pydantic validation for all incoming data
+- **Security Headers**: Best-practice security headers
+- **Audit Logging**: Comprehensive security event logging
+
+## 🔗 XRPL Integration
+
+Klerno Labs features native XRPL integration for payments and subscriptions:
+
+- **Subscription Tiers**: Basic, Premium, and Enterprise tiers with XRP payments
+- **Payment Processing**: Generate and verify XRPL payments
+- **Admin Management**: Manage subscriptions via admin panel or CLI tools
+
+### Setting Up XRPL Integration
+
+1. Configure XRPL settings in your `.env` file:
+   ```
+   XRPL_NET=testnet
+   DESTINATION_WALLET=your_wallet_address
+   SUB_PRICE_XRP=10
+   SUB_DURATION_DAYS=30
+   ```
+
+2. Initialize the XRPL client:
+   ```python
+   from app.integrations.xrp import XRPLClient
+   
+   client = XRPLClient()
+   ```
+
+3. Process payments:
+   ```python
+   from app.xrpl_payments import create_payment_request, verify_payment
+   
+   # Generate payment request
+   payment_info = create_payment_request(user_id, tier="premium")
+   
+   # Verify payment
+   is_verified = verify_payment(payment_info.transaction_hash)
+   ```
+
+For detailed information, see [XRPL Integration Documentation](docs/XRPL_INTEGRATION.md).
+
+## ⚙️ Environment Configuration
+
+### Environment Variables
+
+Klerno Labs uses environment variables for configuration, which can be set in a `.env` file:
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `APP_ENV` | Environment (dev/staging/prod) | `dev` | Yes |
+| `DEBUG` | Enable debug mode | `false` | No |
+| `SECRET_KEY` | Secret key for security | - | Yes |
+| `DATABASE_URL` | Database connection string | `sqlite:///./data/klerno.db` | Yes |
+| `XRPL_NET` | XRPL network (testnet/devnet/mainnet) | `testnet` | Yes for XRPL |
+| `DESTINATION_WALLET` | XRPL destination wallet | - | Yes for XRPL |
+| `SUB_PRICE_XRP` | Subscription price in XRP | `10` | Yes for XRPL |
+| `JWT_SECRET` | JWT token secret | - | Yes |
+| `JWT_ALGORITHM` | JWT algorithm | `HS256` | No |
+| `SENDGRID_API_KEY` | SendGrid API key | - | For email |
+
+For a complete list of environment variables, see the `.env.example` file.
+
+## 📚 API Documentation
+
+### OpenAPI Documentation
+
+When running the application, OpenAPI documentation is available at:
+
+- Swagger UI: `http://localhost:10000/docs`
+- ReDoc: `http://localhost:10000/redoc`
+
+### API Endpoints
+
+#### Authentication
+- `POST /auth/token` - Get JWT token
+- `POST /auth/register` - Register new user
+- `GET /auth/me` - Get current user info
+
+#### Subscriptions
+- `GET /subscriptions` - List available subscription tiers
+- `POST /subscriptions` - Create subscription
+- `GET /subscriptions/{id}` - Get subscription details
+
+#### XRPL Integration
+- `POST /xrpl/create-payment` - Create payment request
+- `GET /xrpl/verify-payment/{tx_hash}` - Verify payment
+- `GET /xrpl/account-info/{address}` - Get account info
+
+## 🧑‍💻 Development Guide
+
+### Development Environment Setup
+
+1. Create a virtual environment with Python 3.11+
+2. Install development dependencies:
+   ```bash
+   pip install -r requirements-consolidated.txt
+   ```
+3. Set up pre-commit hooks:
+   ```bash
+   pre-commit install
+   ```
+
+### Code Style
+
+- **Python**: PEP 8 with a 100 character line length
+- **Import Order**: `isort` configuration in `pyproject.toml`
+- **Formatting**: `black` for code formatting
+
+### Development Workflow
+
+1. **Fork**: Fork the repository and create a feature branch
+2. **Develop**: Implement your changes with tests
+3. **Test**: Run tests with `pytest`
+4. **Format**: Format code with `black` and `isort`
+5. **Submit**: Create a pull request with detailed description
+
+## 🚢 Deployment
+
+### Deployment Options
+
+#### Option 1: Docker Deployment
+
+```bash
+# Build the Docker image
+docker build -t klerno-labs .
+
+# Run with environment variables
+docker run -p 8000:8000 \
+  -e APP_ENV=prod \
+  -e DATABASE_URL=postgresql://user:password@db:5432/klerno \
+  -e XRPL_NET=mainnet \
+  klerno-labs
+```
+
+#### Option 2: Render Deployment
+
+Klerno Labs includes a `render.yaml` configuration for [Render](https://render.com):
+
+1. Connect your GitHub repository to Render
+2. Configure environment variables in the Render dashboard
+3. Deploy using the included Blueprint
+
+### Production Considerations
+
+- **Database**: Use PostgreSQL in production
+- **ASGI Server**: Use Gunicorn with Uvicorn workers
+- **Security**: Set up HTTPS with proper certificates
+- **Monitoring**: Implement monitoring with Prometheus
+- **Scaling**: Consider horizontal scaling for high load
+
+## 🔒 Security
+
+### Security Features
+
+- **Authentication**: JWT-based with proper token handling
+- **Authorization**: Role-based access control
+- **Input Validation**: All inputs validated with Pydantic
+- **Output Encoding**: Proper HTML escaping in templates
+- **Security Headers**: Set via middleware
+- **Rate Limiting**: Implemented to prevent abuse
+- **Dependency Management**: Regular dependency updates
+
+### Security Best Practices
+
+1. **Secrets Management**: Never commit secrets to Git
+2. **Least Privilege**: Follow the principle of least privilege
+3. **Regular Updates**: Keep dependencies updated
+4. **Audit Logging**: Enable comprehensive audit logging
+5. **Security Headers**: Use security headers middleware
+
+## 🧪 Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=app
+
+# Run specific test modules
+pytest tests/test_xrpl_payments.py
+```
+
+### Test Structure
+
+- **Unit Tests**: Test individual components in isolation
+- **Integration Tests**: Test component interactions
+- **API Tests**: Test API endpoints
+- **Performance Tests**: Test under load
+
+### Writing Tests
+
+```python
+# Example test for XRPL payment verification
+def test_verify_payment():
+    # Arrange
+    payment_info = create_test_payment()
+    
+    # Act
+    result = verify_payment(payment_info.transaction_hash)
+    
+    # Assert
+    assert result.verified == True
+    assert result.amount == payment_info.amount
+```
+
+## 👨‍👩‍👧‍👦 Contributing
+
+### Contribution Guidelines
+
+1. **Fork**: Fork the repository
+2. **Branch**: Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit**: Commit your changes (`git commit -m 'Add amazing feature'`)
+4. **Push**: Push to the branch (`git push origin feature/amazing-feature`)
+5. **PR**: Open a Pull Request
+
+### Pull Request Process
+
+1. Ensure all tests pass
+2. Update documentation if needed
+3. Include a clear description of the changes
+4. Reference any related issues
+
+## 🆘 Support
+
+- **Documentation**: See the `docs/` directory
+- **Issues**: Report issues via GitHub Issues
+- **Email**: support@klernolabs.com
+- **Community**: Join our community Discord
