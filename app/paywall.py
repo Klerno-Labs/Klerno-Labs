@@ -17,7 +17,7 @@ PAYWALL_CODE = os.getenv("PAYWALL_CODE", "Labs2025").strip()
 @router.get("/paywall", include_in_schema=False)
 def paywall(request: Request):
     err = request.query_params.get("err")
-    return templates.TemplateResponse("paywall.html", {"request": request, "error": bool(err)})
+    return templates.TemplateResponse("paywall_premium.html", {"request": request, "error": bool(err)})
 
 @router.post("/paywall/verify", include_in_schema=False)
 def paywall_verify(code: str = Form(...)):
@@ -40,19 +40,33 @@ def logout():
 
 # XRP Payment Routes
 @router.post("/api/paywall/xrp-payment", include_in_schema=False)
-async def create_xrp_payment_request(amount_xrp: float = Body(None), _user=Depends(require_user)):
+async def create_xrp_payment_request(
+    request: Request,
+    amount_xrp: float = Body(...),
+    tier: int = Body(1),
+    _user=Depends(require_user)
+):
     """Create a payment request for XRPL."""
     try:
         payment = create_payment_request(
-            user_id=_user["id"],
-            amount_xrp=amount_xrp or settings.SUB_PRICE_XRP,
-            description="Klerno Labs Subscription"
+            amount=amount_xrp,
+            recipient=settings.XRP_WALLET_ADDRESS,
+            sender=_user.get("email", ""),
+            memo=f"Klerno Labs Subscription - Tier {tier}"
         )
-        return payment
+        
+        return JSONResponse(content={
+            "success": True,
+            "request_id": payment["request_id"],
+            "destination_address": payment.get("recipient", settings.XRP_WALLET_ADDRESS),
+            "destination_tag": payment.get("destination_tag", "12345"),
+            "amount": amount_xrp,
+            "tier": tier
+        })
     except Exception as e:
         return JSONResponse(
-            status_code=500, 
-            content={"error": f"Failed to create payment request: {str(e)}"}
+            status_code=500,
+            content={"success": False, "error": f"Failed to create payment request: {str(e)}"}
         )
 
 @router.post("/api/paywall/verify-xrp", include_in_schema=False)
@@ -93,4 +107,36 @@ async def verify_xrp_payment_request(
         return JSONResponse(
             status_code=500, 
             content={"error": f"Failed to verify payment: {str(e)}"}
+        )
+
+@router.post("/api/paywall/verify-payment", include_in_schema=False)
+async def verify_payment_endpoint(
+    request_id: str = Body(...),
+    transaction_hash: str = Body(...),
+    _user=Depends(require_user)
+):
+    """Verify a payment transaction."""
+    try:
+        # Verify the payment using the transaction hash
+        result = verify_payment(request_id, transaction_hash)
+        
+        if result.get("verified"):
+            # Activate subscription for user
+            from . import store
+            store.update_user_subscription(_user["id"], active=True)
+            
+            return JSONResponse(content={
+                "success": True,
+                "message": "Payment verified successfully",
+                "transaction": result.get("transaction", {})
+            })
+        else:
+            return JSONResponse(content={
+                "success": False,
+                "error": result.get("error", "Payment verification failed")
+            })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": f"Verification error: {str(e)}"}
         )

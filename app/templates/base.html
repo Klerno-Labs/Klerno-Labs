@@ -3,8 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="color-scheme" content="dark" />
+  <meta name="color-scheme" content="dark light" />
   <title>{{ title or "Klerno Labs" }}</title>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Bootstrap 5 (CDN) with safe local fallback -->
   <link
@@ -16,8 +21,8 @@
     onerror="this.removeAttribute('onerror'); this.href=this.dataset.fallback"
   />
 
-  <!-- Optional app overrides -->
-  <link rel="stylesheet" href="{{ url_path_for('static', path='css/app.css') }}" />
+  <!-- Elite Design System -->
+  <link rel="stylesheet" href="{{ url_path_for('static', path='css/design-system.css') }}" />
   
   <!-- Favicon -->
   <link rel="shortcut icon" href="{{ url_path_for('static', path='favicon.ico') }}" type="image/x-icon" />
@@ -25,45 +30,42 @@
   <!-- Chart.js (from jsDelivr to match CSP) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-  <style>
-    :root{
-      --bg:#0b1020; --panel:#121a34; --line:#1e2a52; --ink:#e8ecf3;
-      --muted:#9aa9c6; --brand:#6c63ff; --danger:#ff5577; --ok:#10b981; --warn:#f59e0b;
-    }
-    body{ background:var(--bg); color:var(--ink); }
-    .border-line{ border-color:var(--line)!important; }
-    .card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; }
-    .chip{ border:1px solid var(--line); background:rgba(255,255,255,0.03); border-radius:.5rem; padding:.375rem .75rem; display:inline-block }
-    .pill{ background:rgba(255,255,255,0.06); border-radius:999px; padding:.25rem .625rem; }
-    .navbar .navbar-toggler-icon{ filter: invert(1); }
-  </style>
+  {% block head %}{% endblock %}
 </head>
 
 <body class="min-vh-100 d-flex flex-column">
   <!-- Accessibility: Skip to content link -->
-  <a href="#main" class="skip-to-content">Skip to content</a>
+  <a href="#main" class="skip-to-content" style="position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden;">Skip to content</a>
   
-  <!-- Header / Nav -->
-  <header class="border-bottom border-line sticky-top" style="backdrop-filter:saturate(140%) blur(8px); background:rgba(0,0,0,.25)">
-    <nav class="navbar navbar-expand-lg">
-      <div class="container-fluid">
-        <a href="{{ url_path_for('ui_dashboard') }}" class="navbar-brand text-light fw-semibold">Klerno Labs</a>
+  <!-- Elite Header / Nav -->
+  <header class="glass sticky-top" style="z-index: var(--z-sticky);">
+    <nav class="navbar navbar-expand-lg" style="padding: var(--space-4) 0;">
+      <div class="container-fluid" style="max-width: 1200px; margin: 0 auto; padding: 0 var(--space-6);">
+        {% set home_url = "/dashboard" if user and (user.get("subscription_active") or user.get("role") == "admin") else "/" %}
+        <a href="{{ home_url }}" class="navbar-brand" style="color: var(--color-text-primary); font-weight: var(--font-bold); font-size: var(--text-xl); text-decoration: none; display: flex; align-items: center; gap: var(--space-3);">
+          <img src="{{ url_path_for('static', path='klerno-logo.png') }}" alt="Klerno Labs" style="height: 32px;">
+          Klerno Labs
+        </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
-                aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
+                aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation"
+                style="border: 1px solid var(--glass-border); background: var(--color-surface-primary); color: var(--color-text-primary);">
+          <span class="navbar-toggler-icon" style="filter: brightness(0) invert(1);"></span>
         </button>
 
         <div id="mainNav" class="collapse navbar-collapse">
-          <ul class="navbar-nav ms-auto gap-2">
+          <ul class="navbar-nav ms-auto" style="display: flex; align-items: center; gap: var(--space-2);">
             <li class="nav-item">
-              <a id="nav-dashboard" class="nav-link text-light chip" href="{{ url_path_for('ui_dashboard') }}">Dashboard</a>
+              <a id="nav-dashboard" class="nav-link" href="/dashboard" 
+                 style="color: var(--color-text-secondary); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">Dashboard</a>
             </li>
             <li class="nav-item">
-              <a id="nav-alerts" class="nav-link text-light chip" href="{{ url_path_for('ui_alerts') }}">Alerts</a>
+              <a id="nav-alerts" class="nav-link" href="/alerts-ui"
+                 style="color: var(--color-text-secondary); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">Alerts</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link text-light chip" href="/docs" target="_blank" rel="noopener">API Docs</a>
+              <a class="nav-link" href="/docs" target="_blank" rel="noopener"
+                 style="color: var(--color-text-secondary); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">API Docs</a>
             </li>
           </ul>
         </div>
@@ -76,7 +78,16 @@
     <!-- Global alerts container -->
     <div id="alerts-container" class="mb-3"></div>
     
-    {% block content %}{% endblock %}
+    {% if content %}
+      <!-- For custom error pages with content directly in the template -->
+      <div class="card mb-4">
+        <div class="card-body">
+          {{ content|safe }}
+        </div>
+      </div>
+    {% else %}
+      {% block content %}{% endblock %}
+    {% endif %}
   </main>
 
   <!-- Footer -->
@@ -113,7 +124,7 @@
   </script>
   
   <!-- Application JavaScript -->
-  <script src="{{ url_path_for('static', path='js/app.js') }}"></script>
+  <script src="{{ url_path_for('static', path='js/app-enhanced.js') }}"></script>
 
   {% block scripts %}{% endblock %}
 </body>

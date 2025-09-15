@@ -12,7 +12,6 @@ load_dotenv()
 # ===== OpenAI client (compatible with both legacy 0.28.x and v1+) =====
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 _LLM_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-_DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
 
 _use_v1 = False
 _client_v1 = None
@@ -62,8 +61,6 @@ def _safe_llm(system: str, user: str, temperature: float = 0.2) -> str:
             )
             return (resp["choices"][0]["message"]["content"] or "").strip()
     except Exception as e:
-        if _DEMO_MODE:
-            return f"(DEMO MODE fallback; LLM error: {e})"
         return f"(LLM error: {e})"
 
 

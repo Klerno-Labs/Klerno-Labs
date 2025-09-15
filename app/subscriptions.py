@@ -416,9 +416,6 @@ def cancel_subscription(user_id: str) -> bool:
 
 def has_active_subscription(user_id: str) -> bool:
     """Check if a user has an active subscription."""
-    if settings.DEMO_MODE:
-        return True
-        
     subscription = get_user_subscription(user_id)
     if not subscription:
         return False
@@ -469,10 +466,6 @@ async def require_active_subscription(
     """FastAPI dependency that requires an active subscription."""
     # Admin users always have access
     if current_user.get("role") == "admin":
-        return current_user
-    
-    # Demo mode gives everyone access
-    if settings.DEMO_MODE:
         return current_user
     
     # Check for active subscription

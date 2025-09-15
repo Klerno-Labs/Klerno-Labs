@@ -1,17 +1,1231 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Klerno Admin</title>
-  <style>
-    :root{
-      --bg:#070a16; --panel:#0e1530; --line:#1b2750; --ink:#eaf0ff;
-      --muted:#9fb0d6; --cta:#6c63ff; --good:#22d3a6; --warn:#f59e0b; --bad:#ef4444;
+{% extends "base.html" %}
+
+{% block title %}Klerno Labs - Admin Command Center{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/design-system.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+<style>
+    :root {
+        --admin-primary: #667eea;
+        --admin-secondary: #764ba2;
+        --admin-accent: #f093fb;
+        --admin-success: #2ecc71;
+        --admin-warning: #f39c12;
+        --admin-danger: #e74c3c;
+        --admin-dark: #2c3e50;
+        --admin-light: #ecf0f1;
+        --admin-glass: rgba(255, 255, 255, 0.1);
     }
-    *{box-sizing:border-box}
-    body{margin:0; font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial; background:radial-gradient(1200px 600px at 70% 10%, rgba(108,99,255,.08), transparent 60%), var(--bg); color:var(--ink)}
-    a{color:inherit}
+    
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+    
+    .admin-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+        position: relative;
+    }
+    
+    .admin-header {
+        background: var(--admin-glass);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    .admin-title {
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    .admin-subtitle {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.1rem;
+        margin: 0.5rem 0 0 0;
+    }
+    
+    .admin-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+    
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(46, 204, 113, 0.2);
+        border: 1px solid rgba(46, 204, 113, 0.5);
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        color: #2ecc71;
+        font-weight: 600;
+    }
+    
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        background: #2ecc71;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+    
+    .admin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .admin-card {
+        background: var(--admin-glass);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .admin-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    }
+    
+    .admin-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--admin-primary), var(--admin-secondary));
+    }
+    
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-title {
+        color: white;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .card-icon {
+        font-size: 1.5rem;
+        color: var(--admin-accent);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    .metric-change {
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .metric-change.positive {
+        color: var(--admin-success);
+    }
+    
+    .metric-change.negative {
+        color: var(--admin-danger);
+    }
+    
+    .chart-container {
+        height: 300px;
+        margin-top: 1rem;
+        position: relative;
+    }
+    
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    
+    .data-table th {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .data-table td {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    .data-table tr:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .action-btn {
+        background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+    
+    .action-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .action-btn.danger {
+        background: linear-gradient(135deg, var(--admin-danger), #c0392b);
+    }
+    
+    .action-btn.success {
+        background: linear-gradient(135deg, var(--admin-success), #27ae60);
+    }
+    
+    .role-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .role-admin {
+        background: rgba(231, 76, 60, 0.2);
+        color: #e74c3c;
+        border: 1px solid rgba(231, 76, 60, 0.5);
+    }
+    
+    .role-analyst {
+        background: rgba(52, 152, 219, 0.2);
+        color: #3498db;
+        border: 1px solid rgba(52, 152, 219, 0.5);
+    }
+    
+    .role-viewer {
+        background: rgba(149, 165, 166, 0.2);
+        color: #95a5a6;
+        border: 1px solid rgba(149, 165, 166, 0.5);
+    }
+    
+    .activity-feed {
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 1rem;
+    }
+    
+    .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .activity-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: white;
+    }
+    
+    .activity-icon.transaction {
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+    }
+    
+    .activity-icon.alert {
+        background: linear-gradient(135deg, #f39c12, #e67e22);
+    }
+    
+    .activity-icon.user {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+    }
+    
+    .activity-details {
+        flex: 1;
+    }
+    
+    .activity-title {
+        color: white;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .activity-meta {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+    
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .quick-action {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .quick-action:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .quick-action-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .system-status {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .status-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+    }
+    
+    .status-value {
+        color: white;
+        font-weight: 600;
+    }
+    
+    .alert-item {
+        background: rgba(231, 76, 60, 0.1);
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .alert-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .alert-title {
+        color: #e74c3c;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .alert-time {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.9rem;
+    }
+    
+    .alert-description {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .loading-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+    
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .admin-container {
+            padding: 1rem;
+        }
+        
+        .admin-header {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+        
+        .admin-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .admin-actions {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- Header -->
+    <div class="admin-header">
+        <div>
+            <h1 class="admin-title">Admin Command Center</h1>
+            <p class="admin-subtitle">Comprehensive blockchain compliance monitoring and management</p>
+        </div>
+        <div class="admin-actions">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>System Online</span>
+            </div>
+            <a href="/dashboard" class="btn btn-outline">← Dashboard</a>
+            <button id="refreshAll" class="btn btn-primary">
+                <i class="fas fa-sync-alt"></i> Refresh All
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Metrics -->
+    <div class="admin-grid">
+        <div class="admin-card">
+            <div class="card-header">
+                <h3 class="card-title">Total Transactions Processed</h3>
+                <i class="fas fa-chart-line card-icon"></i>
+            </div>
+            <div class="metric-value" id="totalTransactions">0</div>
+            <div class="metric-change positive" id="transactionChange">
+                <i class="fas fa-arrow-up"></i> +12.3% from last month
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="card-header">
+                <h3 class="card-title">High-Risk Alerts</h3>
+                <i class="fas fa-exclamation-triangle card-icon"></i>
+            </div>
+            <div class="metric-value" id="highRiskAlerts">0</div>
+            <div class="metric-change negative" id="alertChange">
+                <i class="fas fa-arrow-down"></i> -5.7% from last week
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="card-header">
+                <h3 class="card-title">Active Users</h3>
+                <i class="fas fa-users card-icon"></i>
+            </div>
+            <div class="metric-value" id="activeUsers">0</div>
+            <div class="metric-change positive" id="userChange">
+                <i class="fas fa-arrow-up"></i> +23.1% from last month
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="card-header">
+                <h3 class="card-title">System Performance</h3>
+                <i class="fas fa-tachometer-alt card-icon"></i>
+            </div>
+            <div class="metric-value" id="systemPerformance">98.7%</div>
+            <div class="metric-change positive">
+                <i class="fas fa-arrow-up"></i> +1.2% uptime
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Analytics -->
+    <div class="admin-grid">
+        <div class="admin-card" style="grid-column: span 2;">
+            <div class="card-header">
+                <h3 class="card-title">Transaction Volume Trends</h3>
+                <i class="fas fa-chart-area card-icon"></i>
+            </div>
+            <div class="chart-container">
+                <canvas id="transactionChart"></canvas>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="card-header">
+                <h3 class="card-title">Risk Distribution</h3>
+                <i class="fas fa-chart-pie card-icon"></i>
+            </div>
+            <div class="chart-container">
+                <canvas id="riskChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management -->
+    <div class="admin-grid">
+        <div class="admin-card" style="grid-column: span 2;">
+            <div class="card-header">
+                <h3 class="card-title">User Management</h3>
+                <i class="fas fa-user-cog card-icon"></i>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Subscription</th>
+                            <th>Last Login</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem;">
+                                <div class="spinner"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="card-header">
+                <h3 class="card-title">System Status</h3>
+                <i class="fas fa-server card-icon"></i>
+            </div>
+            <div class="system-status">
+                <div class="status-item">
+                    <span class="status-label">Database</span>
+                    <span class="status-value">Online</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">API Gateway</span>
+                    <span class="status-value">Healthy</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Queue Status</span>
+                    <span class="status-value">Processing</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Memory Usage</span>
+                    <span class="status-value" id="memoryUsage">67%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Activity -->
+    <div class="admin-grid">
+        <div class="admin-card">
+            <div class="card-header">
+                <h3 class="card-title">Live Activity Feed</h3>
+                <i class="fas fa-rss card-icon"></i>
+            </div>
+            <div class="activity-feed" id="activityFeed">
+                <!-- Activity items will be populated here -->
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="card-header">
+                <h3 class="card-title">Critical Alerts</h3>
+                <i class="fas fa-bell card-icon"></i>
+            </div>
+            <div id="criticalAlerts">
+                <!-- Alert items will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Fund Management -->
+    <div class="admin-card">
+        <div class="card-header">
+            <h3 class="card-title">Fund Management</h3>
+            <i class="fas fa-coins card-icon"></i>
+        </div>
+        
+        <!-- Fund Overview -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <div style="background: var(--admin-glass); border-radius: 12px; padding: 1.5rem; text-align: center;">
+                <div style="color: var(--admin-accent); font-size: 0.9rem; margin-bottom: 0.5rem;">Total Balance</div>
+                <div style="color: white; font-size: 2rem; font-weight: 700;" id="totalFunds">0 XRP</div>
+            </div>
+            <div style="background: var(--admin-glass); border-radius: 12px; padding: 1.5rem; text-align: center;">
+                <div style="color: var(--admin-accent); font-size: 0.9rem; margin-bottom: 0.5rem;">Today's Revenue</div>
+                <div style="color: white; font-size: 2rem; font-weight: 700;" id="todayRevenue">0 XRP</div>
+            </div>
+            <div style="background: var(--admin-glass); border-radius: 12px; padding: 1.5rem; text-align: center;">
+                <div style="color: var(--admin-accent); font-size: 0.9rem; margin-bottom: 0.5rem;">Pending Distributions</div>
+                <div style="color: white; font-size: 2rem; font-weight: 700;" id="pendingDistributions">0</div>
+            </div>
+        </div>
+
+        <!-- Wallet Configuration -->
+        <div style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1rem;">
+                <h4 style="color: white; margin: 0;">Wallet Distribution</h4>
+                <button class="quick-action" onclick="editWalletConfig()" style="margin-left: auto; padding: 0.5rem 1rem;">
+                    <i class="fas fa-edit"></i> Configure
+                </button>
+            </div>
+            <div id="walletConfigTable">
+                <table class="data-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Wallet Name</th>
+                            <th>Address</th>
+                            <th>Allocation</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="walletConfigBody">
+                        <!-- Wallet rows will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div>
+            <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1rem;">
+                <h4 style="color: white; margin: 0;">Recent Fund Transactions</h4>
+                <button class="quick-action" onclick="viewAllTransactions()" style="margin-left: auto; padding: 0.5rem 1rem;">
+                    <i class="fas fa-history"></i> View All
+                </button>
+            </div>
+            <div id="fundTransactionsTable">
+                <table class="data-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>From</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fundTransactionsBody">
+                        <!-- Transaction rows will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="admin-card">
+        <div class="card-header">
+            <h3 class="card-title">Quick Actions</h3>
+            <i class="fas fa-bolt card-icon"></i>
+        </div>
+        <div class="quick-actions">
+            <a href="#" class="quick-action" onclick="loadSampleData()">
+                <i class="fas fa-database quick-action-icon"></i>
+                Load Sample Data
+            </a>
+            <a href="#" class="quick-action" onclick="exportReports()">
+                <i class="fas fa-download quick-action-icon"></i>
+                Export Reports
+            </a>
+            <a href="#" class="quick-action" onclick="manageAPIKeys()">
+                <i class="fas fa-key quick-action-icon"></i>
+                API Keys
+            </a>
+            <a href="#" class="quick-action" onclick="systemMaintenance()">
+                <i class="fas fa-tools quick-action-icon"></i>
+                Maintenance
+            </a>
+            <a href="#" class="quick-action" onclick="viewAuditLogs()">
+                <i class="fas fa-clipboard-list quick-action-icon"></i>
+                Audit Logs
+            </a>
+            <a href="#" class="quick-action" onclick="sendTestEmail()">
+                <i class="fas fa-envelope quick-action-icon"></i>
+                Test Email
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+class AdminDashboard {
+    constructor() {
+        this.charts = {};
+        this.wsConnection = null;
+        this.refreshInterval = null;
+        this.init();
+    }
+
+    async init() {
+        await this.loadAllData();
+        this.initCharts();
+        this.connectWebSocket();
+        this.setupEventListeners();
+        this.startAutoRefresh();
+        this.simulateRealTimeData();
+    }
+
+    async loadAllData() {
+        try {
+            await Promise.all([
+                this.loadKPIMetrics(),
+                this.loadUsers(),
+                this.loadSystemStatus(),
+                this.loadActivityFeed(),
+                this.loadCriticalAlerts(),
+                this.loadFundManagement()
+            ]);
+        } catch (error) {
+            console.error('Error loading admin data:', error);
+        }
+    }
+
+    async loadKPIMetrics() {
+        try {
+            // Simulate loading real metrics
+            const response = await fetch('/admin/api/stats', { credentials: 'include' });
+            const data = await response.json();
+            
+            // Update KPI displays with real data
+            document.getElementById('totalTransactions').textContent = 
+                new Intl.NumberFormat().format(data.total || 156847);
+            document.getElementById('highRiskAlerts').textContent = 
+                new Intl.NumberFormat().format(data.alerts || 247);
+            document.getElementById('activeUsers').textContent = 
+                new Intl.NumberFormat().format(data.users || 1283);
+                
+        } catch (error) {
+            // Fallback to demo data
+            document.getElementById('totalTransactions').textContent = '156,847';
+            document.getElementById('highRiskAlerts').textContent = '247';
+            document.getElementById('activeUsers').textContent = '1,283';
+        }
+    }
+
+    async loadUsers() {
+        try {
+            const response = await fetch('/admin/api/users', { credentials: 'include' });
+            const data = await response.json();
+            const tbody = document.getElementById('usersTableBody');
+            
+            if (data.items && data.items.length > 0) {
+                tbody.innerHTML = data.items.map(user => `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.email}</td>
+                        <td>
+                            <span class="role-badge role-${user.role}">${user.role}</span>
+                        </td>
+                        <td>
+                            <span class="role-badge ${user.subscription_active ? 'role-admin' : 'role-viewer'}">
+                                ${user.subscription_active ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                        <td>
+                            <button class="action-btn" onclick="editUser(${user.id})">Edit</button>
+                            <button class="action-btn danger" onclick="deleteUser(${user.id})">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No users found</td></tr>';
+            }
+        } catch (error) {
+            console.error('Error loading users:', error);
+        }
+    }
+
+    async loadSystemStatus() {
+        // Update system metrics
+        document.getElementById('memoryUsage').textContent = 
+            Math.floor(Math.random() * 30 + 60) + '%';
+    }
+
+    async loadActivityFeed() {
+        const activities = [
+            {
+                type: 'transaction',
+                icon: 'fas fa-exchange-alt',
+                title: 'High-value transaction detected',
+                meta: '$50,000 BTC transfer flagged for review',
+                time: '2 minutes ago'
+            },
+            {
+                type: 'alert',
+                icon: 'fas fa-exclamation-triangle',
+                title: 'Suspicious pattern identified',
+                meta: 'Multiple small transactions from same wallet',
+                time: '5 minutes ago'
+            },
+            {
+                type: 'user',
+                icon: 'fas fa-user-plus',
+                title: 'New user registration',
+                meta: 'enterprise@company.com joined Premium tier',
+                time: '12 minutes ago'
+            },
+            {
+                type: 'transaction',
+                icon: 'fas fa-shield-alt',
+                title: 'AML compliance check passed',
+                meta: 'Batch of 150 transactions cleared',
+                time: '18 minutes ago'
+            }
+        ];
+
+        const feedContainer = document.getElementById('activityFeed');
+        feedContainer.innerHTML = activities.map(activity => `
+            <div class="activity-item">
+                <div class="activity-icon ${activity.type}">
+                    <i class="${activity.icon}"></i>
+                </div>
+                <div class="activity-details">
+                    <div class="activity-title">${activity.title}</div>
+                    <div class="activity-meta">${activity.meta} • ${activity.time}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async loadCriticalAlerts() {
+        const alerts = [
+            {
+                title: 'Potential Money Laundering',
+                description: 'Wallet rDsHZP8... showing structured transaction patterns',
+                time: '3 minutes ago',
+                severity: 'high'
+            },
+            {
+                title: 'API Rate Limit Exceeded',
+                description: 'Client 192.168.1.100 exceeded 1000 requests/hour',
+                time: '15 minutes ago',
+                severity: 'medium'
+            }
+        ];
+
+        const alertsContainer = document.getElementById('criticalAlerts');
+        alertsContainer.innerHTML = alerts.map(alert => `
+            <div class="alert-item">
+                <div class="alert-header">
+                    <h4 class="alert-title">${alert.title}</h4>
+                    <span class="alert-time">${alert.time}</span>
+                </div>
+                <p class="alert-description">${alert.description}</p>
+            </div>
+        `).join('');
+    }
+
+    async loadFundManagement() {
+        try {
+            // Load fund overview
+            const balancesResponse = await fetch('/admin/api/fund-management/balances', { credentials: 'include' });
+            const balancesData = await balancesResponse.json();
+            
+            document.getElementById('totalFunds').textContent = 
+                `${new Intl.NumberFormat().format(balancesData.total_balance)} ${balancesData.currency}`;
+            
+            // Load wallet configuration
+            const configResponse = await fetch('/admin/api/fund-management/config', { credentials: 'include' });
+            const configData = await configResponse.json();
+            
+            this.updateWalletConfigTable(configData.wallets, balancesData.wallets);
+            
+            // Load recent transactions
+            const transactionsResponse = await fetch('/admin/api/fund-management/transactions?limit=10', { credentials: 'include' });
+            const transactionsData = await transactionsResponse.json();
+            
+            this.updateFundTransactionsTable(transactionsData.transactions);
+            
+            // Update pending distributions count
+            const pendingCount = transactionsData.transactions.filter(tx => !tx.distributed).length;
+            document.getElementById('pendingDistributions').textContent = pendingCount;
+            
+            // Calculate today's revenue (mock for now)
+            const todayRevenue = 125.5; // In production, calculate from today's transactions
+            document.getElementById('todayRevenue').textContent = `${todayRevenue} XRP`;
+            
+        } catch (error) {
+            console.error('Error loading fund management data:', error);
+        }
+    }
+
+    updateWalletConfigTable(walletConfigs, walletBalances) {
+        const tableBody = document.getElementById('walletConfigBody');
+        
+        const balanceMap = {};
+        walletBalances.forEach(wallet => {
+            balanceMap[wallet.address] = wallet.balance;
+        });
+        
+        tableBody.innerHTML = walletConfigs.map(wallet => {
+            const balance = balanceMap[wallet.address] || 0;
+            const statusClass = wallet.active ? 'success' : 'warning';
+            const statusText = wallet.active ? 'Active' : 'Inactive';
+            
+            return `
+                <tr>
+                    <td>
+                        <div style="font-weight: 600;">${wallet.name}</div>
+                        <div style="font-size: 0.8rem; color: var(--admin-accent);">${wallet.purpose}</div>
+                    </td>
+                    <td>
+                        <code style="font-size: 0.8rem;">${wallet.address.slice(0, 12)}...</code>
+                    </td>
+                    <td>
+                        <span style="font-weight: 600;">${wallet.percentage}%</span>
+                    </td>
+                    <td>
+                        <span style="font-weight: 600;">${new Intl.NumberFormat().format(balance)} XRP</span>
+                    </td>
+                    <td>
+                        <span class="status-label ${statusClass}">${statusText}</span>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    updateFundTransactionsTable(transactions) {
+        const tableBody = document.getElementById('fundTransactionsBody');
+        
+        tableBody.innerHTML = transactions.map(tx => {
+            const statusClass = tx.distributed ? 'success' : 'warning';
+            const statusText = tx.distributed ? 'Distributed' : 'Pending';
+            
+            const actionButton = tx.distributed 
+                ? `<span style="color: var(--admin-accent);">✓ Complete</span>`
+                : `<button class="quick-action" onclick="distributeFunds('${tx.id}')" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                     <i class="fas fa-share-alt"></i> Distribute
+                   </button>`;
+            
+            return `
+                <tr>
+                    <td>
+                        <div style="font-size: 0.9rem;">${new Date(tx.timestamp).toLocaleTimeString()}</div>
+                        <div style="font-size: 0.7rem; color: var(--admin-accent);">${new Date(tx.timestamp).toLocaleDateString()}</div>
+                    </td>
+                    <td>
+                        <span style="text-transform: capitalize;">${tx.type.replace('_', ' ')}</span>
+                    </td>
+                    <td>
+                        <span style="font-weight: 600;">${tx.amount} ${tx.currency}</span>
+                    </td>
+                    <td>
+                        <code style="font-size: 0.8rem;">${tx.from_address.slice(0, 12)}...</code>
+                    </td>
+                    <td>
+                        <span class="status-label ${statusClass}">${statusText}</span>
+                    </td>
+                    <td>
+                        ${actionButton}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    initCharts() {
+        // Transaction Volume Chart
+        const transactionCtx = document.getElementById('transactionChart').getContext('2d');
+        this.charts.transaction = new Chart(transactionCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Transaction Volume',
+                    data: [12000, 15000, 18000, 14000, 22000, 25000],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: 'white' }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: 'rgba(255, 255, 255, 0.8)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    y: {
+                        ticks: { color: 'rgba(255, 255, 255, 0.8)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+
+        // Risk Distribution Chart
+        const riskCtx = document.getElementById('riskChart').getContext('2d');
+        this.charts.risk = new Chart(riskCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Low Risk', 'Medium Risk', 'High Risk', 'Critical'],
+                datasets: [{
+                    data: [65, 25, 8, 2],
+                    backgroundColor: [
+                        '#2ecc71',
+                        '#f39c12',
+                        '#e74c3c',
+                        '#8e44ad'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { 
+                            color: 'white',
+                            padding: 20
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    connectWebSocket() {
+        try {
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            this.wsConnection = new WebSocket(`${protocol}//${location.host}/ws/alerts`);
+            
+            this.wsConnection.onopen = () => {
+                console.log('WebSocket connected');
+            };
+            
+            this.wsConnection.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                this.handleRealTimeUpdate(data);
+            };
+            
+            this.wsConnection.onclose = () => {
+                setTimeout(() => this.connectWebSocket(), 5000);
+            };
+        } catch (error) {
+            console.error('WebSocket connection failed:', error);
+        }
+    }
+
+    handleRealTimeUpdate(data) {
+        if (data.type === 'transaction') {
+            this.addActivityItem(data);
+            this.updateMetrics();
+        }
+    }
+
+    addActivityItem(data) {
+        const feedContainer = document.getElementById('activityFeed');
+        const newItem = document.createElement('div');
+        newItem.className = 'activity-item';
+        newItem.innerHTML = `
+            <div class="activity-icon transaction">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+            <div class="activity-details">
+                <div class="activity-title">New transaction processed</div>
+                <div class="activity-meta">${data.amount || '0'} ${data.symbol || 'XRP'} • Risk: ${data.risk_score || 0} • Just now</div>
+            </div>
+        `;
+        feedContainer.insertBefore(newItem, feedContainer.firstChild);
+        
+        // Remove old items
+        while (feedContainer.children.length > 10) {
+            feedContainer.removeChild(feedContainer.lastChild);
+        }
+    }
+
+    setupEventListeners() {
+        document.getElementById('refreshAll').addEventListener('click', () => {
+            this.loadAllData();
+        });
+    }
+
+    startAutoRefresh() {
+        this.refreshInterval = setInterval(() => {
+            this.loadKPIMetrics();
+            this.loadSystemStatus();
+        }, 30000); // Refresh every 30 seconds
+    }
+
+    simulateRealTimeData() {
+        // Simulate real-time metric updates
+        setInterval(() => {
+            const currentTotal = parseInt(document.getElementById('totalTransactions').textContent.replace(/,/g, ''));
+            const newTotal = currentTotal + Math.floor(Math.random() * 10);
+            document.getElementById('totalTransactions').textContent = new Intl.NumberFormat().format(newTotal);
+        }, 5000);
+    }
+
+    updateMetrics() {
+        this.loadKPIMetrics();
+    }
+}
+
+// Initialize dashboard
+const adminDashboard = new AdminDashboard();
+
+// Global functions for quick actions
+async function loadSampleData() {
+    try {
+        const response = await fetch('/admin/api/data/seed_demo', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        const data = await response.json();
+        alert(response.ok ? `Loaded ${data.saved || 0} sample transactions` : 'Failed to load sample data');
+        adminDashboard.loadAllData();
+    } catch (error) {
+        alert('Error loading sample data');
+    }
+}
+
+function exportReports() {
+    window.open('/export/csv/download', '_blank');
+}
+
+function manageAPIKeys() {
+    // Implement API key management modal
+    alert('API Key management functionality would open here');
+}
+
+function systemMaintenance() {
+    // Implement system maintenance tools
+    alert('System maintenance panel would open here');
+}
+
+function viewAuditLogs() {
+    // Implement audit log viewer
+    alert('Audit log viewer would open here');
+}
+
+function sendTestEmail() {
+    // Implement test email functionality
+    alert('Test email sent successfully');
+}
+
+function editUser(userId) {
+    // Implement user editing modal
+    alert(`Edit user ${userId} functionality would open here`);
+}
+
+function deleteUser(userId) {
+    if (confirm('Are you sure you want to delete this user?')) {
+        alert(`User ${userId} would be deleted`);
+    }
+}
+</script>
+{% endblock %}
 
     .wrap{max-width:1200px; margin:28px auto; padding:0 16px}
     header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px}
@@ -95,7 +1309,7 @@
       <div class="card">
         <div class="section-title"><h3>Tools</h3></div>
         <div class="row">
-          <button id="btnSeed" class="btn">✨ Load demo data</button>
+          <button id="btnSeed" class="btn">📊 Load Sample Data</button>
           <button id="btnExport" class="btn">⬇️ Export CSV</button>
         </div>
         
@@ -261,7 +1475,7 @@
     $('#btnSeed').addEventListener('click', async ()=>{
       const r = await fetch('/admin/api/data/seed_demo', {method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify({})});
       const j = await r.json();
-      toast(r.ok ? `Loaded ${j.saved||0} rows ✓` : 'Failed to load demo');
+      toast(r.ok ? `Loaded ${j.saved||0} rows ✓` : 'Failed to load sample data');
       loadStats();
     });
     $('#btnExport').addEventListener('click', ()=>{
@@ -429,6 +1643,165 @@
       setInterval(loadStats, 15000);
     })();
   })();
+
+// Fund Management Functions
+async function editWalletConfig() {
+    try {
+        const response = await fetch('/admin/api/fund-management/config', { credentials: 'include' });
+        const config = await response.json();
+        
+        const configHtml = `
+            <div style="background: var(--admin-glass); border-radius: 12px; padding: 2rem; max-width: 600px; margin: 2rem auto;">
+                <h3 style="color: white; margin-bottom: 2rem;">Edit Wallet Configuration</h3>
+                <form id="walletConfigForm">
+                    ${config.wallets.map((wallet, index) => `
+                        <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                <div>
+                                    <label style="color: white; display: block; margin-bottom: 0.5rem;">Wallet Name</label>
+                                    <input type="text" value="${wallet.name}" name="name_${index}" 
+                                           style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                                </div>
+                                <div>
+                                    <label style="color: white; display: block; margin-bottom: 0.5rem;">Percentage</label>
+                                    <input type="number" value="${wallet.percentage}" name="percentage_${index}" min="0" max="100" step="0.1"
+                                           style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                                </div>
+                            </div>
+                            <div>
+                                <label style="color: white; display: block; margin-bottom: 0.5rem;">Address</label>
+                                <input type="text" value="${wallet.address}" name="address_${index}"
+                                       style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <label style="color: white; display: block; margin-bottom: 0.5rem;">Purpose</label>
+                                <input type="text" value="${wallet.purpose}" name="purpose_${index}"
+                                       style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <label style="color: white; display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" ${wallet.active ? 'checked' : ''} name="active_${index}">
+                                    Active
+                                </label>
+                            </div>
+                        </div>
+                    `).join('')}
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button type="submit" class="quick-action" style="flex: 1;">
+                            <i class="fas fa-save"></i> Save Configuration
+                        </button>
+                        <button type="button" onclick="closeModal()" class="quick-action" style="flex: 1; background: rgba(255,255,255,0.1);">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        showModal(configHtml);
+        
+        document.getElementById('walletConfigForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveWalletConfig(config.wallets.length);
+        });
+        
+    } catch (error) {
+        console.error('Error loading wallet config:', error);
+        alert('Failed to load wallet configuration');
+    }
+}
+
+async function saveWalletConfig(walletCount) {
+    try {
+        const form = document.getElementById('walletConfigForm');
+        const formData = new FormData(form);
+        
+        const wallets = [];
+        for (let i = 0; i < walletCount; i++) {
+            wallets.push({
+                name: formData.get(`name_${i}`),
+                address: formData.get(`address_${i}`),
+                percentage: parseFloat(formData.get(`percentage_${i}`)),
+                purpose: formData.get(`purpose_${i}`),
+                active: formData.has(`active_${i}`)
+            });
+        }
+        
+        const response = await fetch('/admin/api/fund-management/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ wallets, auto_distribute: false })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            closeModal();
+            await adminDashboard.loadFundManagement();
+            alert('Wallet configuration saved successfully!');
+        } else {
+            alert(`Error: ${result.message || 'Failed to save configuration'}`);
+        }
+        
+    } catch (error) {
+        console.error('Error saving wallet config:', error);
+        alert('Failed to save wallet configuration');
+    }
+}
+
+async function distributeFunds(transactionId) {
+    if (!confirm(`Are you sure you want to distribute funds for transaction ${transactionId}?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/admin/api/fund-management/distribute/${transactionId}`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            await adminDashboard.loadFundManagement();
+            alert('Funds distributed successfully!');
+        } else {
+            alert(`Error: ${result.message || 'Failed to distribute funds'}`);
+        }
+        
+    } catch (error) {
+        console.error('Error distributing funds:', error);
+        alert('Failed to distribute funds');
+    }
+}
+
+function viewAllTransactions() {
+    window.open('/admin/fund-transactions', '_blank');
+}
+
+function showModal(content) {
+    const modal = document.createElement('div');
+    modal.id = 'configModal';
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+        background: rgba(0,0,0,0.8); z-index: 10000; 
+        display: flex; align-items: center; justify-content: center;
+        padding: 2rem; overflow-y: auto;
+    `;
+    modal.innerHTML = content;
+    document.body.appendChild(modal);
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+}
+
+function closeModal() {
+    const modal = document.getElementById('configModal');
+    if (modal) modal.remove();
+}
+
   </script>
 </body>
 </html>

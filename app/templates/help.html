@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+
+{% block title %}Help & Support - Klerno Labs{% endblock %}
+
+{% block head %}
+<style>
+    .help-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 2rem;
+        color: #333;
+    }
+    
+    .help-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 3rem 2rem;
+        background: linear-gradient(135deg, #3742fa 0%, #2f3542 100%);
+        color: white;
+        border-radius: 20px;
+    }
+    
+    .help-title {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .help-subtitle {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+    
+    .search-box {
+        max-width: 600px;
+        margin: 2rem auto;
+        position: relative;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 20px 60px 20px 20px;
+        border: 2px solid #ddd;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: #3742fa;
+        box-shadow: 0 4px 25px rgba(55, 66, 250, 0.3);
+    }
+    
+    .search-btn {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #3742fa;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .search-btn:hover {
+        background: #2f3542;
+        transform: translateY(-50%) scale(1.05);
+    }
+    
+    .help-sections {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2rem;
+        margin: 3rem 0;
+    }
+    
+    .help-section {
+        background: white;
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: 1px solid #f0f0f0;
+        transition: all 0.3s ease;
+    }
+    
+    .help-section:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    .section-icon {
+        font-size: 3rem;
+        color: #3742fa;
+        margin-bottom: 1rem;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #333;
+    }
+    
+    .section-description {
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+    
+    .help-links {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .help-links li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .help-links a {
+        color: #3742fa;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .help-links a:hover {
+        color: #2f3542;
+        text-decoration: underline;
+    }
+    
+    .faq-section {
+        background: white;
+        padding: 3rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        margin: 3rem 0;
+    }
+    
+    .faq-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .faq-item {
+        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 1rem;
+    }
+    
+    .faq-question {
+        font-weight: 600;
+        color: #333;
+        padding: 1rem 0;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+    
+    .faq-question:hover {
+        color: #3742fa;
+    }
+    
+    .faq-answer {
+        padding: 0 0 1rem 0;
+        color: #666;
+        line-height: 1.6;
+        display: none;
+    }
+    
+    .faq-answer.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    .contact-support {
+        background: linear-gradient(135deg, #3742fa 0%, #2f3542 100%);
+        color: white;
+        padding: 3rem;
+        border-radius: 20px;
+        text-align: center;
+        margin: 3rem 0;
+    }
+    
+    .contact-methods {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    
+    .contact-method {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2rem;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .contact-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-container">
+    <div class="help-header">
+        <h1 class="help-title">Help & Support</h1>
+        <p class="help-subtitle">Get the help you need to make the most of Klerno Labs</p>
+    </div>
+    
+    <div class="search-box">
+        <input 
+            type="text" 
+            class="search-input" 
+            placeholder="Search for help articles, features, or troubleshooting..."
+            id="helpSearch"
+        >
+        <button class="search-btn" onclick="searchHelp()">
+            <i class="fas fa-search"></i>
+        </button>
+    </div>
+    
+    <div class="help-sections">
+        <div class="help-section">
+            <div class="section-icon">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h3 class="section-title">Getting Started</h3>
+            <p class="section-description">
+                New to Klerno Labs? Learn the basics and get up and running quickly with our platform.
+            </p>
+            <ul class="help-links">
+                <li><a href="#" onclick="showArticle('setup')">Initial Setup Guide</a></li>
+                <li><a href="#" onclick="showArticle('dashboard')">Dashboard Overview</a></li>
+                <li><a href="#" onclick="showArticle('first-analysis')">Running Your First Analysis</a></li>
+                <li><a href="#" onclick="showArticle('api-keys')">Setting Up API Keys</a></li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <div class="section-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3 class="section-title">Analytics & Reports</h3>
+            <p class="section-description">
+                Learn how to create, customize, and interpret blockchain analytics and compliance reports.
+            </p>
+            <ul class="help-links">
+                <li><a href="#" onclick="showArticle('risk-scoring')">Understanding Risk Scores</a></li>
+                <li><a href="#" onclick="showArticle('custom-reports')">Creating Custom Reports</a></li>
+                <li><a href="#" onclick="showArticle('export-data')">Exporting Data</a></li>
+                <li><a href="#" onclick="showArticle('alerts')">Setting Up Alerts</a></li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <div class="section-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h3 class="section-title">Compliance & Security</h3>
+            <p class="section-description">
+                Ensure regulatory compliance and understand our security measures and best practices.
+            </p>
+            <ul class="help-links">
+                <li><a href="#" onclick="showArticle('aml-compliance')">AML Compliance Features</a></li>
+                <li><a href="#" onclick="showArticle('kyc-tools')">KYC Integration Tools</a></li>
+                <li><a href="#" onclick="showArticle('data-security')">Data Security Measures</a></li>
+                <li><a href="#" onclick="showArticle('audit-logs')">Audit Trail & Logs</a></li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <div class="section-icon">
+                <i class="fas fa-code"></i>
+            </div>
+            <h3 class="section-title">API Documentation</h3>
+            <p class="section-description">
+                Integrate Klerno Labs with your systems using our comprehensive API documentation.
+            </p>
+            <ul class="help-links">
+                <li><a href="#" onclick="showArticle('api-overview')">API Overview</a></li>
+                <li><a href="#" onclick="showArticle('authentication')">Authentication Guide</a></li>
+                <li><a href="#" onclick="showArticle('endpoints')">Available Endpoints</a></li>
+                <li><a href="#" onclick="showArticle('webhooks')">Webhook Integration</a></li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <div class="section-icon">
+                <i class="fas fa-tools"></i>
+            </div>
+            <h3 class="section-title">Troubleshooting</h3>
+            <p class="section-description">
+                Resolve common issues and learn troubleshooting techniques for optimal performance.
+            </p>
+            <ul class="help-links">
+                <li><a href="#" onclick="showArticle('connection-issues')">Connection Problems</a></li>
+                <li><a href="#" onclick="showArticle('slow-performance')">Performance Issues</a></li>
+                <li><a href="#" onclick="showArticle('data-accuracy')">Data Accuracy Concerns</a></li>
+                <li><a href="#" onclick="showArticle('browser-support')">Browser Compatibility</a></li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <div class="section-icon">
+                <i class="fas fa-credit-card"></i>
+            </div>
+            <h3 class="section-title">Billing & Account</h3>
+            <p class="section-description">
+                Manage your subscription, billing information, and account settings effectively.
+            </p>
+            <ul class="help-links">
+                <li><a href="#" onclick="showArticle('subscription-plans')">Subscription Plans</a></li>
+                <li><a href="#" onclick="showArticle('billing-cycle')">Billing Information</a></li>
+                <li><a href="#" onclick="showArticle('usage-limits')">Usage Limits & Quotas</a></li>
+                <li><a href="#" onclick="showArticle('account-settings')">Account Management</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="faq-section">
+        <h2 class="faq-title">Frequently Asked Questions</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                What blockchain networks does Klerno Labs support?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                Klerno Labs currently supports major blockchain networks including Bitcoin, Ethereum, XRP Ledger, Binance Smart Chain, and Polygon. We're continuously adding support for additional networks based on user demand and market requirements.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                How accurate are the risk scores provided by the platform?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                Our risk scoring algorithm achieves over 95% accuracy in identifying high-risk transactions. The scores are based on machine learning models trained on millions of transactions and are continuously updated to reflect new threat patterns and regulatory requirements.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                Can I integrate Klerno Labs with my existing compliance systems?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                Yes, Klerno Labs provides comprehensive API integration capabilities. You can connect our platform to your existing AML, KYC, and compliance management systems using our RESTful APIs and webhook notifications.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                What data retention policies does Klerno Labs follow?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                We retain transaction data for up to 7 years to comply with financial regulations. Personal data is retained only as long as necessary for service provision. You can request data deletion at any time, subject to legal requirements.
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(this)">
+                How does Klerno Labs ensure data privacy and security?
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer">
+                We implement bank-grade security measures including end-to-end encryption, SOC 2 compliance, regular security audits, and multi-factor authentication. All data is stored in secure, geographically distributed data centers with 24/7 monitoring.
+            </div>
+        </div>
+    </div>
+    
+    <div class="contact-support">
+        <h2>Still Need Help?</h2>
+        <p>Our support team is available 24/7 to assist you with any questions or issues.</p>
+        
+        <div class="contact-methods">
+            <div class="contact-method">
+                <div class="contact-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h4>Live Chat</h4>
+                <p>Get instant help with our live chat support</p>
+                <button class="btn btn-primary" onclick="openLiveChat()">Start Chat</button>
+            </div>
+            
+            <div class="contact-method">
+                <div class="contact-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <h4>Email Support</h4>
+                <p>Send us detailed questions or feedback</p>
+                <a href="mailto:support@klernolabs.com" class="btn btn-primary">Send Email</a>
+            </div>
+            
+            <div class="contact-method">
+                <div class="contact-icon">
+                    <i class="fas fa-phone"></i>
+                </div>
+                <h4>Phone Support</h4>
+                <p>Speak directly with our technical team</p>
+                <a href="tel:+15551234567" class="btn btn-primary">Call Now</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function searchHelp() {
+    const searchTerm = document.getElementById('helpSearch').value.toLowerCase();
+    // In a real implementation, this would search through help articles
+    alert(`Searching for: "${searchTerm}"\n\nThis would typically show relevant help articles and documentation.`);
+}
+
+function showArticle(articleId) {
+    // In a real implementation, this would load the specific help article
+    const articles = {
+        'setup': 'Initial Setup Guide - Complete walkthrough of setting up your Klerno Labs account...',
+        'dashboard': 'Dashboard Overview - Understanding your main dashboard and key metrics...',
+        'risk-scoring': 'Risk Scoring Algorithm - How we calculate and assign risk scores...',
+        'api-overview': 'API Documentation - Complete guide to our REST API endpoints...'
+    };
+    
+    const content = articles[articleId] || 'Article content would be displayed here...';
+    alert(`Loading Article: ${articleId}\n\n${content}`);
+}
+
+function toggleFAQ(element) {
+    const answer = element.nextElementSibling;
+    const icon = element.querySelector('i');
+    
+    // Close all other FAQs
+    document.querySelectorAll('.faq-answer').forEach(item => {
+        if (item !== answer) {
+            item.classList.remove('active');
+        }
+    });
+    
+    document.querySelectorAll('.faq-question i').forEach(item => {
+        if (item !== icon) {
+            item.style.transform = 'rotate(0deg)';
+        }
+    });
+    
+    // Toggle current FAQ
+    answer.classList.toggle('active');
+    icon.style.transform = answer.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+function openLiveChat() {
+    // In a real implementation, this would open a live chat widget
+    alert('Live chat would open here. This feature connects you directly with our support team for real-time assistance.');
+}
+
+// Search functionality
+document.getElementById('helpSearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchHelp();
+    }
+});
+
+// Add search suggestions
+document.getElementById('helpSearch').addEventListener('input', function(e) {
+    const value = e.target.value.toLowerCase();
+    // In a real implementation, this would show search suggestions
+    if (value.length > 2) {
+        // Show suggestions dropdown
+    }
+});
+</script>
+{% endblock %}

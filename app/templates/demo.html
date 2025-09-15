@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Demo - Klerno Labs{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/design-system.css">
+<style>
+.demo-hero {
+  background: var(--gradient-hero);
+  padding: var(--space-12) 0;
+  text-align: center;
+  color: white;
+}
+
+.demo-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-8);
+}
+
+.demo-section {
+  margin-bottom: var(--space-8);
+  padding: var(--space-6);
+  background: var(--glass-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+}
+
+.transaction-demo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.transaction-card {
+  background: var(--surface-light);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  padding: var(--space-4);
+  transition: all 0.3s ease;
+}
+
+.transaction-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.risk-score {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+}
+
+.risk-high { background: rgba(239, 68, 68, 0.1); color: #DC2626; }
+.risk-medium { background: rgba(245, 158, 11, 0.1); color: #D97706; }
+.risk-low { background: rgba(34, 197, 94, 0.1); color: #059669; }
+
+.demo-controls {
+  text-align: center;
+  margin: var(--space-6) 0;
+}
+
+.demo-btn {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 0 var(--space-2);
+}
+
+.demo-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.metric-card {
+  text-align: center;
+  padding: var(--space-4);
+  background: var(--surface-light);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.metric-number {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--color-primary);
+  display: block;
+}
+
+.metric-label {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+
+.interactive-area {
+  min-height: 400px;
+  background: var(--surface-light);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: var(--space-8);
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.6); }
+}
+
+.demo-active {
+  animation: pulse-glow 2s infinite;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<main id="main">
+  <div class="demo-hero">
+    <div class="demo-container">
+      <h1 class="hero-title">Interactive Demo</h1>
+      <p class="hero-subtitle">Experience Klerno Labs' blockchain analysis in action</p>
+    </div>
+  </div>
+
+  <div class="demo-container">
+    <!-- Live Transaction Analysis -->
+    <div class="demo-section">
+      <h2>🔍 Real-Time Transaction Analysis</h2>
+      <p>Watch our AI analyze blockchain transactions for risk patterns and compliance issues.</p>
+      
+      <div class="demo-controls">
+        <button class="demo-btn" onclick="analyzeTransaction()">Analyze Sample Transaction</button>
+        <button class="demo-btn" onclick="runBatchAnalysis()">Run Batch Analysis</button>
+      </div>
+
+      <div class="interactive-area" id="analysis-area">
+        <div class="placeholder-text">
+          <h3>Click "Analyze Sample Transaction" to begin</h3>
+          <p>Our AI will demonstrate real-time risk scoring and compliance tagging</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sample Transactions -->
+    <div class="demo-section">
+      <h2>📊 Sample Transaction Results</h2>
+      <div class="transaction-demo">
+        {% for tx in demo_data.sample_transactions %}
+        <div class="transaction-card">
+          <div class="transaction-header">
+            <code>{{ tx.hash }}</code>
+            <span class="risk-score risk-{{ 'high' if tx.risk_score > 0.7 else 'medium' if tx.risk_score > 0.4 else 'low' }}">
+              Risk: {{ (tx.risk_score * 100)|round }}%
+            </span>
+          </div>
+          <div style="margin-top: var(--space-3);">
+            <strong>Amount:</strong> ${{ "{:,.2f}".format(tx.amount) }}<br>
+            <strong>Category:</strong> {{ tx.category }}<br>
+            <strong>Time:</strong> {{ tx.timestamp[:19] }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Platform Metrics -->
+    <div class="demo-section">
+      <h2>📈 Platform Performance</h2>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <span class="metric-number">{{ "{:,}".format(demo_data.metrics.total_analyzed) }}</span>
+          <div class="metric-label">Transactions Analyzed</div>
+        </div>
+        <div class="metric-card">
+          <span class="metric-number">{{ "{:,}".format(demo_data.metrics.high_risk_detected) }}</span>
+          <div class="metric-label">High-Risk Detected</div>
+        </div>
+        <div class="metric-card">
+          <span class="metric-number">{{ demo_data.metrics.accuracy_rate }}%</span>
+          <div class="metric-label">Accuracy Rate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="demo-section" style="text-align: center;">
+      <h2>🚀 Ready to Get Started?</h2>
+      <p>Join thousands of companies using Klerno Labs for blockchain security and compliance.</p>
+      <div style="margin-top: var(--space-6);">
+        <a href="/signup" class="btn-elite btn-elite-primary" style="margin: 0 var(--space-2);">Start Free Trial</a>
+        <a href="/login" class="btn-elite btn-elite-secondary" style="margin: 0 var(--space-2);">Sign In</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// Demo functionality
+function analyzeTransaction() {
+  const area = document.getElementById('analysis-area');
+  area.classList.add('demo-active');
+  
+  area.innerHTML = `
+    <div style="text-align: center;">
+      <div class="spinner" style="margin: 0 auto 1rem; width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      <h3>Analyzing Transaction...</h3>
+      <p>Scanning for risk patterns and compliance flags</p>
+    </div>
+  `;
+
+  setTimeout(() => {
+    area.innerHTML = `
+      <div style="text-align: left; max-width: 500px;">
+        <h3 style="color: var(--color-success); margin-bottom: 1rem;">✅ Analysis Complete</h3>
+        <div style="background: var(--surface-light); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--color-warning);">
+          <strong>Risk Score:</strong> 73% (High Risk)<br>
+          <strong>Flags:</strong> Unusual amount pattern, High-velocity trading<br>
+          <strong>Category:</strong> Potentially Suspicious Activity<br>
+          <strong>Recommendation:</strong> Manual review required
+        </div>
+        <button onclick="analyzeTransaction()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--color-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">Analyze Another</button>
+      </div>
+    `;
+    area.classList.remove('demo-active');
+  }, 3000);
+}
+
+function runBatchAnalysis() {
+  const area = document.getElementById('analysis-area');
+  area.classList.add('demo-active');
+  
+  area.innerHTML = `
+    <div style="text-align: center;">
+      <div class="spinner" style="margin: 0 auto 1rem; width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid var(--color-primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+      <h3>Processing 1,000 Transactions...</h3>
+      <p>Applying ML models and compliance rules</p>
+    </div>
+  `;
+
+  setTimeout(() => {
+    area.innerHTML = `
+      <div style="text-align: left; max-width: 600px;">
+        <h3 style="color: var(--color-success); margin-bottom: 1rem;">🎯 Batch Analysis Results</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+          <div style="text-align: center; padding: 1rem; background: var(--surface-light); border-radius: 8px;">
+            <div style="font-size: 2rem; font-weight: bold; color: var(--color-success);">952</div>
+            <div>Safe</div>
+          </div>
+          <div style="text-align: center; padding: 1rem; background: var(--surface-light); border-radius: 8px;">
+            <div style="font-size: 2rem; font-weight: bold; color: var(--color-warning);">35</div>
+            <div>Medium Risk</div>
+          </div>
+          <div style="text-align: center; padding: 1rem; background: var(--surface-light); border-radius: 8px;">
+            <div style="font-size: 2rem; font-weight: bold; color: var(--color-danger);">13</div>
+            <div>High Risk</div>
+          </div>
+        </div>
+        <button onclick="runBatchAnalysis()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: var(--color-primary); color: white; border: none; border-radius: 4px; cursor: pointer;">Run Another Batch</button>
+      </div>
+    `;
+    area.classList.remove('demo-active');
+  }, 4000);
+}
+
+// CSS animation
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

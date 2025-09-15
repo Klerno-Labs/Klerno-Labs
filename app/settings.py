@@ -5,12 +5,17 @@ from functools import lru_cache
 class Settings:
     # Env is read at import time; fine for simple configs
     app_env = os.getenv("APP_ENV", "dev")
-    demo_mode = os.getenv("DEMO_MODE", "false").lower() == "true"
 
     # Auth
     jwt_secret = os.getenv("JWT_SECRET", "CHANGE_ME_32+")
     access_token_expire_minutes = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
     admin_email = os.getenv("ADMIN_EMAIL", "klerno@outlook.com")
+    
+    # OAuth
+    google_client_id = os.getenv("GOOGLE_CLIENT_ID", "")
+    google_client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    microsoft_client_id = os.getenv("MICROSOFT_CLIENT_ID", "")
+    microsoft_client_secret = os.getenv("MICROSOFT_CLIENT_SECRET", "")
 
     # Paywall/Stripe
     paywall_code = os.getenv("PAYWALL_CODE", "Labs2025")

@@ -27,19 +27,6 @@ def _lookup_user_by_sub(sub: str) -> Optional[dict]:
         if user:
             return user
 
-    # 3) DEMO fallback: synthesize admin if matches ADMIN_EMAIL
-    if (
-        S.demo_mode
-        and isinstance(sub, str)
-        and sub.strip().lower() == S.admin_email.strip().lower()
-    ):
-        return {
-            "id": -1,
-            "email": S.admin_email,
-            "role": "admin",
-            "subscription_active": True,
-        }
-
     return None
 
 def current_user(request: Request) -> Optional[dict]:
@@ -76,9 +63,6 @@ def require_user(user: Optional[dict] = Depends(current_user)) -> dict:
     return user
 
 def require_paid_or_admin(user: dict = Depends(require_user)) -> dict:
-    if S.demo_mode:
-        return user
-    
     # Admin check
     if user.get("role") == "admin":
         return user

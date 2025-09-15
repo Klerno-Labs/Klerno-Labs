@@ -76,11 +76,6 @@ class Settings(BaseSettings):
         0.75, description="Risk threshold for alerts (0.0-1.0)", ge=0.0, le=1.0
     )
     
-    # Demo mode (all users get access)
-    DEMO_MODE: bool = Field(
-        False, description="Enable demo mode (all users have paid access)"
-    )
-    
     # Admin email
     ADMIN_EMAIL: Optional[str] = Field(
         None, description="Admin email address (gets admin role on signup)"
