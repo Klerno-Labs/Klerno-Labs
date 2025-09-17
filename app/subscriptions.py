@@ -1,17 +1,35 @@
+#
+from __future__ import annotations
+# Dummy db for test patching
+db = None
+# Utility for test compatibility
+def is_subscription_active(user_id: str) -> bool:
+    """Return True if the user's subscription is active, False otherwise."""
+    sub = get_subscription_for_user(user_id)
+    return (
+        sub is not None
+        and getattr(sub, 'active', False)
+        and getattr(sub, 'expires_at', None)
+        and sub.expires_at > datetime.now(timezone.utc)
+    )
+
+def get_subscription_for_user(user_id: str) -> Optional[Subscription]:
+    """Alias for get_user_subscription for test compatibility."""
+    return get_user_subscription(user_id)
+
 """
 Subscriptions Module for Klerno Labs.
 
 Manages user subscriptions, tier pricing, and access control.
 """
-from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Dict, Any, Optional, List, Tuple, Union
+from typing import Dict, Any, Optional, List, Tuple
 
 import sqlite3
 from fastapi import Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .config import settings
 from .security_session import get_current_user
@@ -19,8 +37,8 @@ from .security_session import get_current_user
 
 class SubscriptionTier(str, Enum):
     """Subscription tier levels."""
-    BASIC = "basic"
-    PREMIUM = "premium"
+    STARTER = "starter"
+    PROFESSIONAL = "professional" 
     ENTERPRISE = "enterprise"
 
 
@@ -32,6 +50,8 @@ class TierDetails(BaseModel):
     price_xrp: float
     duration_days: int
     features: List[str]
+    transaction_limit: Optional[int] = None  # None = unlimited
+    api_rate_limit: Optional[int] = None     # requests per hour
 
 
 class Subscription(BaseModel):
@@ -49,47 +69,58 @@ class Subscription(BaseModel):
     updated_at: datetime
 
 
-# Default tier configuration
+# Default tier configuration - Aligned with advertised pricing
 DEFAULT_TIERS = {
-    SubscriptionTier.BASIC: TierDetails(
-        id=SubscriptionTier.BASIC,
-        name="Basic",
-        description="Access to core XRPL analytics and transaction monitoring",
-        price_xrp=10.0,
+    SubscriptionTier.STARTER: TierDetails(
+        id=SubscriptionTier.STARTER,
+        name="Starter",
+        description="Perfect for individual developers starting their journey",
+        price_xrp=0.0,  # Free tier
         duration_days=30,
+        transaction_limit=1000,  # 1,000 transactions/month
+        api_rate_limit=100,      # 100 requests/hour
         features=[
-            "XRPL transaction monitoring", 
-            "Basic risk scoring", 
-            "Transaction history"
+            "Up to 1,000 transactions/month",
+            "Starter risk analysis", 
+            "Email alerts",
+            "Community support",
+            "API access"
         ]
     ),
-    SubscriptionTier.PREMIUM: TierDetails(
-        id=SubscriptionTier.PREMIUM,
-        name="Premium",
-        description="Advanced analytics and real-time alerts",
-        price_xrp=25.0,
+    SubscriptionTier.PROFESSIONAL: TierDetails(
+        id=SubscriptionTier.PROFESSIONAL,
+        name="Professional",
+        description="Ideal for power users and small businesses",
+        price_xrp=25.0,  # $99/month worth in XRP (25 XRP * $4/XRP = ~$100)
         duration_days=30,
+        transaction_limit=100000,  # 100,000 transactions/month
+        api_rate_limit=1000,       # 1,000 requests/hour
         features=[
-            "All Basic features",
-            "Advanced risk scoring",
-            "Real-time alerts",
-            "Customizable dashboards",
-            "Priority support"
+            "Up to 100,000 transactions/month",
+            "Advanced AI risk scoring",
+            "Real-time WebSocket alerts",
+            "Priority support",
+            "Custom dashboards",
+            "Compliance reporting",
+            "Multi-chain support"
         ]
     ),
     SubscriptionTier.ENTERPRISE: TierDetails(
         id=SubscriptionTier.ENTERPRISE,
         name="Enterprise",
-        description="Enterprise-grade XRPL intelligence with API access",
-        price_xrp=100.0,
+        description="Complete solution for businesses with advanced needs",
+        price_xrp=0.0,  # Custom pricing - contact sales
         duration_days=30,
+        transaction_limit=None,  # Unlimited transactions
+        api_rate_limit=None,     # Unlimited API access
         features=[
-            "All Premium features",
-            "API access",
-            "Custom integrations",
+            "Unlimited transactions",
+            "White-label solution",
             "Dedicated support",
-            "Compliance reporting",
-            "Multi-user access"
+            "Custom integrations",
+            "SLA guarantees",
+            "On-premise deployment",
+            "Custom AI models"
         ]
     )
 }
@@ -181,7 +212,10 @@ def get_tier_details(tier_id: str) -> TierDetails:
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id, name, description, price_xrp, duration_days, features FROM subscription_tiers WHERE id = ?",
+        (
+            "SELECT id, name, description, price_xrp, duration_days, features "
+            "FROM subscription_tiers WHERE id = ?"
+        ),
         (tier_id,)
     )
     row = cursor.fetchone()
@@ -214,7 +248,10 @@ def get_all_tiers() -> List[TierDetails]:
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id, name, description, price_xrp, duration_days, features FROM subscription_tiers"
+        (
+            "SELECT id, name, description, price_xrp, duration_days, features "
+            "FROM subscription_tiers"
+        )
     )
     rows = cursor.fetchall()
     conn.close()
@@ -238,6 +275,60 @@ def get_all_tiers() -> List[TierDetails]:
 
 def get_user_subscription(user_id: str) -> Optional[Subscription]:
     """Get the current subscription for a user."""
+    # If a db facade is provided (e.g., in tests), delegate to it
+    global db
+    if db is not None and hasattr(db, 'get_user_subscription'):
+        ret = db.get_user_subscription(user_id)
+        if ret is None:
+            return None
+        # If already a Subscription instance, return as-is
+        if isinstance(ret, Subscription):
+            return ret
+        # If dict-like, construct Subscription
+        try:
+            data = dict(ret)
+        except Exception:
+            # Assume attribute-style access
+            data = ret.__dict__
+
+        def _parse_dt(val: str) -> datetime:
+            d = datetime.fromisoformat(val)
+            if d.tzinfo is None:
+                d = d.replace(tzinfo=timezone.utc)
+            return d
+
+        tier_val = (
+            data["tier"]
+            if isinstance(data["tier"], SubscriptionTier)
+            else SubscriptionTier(data["tier"])
+        )
+        starts_at = data.get("starts_at", datetime.now(timezone.utc))
+        if isinstance(starts_at, str):
+            starts_at = _parse_dt(starts_at)
+        expires_at = data.get("expires_at", datetime.now(timezone.utc))
+        if isinstance(expires_at, str):
+            expires_at = _parse_dt(expires_at)
+        created_at = data.get("created_at", datetime.now(timezone.utc))
+        if isinstance(created_at, str):
+            created_at = _parse_dt(created_at)
+        updated_at = data.get("updated_at", datetime.now(timezone.utc))
+        if isinstance(updated_at, str):
+            updated_at = _parse_dt(updated_at)
+
+        return Subscription(
+            id=data["id"],
+            user_id=data["user_id"],
+            tier=tier_val,
+            active=bool(data["active"]),
+            starts_at=starts_at,
+            expires_at=expires_at,
+            tx_hash=data.get("tx_hash"),
+            payment_id=data.get("payment_id"),
+            auto_renew=bool(data.get("auto_renew", False)),
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
@@ -257,18 +348,24 @@ def get_user_subscription(user_id: str) -> Optional[Subscription]:
     if not row:
         return None
     
+    def _parse_dt_db(val: str) -> datetime:
+        d = datetime.fromisoformat(val)
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=timezone.utc)
+        return d
+
     return Subscription(
         id=row["id"],
         user_id=row["user_id"],
         tier=SubscriptionTier(row["tier"]),
         active=bool(row["active"]),
-        starts_at=datetime.fromisoformat(row["starts_at"]),
-        expires_at=datetime.fromisoformat(row["expires_at"]),
+        starts_at=_parse_dt_db(row["starts_at"]),
+        expires_at=_parse_dt_db(row["expires_at"]),
         tx_hash=row["tx_hash"],
         payment_id=row["payment_id"],
         auto_renew=bool(row["auto_renew"]),
-        created_at=datetime.fromisoformat(row["created_at"]),
-        updated_at=datetime.fromisoformat(row["updated_at"])
+        created_at=_parse_dt_db(row["created_at"]),
+        updated_at=_parse_dt_db(row["updated_at"])
     )
 
 
@@ -287,7 +384,7 @@ def create_subscription(
     tier_details = get_tier_details(tier)
     days = duration_days if duration_days is not None else tier_details.duration_days
     
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     
     # Check if user already has a subscription
     existing = get_user_subscription(user_id)
@@ -315,6 +412,15 @@ def create_subscription(
         updated_at=now
     )
     
+    # Use db facade if available (tests)
+    if db is not None and hasattr(db, 'insert_subscription'):
+        # If existing and we are extending, prefer update_subscription when available
+        if existing and existing.id == sub_id and hasattr(db, 'update_subscription'):
+            db.update_subscription(subscription)
+        else:
+            db.insert_subscription(subscription)
+        return subscription
+
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -370,10 +476,15 @@ def create_subscription(
 
 def update_subscription(subscription: Subscription) -> Subscription:
     """Update an existing subscription."""
+    # Use db facade if available (tests)
+    if db is not None and hasattr(db, 'update_subscription'):
+        db.update_subscription(subscription)
+        return subscription
+
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    subscription.updated_at = datetime.utcnow()
+    subscription.updated_at = datetime.now(timezone.utc)
     
     cursor.execute(
         '''
@@ -421,7 +532,7 @@ def has_active_subscription(user_id: str) -> bool:
         return False
     
     # Check if subscription is active and not expired
-    return subscription.active and subscription.expires_at > datetime.utcnow()
+    return subscription.active and subscription.expires_at > datetime.now(timezone.utc)
 
 
 def get_all_subscriptions(limit: int = 100, offset: int = 0) -> List[Subscription]:
@@ -441,19 +552,25 @@ def get_all_subscriptions(limit: int = 100, offset: int = 0) -> List[Subscriptio
     rows = cursor.fetchall()
     conn.close()
     
+    def _parse_dt_db(val: str) -> datetime:
+        d = datetime.fromisoformat(val)
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=timezone.utc)
+        return d
+
     return [
         Subscription(
             id=row["id"],
             user_id=row["user_id"],
             tier=SubscriptionTier(row["tier"]),
             active=bool(row["active"]),
-            starts_at=datetime.fromisoformat(row["starts_at"]),
-            expires_at=datetime.fromisoformat(row["expires_at"]),
+            starts_at=_parse_dt_db(row["starts_at"]),
+            expires_at=_parse_dt_db(row["expires_at"]),
             tx_hash=row["tx_hash"],
             payment_id=row["payment_id"],
             auto_renew=bool(row["auto_renew"]),
-            created_at=datetime.fromisoformat(row["created_at"]),
-            updated_at=datetime.fromisoformat(row["updated_at"])
+            created_at=_parse_dt_db(row["created_at"]),
+            updated_at=_parse_dt_db(row["updated_at"])
         )
         for row in rows
     ]
@@ -477,6 +594,84 @@ async def require_active_subscription(
         )
     
     return current_user
+
+
+def check_transaction_limit(user_id: str) -> Tuple[bool, int, int]:
+    """
+    Check if user has exceeded transaction limit.
+    Returns: (allowed, used_count, limit)
+    """
+    subscription = get_user_subscription(user_id)
+    if not subscription:
+        # No subscription = starter tier limits
+        tier_details = DEFAULT_TIERS[SubscriptionTier.STARTER]
+    else:
+        tier_details = get_tier_details(subscription.tier.value)
+    
+    # If unlimited, always allow
+    if tier_details.transaction_limit is None:
+        return True, 0, -1  # -1 indicates unlimited
+    
+    # Count transactions for current billing period
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Create usage table if not exists
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS transaction_usage (
+        user_id TEXT NOT NULL,
+        transaction_date DATE NOT NULL,
+        count INTEGER DEFAULT 1,
+        PRIMARY KEY (user_id, transaction_date)
+    )
+    ''')
+    
+    # Get current month usage
+    from datetime import date
+    current_month = date.today().replace(day=1)
+    
+    cursor.execute(
+        """
+        SELECT COALESCE(SUM(count), 0) FROM transaction_usage 
+        WHERE user_id = ? AND transaction_date >= ?
+        """,
+        (user_id, current_month.isoformat())
+    )
+    
+    used_count = cursor.fetchone()[0]
+    conn.close()
+    
+    return used_count < tier_details.transaction_limit, used_count, tier_details.transaction_limit
+
+
+def record_transaction_usage(user_id: str, count: int = 1):
+    """Record transaction usage for billing."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    from datetime import date
+    today = date.today().isoformat()
+    
+    cursor.execute(
+        (
+            """
+            INSERT OR REPLACE INTO transaction_usage (user_id, transaction_date, count)
+            VALUES (
+                ?, ?, COALESCE(
+                    (
+                        SELECT count FROM transaction_usage
+                        WHERE user_id = ? AND transaction_date = ?
+                    ),
+                    0
+                ) + ?
+            )
+            """
+        ),
+        (user_id, today, user_id, today, count),
+    )
+    
+    conn.commit()
+    conn.close()
 
 
 # Initialize the database on module import

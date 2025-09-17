@@ -1,4 +1,5 @@
-import os, requests
+import os
+import requests
 from typing import List, Dict, Any
 from datetime import datetime
 from ..models import Transaction
@@ -41,7 +42,10 @@ def bsc_json_to_transactions(address: str, payload: List[Dict[str, Any]]) -> Lis
             # native BNB transfer value is in wei
             value_wei = int(it.get("value", 0))
             amount = value_wei / 10**18
-            fee = (int(it.get("gasPrice", 0)) * int(it.get("gasUsed", it.get("gas", 0) or 0))) / 10**18
+            fee = (
+                int(it.get("gasPrice", 0))
+                * int(it.get("gasUsed", it.get("gas", 0) or 0))
+            ) / 10**18
             direction = "in" if to_addr == addr else ("out" if from_addr == addr else "")
             tx = Transaction(
                 tx_id = it.get("hash") or "",

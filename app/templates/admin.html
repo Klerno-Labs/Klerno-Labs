@@ -1320,8 +1320,8 @@ function deleteUser(userId) {
         <div class="row">
           <input id="subUserId" placeholder="User ID" />
           <select id="subTier">
-            <option value="1">Basic</option>
-            <option value="2">Premium</option>
+            <option value="1">Starter</option>
+            <option value="2">Professional</option>
             <option value="3">Enterprise</option>
           </select>
           <input id="subDays" type="number" placeholder="Days" value="30" min="1" max="365" />
@@ -1531,8 +1531,8 @@ function deleteUser(userId) {
           const daysLeft = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
           
           let tierName = "Unknown";
-          if (sub.tier === 1) tierName = "Basic";
-          else if (sub.tier === 2) tierName = "Premium";
+          if (sub.tier === 1) tierName = "Starter";
+          else if (sub.tier === 2) tierName = "Professional";
           else if (sub.tier === 3) tierName = "Enterprise";
           
           return `<tr>

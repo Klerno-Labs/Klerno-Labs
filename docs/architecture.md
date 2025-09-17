@@ -337,7 +337,7 @@ async def health_check():
     """Comprehensive health check endpoint"""
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow(),
+        "timestamp": datetime.now(timezone.utc),
         "services": {
             "database": await check_database_health(),
             "cache": await check_redis_health(),

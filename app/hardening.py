@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import hmac
 import secrets
-from typing import Optional, Callable, Awaitable
+from typing import Callable, Awaitable
 
 from fastapi import Request, HTTPException
 from starlette.responses import Response
@@ -31,9 +31,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
         resp.headers.setdefault("X-Frame-Options", "DENY")
         resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        resp.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        resp.headers.setdefault(
+            "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
+        )
         if (os.getenv("ENABLE_HSTS", "true").lower() == "true") and request.url.scheme == "https":
-            resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+            resp.headers.setdefault(
+                "Strict-Transport-Security",
+                "max-age=31536000; includeSubDomains; preload",
+            )
         return resp
 
 
@@ -51,7 +56,15 @@ def issue_csrf_cookie(resp: Response) -> str:
     """Mint a CSRF token cookie (readable by JS; header-only is checked server-side)."""
     token = secrets.token_urlsafe(32)
     # NOTE: SameSite=Strict and Secure; not HttpOnly because client JS must reflect it into header.
-    resp.set_cookie("csrf_token", token, secure=True, samesite="Strict", httponly=False, path="/", max_age=60 * 60 * 8)
+    resp.set_cookie(
+        "csrf_token",
+        token,
+        secure=True,
+        samesite="Strict",
+        httponly=False,
+        path="/",
+        max_age=60 * 60 * 8,
+    )
     return token
 
 

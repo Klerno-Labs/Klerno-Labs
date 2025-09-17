@@ -1,22 +1,40 @@
+
+from __future__ import annotations
+# Dummy XRPLClient for test patching
+XRPLClient = None
+
+from datetime import timezone
+def get_payment_status(payment_request: Dict[str, Any], tx_hash: Optional[str] = None) -> str:
+    """Return the status of a payment request: 'verified', 'pending', or 'expired'."""
+    expires_at = payment_request.get("expires_at")
+    if expires_at:
+        try:
+            expires_dt = datetime.fromisoformat(expires_at)
+            if expires_dt.tzinfo is None:
+                expires_dt = expires_dt.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) > expires_dt:
+                return "expired"
+        except Exception:
+            pass
+    verified, _, _ = verify_payment(payment_request, tx_hash)
+    if verified:
+        return "verified"
+    return "pending"
 """
 XRPL Payments Module for Klerno Labs.
 
 Handles payment generation, verification, and subscription management using the XRP Ledger.
 Uses xrpl-py library for XRPL interaction.
 """
-from __future__ import annotations
 
 import hashlib
-import os
 import time
 import uuid
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple
 
 import xrpl
 from xrpl.clients import JsonRpcClient
-from xrpl.wallet import Wallet
-from xrpl.models.transactions import Payment
 from xrpl.models.requests import AccountTx
 
 from .config import settings
@@ -68,8 +86,8 @@ def create_payment_request(
         "description": description,
         "payment_code": payment_code,
         "network": settings.XRPL_NET,
-        "created_at": datetime.utcnow().isoformat(),
-        "expires_at": (datetime.utcnow() + timedelta(hours=24)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat(),
         "status": "pending"
     }
     
@@ -80,6 +98,17 @@ def verify_payment(
     payment_request: Dict[str, Any], 
     tx_hash: Optional[str] = None
 ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+    # Check for expiration before verifying payment
+    expires_at = payment_request.get("expires_at")
+    if expires_at:
+        try:
+            expires_dt = datetime.fromisoformat(expires_at)
+            if expires_dt.tzinfo is None:
+                expires_dt = expires_dt.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) > expires_dt:
+                return False, "Payment request expired", None
+        except Exception:
+            pass
     """
     Verify if a payment has been made according to the request.
     
@@ -104,7 +133,12 @@ def verify_payment(
             if not tx_response.is_successful():
                 return False, f"Failed to fetch transaction: {tx_response.result}", None
             
-            tx = tx_response.result.get("Transactions", [])[0] if isinstance(tx_response.result.get("Transactions"), list) else tx_response.result
+            tx_result = tx_response.result
+            tx = (
+                tx_result.get("Transactions", [])[0]
+                if isinstance(tx_result.get("Transactions"), list)
+                else tx_result
+            )
             
             # Verify it's a payment
             if tx.get("TransactionType") != "Payment":
@@ -118,7 +152,11 @@ def verify_payment(
             tx_amount_xrp = float(drops) / 1_000_000.0  # Convert drops to XRP
             
             if tx_amount_xrp < amount_xrp:
-                return False, f"Payment amount too low: {tx_amount_xrp} XRP < {amount_xrp} XRP", None
+                return (
+                    False,
+                    f"Payment amount too low: {tx_amount_xrp} XRP < {amount_xrp} XRP",
+                    None,
+                )
             
             # Verify destination
             if tx.get("Destination", "").lower() != destination.lower():
@@ -143,7 +181,7 @@ def verify_payment(
                 "amount_xrp": tx_amount_xrp,
                 "from_account": tx.get("Account", ""),
                 "to_account": tx.get("Destination", ""),
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "memo_verified": memo_found
             }
             
@@ -196,7 +234,7 @@ def verify_payment(
                         "amount_xrp": tx_amount_xrp,
                         "from_account": tx.get("Account", ""),
                         "to_account": tx.get("Destination", ""),
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
                         "memo_verified": True
                     }
                     return True, "Payment verified with memo", tx_details

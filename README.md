@@ -139,7 +139,7 @@ docker-compose up -d
 
 Klerno Labs features native XRPL integration for payments and subscriptions:
 
-- **Subscription Tiers**: Basic, Premium, and Enterprise tiers with XRP payments
+- **Subscription Tiers**: Starter, Professional, and Enterprise tiers with XRP payments
 - **Payment Processing**: Generate and verify XRPL payments
 - **Admin Management**: Manage subscriptions via admin panel or CLI tools
 
@@ -225,6 +225,19 @@ pytest --cov=app --cov-report=html
 pytest app/tests/test_security.py -v
 pytest app/tests/test_compliance.py -v
 ```
+
+### ISO20022 and Crypto Compliance Endpoints
+
+All enterprise endpoints require the API key header in production: `X-API-Key: <your key>`. In development, if no key is configured, access is allowed.
+
+- GET `/enterprise/iso20022/status` — Overall ISO20022 compliance report.
+- POST `/enterprise/iso20022/validate-message` — Validate a JSON payload for ISO20022 compliance.
+- POST `/enterprise/iso20022/validate-xml` — Validate raw ISO20022 XML (content-type: application/xml).
+- POST `/enterprise/iso20022/build-message` — Build ISO XML from a JSON description (supports pain.001, pain.002, camt.053).
+- GET `/enterprise/iso20022/cryptos` — Supported cryptocurrencies with compliance snapshots.
+- POST `/enterprise/iso20022/crypto-payment` — Build ISO-style crypto payment payload (no on-chain submit).
+
+Note: Timestamps are handled as timezone-aware UTC; ISO strings with `Z` are accepted.
 
 ### API Documentation
 - **Interactive docs**: `http://localhost:8000/docs`

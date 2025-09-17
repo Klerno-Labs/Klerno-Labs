@@ -59,16 +59,27 @@ async def stripe_webhook(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    if event.get("type") in ("checkout.session.completed", "customer.subscription.updated"):
+    if event.get("type") in (
+        "checkout.session.completed",
+        "customer.subscription.updated",
+    ):
         session = event["data"]["object"]
-        email = (session.get("customer_details", {}) or {}).get("email") or session.get("customer_email")
+        email = (
+            (session.get("customer_details", {}) or {}).get("email")
+            or session.get("customer_email")
+        )
         if email:
             email_l = email.lower()
             # upsert user if not exists; activate subscription
             u = store.get_user_by_email(email_l)
             if not u:
                 from .security_session import hash_pw
-                store.create_user(email_l, hash_pw(os.urandom(8).hex()), role="viewer", subscription_active=True)
+                store.create_user(
+                    email_l,
+                    hash_pw(os.urandom(8).hex()),
+                    role="viewer",
+                    subscription_active=True,
+                )
             else:
                 store.set_subscription_active(email_l, True)
 

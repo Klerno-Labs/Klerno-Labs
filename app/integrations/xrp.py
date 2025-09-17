@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from typing import List, Dict
 from ..models import Transaction
@@ -26,7 +25,8 @@ def xrpl_json_to_transactions(account: str, tx_list: List[Dict]) -> List[Transac
     return out
 
 # --- Read-only XRPL fetch (public endpoint) ---
-import os, requests
+import os
+import requests
 
 def fetch_account_tx(account: str, limit: int = 10) -> list[dict]:
     """
@@ -49,6 +49,6 @@ def fetch_account_tx(account: str, limit: int = 10) -> list[dict]:
         data = r.json()
         # XRPL returns {"result": {"transactions": [...]}}
         return data.get("result", {}).get("transactions", [])
-    except Exception as e:
+    except Exception:
         # Return an empty list on network trouble so the API still responds
         return []

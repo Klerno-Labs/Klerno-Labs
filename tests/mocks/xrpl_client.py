@@ -11,6 +11,45 @@ from xrpl.models.response import Response
 
 
 class MockXRPLClient:
+    def request(self, request_obj):
+        """Mock the .request() method for Tx and AccountTx requests."""
+        # Handle Tx (transaction lookup by hash)
+        if hasattr(request_obj, 'transaction'):
+            tx_hash = getattr(request_obj, 'transaction', None)
+            tx = self.get_transaction(tx_hash)
+            class MockResponse:
+                def is_successful(self_inner):
+                    return tx is not None
+                @property
+                def result(self_inner):
+                    if tx is not None:
+                        return tx
+                    return {}
+            return MockResponse()
+        # Handle AccountTx (list transactions for an account)
+        if hasattr(request_obj, 'account'):
+            account = getattr(request_obj, 'account', None)
+            limit = getattr(request_obj, 'limit', 20)
+            txs = []
+            for tx_hash in self.accounts.get(account, {}).get('transactions', [])[-limit:]:
+                tx = self.get_transaction(tx_hash)
+                if tx:
+                    txs.append({'tx': tx})
+            class MockResponse:
+                def is_successful(self_inner):
+                    return True
+                @property
+                def result(self_inner):
+                    return {'transactions': txs}
+            return MockResponse()
+        # Default fallback
+        class MockResponse:
+            def is_successful(self_inner):
+                return False
+            @property
+            def result(self_inner):
+                return {}
+        return MockResponse()
     """Mock implementation of the XRPL client for testing."""
     
     def __init__(self, network: str = "testnet"):

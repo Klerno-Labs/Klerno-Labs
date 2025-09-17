@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h1 class="mb-3">ISO20022 Compliance Dashboard</h1>
+  <p class="text-muted">Updated: {{ timestamp }}</p>
+
+  <div class="card mb-4">
+    <div class="card-header">Compliance Report</div>
+    <div class="card-body">
+      <div class="mb-3 d-flex gap-2 align-items-end flex-wrap">
+        <div>
+          <label for="apiKey" class="form-label">API Key (optional)</label>
+          <input id="apiKey" class="form-control form-control-sm" placeholder="X-API-Key" />
+        </div>
+        <div class="ms-2">
+          <button id="btnRefresh" class="btn btn-primary btn-sm">Refresh Status</button>
+          <button id="btnBuild" class="btn btn-success btn-sm">Build Sample pain.001</button>
+          <button id="btnValidate" class="btn btn-secondary btn-sm">Validate Last XML</button>
+        </div>
+        <div id="actionMsg" class="ms-3 small text-muted"></div>
+      </div>
+      {% if report %}
+        <p>Status: <strong>{{ 'Compliant' if report.compliant else 'Not Compliant' }}</strong></p>
+        <p>Score: <strong>{{ report.score }}</strong></p>
+        <p>Supported Message Types:</p>
+        <ul>
+          {% for t in report.supported_message_types %}
+            <li><code>{{ t }}</code></li>
+          {% endfor %}
+        </ul>
+        <p>Supported Currencies (sample): {{ report.supported_currencies[:10] }}{% if report.supported_currencies|length > 10 %} ...{% endif %}</p>
+        <p>Features:</p>
+        <ul>
+          {% for f in report.features %}
+            <li>{{ f }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <em>No report available</em>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Supported Cryptocurrencies</div>
+    <div class="card-body">
+      {% if cryptos %}
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Name</th>
+                <th>ISO20022</th>
+                <th>Network</th>
+                <th>Decimals</th>
+                <th>Compliance Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sym, info in cryptos.items() %}
+                <tr>
+                  <td><code>{{ sym }}</code></td>
+                  <td>{{ info.name }}</td>
+                  <td>{{ 'Yes' if info.iso20022_compliant else 'No' }}</td>
+                  <td>{{ info.network_details.network }}</td>
+                  <td>{{ info.network_details.decimals }}</td>
+                  <td>{{ info.compliance_score }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <em>No cryptocurrency info available</em>
+      {% endif %}
+    </div>
+  </div>
+</div>
+<script>
+(() => {
+  const msg = (t, cls='text-muted') => {
+    const el = document.getElementById('actionMsg');
+    el.className = `ms-3 small ${cls}`;
+    el.textContent = t;
+  };
+  const headers = () => {
+    const key = document.getElementById('apiKey').value.trim();
+    return key ? { 'X-API-Key': key } : {};
+  };
+  const refresh = async () => {
+    msg('Refreshing…');
+    try {
+      const r = await fetch('/enterprise/iso20022/status', { headers: headers() });
+      const j = await r.json();
+      if (j.status === 'success') msg('Status OK', 'text-success'); else msg('Status error', 'text-danger');
+    } catch (e) { msg('Network error', 'text-danger'); }
+  };
+  let lastXml = '';
+  const build = async () => {
+    msg('Building pain.001…');
+    try {
+      const payload = {
+        message_type: 'pain.001',
+        data: {
+          message_id: 'DASH-1',
+          creation_datetime: new Date().toISOString(),
+          initiating_party: { name: 'Klerno' },
+          payment_instructions: [{
+            instruction_id: 'I1', end_to_end_id: 'E1',
+            amount: { value: '1.00', currency: 'USD' },
+            debtor: { name: 'Alice' }, creditor: { name: 'Bob' },
+            debtor_account: 'DE89370400440532013000',
+            creditor_account: 'GB29NWBK60161331926819'
+          }]
+        }
+      };
+      const r = await fetch('/enterprise/iso20022/build-message', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...headers() }, body: JSON.stringify(payload)
+      });
+      const j = await r.json();
+      if (j.status === 'success') { lastXml = j.xml || ''; msg('Built OK', 'text-success'); }
+      else msg('Build error', 'text-danger');
+    } catch (e) { msg('Network error', 'text-danger'); }
+  };
+  const validate = async () => {
+    if (!lastXml) { msg('No XML to validate', 'text-warning'); return; }
+    msg('Validating XML…');
+    try {
+      const r = await fetch('/enterprise/iso20022/validate-xml', {
+        method: 'POST', headers: { 'Content-Type': 'application/xml', ...headers() }, body: lastXml
+      });
+      const j = await r.json();
+      if (j.status === 'success' && j.validation_result?.valid) msg('XML valid', 'text-success');
+      else msg('XML invalid', 'text-danger');
+    } catch (e) { msg('Network error', 'text-danger'); }
+  };
+  document.getElementById('btnRefresh').addEventListener('click', refresh);
+  document.getElementById('btnBuild').addEventListener('click', build);
+  document.getElementById('btnValidate').addEventListener('click', validate);
+})();
+</script>
+{% endblock %}

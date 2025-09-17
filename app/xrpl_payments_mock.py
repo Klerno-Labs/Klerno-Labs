@@ -11,7 +11,7 @@ import os
 import time
 import uuid
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple
 
 # Mock class implementations
 class MockJsonRpcClient:
@@ -76,7 +76,10 @@ def create_payment_request(amount: float, destination: str = None) -> Dict[str, 
     payment_id = str(uuid.uuid4())
     
     # Use provided destination or fall back to settings
-    dest_address = destination or os.environ.get("DESTINATION_WALLET", "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh")
+    dest_address = destination or os.environ.get(
+        "DESTINATION_WALLET",
+        "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh",
+    )
     
     # Create the payment request
     return {

@@ -45,8 +45,8 @@ SUB_DURATION_DAYS=30
 ## Subscription Tiers
 
 The system supports three subscription tiers:
-- **Basic**: Core XRPL analytics and transaction monitoring
-- **Premium**: Advanced analytics and real-time alerts
+- **Starter**: Core XRPL analytics and transaction monitoring
+- **Professional**: Advanced analytics and real-time alerts
 - **Enterprise**: Enterprise-grade XRPL intelligence with API access
 
 Tiers can be customized by modifying the `DEFAULT_TIERS` dictionary in `app/subscriptions.py`.

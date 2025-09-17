@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends
-from decimal import Decimal
 from typing import Any
 
 from ..deps import require_user

@@ -1,5 +1,6 @@
 # app/notifications.py
-import os, httpx
+import os
+import httpx
 
 SLACK_WEBHOOK = (os.getenv("SLACK_WEBHOOK_URL") or "").strip()
 

@@ -19,6 +19,21 @@ import pytest_asyncio
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 
+# Ensure critical env vars are set BEFORE importing the app to avoid early exits
+os.environ["APP_ENV"] = "test"
+os.environ["DISABLE_AUTH"] = "true"
+# Ensure config.Settings required fields are present and DB config is valid for tests
+os.environ["SECRET_KEY"] = "test-secret-key-abcdefghijklmnopqrstuvwxyz-0123456789"
+os.environ["USE_SQLITE"] = "true"
+# Remove DATABASE_URL to avoid PostgresDsn validation when using SQLite
+os.environ.pop("DATABASE_URL", None)
+# Use a stable, 32+ char test secret to satisfy security checks
+os.environ[
+    "JWT_SECRET"
+] = "test-secret-key-012345678901234567890123456789"
+os.environ["OPENAI_API_KEY"] = "test-key"
+os.environ["XRPL_RPC_URL"] = "wss://s.altnet.rippletest.net:51233"
+
 # Add project root to Python path for reliable imports
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:

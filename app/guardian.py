@@ -49,24 +49,30 @@ def score_risk(tx: Any) -> tuple[float, list[str]]:
         if mag > 0:
             score += Decimal("0.10")
         if mag > 100:
-            score += Decimal("0.10"); flags.append("medium_outgoing")
+            score += Decimal("0.10")
+            flags.append("medium_outgoing")
         if mag > 1000:
-            score += Decimal("0.15"); flags.append("large_outgoing")
+            score += Decimal("0.15")
+            flags.append("large_outgoing")
         if mag > 10000:
-            score += Decimal("0.15"); flags.append("very_large_outgoing")
+            score += Decimal("0.15")
+            flags.append("very_large_outgoing")
     elif direction in {"in", "incoming", "credit"}:
         flags.append("incoming")
         score -= Decimal("0.05")
 
     # Fee pressure
     if fee > 0:
-        score += Decimal("0.05"); flags.append("fee_present")
+        score += Decimal("0.05")
+        flags.append("fee_present")
         if amount != 0:
             ratio = (fee / abs(amount)) if abs(amount) > 0 else Decimal("0")
             if ratio > Decimal("0.01"):
-                score += Decimal("0.05"); flags.append("high_fee_ratio")
+                score += Decimal("0.05")
+                flags.append("high_fee_ratio")
             if ratio > Decimal("0.05"):
-                score += Decimal("0.10"); flags.append("very_high_fee_ratio")
+                score += Decimal("0.10")
+                flags.append("very_high_fee_ratio")
 
     # Suspicious memo keywords
     if memo:
@@ -77,11 +83,13 @@ def score_risk(tx: Any) -> tuple[float, list[str]]:
 
     # Tag-based adjustments
     if "sanctioned" in tags or "mixer" in tags:
-        score += Decimal("0.20"); flags.append("sanctioned_or_mixer")
+        score += Decimal("0.20")
+        flags.append("sanctioned_or_mixer")
 
     # Internal transfers reduce risk
     if is_internal:
-        score -= Decimal("0.25"); flags.append("internal_transfer")
+        score -= Decimal("0.25")
+        flags.append("internal_transfer")
 
     # Clamp to [0, 1]
     if score < 0:

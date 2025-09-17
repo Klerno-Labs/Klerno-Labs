@@ -4,8 +4,15 @@ from datetime import datetime, timedelta, timezone
 import jwt
 from passlib.context import CryptContext
 
-# ENV
-SECRET_KEY = os.getenv("JWT_SECRET", "CHANGE_ME_32+_chars")
+# ENV - Secure JWT configuration
+SECRET_KEY = os.getenv("JWT_SECRET")
+if not SECRET_KEY or len(SECRET_KEY) < 32 or SECRET_KEY == "CHANGE_ME_32+_chars":
+    print("🚨 SECURITY ERROR: JWT_SECRET environment variable is required!")
+    print("   Generate a secure secret key with at least 32 characters.")
+    print("   Example: openssl rand -hex 32")
+    import sys
+    sys.exit(1)
+
 ALGO = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
@@ -37,7 +44,7 @@ def decode_jwt(token: str) -> dict:
     return jwt.decode(token, SECRET_KEY, algorithms=[ALGO])
 
 # Add get_current_user function for dependency injection
-from fastapi import Depends, HTTPException, status, Request
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 security = HTTPBearer()

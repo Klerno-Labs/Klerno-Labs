@@ -1,11 +1,11 @@
 # app/paywall.py
 import os
-from fastapi import APIRouter, Request, Form, Depends, HTTPException, Body
+from fastapi import APIRouter, Request, Form, Depends, Body
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from .security import expected_api_key
 from .deps import require_user
-from .subscriptions import get_user_subscription, SubscriptionTier
+# from .subscriptions import get_user_subscription  # not used here
 from .xrpl_payments import create_payment_request, verify_payment
 from .settings import settings
 
@@ -17,7 +17,10 @@ PAYWALL_CODE = os.getenv("PAYWALL_CODE", "Labs2025").strip()
 @router.get("/paywall", include_in_schema=False)
 def paywall(request: Request):
     err = request.query_params.get("err")
-    return templates.TemplateResponse("paywall_premium.html", {"request": request, "error": bool(err)})
+    return templates.TemplateResponse(
+        "paywall_professional.html",
+        {"request": request, "error": bool(err)},
+    )
 
 @router.post("/paywall/verify", include_in_schema=False)
 def paywall_verify(code: str = Form(...)):

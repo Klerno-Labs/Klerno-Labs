@@ -103,7 +103,10 @@ def explain_tx(tx: Dict[str, Any]) -> str:
         "Explain the transaction succinctly (5-8 sentences), focusing on risk-relevant details, "
         "direction, counterparties, and any anomalies. Avoid hedging."
     )
-    user = "Explain this JSON transaction for a compliance analyst:\n" + json.dumps(tx, ensure_ascii=False, indent=2)
+    user = (
+        "Explain this JSON transaction for a compliance analyst:\n"
+        + json.dumps(tx, ensure_ascii=False, indent=2)
+    )
     llm = _safe_llm(system, user)
     return preface + "\n\n" + llm
 
@@ -121,7 +124,11 @@ def explain_batch(txs: List[Dict[str, Any]]) -> Dict[str, Any]:
         text = explain_tx(t)
         items.append({"tx_id": t.get("tx_id"), "explanation": text})
 
-    amounts = [float(t.get("amount", 0) or 0) for t in txs if isinstance(t.get("amount", 0), (int, float, str))]
+    amounts = [
+        float(t.get("amount", 0) or 0)
+        for t in txs
+        if isinstance(t.get("amount", 0), (int, float, str))
+    ]
     risk_scores = [float(t.get("risk_score", 0) or 0) for t in txs]
 
     total = len(txs)
@@ -136,7 +143,8 @@ def explain_batch(txs: List[Dict[str, Any]]) -> Dict[str, Any]:
         f"Batch size: {total}\n"
         f"Total amount (naive sum): {total_amt}\n"
         f"Average risk score (if any): {avg_risk}\n"
-        f"Sample items (trimmed to first 20):\n{json.dumps(txs[:20], ensure_ascii=False, indent=2)}"
+        f"Sample items (trimmed to first 20):\n"
+        f"{json.dumps(txs[:20], ensure_ascii=False, indent=2)}"
     )
     batch_summary = _safe_llm(system, user)
     return {"items": items, "summary": batch_summary}
@@ -175,12 +183,12 @@ def apply_filters(rows: List[Dict[str, Any]], spec: Dict[str, Any]) -> List[Dict
 
     df = spec  # shorthand
     date_from = _parse_iso(df.get("date_from")) if df.get("date_from") else None
-    date_to   = _parse_iso(df.get("date_to"))   if df.get("date_to")   else None
-    min_risk  = float(df.get("min_risk", 0)) if df.get("min_risk") is not None else None
-    max_risk  = float(df.get("max_risk", 1)) if df.get("max_risk") is not None else None
-    cats      = set([str(c).lower() for c in (df.get("categories") or [])])
-    inc_w     = set([str(w) for w in (df.get("include_wallets") or [])])
-    exc_w     = set([str(w) for w in (df.get("exclude_wallets") or [])])
+    date_to = _parse_iso(df.get("date_to")) if df.get("date_to") else None
+    min_risk = float(df.get("min_risk", 0)) if df.get("min_risk") is not None else None
+    max_risk = float(df.get("max_risk", 1)) if df.get("max_risk") is not None else None
+    cats = {str(c).lower() for c in (df.get("categories") or [])}
+    inc_w = {str(w) for w in (df.get("include_wallets") or [])}
+    exc_w = {str(w) for w in (df.get("exclude_wallets") or [])}
 
     out = []
     for r in rows:
@@ -270,7 +278,11 @@ def summarize_rows(rows: List[Dict[str, Any]], title: str = "Summary") -> Dict[s
 
     total_amt = sum(amounts) if amounts else 0.0
     avg_risk = round(sum(risks) / len(risks), 3) if risks else 0.0
-    p95_risk = round(stats.quantiles(risks, n=20)[-1], 3) if len(risks) >= 20 else (max(risks) if risks else 0.0)
+    p95_risk = (
+        round(stats.quantiles(risks, n=20)[-1], 3)
+        if len(risks) >= 20
+        else (max(risks) if risks else 0.0)
+    )
 
     kpis = {
         "transactions": n,
@@ -281,8 +293,8 @@ def summarize_rows(rows: List[Dict[str, Any]], title: str = "Summary") -> Dict[s
     }
 
     system = (
-        "You are a seasoned AML analyst. Provide a compact commentary (4-6 sentences) on the KPIs and patterns, "
-        "flagging noteworthy risks and possible next steps."
+        "You are a seasoned AML analyst. Provide a compact commentary (4-6 sentences) on the KPIs and "
+        "patterns, flagging noteworthy risks and possible next steps."
     )
     user = f"Title: {title}\nKPIs: {json.dumps(kpis, ensure_ascii=False)}\n"
     commentary = _safe_llm(system, user)

@@ -58,11 +58,27 @@ def fetch_account_tx_bscscan(
     Returns raw payloads as dict: {"normal": [...], "token": [...], "internal": [...]}
     """
     offset = max(1, min(limit, 10000))
-    common = {"address": address, "startblock": 0, "endblock": 99999999, "page": 1, "offset": offset, "sort": "desc"}
+    common = {
+        "address": address,
+        "startblock": 0,
+        "endblock": 99999999,
+        "page": 1,
+        "offset": offset,
+        "sort": "desc",
+    }
 
-    normal = _get({"module": "account", "action": "txlist", **common}, api_key).get("result", []) or []
-    token  = _get({"module": "account", "action": "tokentx", **common}, api_key).get("result", []) or []
-    internal = _get({"module": "account", "action": "txlistinternal", **common}, api_key).get("result", []) or []
+    normal = (
+        _get({"module": "account", "action": "txlist", **common}, api_key).get("result", [])
+        or []
+    )
+    token = (
+        _get({"module": "account", "action": "tokentx", **common}, api_key).get("result", [])
+        or []
+    )
+    internal = (
+        _get({"module": "account", "action": "txlistinternal", **common}, api_key).get("result", [])
+        or []
+    )
 
     return {"normal": normal, "token": token, "internal": internal}
 

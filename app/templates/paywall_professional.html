@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Unlock Premium Access - Klerno Labs{% endblock %}
+{% block title %}Unlock Professional Access - Klerno Labs{% endblock %}
 
 {% block content %}
 <style>
-/* Premium Paywall Styles - Top 0.1% Design */
+/* Professional Paywall Styles - Top 0.1% Design */
 .paywall-container {
   min-height: 100vh;
   background: linear-gradient(135deg, 
@@ -362,7 +362,7 @@
   <div class="paywall-card">
     <!-- Header -->
     <div class="paywall-header">
-      <h1 class="paywall-title">Unlock Premium Access</h1>
+      <h1 class="paywall-title">Unlock Professional Access</h1>
       <p class="paywall-subtitle">
         Join thousands of professionals using Klerno Labs for advanced blockchain compliance and risk analysis
       </p>
@@ -395,12 +395,12 @@
     <!-- Pricing Tiers -->
     <div class="pricing-grid" id="pricing-tiers">
       <div class="pricing-card" data-tier="1" data-amount="10">
-        <h3 class="pricing-tier">Basic</h3>
+        <h3 class="pricing-tier">Starter</h3>
         <div class="pricing-amount">10</div>
         <div class="pricing-currency">XRP / month</div>
         <ul class="pricing-features">
           <li>Up to 1,000 transactions</li>
-          <li>Basic risk analysis</li>
+          <li>Starter risk analysis</li>
           <li>Email alerts</li>
           <li>Standard support</li>
           <li>API rate limit: 100/hour</li>
@@ -556,7 +556,7 @@ let selectedAmount = 25;
 let paymentRequestId = null;
 
 const tierNames = {
-  1: 'Basic',
+  1: 'Starter',
   2: 'Professional', 
   3: 'Enterprise'
 };
