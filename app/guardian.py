@@ -1,11 +1,23 @@
 ﻿from __future__ import annotations
+
+from collections.abc import Iterable
 from decimal import Decimal
-from typing import Any, Iterable, Optional
+from typing import Any
 
 SUSPICIOUS_WORDS = {
-    "scam", "phish", "hack", "fraud", "ransom", "malware",
-    "blackmail", "mixer", "tornado", "sanction", "darknet",
+    "scam",
+    "phish",
+    "hack",
+    "fraud",
+    "ransom",
+    "malware",
+    "blackmail",
+    "mixer",
+    "tornado",
+    "sanction",
+    "darknet",
 }
+
 
 def _as_decimal(x: Any, default: str = "0") -> Decimal:
     if isinstance(x, Decimal):
@@ -15,8 +27,10 @@ def _as_decimal(x: Any, default: str = "0") -> Decimal:
     except Exception:
         return Decimal(default)
 
-def _norm(s: Optional[str]) -> str:
+
+def _norm(s: str | None) -> str:
     return (s or "").strip().lower()
+
 
 def _get(tx: Any, name: str, default=None):
     if hasattr(tx, name):
@@ -24,6 +38,7 @@ def _get(tx: Any, name: str, default=None):
     if isinstance(tx, dict):
         return tx.get(name, default)
     return default
+
 
 def score_risk(tx: Any) -> tuple[float, list[str]]:
     """
@@ -98,6 +113,7 @@ def score_risk(tx: Any) -> tuple[float, list[str]]:
         score = Decimal("1")
 
     return float(score), flags
+
 
 # Back-compat: old callers that expect just a float can use this.
 def score_risk_value(tx: Any) -> float:

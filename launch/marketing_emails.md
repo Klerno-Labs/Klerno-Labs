@@ -22,6 +22,197 @@
 
 ## 📧 Email Templates
 
+### 0. Viral & Referral Email Series
+
+#### Referral Invitation Email
+**Subject**: Earn $500 for each compliance team you help 💰
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Klerno Labs Referral Program</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        
+        <!-- Header -->
+        <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%); border-radius: 10px;">
+            <h1 style="color: white; margin: 0;">💰 Earn $500 Per Referral</h1>
+            <p style="color: #fff; margin: 10px 0 0 0; font-weight: bold;">Help other compliance teams discover Klerno Labs</p>
+        </div>
+        
+        <!-- Social Proof -->
+        <div style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+            <h3 style="margin-top: 0; color: #667eea;">🔥 Our Community is Growing Fast!</h3>
+            <div style="display: flex; justify-content: space-around; margin: 15px 0;">
+                <div>
+                    <div style="font-size: 24px; font-weight: bold; color: #333;">500+</div>
+                    <div style="font-size: 12px; color: #666;">Teams Trust Us</div>
+                </div>
+                <div>
+                    <div style="font-size: 24px; font-weight: bold; color: #333;">$2.1B+</div>
+                    <div style="font-size: 12px; color: #666;">Monitored Daily</div>
+                </div>
+                <div>
+                    <div style="font-size: 24px; font-weight: bold; color: #333;">99.7%</div>
+                    <div style="font-size: 12px; color: #666;">Uptime</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div style="padding: 20px 0;">
+            <h2>Hi {{first_name}},</h2>
+            
+            <p><strong>Ready to earn some serious referral rewards?</strong></p>
+            
+            <p>We know you love Klerno Labs (thanks for being awesome!), and we bet you know other compliance professionals who are struggling with the same challenges you were facing before you found us.</p>
+            
+            <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0;">Here's how it works:</h3>
+                <ol>
+                    <li><strong>Share your unique link</strong> with compliance professionals</li>
+                    <li><strong>They sign up</strong> and get 25% off their first month</li>
+                    <li><strong>You earn $500</strong> when they upgrade to any paid plan</li>
+                </ol>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{referral_link}}" style="background: linear-gradient(90deg, #667eea, #764ba2); color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;">
+                    🚀 Get My Referral Link
+                </a>
+            </div>
+            
+            <p><strong>Your unique referral link:</strong><br>
+            <code style="background: #f5f5f5; padding: 8px; display: block; margin: 10px 0; border-radius: 4px;">{{referral_link}}</code></p>
+            
+            <!-- Sharing Options -->
+            <div style="background: #fff; border: 2px solid #667eea; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #667eea;">Quick Share Options:</h3>
+                <div style="text-align: center;">
+                    <a href="{{twitter_share_url}}" style="background: #1da1f2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 5px; display: inline-block;">📱 Twitter</a>
+                    <a href="{{linkedin_share_url}}" style="background: #0077b5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 5px; display: inline-block;">💼 LinkedIn</a>
+                    <a href="{{email_share_url}}" style="background: #ea4335; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 5px; display: inline-block;">📧 Email</a>
+                </div>
+            </div>
+            
+            <p><strong>Pro tip:</strong> The best referrals come from personal recommendations. Share your story about how Klerno Labs has helped your team work faster and smarter!</p>
+            
+            <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 0;"><strong>💡 Need talking points?</strong></p>
+                <ul style="margin: 10px 0;">
+                    <li>95% reduction in false positives</li>
+                    <li>10x faster investigation times</li>
+                    <li>AI explanations regulators actually understand</li>
+                    <li>Setup in under 5 minutes</li>
+                </ul>
+            </div>
+            
+            <p>Questions about the referral program? Just reply to this email - we're here to help!</p>
+            
+            <p>Happy referring!<br>
+            The Klerno Labs Team</p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="border-top: 1px solid #ddd; padding-top: 20px; text-align: center; color: #666; font-size: 12px;">
+            <p>Track your referrals and earnings in your <a href="{{dashboard_url}}">dashboard</a></p>
+            <p>Klerno Labs | Clarity at the speed of crypto</p>
+        </div>
+    </div>
+</body>
+</html>
+```
+
+#### Viral Achievement Email
+**Subject**: 🎉 You're our top referrer this month! Here's your reward...
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Top Referrer Achievement</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        
+        <!-- Celebration Header -->
+        <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, #ffd93d 0%, #ff6b6b 100%); border-radius: 15px; position: relative;">
+            <div style="font-size: 48px; margin-bottom: 10px;">🎉</div>
+            <h1 style="color: white; margin: 0;">TOP REFERRER ALERT!</h1>
+            <p style="color: #fff; margin: 10px 0 0 0; font-size: 18px; font-weight: bold;">You're absolutely crushing it, {{first_name}}!</p>
+        </div>
+        
+        <!-- Achievement Stats -->
+        <div style="background: #f8f9ff; padding: 25px; border-radius: 10px; margin: 25px 0; text-align: center;">
+            <h2 style="color: #667eea; margin-top: 0;">Your Amazing Stats This Month:</h2>
+            <div style="display: flex; justify-content: space-around; margin: 20px 0;">
+                <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <div style="font-size: 32px; font-weight: bold; color: #667eea;">{{referral_count}}</div>
+                    <div style="font-size: 14px; color: #666;">Successful Referrals</div>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <div style="font-size: 32px; font-weight: bold; color: #10b981;">${{earnings_amount}}</div>
+                    <div style="font-size: 14px; color: #666;">Earned This Month</div>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <div style="font-size: 32px; font-weight: bold; color: #ff6b6b;">{{rank}}</div>
+                    <div style="font-size: 14px; color: #666;">Global Rank</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Special Reward -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; margin: 25px 0; text-align: center;">
+            <h2 style="margin-top: 0;">🎁 Special Top Referrer Bonus!</h2>
+            <p style="font-size: 18px; margin: 15px 0;">As our #{{rank}} referrer, you've earned an extra <strong>${{bonus_amount}} bonus</strong>!</p>
+            <p style="margin: 15px 0;">Plus, we're sending you exclusive Klerno Labs swag and featuring you in our community spotlight (with your permission, of course!).</p>
+        </div>
+        
+        <!-- Social Sharing Encouragement -->
+        <div style="border: 2px dashed #667eea; padding: 20px; border-radius: 10px; margin: 25px 0; text-align: center;">
+            <h3 style="color: #667eea; margin-top: 0;">🚀 Want to Share Your Success?</h3>
+            <p>You've helped {{referral_count}} compliance teams discover better tools. That's impact worth celebrating!</p>
+            
+            <p style="font-style: italic; background: #f8f9ff; padding: 15px; border-radius: 5px;">
+                "Just became @KlernoLabs' top referrer this month! 🎉 Helping {{referral_count}} compliance teams discover AI-powered risk intelligence that actually makes sense. The referral rewards don't hurt either 💰 #ComplianceTech #CryptoCompliance"
+            </p>
+            
+            <a href="{{twitter_share_celebration}}" style="background: #1da1f2; color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; display: inline-block; margin: 10px;">
+                📱 Share on Twitter
+            </a>
+        </div>
+        
+        <!-- Keep the Momentum -->
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin: 25px 0;">
+            <h3 style="color: #856404; margin-top: 0;">🔥 Keep the Momentum Going!</h3>
+            <p style="color: #856404; margin-bottom: 15px;">You're on fire! Here are some ideas to keep growing:</p>
+            <ul style="color: #856404;">
+                <li><strong>Industry events:</strong> Mention Klerno Labs at compliance meetups</li>
+                <li><strong>LinkedIn posts:</strong> Share your compliance journey and wins</li>
+                <li><strong>Peer networks:</strong> Recommend us in compliance professional groups</li>
+                <li><strong>Case study:</strong> We'd love to feature your success story!</li>
+            </ul>
+        </div>
+        
+        <p>Keep being awesome, {{first_name}}! Your referrals are helping transform compliance for teams everywhere.</p>
+        
+        <p>Cheers to your success!<br>
+        The Klerno Labs Team</p>
+        
+        <!-- Footer -->
+        <div style="border-top: 1px solid #ddd; padding-top: 20px; text-align: center; color: #666; font-size: 12px;">
+            <p>View your complete referral stats in your <a href="{{dashboard_url}}">dashboard</a></p>
+            <p>Klerno Labs | Clarity at the speed of crypto</p>
+        </div>
+    </div>
+</body>
+</html>
+```
+
 ### 1. Welcome Series
 
 #### Email 1: Welcome & Getting Started
