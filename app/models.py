@@ -2,11 +2,133 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional, List, Dict
+from enum import Enum
 
-from pydantic import BaseModel, Field, ConfigDict, AliasChoices
+from pydantic import BaseModel, Field, ConfigDict, AliasChoices, EmailStr
+
+
+# ----------------------------
+# Enhanced User and Role System
+# ----------------------------
+class UserRole(str, Enum):
+    """User role hierarchy with specific permissions."""
+    OWNER = "owner"           # Full access to everything
+    ADMIN = "admin"           # Can see everything, limited editing of sensitive data
+    MANAGER = "manager"       # Can see admin page but not edit
+    USER = "user"             # Only paid content access
+
+class AccountStatus(str, Enum):
+    """Account status for restriction management."""
+    ACTIVE = "active"
+    TEMPORARILY_BLOCKED = "temp_blocked" 
+    PERMANENTLY_BLOCKED = "perm_blocked"
+    RESTRICTED = "restricted"
+
+class ActionType(str, Enum):
+    """Types of admin actions for logging."""
+    BLOCK_TEMPORARY = "block_temporary"
+    BLOCK_PERMANENT = "block_permanent"
+    UNBLOCK = "unblock"
+    RESTRICT = "restrict"
+    UNRESTRICT = "unrestrict"
+    ROLE_CHANGE = "role_change"
+    PASSWORD_CHANGE = "password_change"
+    CREATE_ADMIN = "create_admin"
+    DELETE_ADMIN = "delete_admin"
+
+@dataclass
+class User:
+    """Enhanced user model with role-based access control."""
+    id: Optional[int] = None
+    email: str = ""
+    password_hash: str = ""
+    role: UserRole = UserRole.USER
+    status: AccountStatus = AccountStatus.ACTIVE
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_login: Optional[datetime] = None
+    blocked_until: Optional[datetime] = None  # For temporary blocks
+    blocked_reason: Optional[str] = None
+    blocked_by: Optional[str] = None
+    is_premium: bool = False
+    
+    # MFA fields
+    totp_secret: Optional[str] = None  # Encrypted TOTP seed
+    mfa_enabled: bool = False
+    mfa_type: Optional[str] = None  # 'totp', 'webauthn', etc.
+    recovery_codes: Optional[List[str]] = field(default_factory=list)
+    has_hardware_key: bool = False
+
+    def is_owner(self) -> bool:
+        return self.role == UserRole.OWNER
+    
+    def is_admin_or_higher(self) -> bool:
+        return self.role in [UserRole.OWNER, UserRole.ADMIN]
+    
+    def is_manager_or_higher(self) -> bool:
+        return self.role in [UserRole.OWNER, UserRole.ADMIN, UserRole.MANAGER]
+    
+    def can_edit_role(self, target_role: UserRole) -> bool:
+        """Check if user can edit a specific role."""
+        if self.role == UserRole.OWNER:
+            return True
+        elif self.role == UserRole.ADMIN:
+            return target_role in [UserRole.MANAGER, UserRole.USER]
+        return False
+    
+    def can_block_users(self) -> bool:
+        """Check if user can block other users."""
+        return self.role in [UserRole.OWNER, UserRole.ADMIN]
+    
+    def can_permanent_block(self) -> bool:
+        """Check if user can permanently block users."""
+        return self.role == UserRole.OWNER
+    
+    def is_blocked(self) -> bool:
+        """Check if user is currently blocked."""
+        if self.status == AccountStatus.PERMANENTLY_BLOCKED:
+            return True
+        if self.status == AccountStatus.TEMPORARILY_BLOCKED and self.blocked_until:
+            return datetime.now(timezone.utc) < self.blocked_until
+        return False
+
+@dataclass 
+class AdminAction:
+    """Log entry for admin actions."""
+    id: Optional[int] = None
+    admin_email: str = ""
+    target_email: str = ""
+    action: ActionType = ActionType.ROLE_CHANGE
+    reason: str = ""
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    additional_data: Optional[str] = None  # JSON string for extra data
+
+class UserCreateRequest(BaseModel):
+    """Request model for creating new users."""
+    email: EmailStr
+    password: str
+    role: UserRole = UserRole.USER
+    is_premium: bool = False
+
+class UserUpdateRequest(BaseModel):
+    """Request model for updating users."""
+    role: Optional[UserRole] = None
+    is_premium: Optional[bool] = None
+    status: Optional[AccountStatus] = None
+
+class BlockUserRequest(BaseModel):
+    """Request model for blocking users."""
+    target_email: EmailStr
+    reason: str = Field(min_length=1, max_length=500)
+    duration_hours: Optional[int] = None  # None for permanent block
+
+class AdminActionResponse(BaseModel):
+    """Response model for admin actions."""
+    success: bool
+    message: str
+    action_id: Optional[int] = None
 
 
 # ----------------------------

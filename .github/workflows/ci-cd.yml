@@ -1,0 +1,91 @@
+---
+name: Klerno Labs CI
+
+'on':
+  push:
+    branches: [main, develop, feature/*]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  code-quality:
+    name: Code Quality and Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache Python Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8 black isort mypy pylint bandit safety
+          pip install pytest pytest-asyncio pytest-cov pytest-xdist
+
+      - name: Code Formatting Check (Black)
+        run: black --check --diff .
+
+      - name: Import Sorting Check (isort)
+        run: isort --check-only --diff .
+
+      - name: Linting (flake8)
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Type Checking (mypy)
+        run: mypy app/ --ignore-missing-imports
+
+      - name: Code Quality (pylint)
+        run: pylint app/ --fail-under=8.0
+
+      - name: Security Scan (bandit)
+        run: bandit -r app/ -f json -o bandit-report.json
+
+      - name: Dependency Security Scan (safety)
+        run: safety check --json --output safety-report.json
+
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            safety-report.json
+
+      - name: Set up Test Database
+        run: |
+          mkdir -p test_data
+          touch test_data/test_klerno.db
+
+      - name: Run Tests
+        run: |
+          pytest --maxfail=3 --disable-warnings --cov=app --cov-report=xml
+        timeout-minutes: 15
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: |
+            .coverage
+            coverage.xml
+            test_data/

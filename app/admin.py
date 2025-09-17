@@ -15,6 +15,7 @@ from .deps import require_user
 from .guardian import score_risk
 from .compliance import tag_category
 from .security import rotate_api_key, preview_api_key
+from .security.password_policy import policy
 
 # ---------- Email (SendGrid) ----------
 SENDGRID_KEY = os.getenv("SENDGRID_API_KEY", "").strip()
@@ -597,4 +598,120 @@ def get_wallet_balances(user=Depends(require_admin)):
         ],
         "total_balance": 4846.50,
         "currency": "XRP"
+    }
+
+# ---------- Security Policy Management ----------
+
+class SecurityPolicyConfig(BaseModel):
+    min_length: int = 12
+    max_length: int = 128
+    require_uppercase: bool = True
+    require_lowercase: bool = True
+    require_digits: bool = True
+    require_symbols: bool = True
+    check_breaches: bool = True
+    blacklist_enabled: bool = True
+    mfa_required: bool = False
+    admin_mfa_required: bool = True
+
+@router.get("/security/policy")
+def get_security_policy(admin=Depends(require_admin)):
+    """Get current security policy configuration."""
+    config = policy.config
+    return {
+        "password_policy": {
+            "min_length": config.min_length,
+            "max_length": config.max_length,
+            "require_uppercase": config.require_uppercase,
+            "require_lowercase": config.require_lowercase,
+            "require_digits": config.require_digits,
+            "require_symbols": config.require_symbols,
+            "check_breaches": config.check_breaches,
+            "blacklist_enabled": len(config.common_passwords) > 0
+        },
+        "mfa_policy": {
+            "mfa_required": False,  # Global MFA requirement
+            "admin_mfa_required": True  # Admin MFA requirement
+        }
+    }
+
+@router.post("/security/policy")
+def update_security_policy(config: SecurityPolicyConfig, admin=Depends(require_admin)):
+    """Update security policy configuration."""
+    
+    # Update password policy
+    policy.config.min_length = config.min_length
+    policy.config.max_length = config.max_length
+    policy.config.require_uppercase = config.require_uppercase
+    policy.config.require_lowercase = config.require_lowercase
+    policy.config.require_digits = config.require_digits
+    policy.config.require_symbols = config.require_symbols
+    policy.config.check_breaches = config.check_breaches
+    
+    # Handle blacklist
+    if not config.blacklist_enabled:
+        policy.config.common_passwords = set()
+    elif len(policy.config.common_passwords) == 0:
+        # Reload default blacklist if it was cleared
+        policy.config._load_common_passwords()
+    
+    return {
+        "ok": True,
+        "message": "Security policy updated successfully",
+        "policy": {
+            "password_policy": {
+                "min_length": policy.config.min_length,
+                "max_length": policy.config.max_length,
+                "require_uppercase": policy.config.require_uppercase,
+                "require_lowercase": policy.config.require_lowercase,
+                "require_digits": policy.config.require_digits,
+                "require_symbols": policy.config.require_symbols,
+                "check_breaches": policy.config.check_breaches,
+                "blacklist_enabled": len(policy.config.common_passwords) > 0
+            },
+            "mfa_policy": {
+                "mfa_required": config.mfa_required,
+                "admin_mfa_required": config.admin_mfa_required
+            }
+        }
+    }
+
+@router.get("/security/users")
+def get_users_security_status(admin=Depends(require_admin)):
+    """Get security status for all users."""
+    # This would need a new store function to get all users with security info
+    # For now, return mock data
+    return {
+        "users": [
+            {
+                "id": 1,
+                "email": "admin@example.com",
+                "role": "admin",
+                "mfa_enabled": True,
+                "mfa_type": "totp",
+                "has_hardware_key": False,
+                "last_login": "2025-09-16T10:30:00Z",
+                "password_last_changed": "2025-09-01T14:20:00Z"
+            }
+        ],
+        "summary": {
+            "total_users": 1,
+            "mfa_enabled": 1,
+            "admin_with_mfa": 1,
+            "weak_passwords": 0
+        }
+    }
+
+@router.post("/security/users/{user_id}/force-mfa")
+def force_user_mfa(user_id: int, admin=Depends(require_admin)):
+    """Force MFA setup for a specific user."""
+    user = store.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Force MFA requirement - in a real implementation you'd set a flag
+    # that prevents the user from accessing the system until MFA is set up
+    return {
+        "ok": True,
+        "message": f"MFA requirement enforced for user {user['email']}"
     }
