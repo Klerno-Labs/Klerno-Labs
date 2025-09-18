@@ -11,9 +11,9 @@ import pandas as pd
 
 def test_empty_analytics():
     """Test analytics with no data"""
-    analytics = AdvancedAnalytics()
-    metrics = analytics.generate_comprehensive_metrics(days=30)
-    
+    analytics=AdvancedAnalytics()
+    metrics=analytics.generate_comprehensive_metrics(days=30)
+
     assert metrics.total_transactions == 0
     assert metrics.total_volume == 0.0
     assert metrics.avg_risk_score == 0.0
@@ -25,8 +25,8 @@ def test_empty_analytics():
 
 def test_risk_bucket_calculation():
     """Test risk bucket categorization"""
-    analytics = AdvancedAnalytics()
-    
+    analytics=AdvancedAnalytics()
+
     # Test risk thresholds
     assert analytics.risk_thresholds['low'] == 0.33
     assert analytics.risk_thresholds['medium'] == 0.66
@@ -35,91 +35,91 @@ def test_risk_bucket_calculation():
 
 def test_insights_generation():
     """Test AI insights generation"""
-    insights_engine = InsightsEngine()
-    
+    insights_engine=InsightsEngine()
+
     # Test with high risk metrics
-    high_risk_metrics = AnalyticsMetrics(
+    high_risk_metrics=AnalyticsMetrics(
         total_transactions=100,
-        total_volume=2000000.0,
-        avg_risk_score=0.85,
-        high_risk_count=25,
-        medium_risk_count=30,
-        low_risk_count=45,
-        unique_addresses=50,
-        top_risk_addresses=[],
-        risk_trend=[],
-        category_distribution={},
-        hourly_activity=[],
-        network_analysis={},
-        anomaly_score=0.15
+            total_volume=2000000.0,
+            avg_risk_score=0.85,
+            high_risk_count=25,
+            medium_risk_count=30,
+            low_risk_count=45,
+            unique_addresses=50,
+            top_risk_addresses=[],
+            risk_trend=[],
+            category_distribution={},
+            hourly_activity=[],
+            network_analysis={},
+            anomaly_score=0.15
     )
-    
-    insights = insights_engine.generate_insights(high_risk_metrics)
-    
+
+    insights=insights_engine.generate_insights(high_risk_metrics)
+
     # Should generate high risk warning
-    high_risk_insights = [i for i in insights if i['type'] == 'warning']
+    high_risk_insights=[i for i in insights if i['type'] == 'warning']
     assert len(high_risk_insights) > 0
-    
+
     # Should have high priority insights
-    high_priority_insights = [i for i in insights if i['priority'] == 'high']
+    high_priority_insights=[i for i in insights if i['priority'] == 'high']
     assert len(high_priority_insights) > 0
 
 
 def test_insights_low_risk():
     """Test insights with low risk metrics"""
-    insights_engine = InsightsEngine()
-    
-    low_risk_metrics = AnalyticsMetrics(
+    insights_engine=InsightsEngine()
+
+    low_risk_metrics=AnalyticsMetrics(
         total_transactions=100,
-        total_volume=50000.0,
-        avg_risk_score=0.15,
-        high_risk_count=2,
-        medium_risk_count=10,
-        low_risk_count=88,
-        unique_addresses=80,
-        top_risk_addresses=[],
-        risk_trend=[],
-        category_distribution={},
-        hourly_activity=[],
-        network_analysis={},
-        anomaly_score=0.02
+            total_volume=50000.0,
+            avg_risk_score=0.15,
+            high_risk_count=2,
+            medium_risk_count=10,
+            low_risk_count=88,
+            unique_addresses=80,
+            top_risk_addresses=[],
+            risk_trend=[],
+            category_distribution={},
+            hourly_activity=[],
+            network_analysis={},
+            anomaly_score=0.02
     )
-    
-    insights = insights_engine.generate_insights(low_risk_metrics)
-    
+
+    insights=insights_engine.generate_insights(low_risk_metrics)
+
     # Should not generate high risk warnings
-    high_risk_insights = [i for i in insights if 'High Average Risk' in i['title']]
+    high_risk_insights=[i for i in insights if 'High Average Risk' in i['title']]
     assert len(high_risk_insights) == 0
 
 
 def test_network_hub_insights():
     """Test network hub detection insights"""
-    insights_engine = InsightsEngine()
-    
-    metrics_with_hub = AnalyticsMetrics(
+    insights_engine=InsightsEngine()
+
+    metrics_with_hub=AnalyticsMetrics(
         total_transactions=100,
-        total_volume=50000.0,
-        avg_risk_score=0.25,
-        high_risk_count=5,
-        medium_risk_count=15,
-        low_risk_count=80,
-        unique_addresses=50,
-        top_risk_addresses=[],
-        risk_trend=[],
-        category_distribution={},
-        hourly_activity=[],
-        network_analysis={
+            total_volume=50000.0,
+            avg_risk_score=0.25,
+            high_risk_count=5,
+            medium_risk_count=15,
+            low_risk_count=80,
+            unique_addresses=50,
+            top_risk_addresses=[],
+            risk_trend=[],
+            category_distribution={},
+            hourly_activity=[],
+            network_analysis={
             'hub_addresses': [
                 {'address': 'rHub123...', 'connection_count': 25}
             ]
         },
-        anomaly_score=0.05
+            anomaly_score=0.05
     )
-    
-    insights = insights_engine.generate_insights(metrics_with_hub)
-    
+
+    insights=insights_engine.generate_insights(metrics_with_hub)
+
     # Should generate network hub insight
-    hub_insights = [i for i in insights if 'Network Hub' in i['title']]
+    hub_insights=[i for i in insights if 'Network Hub' in i['title']]
     assert len(hub_insights) > 0
 
 

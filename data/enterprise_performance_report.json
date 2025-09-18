@@ -1,0 +1,92 @@
+{
+  "test_timestamp": "2025-09-17T17:57:13.604474",
+  "test_duration_seconds": 0.246316,
+  "performance_results": {
+    "database_performance": {
+      "concurrent_queries": 100,
+      "avg_response_time": 10.977838039398193,
+      "p95_response_time": 11.138677597045898,
+      "p99_response_time": 11.207818984985352,
+      "throughput_qps": 8608.821658011946
+    },
+    "concurrent_operations": {
+      "total_operations": 1100,
+      "total_time_seconds": 0.10757231712341309,
+      "overall_throughput": 10225.6791469688,
+      "by_operation_type": {
+        "api_request": {
+          "count": 500,
+          "avg_duration_ms": 37.387725830078125,
+          "p95_duration_ms": 58.08305740356445
+        },
+        "database_query": {
+          "count": 300,
+          "avg_duration_ms": 19.46492910385132,
+          "p95_duration_ms": 28.990745544433594
+        },
+        "analytics_processing": {
+          "count": 200,
+          "avg_duration_ms": 67.49590873718262,
+          "p95_duration_ms": 102.20837593078613
+        },
+        "health_check": {
+          "count": 100,
+          "avg_duration_ms": 9.839773178100586,
+          "p95_duration_ms": 10.0860595703125
+        }
+      }
+    },
+    "error_handling_performance": {
+      "total_errors_handled": 100,
+      "avg_recovery_time_ms": 28.22709083557129,
+      "error_handling_throughput": 3485.8705318185216,
+      "auto_recovery_rate": 100.0
+    },
+    "analytics_throughput": {
+      "total_events_processed": 1700,
+      "processing_time_seconds": 0.022159337997436523,
+      "events_per_second": 76717.0932722206,
+      "avg_processing_time_ms": 8.432486197527718
+    },
+    "system_scalability": {
+      "load_levels_tested": [
+        10,
+        50,
+        100,
+        500,
+        1000
+      ],
+      "scalability_results": [
+        {
+          "load_level": 10,
+          "duration": 0.0068645477294921875,
+          "throughput": 1456.7602111697695
+        },
+        {
+          "load_level": 50,
+          "duration": 0.016045808792114258,
+          "throughput": 3116.0785129492874
+        },
+        {
+          "load_level": 100,
+          "duration": 0.015743255615234375,
+          "throughput": 6351.926338744851
+        },
+        {
+          "load_level": 500,
+          "duration": 0.017665863037109375,
+          "throughput": 28303.174260418917
+        },
+        {
+          "load_level": 1000,
+          "duration": 0.01427602767944336,
+          "throughput": 70047.49657637195
+        }
+      ],
+      "avg_efficiency_percent": 54.66523547357082,
+      "max_tested_load": 1000,
+      "peak_throughput": 70047.49657637195
+    }
+  },
+  "certification_status": "ENTERPRISE_GRADE_CERTIFIED"
+}

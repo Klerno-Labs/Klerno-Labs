@@ -1,5 +1,39 @@
 {
     "recommendations": [
-        "easycodeai.chatgpt-gpt4-gpt3-vscode"
+        // AI Development Assistant
+        "easycodeai.chatgpt-gpt4-gpt3-vscode",
+        // Essential Python Development
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.debugpy",
+        // Code Quality & Formatting
+        "ms-python.black-formatter",
+        "ms-python.flake8",
+        "ms-python.isort",
+        // Web Development
+        "ms-vscode.vscode-json",
+        "bradlc.vscode-tailwindcss",
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense",
+        // API Development
+        "humao.rest-client",
+        "42crunch.vscode-openapi",
+        // Docker & DevOps
+        "ms-azuretools.vscode-docker",
+        // Git & Version Control
+        "eamodio.gitlens",
+        "donjayamanne.githistory",
+        // Productivity
+        "ms-vscode.todo-highlight",
+        "gruntfuggly.todo-tree",
+        "streetsidesoftware.code-spell-checker",
+        // Database
+        "mtxr.sqltools",
+        "alexcvzz.vscode-sqlite",
+        // Testing
+        "ms-python.vscode-pytest",
+        // Markdown & Documentation
+        "yzhang.markdown-all-in-one",
+        "davidanson.vscode-markdownlint"
     ]
 }

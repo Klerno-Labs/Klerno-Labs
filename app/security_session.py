@@ -1,8 +1,18 @@
 import os
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import jwt
 from passlib.context import CryptContext
+
+# Load environment variables from .env file if it exists
+env_file = Path(__file__).parent.parent / ".env"
+if env_file.exists():
+    try:
+        import dotenv
+        dotenv.load_dotenv(env_file, override=True)  # Override existing env vars
+    except ImportError:
+        pass  # dotenv not available, continue with existing environment
 
 # ENV - Secure JWT configuration
 SECRET_KEY = os.getenv("JWT_SECRET")
@@ -13,10 +23,10 @@ if not SECRET_KEY or len(SECRET_KEY) < 32 or SECRET_KEY == "CHANGE_ME_32+_chars"
     import sys
     sys.exit(1)
 
-ALGO = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+ALGO="HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
-_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+_pwd=CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_pw(password: str) -> str:
@@ -30,17 +40,17 @@ def verify_pw(password: str, hashed: str) -> bool:
 def issue_jwt(uid: int, email: str, role: str, minutes: int | None = None) -> str:
     """
     Create a JWT with both sub=email (common) and uid=<int> (your store lookups),
-    plus role for convenience.
+        plus role for convenience.
     """
-    exp_minutes = minutes or ACCESS_TOKEN_EXPIRE_MINUTES
-    now = datetime.now(UTC)
-    payload = {
+    exp_minutes=minutes or ACCESS_TOKEN_EXPIRE_MINUTES
+    now=datetime.now(UTC)
+    payload={
         "sub": email,  # email as primary subject
         "uid": int(uid),  # numeric user id for your store
         "role": role,
-        "iat": now,
-        "exp": now + timedelta(minutes=exp_minutes),
-    }
+            "iat": now,
+            "exp": now + timedelta(minutes=exp_minutes),
+            }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGO)
 
 
@@ -51,24 +61,25 @@ def decode_jwt(token: str) -> dict:
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-security = HTTPBearer()
+security=HTTPBearer()
+
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
     Extracts and validates the JWT token from the request.
     Returns the user information if valid.
     """
-    token = credentials.credentials
+    token=credentials.credentials
     try:
-        payload = decode_jwt(token)
+        payload=decode_jwt(token)
         return {
             "uid": payload.get("uid"),
-            "email": payload.get("sub"),
-            "role": payload.get("role", "user")
+                "email": payload.get("sub"),
+                "role": payload.get("role", "user")
         }
     except jwt.PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+                detail="Invalid authentication credentials",
+                headers={"WWW - Authenticate": "Bearer"},
+                )

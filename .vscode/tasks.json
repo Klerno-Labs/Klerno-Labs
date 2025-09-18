@@ -1,0 +1,163 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "🚀 Start Klerno Server",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "robust_server.py",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "8000"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "JWT_SECRET": "supersecretjwtkey123456789abcdef0123456789abcdef01234567890abcdef",
+                    "SECRET_KEY": "klerno_labs_secret_key_2025_very_secure_32_chars_minimum",
+                    "ENVIRONMENT": "development",
+                    "PYTHONPATH": "${workspaceFolder}"
+                }
+            },
+            "problemMatcher": [],
+            "isBackground": true
+        },
+        {
+            "label": "🧪 Run All Tests",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "-m",
+                "pytest",
+                "app/tests/",
+                "-v",
+                "--tb=short"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "JWT_SECRET": "supersecretjwtkey123456789abcdef0123456789abcdef01234567890abcdef",
+                    "SECRET_KEY": "klerno_labs_secret_key_2025_very_secure_32_chars_minimum",
+                    "ENVIRONMENT": "test",
+                    "PYTHONPATH": "${workspaceFolder}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "⚙️ Validate Imports",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "validate_imports.py"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "JWT_SECRET": "supersecretjwtkey123456789abcdef0123456789abcdef01234567890abcdef",
+                    "SECRET_KEY": "klerno_labs_secret_key_2025_very_secure_32_chars_minimum",
+                    "PYTHONPATH": "${workspaceFolder}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🏥 Health Check",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "quick_endpoint_test.py"
+            ],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "PYTHONPATH": "${workspaceFolder}"
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "📦 Install Dependencies",
+            "type": "shell",
+            "command": "pip",
+            "args": [
+                "install",
+                "-r",
+                "requirements.txt"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "🔄 Restart Server",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-Command",
+                "Get-Process -Name python -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep 2; python robust_server.py --host 127.0.0.1 --port 8000"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "JWT_SECRET": "supersecretjwtkey123456789abcdef0123456789abcdef01234567890abcdef",
+                    "SECRET_KEY": "klerno_labs_secret_key_2025_very_secure_32_chars_minimum",
+                    "ENVIRONMENT": "development",
+                    "PYTHONPATH": "${workspaceFolder}"
+                }
+            },
+            "problemMatcher": [],
+            "isBackground": true
+        }
+    ]
+}

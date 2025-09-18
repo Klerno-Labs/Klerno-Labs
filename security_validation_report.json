@@ -1,0 +1,71 @@
+{
+  "summary": {
+    "total_tests": 6,
+    "passed_tests": 6,
+    "failed_tests": 0,
+    "success_rate": 100.0,
+    "duration_seconds": 2.8336589336395264,
+    "timestamp": "2025-09-17T18:07:43.274784"
+  },
+  "results": {
+    "Environment Configuration": {
+      "passed": true,
+      "details": {
+        "jwt_secret_length": 65,
+        "jwt_secret_configured": true,
+        "app_env_set": true,
+        "database_url_set": true
+      },
+      "error": null,
+      "timestamp": "2025-09-17T18:07:40.440796"
+    },
+    "Password Security": {
+      "passed": true,
+      "details": {
+        "tested_passwords": 4,
+        "all_hashing_tests_passed": true
+      },
+      "error": null,
+      "timestamp": "2025-09-17T18:07:43.195286"
+    },
+    "JWT Security": {
+      "passed": true,
+      "details": {
+        "tested_tokens": 3,
+        "all_jwt_tests_passed": true
+      },
+      "error": null,
+      "timestamp": "2025-09-17T18:07:43.195959"
+    },
+    "Middleware Security": {
+      "passed": true,
+      "details": {
+        "security_headers_middleware": true,
+        "logging_middleware": true,
+        "expected_security_headers": 5,
+        "middleware_instantiated": true
+      },
+      "error": null,
+      "timestamp": "2025-09-17T18:07:43.273585"
+    },
+    "Input Validation": {
+      "passed": true,
+      "details": {
+        "attack_patterns_tested": 9,
+        "validation_functions_working": true
+      },
+      "error": null,
+      "timestamp": "2025-09-17T18:07:43.274177"
+    },
+    "Encryption Capabilities": {
+      "passed": true,
+      "details": {
+        "test_data_sets": 4,
+        "encryption_tests_passed": true,
+        "hashing_tests_passed": true
+      },
+      "error": null,
+      "timestamp": "2025-09-17T18:07:43.274324"
+    }
+  }
+}
