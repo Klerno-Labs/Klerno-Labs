@@ -13,8 +13,8 @@ We've consolidated all CI/CD processes into a single workflow file: `.github/wor
 ### Pipeline Features
 
 #### **Smart Triggers**
-- Runs on pushes to `Klerno labs branch`
-- Runs on pull requests to `delete me`
+- Runs on pushes to `main`
+- Runs on pull requests to `main`
 - Can be manually triggered via `workflow_dispatch`
 
 #### **Conditional Validation**
