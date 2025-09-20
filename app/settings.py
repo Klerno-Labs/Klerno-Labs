@@ -1,48 +1,48 @@
-# app / settings.py
+"""Settings module for Klerno Labs application."""
+
 import os
 from functools import lru_cache
 
+from pydantic import BaseModel
 
-class Settings:
-    # Env is read at import time; fine for simple configs
-    app_env=os.getenv("APP_ENV", "dev")
 
-    # Auth
-    jwt_secret=os.getenv("JWT_SECRET", "CHANGE_ME_32+")
-    access_token_expire_minutes=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
-    admin_email=os.getenv("ADMIN_EMAIL", "klerno@outlook.com")
+class Settings(BaseModel):
+    """Application settings with environment variable support."""
 
-    # OAuth
-    google_client_id=os.getenv("GOOGLE_CLIENT_ID", "")
-    google_client_secret=os.getenv("GOOGLE_CLIENT_SECRET", "")
-    microsoft_client_id=os.getenv("MICROSOFT_CLIENT_ID", "")
-    microsoft_client_secret=os.getenv("MICROSOFT_CLIENT_SECRET", "")
+    # Database settings
+    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./data/klerno.db")
+    redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379")
 
-    # Paywall / Stripe
-    paywall_code=os.getenv("PAYWALL_CODE", "Labs2025")
-    stripe_secret_key=os.getenv("STRIPE_SECRET_KEY", "")
-    stripe_price_id=os.getenv("STRIPE_PRICE_ID", "")
-    stripe_webhook_secret=os.getenv("STRIPE_WEBHOOK_SECRET", "")
+    # Security settings
+    jwt_secret: str = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
+    jwt_algorithm: str = "HS256"
+    jwt_expiration_hours: int = 24
 
-    # OpenAI
-    openai_api_key=os.getenv("OPENAI_API_KEY", "")
-    openai_model=os.getenv("OPENAI_MODEL", "gpt - 4o - mini")
+    # API settings
+    api_key: str = os.getenv("API_KEY", "dev-api-key")
+    risk_threshold: float = float(os.getenv("RISK_THRESHOLD", "0.75"))
 
-    # Email
-    sendgrid_api_key=os.getenv("SENDGRID_API_KEY", "")
-    alert_email_from=os.getenv("ALERT_EMAIL_FROM", "alerts@example.com")
-    alert_email_to=os.getenv("ALERT_EMAIL_TO", "you@example.com")
+    # XRPL settings
+    xrpl_rpc_url: str = os.getenv("XRPL_RPC_URL", "https://s2.ripple.com:51234")
 
-    # Risk / XRPL
-    api_key=os.getenv("API_KEY", "dev - api - key")
-    risk_threshold=float(os.getenv("RISK_THRESHOLD", "0.75"))
-    xrpl_rpc_url=os.getenv("XRPL_RPC_URL", "https://s2.ripple.com:51234")
+    # Email settings
+    sendgrid_api_key: str = os.getenv("SENDGRID_API_KEY", "")
+    alert_email_from: str = os.getenv("ALERT_EMAIL_FROM", "alerts@example.com")
+    alert_email_to: str = os.getenv("ALERT_EMAIL_TO", "you@example.com")
+
+    # Subscription settings
+    SUB_PRICE_USD: float = 29.99
+    SUB_PRICE_XRP: float = 50.0
+
+    # Environment
+    environment: str = os.getenv("ENVIRONMENT", "development")
+    debug: bool = os.getenv("DEBUG", "False").lower() == "true"
+
 
 @lru_cache
-
-
 def get_settings() -> Settings:
+    """Get cached settings instance."""
     return Settings()
 
-# Create a global settings instance
-settings=get_settings()
+
+settings: Settings = get_settings()

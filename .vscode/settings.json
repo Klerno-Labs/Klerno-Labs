@@ -1,61 +1,40 @@
 {
-  // Python Environment Configuration
-  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
-  "python.venvPath": "${workspaceFolder}",
-  "python.terminal.activateEnvironment": true,
-  // FastAPI Development
-  "python.analysis.extraPaths": [
-    "./app"
-  ],
-  "python.analysis.autoSearchPaths": true,
-  "python.analysis.include": [
-    "./app",
-    "./automation",
-    "./tests"
-  ],
-  // Testing Configuration
-  "python.testing.pytestEnabled": true,
-  "python.testing.unittestEnabled": false,
-  "python.testing.pytestArgs": [
-    ".",
-    "--tb=short",
-    "--disable-warnings",
-    "-v"
-  ],
-  "python.testing.cwd": "${workspaceFolder}",
-  // File Watching & Exclusions
-  "files.watcherExclude": {
-    "**/.git/objects/**": true,
-    "**/.git/subtree-cache/**": true,
-    "**/node_modules/**": true,
-    "**/__pycache__/**": true,
-    "**/.pytest_cache/**": true,
-    "**/data/**": true,
-    "**/local_data/**": true
-  },
-  // Environment Variables
-  "terminal.integrated.env.windows": {
-    "PYTHONPATH": "${workspaceFolder}",
-    "ENVIRONMENT": "development"
-  },
-  // Code Quality & Linting
-  "python.linting.enabled": true,
-  "python.linting.flake8Enabled": true,
-  "python.linting.flake8Args": [
-    "--max-line-length=88",
-    "--ignore=E203,W503,E501"
-  ],
-  // Type Checking Configuration  
-  "python.analysis.typeCheckingMode": "off",
-  // Development Productivity
-  "files.autoSave": "afterDelay",
-  "files.autoSaveDelay": 1000,
-  "editor.formatOnSave": true,
-  // Klerno Labs Specific
-  "search.exclude": {
-    "**/data/": true,
-    "**/local_data/": true,
-    "**/__pycache__/": true,
-    "**/.pytest_cache/": true
-  }
+    "python.defaultInterpreterPath": "./.venv/Scripts/python.exe",
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Args": [
+        "--config=.flake8"
+    ],
+    "python.linting.pylintEnabled": false,
+    "python.linting.mypyEnabled": false,
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--line-length=88"
+    ],
+    "python.sortImports.args": [
+        "--profile",
+        "black"
+    ],
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.pytest_cache": true,
+        "**/node_modules": true,
+        "**/.git": true,
+        "**/.venv": true
+    },
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.typeCheckingMode": "basic",
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestArgs": [
+        "."
+    ],
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true
 }

@@ -1,0 +1,87 @@
+{
+  "timestamp": 1758403290.496264,
+  "duration": 6.49435567855835,
+  "summary": {
+    "passed": 1,
+    "warned": 11,
+    "failed": 1,
+    "skipped": 1
+  },
+  "results": {
+    "File Structure": {
+      "status": "PASS",
+      "files": [
+        "requirements.txt",
+        "pyproject.toml",
+        ".github/workflows/ci.yml",
+        "app/main.py",
+        "app/__init__.py",
+        "cspell.json",
+        "build.py"
+      ]
+    },
+    "Import: import app.main": {
+      "status": "WARN",
+      "error": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import app.main; print('\\u2713 import app.main')\n                     ~~~~~^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\chatf\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\encodings\\cp1252.py\", line 19, in encode\n    return codecs.charmap_encode(input,self.errors,encoding_table)[0]\n           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nUnicodeEncodeError: 'charmap' codec can't encode character '\\u2713' in position 0: character maps to <undefined>\n",
+      "output": ""
+    },
+    "Import: import app.auth": {
+      "status": "WARN",
+      "error": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import app.auth; print('\\u2713 import app.auth')\n                     ~~~~~^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\chatf\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\encodings\\cp1252.py\", line 19, in encode\n    return codecs.charmap_encode(input,self.errors,encoding_table)[0]\n           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nUnicodeEncodeError: 'charmap' codec can't encode character '\\u2713' in position 0: character maps to <undefined>\n",
+      "output": ""
+    },
+    "Import: import app.models": {
+      "status": "WARN",
+      "error": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import app.models; print('\\u2713 import app.models')\n                       ~~~~~^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\chatf\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\encodings\\cp1252.py\", line 19, in encode\n    return codecs.charmap_encode(input,self.errors,encoding_table)[0]\n           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nUnicodeEncodeError: 'charmap' codec can't encode character '\\u2713' in position 0: character maps to <undefined>\n",
+      "output": ""
+    },
+    "Import: import app.store": {
+      "status": "WARN",
+      "error": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import app.store; print('\\u2713 import app.store')\n                      ~~~~~^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\chatf\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\encodings\\cp1252.py\", line 19, in encode\n    return codecs.charmap_encode(input,self.errors,encoding_table)[0]\n           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nUnicodeEncodeError: 'charmap' codec can't encode character '\\u2713' in position 0: character maps to <undefined>\n",
+      "output": ""
+    },
+    "Import: from app.main import app": {
+      "status": "WARN",
+      "error": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    from app.main import app; print('\\u2713 from app.main import app')\n                              ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\chatf\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\encodings\\cp1252.py\", line 19, in encode\n    return codecs.charmap_encode(input,self.errors,encoding_table)[0]\n           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nUnicodeEncodeError: 'charmap' codec can't encode character '\\u2713' in position 0: character maps to <undefined>\n",
+      "output": ""
+    },
+    "Import: import fastapi": {
+      "status": "WARN",
+      "error": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import fastapi; print('\\u2713 import fastapi')\n                    ~~~~~^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\chatf\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\encodings\\cp1252.py\", line 19, in encode\n    return codecs.charmap_encode(input,self.errors,encoding_table)[0]\n           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nUnicodeEncodeError: 'charmap' codec can't encode character '\\u2713' in position 0: character maps to <undefined>\n",
+      "output": ""
+    },
+    "Import: import pydantic": {
+      "status": "WARN",
+      "error": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import pydantic; print('\\u2713 import pydantic')\n                     ~~~~~^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\chatf\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\encodings\\cp1252.py\", line 19, in encode\n    return codecs.charmap_encode(input,self.errors,encoding_table)[0]\n           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nUnicodeEncodeError: 'charmap' codec can't encode character '\\u2713' in position 0: character maps to <undefined>\n",
+      "output": ""
+    },
+    "Import: import uvicorn": {
+      "status": "WARN",
+      "error": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n    import uvicorn; print('\\u2713 import uvicorn')\n                    ~~~~~^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\chatf\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\encodings\\cp1252.py\", line 19, in encode\n    return codecs.charmap_encode(input,self.errors,encoding_table)[0]\n           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nUnicodeEncodeError: 'charmap' codec can't encode character '\\u2713' in position 0: character maps to <undefined>\n",
+      "output": ""
+    },
+    "CI Workflow": {
+      "status": "FAIL",
+      "error": "'charmap' codec can't decode byte 0x9d in position 2789: character maps to <undefined>"
+    },
+    "Ruff linting analysis": {
+      "status": "WARN",
+      "error": "warning: The top-level linter settings are deprecated in favour of their counterparts in the `lint` section. Please update the following options in `pyproject.toml`:\n  - 'ignore' -> 'lint.ignore'\n  - 'select' -> 'lint.select'\n  - 'per-file-ignores' -> 'lint.per-file-ignores'\n",
+      "output": "36\tE402  \tmodule-import-not-at-top-of-file\n24\t      \tinvalid-syntax\n20\tPTH118\tos-path-join\n16\tPTH123\tbuiltin-open\n14\tB904  \traise-without-from-inside-except\n11\tE722  \tbare-except\n11\tSIM102\tcollapsible-if\n10\tPTH120\tos-path-dirname\n 7\tF821  \tundefined-name\n 7\tPTH103\tos-makedirs\n 6\tB017  \tassert-raises-exception\n 5\tPTH110\tos-path-exists\n 3\tARG004\tunused-static-method-argument\n 3\tPTH100\tos-path-abspath\n 3\tPTH112\tos-path-isdir\n 2\tB007  \tunused-loop-control-variable\n 2\tE701  \tmultiple-statements-on-one-line-colon\n 2\tPTH109\tos-getcwd\n 2\tPTH204\tos-path-getmtime\n 2\tPTH208\tos-listdir\n 2\tSIM105\tsuppressible-exception\n 1\tPTH113\tos-path-isfile\n 1\tPTH119\tos-path-basename\n 1\tPTH122\tos-path-splitext\n 1\tSIM117\tmultiple-with-statements\n 1\tUP007 \tnon-pep604-annotation-union\n 1\tUP017 \tdatetime-timezone-utc\nFound 194 errors.\n"
+    },
+    "Import sorting validation": {
+      "status": "WARN",
+      "error": "C:\\Users\\chatf\\AppData\\Local\\Programs\\Python\\Python313\\python.exe: No module named isort\n",
+      "output": ""
+    },
+    "Black code formatting check": {
+      "status": "WARN",
+      "error": "C:\\Users\\chatf\\AppData\\Local\\Programs\\Python\\Python313\\python.exe: No module named black\n",
+      "output": ""
+    },
+    "Application Health": {
+      "status": "SKIP",
+      "reason": "HTTPConnectionPool(host='127.0.0.1', port=8001): Max retries exceeded with url: /health (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001A547002900>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))"
+    }
+  }
+}

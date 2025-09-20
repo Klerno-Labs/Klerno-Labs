@@ -8,18 +8,19 @@ import asyncio
 import logging
 import sqlite3
 import time
-from datetime import datetime, timezone, timedelta
-from typing import Dict, Any
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 import psutil
-from dataclasses import dataclass, asdict
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
-
-
 class SystemMetrics:
     """System performance metrics."""
+
     timestamp: datetime
     cpu_percent: float
     memory_percent: float
@@ -31,11 +32,11 @@ class SystemMetrics:
     active_connections: int
     uptime_seconds: int
 
+
 @dataclass
-
-
 class ApplicationMetrics:
     """Application - specific metrics."""
+
     timestamp: datetime
     total_users: int
     active_sessions: int
@@ -45,11 +46,11 @@ class ApplicationMetrics:
     database_connections: int
     cache_hit_rate: float
 
+
 @dataclass
-
-
 class SecurityMetrics:
     """Security monitoring metrics."""
+
     timestamp: datetime
     failed_login_attempts: int
     blocked_ips: int
@@ -60,16 +61,18 @@ class SecurityMetrics:
 
 class SystemMonitor:
 
-
-    def auto_block_suspicious_users(self, admin_manager, guardian_module, risk_threshold=0.9):
+    def auto_block_suspicious_users(
+        self, admin_manager, guardian_module, risk_threshold=0.9
+    ):
         """Scan recent transactions, auto - block users with high risk, and log alerts."""
         try:
             import sqlite3
-            from datetime import datetime, timezone, timedelta
+            from datetime import datetime, timedelta
+
             # Scan last 10 minutes of transactions
-            cutoff=datetime.now(timezone.utc) - timedelta(minutes=10)
+            cutoff = datetime.now(UTC) - timedelta(minutes=10)
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
+                cursor = conn.cursor()
                 cursor.execute(
                     """
                     SELECT
@@ -78,46 +81,47 @@ class SystemMonitor:
                     FROM transactions
                     WHERE timestamp > ?
                     """,
-                        (cutoff.isoformat(),),
-                        )
-                rows=cursor.fetchall()
+                    (cutoff.isoformat(),),
+                )
+                rows = cursor.fetchall()
             for row in rows:
-                user_email=row[0]
-                tx={
-                    'memo': row[2],
-                        'amount': row[3],
-                        'fee': row[4],
-                        'direction': row[5],
-                        'is_internal': row[6],
-                        'tags': row[7].split(',') if row[7] else [],
-                        }
-                score, flags=guardian_module.score_risk(tx)
+                user_email = row[0]
+                tx = {
+                    "memo": row[2],
+                    "amount": row[3],
+                    "fee": row[4],
+                    "direction": row[5],
+                    "is_internal": row[6],
+                    "tags": row[7].split(",") if row[7] else [],
+                }
+                score, flags = guardian_module.score_risk(tx)
                 if score >= risk_threshold:
                     # Block user if not already blocked
-                    user=admin_manager.get_user_by_email(user_email)
+                    user = admin_manager.get_user_by_email(user_email)
                     if user and not user.is_blocked():
                         from app.models import BlockUserRequest
-                        req=BlockUserRequest(
+
+                        req = BlockUserRequest(
                             target_email=user_email,
                             reason=f"Auto-blocked: risk={score}, flags={flags}",
-                                duration_hours=None,
-                                )
+                            duration_hours=None,
+                        )
                         admin_manager.block_user(
                             admin_email=admin_manager.notification_email,
-                                request=req,
-                                )
+                            request=req,
+                        )
                         self.add_alert(
                             "security",
-                                "high",
-                                (
+                            "high",
+                            (
                                 f"Auto - blocked {user_email} for suspicious activity. "
                                 f"Risk={score}, Flags={flags}"
                             ),
-                                )
+                        )
         except Exception as e:
             logger.error("Error in auto_block_suspicious_users: %s", e)
-    """Comprehensive system monitoring for enterprise admin dashboard."""
 
+    """Comprehensive system monitoring for enterprise admin dashboard."""
 
     def __init__(self, db_path: str = "data/klerno.db"):
         self.db_path = db_path
@@ -129,15 +133,15 @@ class SystemMonitor:
         self.failed_logins = 0
         self.init_monitoring_tables()
 
-
     def init_monitoring_tables(self):
         """Initialize monitoring database tables."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
+                cursor = conn.cursor()
 
                 # System metrics table
-                cursor.execute("""
+                cursor.execute(
+                    """
                     CREATE TABLE IF NOT EXISTS system_metrics (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -151,10 +155,12 @@ class SystemMonitor:
                             active_connections INTEGER,
                             uptime_seconds INTEGER
                     )
-                """)
+                """
+                )
 
                 # Application metrics table
-                cursor.execute("""
+                cursor.execute(
+                    """
                     CREATE TABLE IF NOT EXISTS app_metrics (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -166,10 +172,12 @@ class SystemMonitor:
                             database_connections INTEGER,
                             cache_hit_rate REAL
                     )
-                """)
+                """
+                )
 
                 # Security metrics table
-                cursor.execute("""
+                cursor.execute(
+                    """
                     CREATE TABLE IF NOT EXISTS security_metrics (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -179,10 +187,12 @@ class SystemMonitor:
                             threat_level TEXT,
                             last_security_scan TIMESTAMP
                     )
-                """)
+                """
+                )
 
                 # Real - time alerts table
-                cursor.execute("""
+                cursor.execute(
+                    """
                     CREATE TABLE IF NOT EXISTS system_alerts (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                             timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -192,151 +202,155 @@ class SystemMonitor:
                             resolved BOOLEAN DEFAULT 0,
                             resolved_at TIMESTAMP
                     )
-                """)
+                """
+                )
 
                 conn.commit()
         except Exception as e:
             logger.error("Error initializing monitoring tables: %s", e)
 
-
     def get_system_metrics(self) -> SystemMetrics:
         """Get current system performance metrics."""
         try:
             # CPU usage
-            cpu_percent=psutil.cpu_percent(interval=1)
+            cpu_percent = psutil.cpu_percent(interval=1)
 
             # Memory usage
-            memory=psutil.virtual_memory()
-            memory_percent=memory.percent
-            memory_available_gb=memory.available / (1024**3)
+            memory = psutil.virtual_memory()
+            memory_percent = memory.percent
+            memory_available_gb = memory.available / (1024**3)
 
             # Disk usage
-            disk=psutil.disk_usage('/')
-            disk_usage_percent=(disk.used / disk.total) * 100
-            disk_free_gb=disk.free / (1024**3)
+            disk = psutil.disk_usage("/")
+            disk_usage_percent = (disk.used / disk.total) * 100
+            disk_free_gb = disk.free / (1024**3)
 
             # Network stats
-            network=psutil.net_io_counters()
-            network_bytes_sent=network.bytes_sent
-            network_bytes_recv=network.bytes_recv
+            network = psutil.net_io_counters()
+            network_bytes_sent = network.bytes_sent
+            network_bytes_recv = network.bytes_recv
 
             # Connection count
-            active_connections=len(psutil.net_connections())
+            active_connections = len(psutil.net_connections())
 
             # Uptime
-            uptime_seconds=int(time.time() - self.start_time)
+            uptime_seconds = int(time.time() - self.start_time)
 
             return SystemMetrics(
-                timestamp=datetime.now(timezone.utc),
-                    cpu_percent=cpu_percent,
-                    memory_percent=memory_percent,
-                    memory_available_gb=memory_available_gb,
-                    disk_usage_percent=disk_usage_percent,
-                    disk_free_gb=disk_free_gb,
-                    network_bytes_sent=network_bytes_sent,
-                    network_bytes_recv=network_bytes_recv,
-                    active_connections=active_connections,
-                    uptime_seconds=uptime_seconds
+                timestamp=datetime.now(UTC),
+                cpu_percent=cpu_percent,
+                memory_percent=memory_percent,
+                memory_available_gb=memory_available_gb,
+                disk_usage_percent=disk_usage_percent,
+                disk_free_gb=disk_free_gb,
+                network_bytes_sent=network_bytes_sent,
+                network_bytes_recv=network_bytes_recv,
+                active_connections=active_connections,
+                uptime_seconds=uptime_seconds,
             )
         except Exception as e:
             logger.error("Error getting system metrics: %s", e)
             return None
-
 
     def get_application_metrics(self) -> ApplicationMetrics:
         """Get current application metrics."""
         try:
             # Count total users
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
+                cursor = conn.cursor()
                 cursor.execute("SELECT COUNT(*) FROM users_enhanced")
-                total_users=cursor.fetchone()[0]
+                total_users = cursor.fetchone()[0]
 
             # Calculate requests per minute
-            current_time=time.time()
-            minute_ago=current_time - 60
-            requests_per_minute=len([t for t in self.response_times if t > minute_ago])
+            current_time = time.time()
+            minute_ago = current_time - 60
+            requests_per_minute = len(
+                [t for t in self.response_times if t > minute_ago]
+            )
 
             # Calculate average response time
-            recent_times=[t for t in self.response_times if t > minute_ago]
-            response_time_avg=sum(recent_times) / len(recent_times) if recent_times else 0
+            recent_times = [t for t in self.response_times if t > minute_ago]
+            response_time_avg = (
+                sum(recent_times) / len(recent_times) if recent_times else 0
+            )
 
             # Calculate error rate
-            total_requests=len(self.response_times)
-            error_rate_percent=(
-                (self.error_count / total_requests * 100)
-                if total_requests > 0
-                else 0
+            total_requests = len(self.response_times)
+            error_rate_percent = (
+                (self.error_count / total_requests * 100) if total_requests > 0 else 0
             )
 
             return ApplicationMetrics(
-                timestamp=datetime.now(timezone.utc),
-                    total_users=total_users,
-                    active_sessions=len(self.active_sessions),
-                    requests_per_minute=requests_per_minute,
-                    response_time_avg=response_time_avg,
-                    error_rate_percent=error_rate_percent,
-                    database_connections=1,  # Simplified for SQLite
-                cache_hit_rate=85.0  # Placeholder - would be calculated from cache stats
+                timestamp=datetime.now(UTC),
+                total_users=total_users,
+                active_sessions=len(self.active_sessions),
+                requests_per_minute=requests_per_minute,
+                response_time_avg=response_time_avg,
+                error_rate_percent=error_rate_percent,
+                database_connections=1,  # Simplified for SQLite
+                cache_hit_rate=85.0,  # Placeholder - would be calculated from cache stats
             )
         except Exception as e:
             logger.error("Error getting application metrics: %s", e)
             return None
 
-
     def get_security_metrics(self) -> SecurityMetrics:
         """Get current security metrics."""
         try:
             # Count recent failed logins
-            hour_ago=datetime.now(timezone.utc) - timedelta(hours=1)
+            hour_ago = datetime.now(UTC) - timedelta(hours=1)
 
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
-                cursor.execute("""
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
                     SELECT COUNT(*) FROM admin_actions
                     WHERE action='failed_login' AND timestamp > ?
-                """, (hour_ago.isoformat(),))
-                failed_logins_hour=cursor.fetchone()[0]
+                """,
+                    (hour_ago.isoformat(),),
+                )
+                failed_logins_hour = cursor.fetchone()[0]
 
             # Determine threat level based on activity
-            threat_level="LOW"
+            threat_level = "LOW"
             if failed_logins_hour > 10:
-                threat_level="MEDIUM"
+                threat_level = "MEDIUM"
             if failed_logins_hour > 50:
-                threat_level="HIGH"
+                threat_level = "HIGH"
 
             return SecurityMetrics(
-                timestamp=datetime.now(timezone.utc),
-                    failed_login_attempts=failed_logins_hour,
-                    blocked_ips=0,  # Would be calculated from firewall logs
+                timestamp=datetime.now(UTC),
+                failed_login_attempts=failed_logins_hour,
+                blocked_ips=0,  # Would be calculated from firewall logs
                 suspicious_activities=failed_logins_hour,
-                    threat_level=threat_level,
-                    last_security_scan=datetime.now(timezone.utc)
+                threat_level=threat_level,
+                last_security_scan=datetime.now(UTC),
             )
         except Exception as e:
             logger.error("Error getting security metrics: %s", e)
             return None
 
-
     def store_metrics(self):
         """Store current metrics in database."""
         try:
-            system_metrics=self.get_system_metrics()
-            app_metrics=self.get_application_metrics()
-            security_metrics=self.get_security_metrics()
+            system_metrics = self.get_system_metrics()
+            app_metrics = self.get_application_metrics()
+            security_metrics = self.get_security_metrics()
 
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
+                cursor = conn.cursor()
 
                 if system_metrics:
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         INSERT INTO system_metrics
                         (cpu_percent, memory_percent, memory_available_gb,
                          disk_usage_percent, disk_free_gb, network_bytes_sent,
                              network_bytes_recv, active_connections, uptime_seconds)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (
-                        system_metrics.cpu_percent,
+                    """,
+                        (
+                            system_metrics.cpu_percent,
                             system_metrics.memory_percent,
                             system_metrics.memory_available_gb,
                             system_metrics.disk_usage_percent,
@@ -344,155 +358,197 @@ class SystemMonitor:
                             system_metrics.network_bytes_sent,
                             system_metrics.network_bytes_recv,
                             system_metrics.active_connections,
-                            system_metrics.uptime_seconds
-                    ))
+                            system_metrics.uptime_seconds,
+                        ),
+                    )
 
                 if app_metrics:
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         INSERT INTO app_metrics
                         (total_users, active_sessions, requests_per_minute,
                          response_time_avg, error_rate_percent, database_connections,
                              cache_hit_rate)
                         VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """, (
-                        app_metrics.total_users,
+                    """,
+                        (
+                            app_metrics.total_users,
                             app_metrics.active_sessions,
                             app_metrics.requests_per_minute,
                             app_metrics.response_time_avg,
                             app_metrics.error_rate_percent,
                             app_metrics.database_connections,
-                            app_metrics.cache_hit_rate
-                    ))
+                            app_metrics.cache_hit_rate,
+                        ),
+                    )
 
                 if security_metrics:
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         INSERT INTO security_metrics
                         (failed_login_attempts, blocked_ips, suspicious_activities,
                          threat_level, last_security_scan)
                         VALUES (?, ?, ?, ?, ?)
-                    """, (
-                        security_metrics.failed_login_attempts,
+                    """,
+                        (
+                            security_metrics.failed_login_attempts,
                             security_metrics.blocked_ips,
                             security_metrics.suspicious_activities,
                             security_metrics.threat_level,
-                            security_metrics.last_security_scan.isoformat()
-                    ))
+                            security_metrics.last_security_scan.isoformat(),
+                        ),
+                    )
 
                 conn.commit()
         except Exception as e:
             logger.error("Error storing metrics: %s", e)
 
-
-    def get_dashboard_data(self, hours: int = 24) -> Dict[str, Any]:
+    def get_dashboard_data(self, hours: int = 24) -> dict[str, Any]:
         """Get comprehensive dashboard data for admin interface."""
         try:
-            cutoff_time=datetime.now(timezone.utc) - timedelta(hours=hours)
+            cutoff_time = datetime.now(UTC) - timedelta(hours=hours)
 
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
+                cursor = conn.cursor()
 
                 # Get recent system metrics
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT * FROM system_metrics
                     WHERE timestamp > ?
                     ORDER BY timestamp DESC
-                """, (cutoff_time.isoformat(),))
-                system_data=cursor.fetchall()
+                """,
+                    (cutoff_time.isoformat(),),
+                )
+                system_data = cursor.fetchall()
 
                 # Get recent app metrics
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT * FROM app_metrics
                     WHERE timestamp > ?
                     ORDER BY timestamp DESC
-                """, (cutoff_time.isoformat(),))
-                app_data=cursor.fetchall()
+                """,
+                    (cutoff_time.isoformat(),),
+                )
+                app_data = cursor.fetchall()
 
                 # Get recent security metrics
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT * FROM security_metrics
                     WHERE timestamp > ?
                     ORDER BY timestamp DESC
-                """, (cutoff_time.isoformat(),))
-                security_data=cursor.fetchall()
+                """,
+                    (cutoff_time.isoformat(),),
+                )
+                security_data = cursor.fetchall()
 
                 # Get active alerts
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT * FROM system_alerts
                     WHERE resolved=0
                     ORDER BY timestamp DESC
-                """)
-                alerts=cursor.fetchall()
+                """
+                )
+                alerts = cursor.fetchall()
 
             # Get current status
-            current_system=self.get_system_metrics()
-            current_app=self.get_application_metrics()
-            current_security=self.get_security_metrics()
+            current_system = self.get_system_metrics()
+            current_app = self.get_application_metrics()
+            current_security = self.get_security_metrics()
 
-            system_cols=[
-                'id', 'timestamp', 'cpu_percent', 'memory_percent',
-                    'memory_available_gb', 'disk_usage_percent', 'disk_free_gb',
-                    'network_bytes_sent', 'network_bytes_recv', 'active_connections',
-                    'uptime_seconds',
-                    ]
-            app_cols=[
-                'id', 'timestamp', 'total_users', 'active_sessions',
-                    'requests_per_minute', 'response_time_avg', 'error_rate_percent',
-                    'database_connections', 'cache_hit_rate',
-                    ]
-            security_cols=[
-                'id', 'timestamp', 'failed_login_attempts', 'blocked_ips',
-                    'suspicious_activities', 'threat_level', 'last_security_scan',
-                    ]
-            alert_cols=[
-                'id', 'timestamp', 'alert_type', 'severity', 'message',
-                    'resolved', 'resolved_at',
-                    ]
+            system_cols = [
+                "id",
+                "timestamp",
+                "cpu_percent",
+                "memory_percent",
+                "memory_available_gb",
+                "disk_usage_percent",
+                "disk_free_gb",
+                "network_bytes_sent",
+                "network_bytes_recv",
+                "active_connections",
+                "uptime_seconds",
+            ]
+            app_cols = [
+                "id",
+                "timestamp",
+                "total_users",
+                "active_sessions",
+                "requests_per_minute",
+                "response_time_avg",
+                "error_rate_percent",
+                "database_connections",
+                "cache_hit_rate",
+            ]
+            security_cols = [
+                "id",
+                "timestamp",
+                "failed_login_attempts",
+                "blocked_ips",
+                "suspicious_activities",
+                "threat_level",
+                "last_security_scan",
+            ]
+            alert_cols = [
+                "id",
+                "timestamp",
+                "alert_type",
+                "severity",
+                "message",
+                "resolved",
+                "resolved_at",
+            ]
 
             return {
                 "status": {
                     "server_online": True,
-                        "database_connected": True,
-                        "last_update": datetime.now(timezone.utc).isoformat(),
-                        "uptime_hours": round((time.time() - self.start_time) / 3600, 1)
+                    "database_connected": True,
+                    "last_update": datetime.now(UTC).isoformat(),
+                    "uptime_hours": round((time.time() - self.start_time) / 3600, 1),
                 },
-                    "current_metrics": {
+                "current_metrics": {
                     "system": asdict(current_system) if current_system else None,
-                        "application": asdict(current_app) if current_app else None,
-                        "security": asdict(current_security) if current_security else None
+                    "application": asdict(current_app) if current_app else None,
+                    "security": asdict(current_security) if current_security else None,
                 },
-                    "historical_data": {
+                "historical_data": {
                     "system": [
-                        dict(zip(system_cols, row)) for row in system_data
+                        dict(zip(system_cols, row, strict=False)) for row in system_data
                     ],
-                        "application": [
-                        dict(zip(app_cols, row)) for row in app_data
+                    "application": [
+                        dict(zip(app_cols, row, strict=False)) for row in app_data
                     ],
-                        "security": [
-                        dict(zip(security_cols, row)) for row in security_data
+                    "security": [
+                        dict(zip(security_cols, row, strict=False))
+                        for row in security_data
                     ],
-                        },
-                    "alerts": [
-                    dict(zip(alert_cols, alert)) for alert in alerts
+                },
+                "alerts": [
+                    dict(zip(alert_cols, alert, strict=False)) for alert in alerts
                 ],
-                    }
+            }
         except Exception as e:
             logger.error("Error getting dashboard data: %s", e)
             return {"error": str(e)}
-
 
     def add_alert(self, alert_type: str, severity: str, message: str):
         """Add system alert."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
-                cursor.execute("""
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
                     INSERT INTO system_alerts (alert_type, severity, message)
                     VALUES (?, ?, ?)
-                """, (alert_type, severity, message))
+                """,
+                    (alert_type, severity, message),
+                )
                 conn.commit()
         except Exception as e:
             logger.error("Error adding alert: %s", e)
-
 
     def record_request(self, response_time: float, is_error: bool = False):
         """Record API request for metrics."""
@@ -503,23 +559,19 @@ class SystemMonitor:
 
         # Keep only last 1000 response times
         if len(self.response_times) > 1000:
-            self.response_times=self.response_times[-1000:]
-
+            self.response_times = self.response_times[-1000:]
 
     def add_session(self, session_id: str):
         """Add active session."""
         self.active_sessions.add(session_id)
 
-
     def remove_session(self, session_id: str):
         """Remove active session."""
         self.active_sessions.discard(session_id)
 
-
     def record_failed_login(self):
         """Record failed login attempt."""
         self.failed_logins += 1
-
 
     async def start_monitoring(self, admin_manager=None, guardian_module=None):
         """Start background monitoring task with automated incident response."""
@@ -530,16 +582,16 @@ class SystemMonitor:
                 if admin_manager and guardian_module:
                     self.auto_block_suspicious_users(admin_manager, guardian_module)
                 # Check for alerts
-                current_system=self.get_system_metrics()
+                current_system = self.get_system_metrics()
                 if current_system:
                     if current_system.cpu_percent > 90:
-                        msg=f"CPU usage at {current_system.cpu_percent}%"
+                        msg = f"CPU usage at {current_system.cpu_percent}%"
                         self.add_alert("system", "high", msg)
                     if current_system.memory_percent > 90:
-                        msg=f"Memory usage at {current_system.memory_percent}%"
+                        msg = f"Memory usage at {current_system.memory_percent}%"
                         self.add_alert("system", "high", msg)
                     if current_system.disk_usage_percent > 85:
-                        msg=f"Disk usage at {current_system.disk_usage_percent}%"
+                        msg = f"Disk usage at {current_system.disk_usage_percent}%"
                         self.add_alert("system", "medium", msg)
                 await asyncio.sleep(60)  # Update every minute
             except Exception as e:

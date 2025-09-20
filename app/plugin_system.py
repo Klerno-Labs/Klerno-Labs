@@ -3,51 +3,50 @@ Plugin System for Klerno Labs
 Provides extensible API functionality through a plugin architecture
 """
 
-import os
 import importlib
 import inspect
-from typing import Dict, List, Any, Optional, Callable
-from abc import ABC, abstractmethod
-from fastapi import FastAPI, Request, Response
-from pydantic import BaseModel
-import json
 import logging
+import os
+from abc import ABC, abstractmethod
+from collections.abc import Callable
+from typing import Any
 
-logger=logging.getLogger(__name__)
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class PluginMetadata(BaseModel):
     """Metadata for a plugin"""
+
     name: str
     version: str
     description: str
     author: str
-    tags: List[str] = []
-    dependencies: List[str] = []
-    api_version: str="1.0"
+    tags: list[str] = []
+    dependencies: list[str] = []
+    api_version: str = "1.0"
 
 
 class PluginHook:
     """Represents a hook point in the system"""
 
-
     def __init__(self, name: str, description: str = ""):
-        self.name=name
-        self.description=description
-        self.callbacks: List[Callable] = []
-
+        self.name = name
+        self.description = description
+        self.callbacks: list[Callable] = []
 
     def register(self, callback: Callable):
         """Register a callback for this hook"""
         self.callbacks.append(callback)
 
-
-    def execute(self, *args, **kwargs) -> List[Any]:
+    def execute(self, *args, **kwargs) -> list[Any]:
         """Execute all callbacks for this hook"""
-        results=[]
+        results = []
         for callback in self.callbacks:
             try:
-                result=callback(*args, **kwargs)
+                result = callback(*args, **kwargs)
                 results.append(result)
             except Exception as e:
                 logger.error(f"Error executing hook {self.name}: {e}")
@@ -57,78 +56,82 @@ class PluginHook:
 class BasePlugin(ABC):
     """Base class for all plugins"""
 
-
     def __init__(self):
-        self.metadata: Optional[PluginMetadata] = None
-        self.hooks: Dict[str, PluginHook] = {}
+        self.metadata: PluginMetadata | None = None
+        self.hooks: dict[str, PluginHook] = {}
 
     @abstractmethod
-
-
     def get_metadata(self) -> PluginMetadata:
         """Return plugin metadata"""
         pass
 
     @abstractmethod
-
-
-    def initialize(self, app: FastAPI, plugin_manager: 'PluginManager'):
+    def initialize(self, app: FastAPI, plugin_manager: "PluginManager"):
         """Initialize the plugin"""
         pass
-
 
     def register_hook(self, hook_name: str, callback: Callable):
         """Register a callback for a specific hook"""
         if hook_name in self.hooks:
             self.hooks[hook_name].register(callback)
 
-
     def add_api_route(self, app: FastAPI, path: str, endpoint: Callable, **kwargs):
         """Helper to add API routes with plugin prefix"""
-        plugin_path=f"/plugins/{self.metadata.name.lower()}{path}"
+        plugin_path = f"/plugins/{self.metadata.name.lower()}{path}"
         app.add_api_route(plugin_path, endpoint, **kwargs)
 
 
 class PluginManager:
     """Manages plugin lifecycle and hooks"""
 
-
     def __init__(self, app: FastAPI):
-        self.app=app
-        self.plugins: Dict[str, BasePlugin] = {}
-        self.hooks: Dict[str, PluginHook] = {}
-        self.plugin_data: Dict[str, Any] = {}
+        self.app = app
+        self.plugins: dict[str, BasePlugin] = {}
+        self.hooks: dict[str, PluginHook] = {}
+        self.plugin_data: dict[str, Any] = {}
 
         # Initialize core hooks
         self._initialize_core_hooks()
 
-
     def _initialize_core_hooks(self):
         """Initialize core system hooks"""
-        self.hooks.update({
-            'transaction_analyzed': PluginHook('transaction_analyzed', 'Called after a transaction is analyzed'),
-                'risk_calculated': PluginHook('risk_calculated', 'Called after risk score is calculated'),
-                'alert_generated': PluginHook('alert_generated', 'Called when an alert is generated'),
-                'dashboard_data': PluginHook('dashboard_data', 'Called when dashboard data is requested'),
-                'api_request': PluginHook('api_request', 'Called on API requests'),
-                'user_login': PluginHook('user_login', 'Called when user logs in'),
-                'report_generated': PluginHook('report_generated', 'Called when a report is generated'),
-                'settings_changed': PluginHook('settings_changed', 'Called when settings are modified')
-        })
-
+        self.hooks.update(
+            {
+                "transaction_analyzed": PluginHook(
+                    "transaction_analyzed", "Called after a transaction is analyzed"
+                ),
+                "risk_calculated": PluginHook(
+                    "risk_calculated", "Called after risk score is calculated"
+                ),
+                "alert_generated": PluginHook(
+                    "alert_generated", "Called when an alert is generated"
+                ),
+                "dashboard_data": PluginHook(
+                    "dashboard_data", "Called when dashboard data is requested"
+                ),
+                "api_request": PluginHook("api_request", "Called on API requests"),
+                "user_login": PluginHook("user_login", "Called when user logs in"),
+                "report_generated": PluginHook(
+                    "report_generated", "Called when a report is generated"
+                ),
+                "settings_changed": PluginHook(
+                    "settings_changed", "Called when settings are modified"
+                ),
+            }
+        )
 
     def register_plugin(self, plugin_class: type) -> bool:
         """Register a plugin class"""
         try:
-            plugin=plugin_class()
-            metadata=plugin.get_metadata()
+            plugin = plugin_class()
+            metadata = plugin.get_metadata()
 
             if metadata.name in self.plugins:
                 logger.warning(f"Plugin {metadata.name} already registered")
                 return False
 
-            plugin.metadata=metadata
-            plugin.hooks=self.hooks
+            plugin.metadata = metadata
+            plugin.hooks = self.hooks
 
             # Initialize the plugin
             plugin.initialize(self.app, self)
@@ -141,7 +144,6 @@ class PluginManager:
             logger.error(f"Failed to register plugin {plugin_class.__name__}: {e}")
             return False
 
-
     def load_plugins_from_directory(self, directory: str):
         """Load all plugins from a directory"""
         if not os.path.exists(directory):
@@ -149,65 +151,66 @@ class PluginManager:
             return
 
         for filename in os.listdir(directory):
-            if filename.endswith('.py') and not filename.startswith('_'):
+            if filename.endswith(".py") and not filename.startswith("_"):
                 self._load_plugin_file(os.path.join(directory, filename))
-
 
     def _load_plugin_file(self, filepath: str):
         """Load a plugin from a Python file"""
         try:
-            spec=importlib.util.spec_from_file_location("plugin", filepath)
-            module=importlib.util.module_from_spec(spec)
+            spec = importlib.util.spec_from_file_location("plugin", filepath)
+            module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
 
             # Find plugin classes in the module
-            for name, obj in inspect.getmembers(module):
-                if (inspect.isclass(obj) and
-                    issubclass(obj, BasePlugin) and
-                    obj != BasePlugin):
+            for _name, obj in inspect.getmembers(module):
+                if (
+                    inspect.isclass(obj)
+                    and issubclass(obj, BasePlugin)
+                    and obj != BasePlugin
+                ):
                     self.register_plugin(obj)
 
         except Exception as e:
             logger.error(f"Failed to load plugin from {filepath}: {e}")
 
-
-    def execute_hook(self, hook_name: str, *args, **kwargs) -> List[Any]:
+    def execute_hook(self, hook_name: str, *args, **kwargs) -> list[Any]:
         """Execute all callbacks for a hook"""
         if hook_name in self.hooks:
             return self.hooks[hook_name].execute(*args, **kwargs)
         return []
 
-
-    def get_plugin_info(self, plugin_name: str) -> Optional[Dict[str, Any]]:
+    def get_plugin_info(self, plugin_name: str) -> dict[str, Any] | None:
         """Get information about a specific plugin"""
         if plugin_name in self.plugins:
-            plugin=self.plugins[plugin_name]
+            plugin = self.plugins[plugin_name]
             return {
                 "metadata": plugin.metadata.dict(),
-                    "status": "active",
-                    "hooks_registered": len([h for h in self.hooks.values() if plugin in [cb.__self__ for cb in h.callbacks if hasattr(cb, '__self__')]])
+                "status": "active",
+                "hooks_registered": len(
+                    [
+                        h
+                        for h in self.hooks.values()
+                        if plugin
+                        in [
+                            cb.__self__ for cb in h.callbacks if hasattr(cb, "__self__")
+                        ]
+                    ]
+                ),
             }
         return None
 
-
-    def list_plugins(self) -> List[Dict[str, Any]]:
+    def list_plugins(self) -> list[dict[str, Any]]:
         """List all registered plugins"""
         return [
-            {
-                "name": name,
-                    "metadata": plugin.metadata.dict(),
-                    "status": "active"
-            }
+            {"name": name, "metadata": plugin.metadata.dict(), "status": "active"}
             for name, plugin in self.plugins.items()
         ]
-
 
     def set_plugin_data(self, plugin_name: str, key: str, value: Any):
         """Store data for a plugin"""
         if plugin_name not in self.plugin_data:
             self.plugin_data[plugin_name] = {}
         self.plugin_data[plugin_name][key] = value
-
 
     def get_plugin_data(self, plugin_name: str, key: str, default: Any = None) -> Any:
         """Get data for a plugin"""
@@ -220,151 +223,147 @@ class PluginManager:
 class SampleAnalyticsPlugin(BasePlugin):
     """Sample analytics plugin demonstrating the plugin system"""
 
-
     def get_metadata(self) -> PluginMetadata:
         return PluginMetadata(
             name="SampleAnalytics",
-                version="1.0.0",
-                description="Sample analytics plugin showing enhanced transaction insights",
-                author="Klerno Labs",
-                tags=["analytics", "insights", "demo"],
-                dependencies=[]
+            version="1.0.0",
+            description="Sample analytics plugin showing enhanced transaction insights",
+            author="Klerno Labs",
+            tags=["analytics", "insights", "demo"],
+            dependencies=[],
         )
-
 
     def initialize(self, app: FastAPI, plugin_manager: PluginManager):
         """Initialize the sample analytics plugin"""
         # Register hook callbacks
-        plugin_manager.hooks['transaction_analyzed'].register(self.on_transaction_analyzed)
+        plugin_manager.hooks["transaction_analyzed"].register(
+            self.on_transaction_analyzed
+        )
 
         # Add custom API endpoints
         self.add_api_route(
             app,
-                "/custom - analytics",
-                self.get_custom_analytics,
-                methods=["GET"],
-                tags=["plugins"]
+            "/custom - analytics",
+            self.get_custom_analytics,
+            methods=["GET"],
+            tags=["plugins"],
         )
 
-
-    def on_transaction_analyzed(self, transaction_data: Dict[str, Any]) -> Dict[str, Any]:
+    def on_transaction_analyzed(
+        self, transaction_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """Called when a transaction is analyzed"""
         # Add custom analysis
-        custom_score=transaction_data.get('amount', 0) * 0.001  # Simple risk multiplier
+        custom_score = (
+            transaction_data.get("amount", 0) * 0.001
+        )  # Simple risk multiplier
         return {
             "plugin": "SampleAnalytics",
-                "custom_risk_score": min(custom_score, 1.0),
-                "analysis_note": "Custom analytics applied"
+            "custom_risk_score": min(custom_score, 1.0),
+            "analysis_note": "Custom analytics applied",
         }
-
 
     async def get_custom_analytics(self):
         """Custom analytics endpoint"""
         return {
             "plugin": "SampleAnalytics",
-                "message": "Custom analytics data from plugin",
-                "data": {
+            "message": "Custom analytics data from plugin",
+            "data": {
                 "analysis_type": "enhanced",
-                    "features": ["custom_scoring", "pattern_detection", "trend_analysis"]
-            }
+                "features": ["custom_scoring", "pattern_detection", "trend_analysis"],
+            },
         }
 
 
 class CompliancePlugin(BasePlugin):
     """Sample compliance plugin for regulatory reporting"""
 
-
     def get_metadata(self) -> PluginMetadata:
         return PluginMetadata(
             name="ComplianceReporting",
-                version="1.0.0",
-                description="Enhanced compliance reporting and regulatory tools",
-                author="Klerno Labs",
-                tags=["compliance", "reporting", "regulatory"],
-                dependencies=[]
+            version="1.0.0",
+            description="Enhanced compliance reporting and regulatory tools",
+            author="Klerno Labs",
+            tags=["compliance", "reporting", "regulatory"],
+            dependencies=[],
         )
-
 
     def initialize(self, app: FastAPI, plugin_manager: PluginManager):
         """Initialize the compliance plugin"""
-        plugin_manager.hooks['alert_generated'].register(self.on_alert_generated)
-        plugin_manager.hooks['report_generated'].register(self.on_report_generated)
+        plugin_manager.hooks["alert_generated"].register(self.on_alert_generated)
+        plugin_manager.hooks["report_generated"].register(self.on_report_generated)
 
         self.add_api_route(
             app,
-                "/compliance - report",
-                self.generate_compliance_report,
-                methods=["GET"],
-                tags=["plugins"]
+            "/compliance - report",
+            self.generate_compliance_report,
+            methods=["GET"],
+            tags=["plugins"],
         )
 
-
-    def on_alert_generated(self, alert_data: Dict[str, Any]) -> Dict[str, Any]:
+    def on_alert_generated(self, alert_data: dict[str, Any]) -> dict[str, Any]:
         """Process compliance requirements when alerts are generated"""
         return {
             "plugin": "ComplianceReporting",
-                "compliance_checked": True,
-                "regulatory_flags": self._check_regulatory_requirements(alert_data)
+            "compliance_checked": True,
+            "regulatory_flags": self._check_regulatory_requirements(alert_data),
         }
 
-
-    def on_report_generated(self, report_data: Dict[str, Any]) -> Dict[str, Any]:
+    def on_report_generated(self, report_data: dict[str, Any]) -> dict[str, Any]:
         """Add compliance information to reports"""
         return {
             "plugin": "ComplianceReporting",
-                "compliance_summary": "All transactions reviewed for regulatory compliance",
-                "regulatory_score": 0.95
+            "compliance_summary": "All transactions reviewed for regulatory compliance",
+            "regulatory_score": 0.95,
         }
 
-
-    def _check_regulatory_requirements(self, alert_data: Dict[str, Any]) -> List[str]:
+    def _check_regulatory_requirements(self, alert_data: dict[str, Any]) -> list[str]:
         """Check alert against regulatory requirements"""
-        flags=[]
-        risk_score=alert_data.get('risk_score', 0)
+        flags = []
+        risk_score = alert_data.get("risk_score", 0)
 
         if risk_score > 0.8:
             flags.append("SAR_FILING_REQUIRED")
-        if alert_data.get('amount', 0) > 10000:
+        if alert_data.get("amount", 0) > 10000:
             flags.append("CTR_THRESHOLD_EXCEEDED")
 
         return flags
-
 
     async def generate_compliance_report(self):
         """Generate a compliance - focused report"""
         return {
             "plugin": "ComplianceReporting",
-                "report_type": "regulatory_compliance",
-                "summary": {
+            "report_type": "regulatory_compliance",
+            "summary": {
                 "total_alerts_reviewed": 150,
-                    "sar_filings_required": 5,
-                    "ctr_reports_generated": 12,
-                    "compliance_score": 0.95
-            }
+                "sar_filings_required": 5,
+                "ctr_reports_generated": 12,
+                "compliance_score": 0.95,
+            },
         }
 
 
 # Global plugin manager instance (to be initialized with FastAPI app)
-plugin_manager: Optional[PluginManager] = None
+plugin_manager: PluginManager | None = None
 
 
 def initialize_plugin_system(app: FastAPI) -> PluginManager:
     """Initialize the plugin system"""
     global plugin_manager
-    plugin_manager=PluginManager(app)
+    plugin_manager = PluginManager(app)
 
     # Register built - in sample plugins
     plugin_manager.register_plugin(SampleAnalyticsPlugin)
     plugin_manager.register_plugin(CompliancePlugin)
 
     # Load plugins from directory if it exists
-    plugins_dir=os.path.join(os.path.dirname(__file__), "plugins")
+    plugins_dir = os.path.join(os.path.dirname(__file__), "plugins")
     if os.path.exists(plugins_dir):
         plugin_manager.load_plugins_from_directory(plugins_dir)
 
     return plugin_manager
 
 
-def get_plugin_manager() -> Optional[PluginManager]:
+def get_plugin_manager() -> PluginManager | None:
     """Get the global plugin manager instance"""
     return plugin_manager

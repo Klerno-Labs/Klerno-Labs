@@ -9,7 +9,7 @@ the FastAPI `app`, `Depends`, and other dependencies are available.
 # The following sample code is provided as a reference snippet only and is intentionally wrapped
 # in a string so it won't run or trigger linter errors in this standalone file.
 
-REFERENCE_SNIPPET=r'''
+REFERENCE_SNIPPET = r'''
 from app.config import settings
 from app.xrpl_payments import create_payment_request, verify_payment, get_network_info
 from app.subscriptions import (

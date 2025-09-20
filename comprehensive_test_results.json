@@ -1,0 +1,56 @@
+{
+  "timestamp": "2025-09-20T09:44:45.447810",
+  "summary": {
+    "total": 6,
+    "passed": 5,
+    "failed": 1,
+    "success_rate": 83.33333333333334,
+    "total_duration": 0.8819060325622559,
+    "test_duration": 0.8814222812652588
+  },
+  "results": {
+    "Transaction Processing Pipeline": {
+      "success": true,
+      "error": null,
+      "duration": 0.641737699508667
+    },
+    "Authentication & Security": {
+      "success": false,
+      "error": null,
+      "duration": 0.23639965057373047
+    },
+    "Data Models & Validation": {
+      "success": true,
+      "error": null,
+      "duration": 0.00035643577575683594
+    },
+    "Analytics Performance": {
+      "success": true,
+      "error": null,
+      "duration": 0.002407550811767578
+    },
+    "Compliance Engine": {
+      "success": true,
+      "error": null,
+      "duration": 0.00023603439331054688
+    },
+    "Risk Assessment": {
+      "success": true,
+      "error": null,
+      "duration": 0.0002849102020263672
+    }
+  },
+  "performance_metrics": {
+    "avg_test_time": 0.1469037135442098,
+    "fastest_test": {
+      "success": true,
+      "error": null,
+      "duration": 0.00023603439331054688
+    },
+    "slowest_test": {
+      "success": true,
+      "error": null,
+      "duration": 0.641737699508667
+    }
+  }
+}

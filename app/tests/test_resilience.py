@@ -1,24 +1,27 @@
 """
 Test cases for resilience system components.
 """
-import pytest
+
+import contextlib
 import time
+
+import pytest
+
 from app.resilience_system import (
     CircuitBreaker,
-        CircuitBreakerConfig,
-        CircuitState,
-        CircuitBreakerOpenError,
-        )
+    CircuitBreakerConfig,
+    CircuitBreakerOpenError,
+    CircuitState,
+)
 
 
 def test_circuit_breaker_closed_to_open():
     """Test circuit breaker transitions from CLOSED to OPEN when failure threshold is reached."""
-    config=CircuitBreakerConfig(failure_threshold=2, timeout_duration=1.0)
-    cb=CircuitBreaker("test_service", config)
+    config = CircuitBreakerConfig(failure_threshold=2, timeout_duration=1.0)
+    cb = CircuitBreaker("test_service", config)
 
     # Initially closed
     assert cb.state == CircuitState.CLOSED
-
 
     def failing_function():
         raise Exception("Service failure")
@@ -38,9 +41,8 @@ def test_circuit_breaker_closed_to_open():
 
 def test_circuit_breaker_open_blocks_calls():
     """Test that circuit breaker blocks calls when open."""
-    config=CircuitBreakerConfig(failure_threshold=1, timeout_duration=1.0)
-    cb=CircuitBreaker("test_service", config)
-
+    config = CircuitBreakerConfig(failure_threshold=1, timeout_duration=1.0)
+    cb = CircuitBreaker("test_service", config)
 
     def failing_function():
         raise Exception("Service failure")
@@ -57,12 +59,12 @@ def test_circuit_breaker_open_blocks_calls():
 
 def test_circuit_breaker_half_open_recovery():
     """Test circuit breaker recovery from OPEN to HALF_OPEN to CLOSED."""
-    config=CircuitBreakerConfig(
+    config = CircuitBreakerConfig(
         failure_threshold=1,
-            success_threshold=2,
-            timeout_duration=0.1  # Short timeout for testing
+        success_threshold=2,
+        timeout_duration=0.1,  # Short timeout for testing
     )
-    cb=CircuitBreaker("test_service", config)
+    cb = CircuitBreaker("test_service", config)
 
     # Force circuit to open
     with pytest.raises(Exception):
@@ -73,13 +75,13 @@ def test_circuit_breaker_half_open_recovery():
     time.sleep(0.2)
 
     # Next call should move to HALF_OPEN
-    result=cb.call(lambda: "success1")
+    result = cb.call(lambda: "success1")
     assert result == "success1"
     assert cb.state == CircuitState.HALF_OPEN
     assert cb.success_count == 1
 
     # Another success should close the circuit
-    result=cb.call(lambda: "success2")
+    result = cb.call(lambda: "success2")
     assert result == "success2"
     assert cb.state == CircuitState.CLOSED
     assert cb.failure_count == 0
@@ -87,19 +89,17 @@ def test_circuit_breaker_half_open_recovery():
 
 def test_circuit_breaker_stats():
     """Test circuit breaker statistics tracking."""
-    config=CircuitBreakerConfig(failure_threshold=2)
-    cb=CircuitBreaker("test_service", config)
+    config = CircuitBreakerConfig(failure_threshold=2)
+    cb = CircuitBreaker("test_service", config)
 
     # Make some calls
     cb.call(lambda: "success1")
     cb.call(lambda: "success2")
 
-    try:
+    with contextlib.suppress(Exception):
         cb.call(lambda: exec('raise Exception("failure")'))
-    except Exception:
-        pass
 
-    stats=cb.get_stats()
+    stats = cb.get_stats()
     assert stats["name"] == "test_service"
     assert stats["state"] == CircuitState.CLOSED.value
     assert stats["total_requests"] == 3

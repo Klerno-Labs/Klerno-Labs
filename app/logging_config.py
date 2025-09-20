@@ -5,8 +5,8 @@ Provides consistent, structured logging throughout the application.
 
 import logging
 import sys
-from datetime import datetime, timezone
-from typing import Any, Dict
+from datetime import UTC, datetime
+from typing import Any
 
 import structlog
 from pythonjsonlogger.json import JsonFormatter
@@ -16,56 +16,70 @@ from app.settings import get_settings
 
 def configure_logging() -> None:
     """Configure structured logging for the application."""
-    settings=get_settings()
+    settings = get_settings()
 
-    # Configure standard library logging
-    log_level=getattr(logging, settings.app_env.upper() if settings.app_env != "dev" else "DEBUG")
+    # Map app_env to valid logging levels
+    env_to_level = {
+        "production": "INFO",
+        "prod": "INFO",
+        "staging": "INFO",
+        "stage": "INFO",
+        "development": "DEBUG",
+        "dev": "DEBUG",
+        "test": "DEBUG",
+    }
+    log_level_str = env_to_level.get(settings.app_env.lower(), "DEBUG")
+    log_level = getattr(logging, log_level_str)
 
     # Remove existing handlers
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
 
     # JSON formatter for structured logs
-    json_formatter=JsonFormatter(
+    json_formatter = JsonFormatter(
         fmt="%(asctime)s %(name)s %(levelname)s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
     # Console handler
-    console_handler=logging.StreamHandler(sys.stdout)
+    console_handler = logging.StreamHandler(sys.stdout)
+    # File handler for Promtail/Loki
+    file_handler = logging.FileHandler("logs/app.log", mode="a", encoding="utf-8")
 
     if settings.app_env == "production":
         console_handler.setFormatter(json_formatter)
+        file_handler.setFormatter(json_formatter)
     else:
-        # Human - readable format for development
-        formatter=logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                datefmt="%H:%M:%S"
+        # Human-readable format for development
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S"
         )
         console_handler.setFormatter(formatter)
+        file_handler.setFormatter(json_formatter)
 
     # Configure root logger
     logging.basicConfig(
-        level=log_level,
-            handlers=[console_handler],
-            force=True
+        level=log_level, handlers=[console_handler, file_handler], force=True
     )
 
     # Configure structlog
     structlog.configure(
         processors=[
-            structlog.processors.add_logger_name,
-                structlog.processors.add_log_level,
-                structlog.processors.StackInfoRenderer(),
-                structlog.dev.set_exc_info,
-                structlog.processors.TimeStamper(fmt="iso"),
-                structlog.dev.ConsoleRenderer() if settings.app_env == "dev"
-            else structlog.processors.JSONRenderer()
+            structlog.stdlib.add_logger_name,
+            structlog.stdlib.add_log_level,
+            structlog.processors.StackInfoRenderer(),
+            structlog.dev.set_exc_info,
+            structlog.processors.TimeStamper(fmt="iso"),
+            (
+                structlog.dev.ConsoleRenderer()
+                if settings.app_env == "dev"
+                else structlog.processors.JSONRenderer()
+            ),
         ],
-            wrapper_class=structlog.make_filtering_bound_logger(log_level),
-            logger_factory=structlog.PrintLoggerFactory(),
-            cache_logger_on_first_use=True,
-            )
+        wrapper_class=structlog.make_filtering_bound_logger(log_level),
+        logger_factory=structlog.PrintLoggerFactory(),
+        cache_logger_on_first_use=True,
+    )
 
 
 def get_logger(name: str) -> structlog.BoundLogger:
@@ -77,8 +91,6 @@ class LoggingMixin:
     """Mixin to add structured logging to classes."""
 
     @property
-
-
     def logger(self) -> structlog.BoundLogger:
         """Get logger for this class."""
         return get_logger(self.__class__.__name__)
@@ -86,23 +98,23 @@ class LoggingMixin:
 
 def log_request_response(
     method: str,
-        url: str,
-        status_code: int,
-        duration: float,
-        request_id: str=None,
-        user_id: str=None,
-        **kwargs
+    url: str,
+    status_code: int,
+    duration: float,
+    request_id: str = None,
+    user_id: str = None,
+    **kwargs,
 ) -> None:
     """Log HTTP request / response details."""
-    logger=get_logger("http")
+    logger = get_logger("http")
 
-    log_data={
+    log_data = {
         "method": method,
-            "url": url,
-            "status_code": status_code,
-            "duration_ms": round(duration * 1000, 2),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
+        "url": url,
+        "status_code": status_code,
+        "duration_ms": round(duration * 1000, 2),
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
 
     if request_id:
         log_data["request_id"] = request_id
@@ -122,18 +134,18 @@ def log_request_response(
 
 def log_security_event(
     event_type: str,
-        user_id: str=None,
-        ip_address: str=None,
-        details: Dict[str, Any] = None,
-        **kwargs
+    user_id: str = None,
+    ip_address: str = None,
+    details: dict[str, Any] = None,
+    **kwargs,
 ) -> None:
     """Log security - related events."""
-    logger=get_logger("security")
+    logger = get_logger("security")
 
-    log_data={
+    log_data = {
         "event_type": event_type,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
 
     if user_id:
         log_data["user_id"] = user_id
@@ -147,7 +159,11 @@ def log_security_event(
     log_data.update(kwargs)
 
     # Security events are always important
-    if event_type in ["authentication_failure", "authorization_failure", "suspicious_activity"]:
+    if event_type in [
+        "authentication_failure",
+        "authorization_failure",
+        "suspicious_activity",
+    ]:
         logger.warning("Security event", **log_data)
     else:
         logger.info("Security event", **log_data)
@@ -155,19 +171,19 @@ def log_security_event(
 
 def log_business_event(
     event_type: str,
-        entity_type: str=None,
-        entity_id: str=None,
-        user_id: str=None,
-        details: Dict[str, Any] = None,
-        **kwargs
+    entity_type: str = None,
+    entity_id: str = None,
+    user_id: str = None,
+    details: dict[str, Any] = None,
+    **kwargs,
 ) -> None:
     """Log business logic events."""
-    logger=get_logger("business")
+    logger = get_logger("business")
 
-    log_data={
+    log_data = {
         "event_type": event_type,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
 
     if entity_type:
         log_data["entity_type"] = entity_type
@@ -188,20 +204,20 @@ def log_business_event(
 
 def log_performance_metric(
     operation: str,
-        duration: float,
-        success: bool=True,
-        details: Dict[str, Any] = None,
-        **kwargs
+    duration: float,
+    success: bool = True,
+    details: dict[str, Any] = None,
+    **kwargs,
 ) -> None:
     """Log performance metrics."""
-    logger=get_logger("performance")
+    logger = get_logger("performance")
 
-    log_data={
+    log_data = {
         "operation": operation,
-            "duration_ms": round(duration * 1000, 2),
-            "success": success,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
+        "duration_ms": round(duration * 1000, 2),
+        "success": success,
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
 
     if details:
         log_data["details"] = details

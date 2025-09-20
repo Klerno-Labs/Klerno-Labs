@@ -4,19 +4,19 @@ from collections.abc import Iterable
 from decimal import Decimal
 from typing import Any
 
-SUSPICIOUS_WORDS={
+SUSPICIOUS_WORDS = {
     "scam",
-        "phish",
-        "hack",
-        "fraud",
-        "ransom",
-        "malware",
-        "blackmail",
-        "mixer",
-        "tornado",
-        "sanction",
-        "darknet",
-        }
+    "phish",
+    "hack",
+    "fraud",
+    "ransom",
+    "malware",
+    "blackmail",
+    "mixer",
+    "tornado",
+    "sanction",
+    "darknet",
+}
 
 
 def _as_decimal(x: Any, default: str = "0") -> Decimal:
@@ -45,22 +45,22 @@ def score_risk(tx: Any) -> tuple[float, list[str]]:
     Returns (score, flags). Score is clamped to [0, 1].
     Flags explain which signals contributed; useful for tests & auditing.
     """
-    memo=_norm(_get(tx, "memo", ""))
-    amount=_as_decimal(_get(tx, "amount", 0))
-    fee=_as_decimal(_get(tx, "fee", 0))
-    direction=_norm(_get(tx, "direction", ""))
-    is_internal=bool(_get(tx, "is_internal", False))
+    memo = _norm(_get(tx, "memo", ""))
+    amount = _as_decimal(_get(tx, "amount", 0))
+    fee = _as_decimal(_get(tx, "fee", 0))
+    direction = _norm(_get(tx, "direction", ""))
+    is_internal = bool(_get(tx, "is_internal", False))
 
     tags: Iterable[str] = _get(tx, "tags", []) or []
-    tags={_norm(t) for t in tags}
+    tags = {_norm(t) for t in tags}
 
-    score=Decimal("0.10")
+    score = Decimal("0.10")
     flags: list[str] = []
 
     # Direction & magnitude (keeps your thresholds; adds flags)
     if direction in {"out", "outgoing", "debit"}:
         flags.append("outgoing")
-        mag=abs(amount)
+        mag = abs(amount)
         if mag > 0:
             score += Decimal("0.10")
         if mag > 100:
@@ -81,7 +81,7 @@ def score_risk(tx: Any) -> tuple[float, list[str]]:
         score += Decimal("0.05")
         flags.append("fee_present")
         if amount != 0:
-            ratio=(fee / abs(amount)) if abs(amount) > 0 else Decimal("0")
+            ratio = (fee / abs(amount)) if abs(amount) > 0 else Decimal("0")
             if ratio > Decimal("0.01"):
                 score += Decimal("0.05")
                 flags.append("high_fee_ratio")
@@ -91,9 +91,9 @@ def score_risk(tx: Any) -> tuple[float, list[str]]:
 
     # Suspicious memo keywords
     if memo:
-        hits=sum(1 for w in SUSPICIOUS_WORDS if w in memo)
+        hits = sum(1 for w in SUSPICIOUS_WORDS if w in memo)
         if hits:
-            score += Decimal("0.20") + Decimal("0.05") * hits
+            score += Decimal("0.20") + Decimal("0.05") * Decimal(hits)
             flags.append("suspicious_memo")
 
     # Tag - based adjustments
@@ -108,9 +108,9 @@ def score_risk(tx: Any) -> tuple[float, list[str]]:
 
     # Clamp to [0, 1]
     if score < 0:
-        score=Decimal("0")
+        score = Decimal("0")
     if score > 1:
-        score=Decimal("1")
+        score = Decimal("1")
 
     return float(score), flags
 

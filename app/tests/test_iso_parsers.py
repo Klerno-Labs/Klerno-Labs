@@ -1,34 +1,37 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from app.iso20022_compliance import (
-  ISO20022MessageBuilder,
-      ISO20022Parser,
-      ISO20022PaymentInstruction,
-      ISO20022Amount,
-      ISO20022PartyIdentification,
-      CurrencyCode,
-      PaymentPurpose,
-      )
+    CurrencyCode,
+    ISO20022Amount,
+    ISO20022MessageBuilder,
+    ISO20022Parser,
+    ISO20022PartyIdentification,
+    ISO20022PaymentInstruction,
+    PaymentPurpose,
+)
 
 
 def _build_sample_pain001_xml():
-    b=ISO20022MessageBuilder()
-    instr=ISO20022PaymentInstruction(
+    b = ISO20022MessageBuilder()
+    instr = ISO20022PaymentInstruction(
         instruction_id="I1",
-            end_to_end_id="E1",
-            amount=ISO20022Amount(currency=CurrencyCode.USD, value="1.00"),
-            debtor=ISO20022PartyIdentification(name="A"),
-            creditor=ISO20022PartyIdentification(name="B"),
-            debtor_account="DE89370400440532013000",
-            creditor_account="GB29NWBK60161331926819",
-            payment_purpose=PaymentPurpose.OTHR,
-            execution_date=datetime.now(timezone.utc),
-            )
-    return b.create_pain001_message("M1", datetime.now(timezone.utc), ISO20022PartyIdentification(name="K"), [instr])
+        end_to_end_id="E1",
+        amount=ISO20022Amount(currency=CurrencyCode.USD, value="1.00"),
+        debtor=ISO20022PartyIdentification(name="A"),
+        creditor=ISO20022PartyIdentification(name="B"),
+        debtor_account="DE89370400440532013000",
+        creditor_account="GB29NWBK60161331926819",
+        payment_purpose=PaymentPurpose.OTHR,
+        execution_date=datetime.now(UTC),
+    )
+    return b.create_pain001_message(
+        "M1", datetime.now(UTC), ISO20022PartyIdentification(name="K"), [instr]
+    )
 
 
 def test_parse_pain002_minimal():
     # Minimal synthetic pain.002 - like structure using builder namespace
-    xml="""
+    xml = """
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.002.001.12">
  <PmtStsRpt>
  <GrpHdr>
@@ -54,8 +57,8 @@ def test_parse_pain002_minimal():
  </PmtStsRpt>
 </Document>
 """.strip()
-    p=ISO20022Parser()
-    out=p.parse_pain002(xml)
+    p = ISO20022Parser()
+    out = p.parse_pain002(xml)
     assert out["message_type"] == "pain.002"
     assert out["group_header"]["message_id"] == "MSG2"
     assert out["original_message"]["original_message_id"] == "MSG1"
@@ -65,7 +68,7 @@ def test_parse_pain002_minimal():
 
 
 def test_parse_camt053_minimal():
-    xml="""
+    xml = """
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.10">
  <BkToCstmrStmt>
  <GrpHdr>
@@ -93,8 +96,8 @@ def test_parse_camt053_minimal():
  </BkToCstmrStmt>
 </Document>
 """.strip()
-    p=ISO20022Parser()
-    out=p.parse_camt053(xml)
+    p = ISO20022Parser()
+    out = p.parse_camt053(xml)
     assert out["message_type"] == "camt.053"
     assert out["group_header"]["message_id"] == "MSGS"
     assert out["statement"]["id"] == "STMT - 1"

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console Error Checker - Klerno Labs QA</title>
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        .success {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .warning {
+            border-color: #ffc107;
+            background: #fffef5;
+        }
+
+        .error {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .log {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background: #0056b3;
+        }
+
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Klerno Labs Console Error Checker</h1>
+            <p>Comprehensive JavaScript error detection and performance audit</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Test Controls</h3>
+            <button class="button" onclick="runAllTests()">🚀 Run All Tests</button>
+            <button class="button" onclick="testBasicJS()">📝 Basic JS Test</button>
+            <button class="button" onclick="testAPIEndpoints()">🌐 API Test</button>
+            <button class="button" onclick="testConsoleErrors()">🐛 Error Detection</button>
+            <button class="button" onclick="testPerformance()">⚡ Performance Test</button>
+            <button class="button" onclick="clearResults()">🗑️ Clear Results</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let testResults = [];
+        let errorCount = 0;
+        let warningCount = 0;
+
+        // Override console methods to catch errors
+        const originalConsole = {
+            error: console.error,
+            warn: console.warn,
+            log: console.log
+        };
+
+        console.error = function (...args) {
+            errorCount++;
+            addResult('error', 'Console Error', args.join(' '));
+            originalConsole.error.apply(console, args);
+        };
+
+        console.warn = function (...args) {
+            warningCount++;
+            addResult('warning', 'Console Warning', args.join(' '));
+            originalConsole.warn.apply(console, args);
+        };
+
+        function addResult(type, title, message, details = '') {
+            const result = {
+                type,
+                title,
+                message,
+                details,
+                timestamp: new Date().toISOString()
+            };
+            testResults.push(result);
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = testResults.map(result => `
+                <div class="test-section ${result.type}">
+                    <h4>${getStatusIcon(result.type)} ${result.title}</h4>
+                    <p><strong>Message:</strong> ${result.message}</p>
+                    ${result.details ? `<div class="log">${result.details}</div>` : ''}
+                    <small>Timestamp: ${result.timestamp}</small>
+                </div>
+            `).join('');
+        }
+
+        function getStatusIcon(type) {
+            return {
+                'success': '✅',
+                'warning': '⚠️',
+                'error': '❌'
+            }[type] || '🔍';
+        }
+
+        function clearResults() {
+            testResults = [];
+            errorCount = 0;
+            warningCount = 0;
+            updateDisplay();
+            addResult('success', 'Results Cleared', 'Test log has been reset');
+        }
+
+        async function runAllTests() {
+            clearResults();
+            addResult('success', 'Test Suite Started', 'Running comprehensive QA audit...');
+
+            await testBasicJS();
+            await testAPIEndpoints();
+            await testConsoleErrors();
+            await testPerformance();
+
+            const summary = `Tests completed. Errors: ${errorCount}, Warnings: ${warningCount}`;
+            addResult(errorCount > 0 ? 'error' : 'success', 'Test Suite Complete', summary);
+        }
+
+        function testBasicJS() {
+            addResult('success', 'Basic JavaScript Test', 'Starting JavaScript functionality tests...');
+
+            try {
+                // Test basic JavaScript features
+                const testArray = [1, 2, 3];
+                const testObject = { name: 'Klerno', type: 'blockchain-security' };
+                const testFunction = () => 'Hello World';
+
+                if (testArray.length === 3) {
+                    addResult('success', 'Array Operations', 'Array manipulation working correctly');
+                }
+
+                if (testObject.name === 'Klerno') {
+                    addResult('success', 'Object Operations', 'Object manipulation working correctly');
+                }
+
+                if (testFunction() === 'Hello World') {
+                    addResult('success', 'Function Operations', 'Function execution working correctly');
+                }
+
+                // Test DOM manipulation
+                const testDiv = document.createElement('div');
+                testDiv.innerHTML = 'Test Content';
+                if (testDiv.innerHTML === 'Test Content') {
+                    addResult('success', 'DOM Manipulation', 'DOM operations working correctly');
+                }
+
+                // Test event handling
+                const testEvent = new Event('test');
+                if (testEvent.type === 'test') {
+                    addResult('success', 'Event Handling', 'Event system working correctly');
+                }
+
+            } catch (error) {
+                addResult('error', 'Basic JavaScript Error', error.message, error.stack);
+            }
+        }
+
+        async function testAPIEndpoints() {
+            addResult('success', 'API Endpoint Test', 'Testing API connectivity...');
+
+            const endpoints = [
+                '/healthz',
+                '/api/health',
+                '/'
+            ];
+
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint);
+                    if (response.ok) {
+                        addResult('success', `API Endpoint: ${endpoint}`, `Status: ${response.status} ${response.statusText}`);
+                    } else {
+                        addResult('warning', `API Endpoint: ${endpoint}`, `Status: ${response.status} ${response.statusText}`);
+                    }
+                } catch (error) {
+                    addResult('error', `API Endpoint: ${endpoint}`, `Failed to connect: ${error.message}`);
+                }
+            }
+        }
+
+        function testConsoleErrors() {
+            addResult('success', 'Console Error Detection', 'Testing for console errors and warnings...');
+
+            // Deliberately test error handling
+            try {
+                // This should NOT throw an error in normal operation
+                const testUndefined = window.nonExistentProperty;
+                if (testUndefined === undefined) {
+                    addResult('success', 'Undefined Property Test', 'Handled undefined property correctly');
+                }
+            } catch (error) {
+                addResult('warning', 'Undefined Property Test', `Unexpected error: ${error.message}`);
+            }
+
+            // Test for common jQuery/Bootstrap issues
+            if (typeof $ === 'undefined') {
+                addResult('warning', 'jQuery Check', 'jQuery not detected (may be intentional)');
+            } else {
+                addResult('success', 'jQuery Check', 'jQuery is available');
+            }
+
+            if (typeof bootstrap === 'undefined') {
+                addResult('warning', 'Bootstrap JS Check', 'Bootstrap JS not detected');
+            } else {
+                addResult('success', 'Bootstrap JS Check', 'Bootstrap JS is available');
+            }
+        }
+
+        async function testPerformance() {
+            addResult('success', 'Performance Test', 'Running performance audits...');
+
+            // Test page load performance
+            if (performance && performance.timing) {
+                const timing = performance.timing;
+                const loadTime = timing.loadEventEnd - timing.navigationStart;
+
+                if (loadTime < 3000) {
+                    addResult('success', 'Page Load Time', `${loadTime}ms (Excellent)`);
+                } else if (loadTime < 5000) {
+                    addResult('warning', 'Page Load Time', `${loadTime}ms (Good)`);
+                } else {
+                    addResult('error', 'Page Load Time', `${loadTime}ms (Needs Improvement)`);
+                }
+
+                const domReady = timing.domContentLoadedEventEnd - timing.navigationStart;
+                if (domReady < 2000) {
+                    addResult('success', 'DOM Ready Time', `${domReady}ms (Excellent)`);
+                } else {
+                    addResult('warning', 'DOM Ready Time', `${domReady}ms (Could be improved)`);
+                }
+            }
+
+            // Test memory usage (if available)
+            if (performance && performance.memory) {
+                const memory = performance.memory;
+                const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
+
+                if (usedMB < 50) {
+                    addResult('success', 'Memory Usage', `${usedMB}MB (Excellent)`);
+                } else if (usedMB < 100) {
+                    addResult('warning', 'Memory Usage', `${usedMB}MB (Good)`);
+                } else {
+                    addResult('error', 'Memory Usage', `${usedMB}MB (High - investigate)`);
+                }
+            }
+
+            // Test network requests
+            if (performance && performance.getEntriesByType) {
+                const resources = performance.getEntriesByType('resource');
+                const slowResources = resources.filter(r => r.duration > 1000);
+
+                if (slowResources.length === 0) {
+                    addResult('success', 'Resource Loading', 'All resources loaded quickly');
+                } else {
+                    const details = slowResources.map(r => `${r.name}: ${Math.round(r.duration)}ms`).join('\n');
+                    addResult('warning', 'Slow Resources', `${slowResources.length} slow resources detected`, details);
+                }
+            }
+        }
+
+        // Run basic tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('success', 'Page Loaded', 'Console error checker is ready');
+                addResult('success', 'Instructions', 'Click "Run All Tests" to perform comprehensive QA audit');
+            }, 100);
+        });
+
+        // Handle unhandled errors
+        window.addEventListener('error', (event) => {
+            addResult('error', 'Unhandled JavaScript Error', event.message, `File: ${event.filename}\nLine: ${event.lineno}\nColumn: ${event.colno}`);
+        });
+
+        // Handle unhandled promise rejections
+        window.addEventListener('unhandledrejection', (event) => {
+            addResult('error', 'Unhandled Promise Rejection', event.reason.toString());
+        });
+    </script>
+</body>
+
+</html>

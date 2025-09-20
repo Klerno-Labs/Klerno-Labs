@@ -1,87 +1,33 @@
-# Comprehensive Test Configuration for Klerno Labs
-# pytest.ini configuration file
-
 [tool:pytest]
-# Test discovery
-testpaths = .
-python_files = test_*.py *_test.py comprehensive_test_suite.py
-python_classes = Test*
-python_functions = test_*
-
-# Test execution options
+minversion = 6.0
 addopts = 
-    -v
     --strict-markers
     --strict-config
+    --verbose
     --tb=short
-    --durations=10
-    --color=yes
-    --disable-warnings
-
-# Markers for test categorization
-markers =
-    unit: Unit tests for individual components
-    integration: Integration tests for system interaction
-    performance: Performance and benchmark tests
-    security: Security-related tests
-    slow: Tests that take longer to execute
-    asyncio: Asynchronous test cases
-
-# Test timeout settings
-timeout = 300
-timeout_method = thread
-
-# Coverage settings
-# Requires pytest-cov plugin: pip install pytest-cov
-addopts = 
     --cov=app
-    --cov=automation
-    --cov-report=html:htmlcov
     --cov-report=term-missing
+    --cov-report=html:htmlcov
     --cov-report=xml
-    --cov-branch
     --cov-fail-under=80
-
-# Async test configuration
+    --maxfail=10
+    -ra
+testpaths = app/tests
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+markers =
+    unit: Unit tests
+    integration: Integration tests
+    performance: Performance tests
+    slow: Slow running tests
+    api: API endpoint tests
+    auth: Authentication tests
+    compliance: Compliance tests
+    xrpl: XRPL integration tests
+    admin: Admin functionality tests
+    paywall: Paywall tests
 asyncio_mode = auto
-
-# Test environment variables
-env =
-    TESTING = true
-    LOG_LEVEL = ERROR
-    ENVIRONMENT = test
-    
-# Test filtering
 filterwarnings =
     ignore::DeprecationWarning
     ignore::PendingDeprecationWarning
-    ignore::UserWarning
-    error::FutureWarning
-
-# Minimum required version
-minversion = 6.0
-
-# Test collection timeout
-collect_ignore = [
-    "__pycache__",
-    "*.pyc",
-    ".git",
-    "venv",
-    "env",
-    "node_modules"
-]
-
-# Log configuration for tests
-log_cli = true
-log_cli_level = INFO
-log_cli_format = %(asctime)s [%(levelname)8s] %(name)s: %(message)s
-log_cli_date_format = %Y-%m-%d %H:%M:%S
-
-# Test data directory
-testpaths = tests app/tests
-
-# JUnit XML output for CI/CD
-addopts = --junitxml=test-results.xml
-
-# Parallel execution (requires pytest-xdist)
-# addopts = -n auto

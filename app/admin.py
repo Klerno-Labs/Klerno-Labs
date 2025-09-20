@@ -490,7 +490,7 @@ class FundDistributionConfig(BaseModel):
 @router.get("/api / fund - management / config")
 
 
-def get_fund_config(user=Depends(require_admin)):
+def get_fund_config(user=Depends(require_admin) -> Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """Get current fund distribution configuration."""
     # For now, return mock data. In production, store this in database
     return {
@@ -618,7 +618,7 @@ def distribute_transaction_funds(transaction_id: str, user=Depends(require_admin
 @router.get("/api / fund - management / balances")
 
 
-def get_wallet_balances(user=Depends(require_admin)):
+def get_wallet_balances(user=Depends(require_admin) -> Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """Get current balances for all managed wallets."""
     # Mock data - in production, query actual wallet balances
     return {
@@ -674,7 +674,7 @@ class SecurityPolicyConfig(BaseModel):
 @router.get("/security / policy")
 
 
-def get_security_policy(admin=Depends(require_admin)):
+def get_security_policy(admin=Depends(require_admin) -> Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """Get current security policy configuration."""
     config=policy.config
     return {
@@ -740,7 +740,7 @@ def update_security_policy(config: SecurityPolicyConfig, admin=Depends(require_a
 @router.get("/security / users")
 
 
-def get_users_security_status(admin=Depends(require_admin)):
+def get_users_security_status(admin=Depends(require_admin) -> Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """Get security status for all users."""
     # This would need a new store function to get all users with security info
     # For now, return mock data

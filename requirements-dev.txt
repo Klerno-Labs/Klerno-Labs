@@ -1,0 +1,11 @@
+# Development requirements for Klerno Labs
+pytest
+pytest-asyncio
+pytest-cov
+pytest-xdist
+httpx
+requests
+coverage
+bandit
+ruff
+mypy

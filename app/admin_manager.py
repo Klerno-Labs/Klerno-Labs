@@ -5,39 +5,41 @@ Comprehensive admin management system with role - based access control,
 """
 
 import json
-import sqlite3
-from datetime import datetime, timezone, timedelta
-from typing import List, Optional, Dict, Any
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import smtplib
 import logging
-from pathlib import Path
+import sqlite3
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
-from .models import User, AdminAction, UserRole, AccountStatus, ActionType, BlockUserRequest
-from .security_session import hash_pw as get_password_hash, verify_pw as verify_password
+from .models import (
+    AccountStatus,
+    ActionType,
+    AdminAction,
+    BlockUserRequest,
+    User,
+    UserRole,
+)
+from .security_session import hash_pw as get_password_hash
 
-logger=logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class AdminManager:
     """Comprehensive admin management system."""
 
-
     def __init__(self, db_path: str = "data/klerno.db"):
-        self.db_path=db_path
-        self.notification_email="klerno@outlook.com"  # Configurable
+        self.db_path = db_path
+        self.notification_email = "klerno@outlook.com"  # Configurable
         self.init_database()
         self.init_owner_account()
-
 
     def init_database(self):
         """Initialize database tables for enhanced user management."""
         with sqlite3.connect(self.db_path) as conn:
-            cursor=conn.cursor()
+            cursor = conn.cursor()
 
             # Enhanced users table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS users_enhanced (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                         email TEXT UNIQUE NOT NULL,
@@ -51,10 +53,12 @@ class AdminManager:
                         blocked_by TEXT,
                         is_premium BOOLEAN DEFAULT 0
                 )
-            """)
+            """
+            )
 
             # Admin actions log table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS admin_actions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                         admin_email TEXT NOT NULL,
@@ -64,24 +68,26 @@ class AdminManager:
                         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         additional_data TEXT
                 )
-            """)
+            """
+            )
 
             # System settings table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS system_settings (
                     key TEXT PRIMARY KEY,
                         value TEXT NOT NULL,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """)
+            """
+            )
 
             conn.commit()
 
-
     def init_owner_account(self):
         """Initialize the owner account with specified credentials."""
-        owner_email="klerno@outlook.com"
-        owner_password="Labs2025"
+        owner_email = "klerno@outlook.com"
+        owner_password = "Labs2025"
 
         try:
             # Check if owner already exists
@@ -90,15 +96,24 @@ class AdminManager:
                 return
 
             # Create owner account
-            password_hash=get_password_hash(owner_password)
+            password_hash = get_password_hash(owner_password)
 
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
-                cursor.execute("""
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
                     INSERT INTO users_enhanced
                     (email, password_hash, role, status, is_premium)
                     VALUES (?, ?, ?, ?, ?)
-                """, (owner_email, password_hash, UserRole.OWNER, AccountStatus.ACTIVE, True))
+                """,
+                    (
+                        owner_email,
+                        password_hash,
+                        UserRole.OWNER,
+                        AccountStatus.ACTIVE,
+                        True,
+                    ),
+                )
                 conn.commit()
 
             logger.info(f"Owner account created: {owner_email}")
@@ -106,41 +121,54 @@ class AdminManager:
         except Exception as e:
             logger.error(f"Failed to create owner account: {e}")
 
-
-    def get_user_by_email(self, email: str) -> Optional[User]:
+    def get_user_by_email(self, email: str) -> User | None:
         """Get user by email address."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
-                cursor.execute("""
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
                     SELECT id, email, password_hash, role, status, created_at,
                            last_login, blocked_until, blocked_reason, blocked_by, is_premium
                     FROM users_enhanced WHERE email=?
-                """, (email,))
+                """,
+                    (email,),
+                )
 
-                row=cursor.fetchone()
+                row = cursor.fetchone()
                 if row:
                     return User(
                         id=row[0],
-                            email=row[1],
-                            password_hash=row[2],
-                            role=UserRole(row[3]),
-                            status=AccountStatus(row[4]),
-                            created_at=datetime.fromisoformat(row[5]) if row[5] else datetime.now(timezone.utc),
-                            last_login=datetime.fromisoformat(row[6]) if row[6] else None,
-                            blocked_until=datetime.fromisoformat(row[7]) if row[7] else None,
-                            blocked_reason=row[8],
-                            blocked_by=row[9],
-                            is_premium=bool(row[10])
+                        email=row[1],
+                        password_hash=row[2],
+                        role=UserRole(row[3]),
+                        status=AccountStatus(row[4]),
+                        created_at=(
+                            datetime.fromisoformat(row[5])
+                            if row[5]
+                            else datetime.now(UTC)
+                        ),
+                        last_login=datetime.fromisoformat(row[6]) if row[6] else None,
+                        blocked_until=(
+                            datetime.fromisoformat(row[7]) if row[7] else None
+                        ),
+                        blocked_reason=row[8],
+                        blocked_by=row[9],
+                        is_premium=bool(row[10]),
                     )
                 return None
         except Exception as e:
             logger.error(f"Error getting user by email: {e}")
             return None
 
-
-    def create_user(self, email: str, password: str, role: UserRole = UserRole.USER,
-                   admin_email: str=None, is_premium: bool=False) -> Dict[str, Any]:
+    def create_user(
+        self,
+        email: str,
+        password: str,
+        role: UserRole = UserRole.USER,
+        admin_email: str = None,
+        is_premium: bool = False,
+    ) -> dict[str, Any]:
         """Create a new user with role assignment."""
         try:
             # Check if user already exists
@@ -148,46 +176,55 @@ class AdminManager:
                 return {"success": False, "message": "User already exists"}
 
             # Hash password
-            password_hash=get_password_hash(password)
+            password_hash = get_password_hash(password)
 
             # Create user
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
-                cursor.execute("""
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
                     INSERT INTO users_enhanced
                     (email, password_hash, role, status, is_premium)
                     VALUES (?, ?, ?, ?, ?)
-                """, (email, password_hash, role.value, AccountStatus.ACTIVE.value, is_premium))
+                """,
+                    (
+                        email,
+                        password_hash,
+                        role.value,
+                        AccountStatus.ACTIVE.value,
+                        is_premium,
+                    ),
+                )
 
-                user_id=cursor.lastrowid
+                user_id = cursor.lastrowid
                 conn.commit()
 
             # Log admin action if admin created the user
             if admin_email and role in [UserRole.ADMIN, UserRole.MANAGER]:
                 self.log_admin_action(
                     admin_email=admin_email,
-                        target_email=email,
-                        action=ActionType.CREATE_ADMIN,
-                        reason=f"Created {role.value} account"
+                    target_email=email,
+                    action=ActionType.CREATE_ADMIN,
+                    reason=f"Created {role.value} account",
                 )
 
             return {
                 "success": True,
-                    "message": f"User created successfully with role: {role.value}",
-                    "user_id": user_id
+                "message": f"User created successfully with role: {role.value}",
+                "user_id": user_id,
             }
 
         except Exception as e:
             logger.error(f"Error creating user: {e}")
             return {"success": False, "message": f"Error creating user: {str(e)}"}
 
-
-    def update_user_role(self, admin_email: str, target_email: str,
-                        new_role: UserRole) -> Dict[str, Any]:
+    def update_user_role(
+        self, admin_email: str, target_email: str, new_role: UserRole
+    ) -> dict[str, Any]:
         """Update user role with permission checking."""
         try:
-            admin=self.get_user_by_email(admin_email)
-            target=self.get_user_by_email(target_email)
+            admin = self.get_user_by_email(admin_email)
+            target = self.get_user_by_email(target_email)
 
             if not admin or not target:
                 return {"success": False, "message": "User not found"}
@@ -198,18 +235,21 @@ class AdminManager:
 
             # Update role
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
-                cursor.execute("""
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
                     UPDATE users_enhanced SET role=? WHERE email=?
-                """, (new_role.value, target_email))
+                """,
+                    (new_role.value, target_email),
+                )
                 conn.commit()
 
             # Log action
             self.log_admin_action(
                 admin_email=admin_email,
-                    target_email=target_email,
-                    action=ActionType.ROLE_CHANGE,
-                    reason=f"Role changed to {new_role.value}"
+                target_email=target_email,
+                action=ActionType.ROLE_CHANGE,
+                reason=f"Role changed to {new_role.value}",
             )
 
             return {"success": True, "message": f"Role updated to {new_role.value}"}
@@ -218,23 +258,28 @@ class AdminManager:
             logger.error(f"Error updating user role: {e}")
             return {"success": False, "message": f"Error updating role: {str(e)}"}
 
-
-    def block_user(self, admin_email: str, request: BlockUserRequest) -> Dict[str, Any]:
+    def block_user(self, admin_email: str, request: BlockUserRequest) -> dict[str, Any]:
         """Block user with reason tracking and confirmation."""
         try:
-            admin=self.get_user_by_email(admin_email)
-            target=self.get_user_by_email(request.target_email)
+            admin = self.get_user_by_email(admin_email)
+            target = self.get_user_by_email(request.target_email)
 
             if not admin or not target:
                 return {"success": False, "message": "User not found"}
 
             # Check permissions
             if not admin.can_block_users():
-                return {"success": False, "message": "Insufficient permissions to block users"}
+                return {
+                    "success": False,
+                    "message": "Insufficient permissions to block users",
+                }
 
             # Check if trying to permanently block (only owner can do this)
             if request.duration_hours is None and not admin.can_permanent_block():
-                return {"success": False, "message": "Only owners can permanently block users"}
+                return {
+                    "success": False,
+                    "message": "Only owners can permanently block users",
+                }
 
             # Prevent blocking owner
             if target.is_owner():
@@ -243,62 +288,85 @@ class AdminManager:
             # Determine block type and duration
             if request.duration_hours is None:
                 # Permanent block
-                status=AccountStatus.PERMANENTLY_BLOCKED
-                blocked_until=None
-                action_type=ActionType.BLOCK_PERMANENT
+                status = AccountStatus.PERMANENTLY_BLOCKED
+                blocked_until = None
+                action_type = ActionType.BLOCK_PERMANENT
             else:
                 # Temporary block
-                status=AccountStatus.TEMPORARILY_BLOCKED
-                blocked_until=datetime.now(timezone.utc) + timedelta(hours=request.duration_hours)
-                action_type=ActionType.BLOCK_TEMPORARY
+                status = AccountStatus.TEMPORARILY_BLOCKED
+                blocked_until = datetime.now(UTC) + timedelta(
+                    hours=request.duration_hours
+                )
+                action_type = ActionType.BLOCK_TEMPORARY
 
                 # Admin can only do 24 - hour blocks
                 if admin.role == UserRole.ADMIN and request.duration_hours > 24:
-                    return {"success": False, "message": "Admins can only block for maximum 24 hours"}
+                    return {
+                        "success": False,
+                        "message": "Admins can only block for maximum 24 hours",
+                    }
 
             # Update user status
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
-                cursor.execute("""
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
                     UPDATE users_enhanced
                     SET status=?, blocked_until=?, blocked_reason=?, blocked_by=?
                     WHERE email=?
-                """, (status.value, blocked_until.isoformat() if blocked_until else None,
-                     request.reason, admin_email, request.target_email))
+                """,
+                    (
+                        status.value,
+                        blocked_until.isoformat() if blocked_until else None,
+                        request.reason,
+                        admin_email,
+                        request.target_email,
+                    ),
+                )
                 conn.commit()
 
             # Log action
-            action_id=self.log_admin_action(
+            action_id = self.log_admin_action(
                 admin_email=admin_email,
-                    target_email=request.target_email,
-                    action=action_type,
-                    reason=request.reason,
-                    additional_data=json.dumps({
-                    "duration_hours": request.duration_hours,
-                        "blocked_until": blocked_until.isoformat() if blocked_until else None
-                })
+                target_email=request.target_email,
+                action=action_type,
+                reason=request.reason,
+                additional_data=json.dumps(
+                    {
+                        "duration_hours": request.duration_hours,
+                        "blocked_until": (
+                            blocked_until.isoformat() if blocked_until else None
+                        ),
+                    }
+                ),
             )
 
             # Send notification email
             self.send_block_notification(admin_email, request, action_type)
 
-            block_type="permanently" if request.duration_hours is None else f"for {request.duration_hours} hours"
+            block_type = (
+                "permanently"
+                if request.duration_hours is None
+                else f"for {
+                request.duration_hours} hours"
+            )
             return {
                 "success": True,
-                    "message": f"User blocked {block_type}",
-                    "action_id": action_id
+                "message": f"User blocked {block_type}",
+                "action_id": action_id,
             }
 
         except Exception as e:
             logger.error(f"Error blocking user: {e}")
             return {"success": False, "message": f"Error blocking user: {str(e)}"}
 
-
-    def unblock_user(self, admin_email: str, target_email: str, reason: str) -> Dict[str, Any]:
+    def unblock_user(
+        self, admin_email: str, target_email: str, reason: str
+    ) -> dict[str, Any]:
         """Unblock a user."""
         try:
-            admin=self.get_user_by_email(admin_email)
-            target=self.get_user_by_email(target_email)
+            admin = self.get_user_by_email(admin_email)
+            target = self.get_user_by_email(target_email)
 
             if not admin or not target:
                 return {"success": False, "message": "User not found"}
@@ -309,62 +377,77 @@ class AdminManager:
 
             # Update user status
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
-                cursor.execute("""
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
                     UPDATE users_enhanced
-                    SET status=?, blocked_until=NULL, blocked_reason=NULL, blocked_by=NULL
+                    SET status=?, blocked_until = NULL, blocked_reason = NULL, blocked_by = NULL
                     WHERE email=?
-                """, (AccountStatus.ACTIVE.value, target_email))
+                """,
+                    (AccountStatus.ACTIVE.value, target_email),
+                )
                 conn.commit()
 
             # Log action
-            action_id=self.log_admin_action(
+            action_id = self.log_admin_action(
                 admin_email=admin_email,
-                    target_email=target_email,
-                    action=ActionType.UNBLOCK,
-                    reason=reason
+                target_email=target_email,
+                action=ActionType.UNBLOCK,
+                reason=reason,
             )
 
-            return {"success": True, "message": "User unblocked successfully", "action_id": action_id}
+            return {
+                "success": True,
+                "message": "User unblocked successfully",
+                "action_id": action_id,
+            }
 
         except Exception as e:
             logger.error(f"Error unblocking user: {e}")
             return {"success": False, "message": f"Error unblocking user: {str(e)}"}
 
-
-    def log_admin_action(self, admin_email: str, target_email: str,
-                        action: ActionType, reason: str, additional_data: str=None) -> int:
+    def log_admin_action(
+        self,
+        admin_email: str,
+        target_email: str,
+        action: ActionType,
+        reason: str,
+        additional_data: str = None,
+    ) -> int:
         """Log admin action to database."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
-                cursor.execute("""
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
                     INSERT INTO admin_actions
                     (admin_email, target_email, action, reason, additional_data)
                     VALUES (?, ?, ?, ?, ?)
-                """, (admin_email, target_email, action.value, reason, additional_data))
+                """,
+                    (admin_email, target_email, action.value, reason, additional_data),
+                )
 
-                action_id=cursor.lastrowid
+                action_id = cursor.lastrowid
                 conn.commit()
                 return action_id
         except Exception as e:
             logger.error(f"Error logging admin action: {e}")
             return 0
 
-
-    def get_admin_actions(self, start_date: datetime = None,
-                         end_date: datetime=None) -> List[AdminAction]:
+    def get_admin_actions(
+        self, start_date: datetime = None, end_date: datetime = None
+    ) -> list[AdminAction]:
         """Get admin actions within date range."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
+                cursor = conn.cursor()
 
-                query="SELECT * FROM admin_actions"
-                params=[]
+                query = "SELECT * FROM admin_actions"
+                params = []
 
                 if start_date or end_date:
                     query += " WHERE"
-                    conditions=[]
+                    conditions = []
 
                     if start_date:
                         conditions.append(" timestamp >= ?")
@@ -379,34 +462,36 @@ class AdminManager:
                 query += " ORDER BY timestamp DESC"
 
                 cursor.execute(query, params)
-                rows=cursor.fetchall()
+                rows = cursor.fetchall()
 
-                actions=[]
+                actions = []
                 for row in rows:
-                    actions.append(AdminAction(
-                        id=row[0],
+                    actions.append(
+                        AdminAction(
+                            id=row[0],
                             admin_email=row[1],
                             target_email=row[2],
                             action=ActionType(row[3]),
                             reason=row[4],
                             timestamp=datetime.fromisoformat(row[5]),
-                            additional_data=row[6]
-                    ))
+                            additional_data=row[6],
+                        )
+                    )
 
                 return actions
         except Exception as e:
             logger.error(f"Error getting admin actions: {e}")
             return []
 
-
-    def send_block_notification(self, admin_email: str, request: BlockUserRequest,
-                               action_type: ActionType):
+    def send_block_notification(
+        self, admin_email: str, request: BlockUserRequest, action_type: ActionType
+    ):
         """Send email notification for blocking actions."""
         try:
             # Create email content
-            subject=f"User Account Action: {action_type.value}"
+            subject = f"User Account Action: {action_type.value}"
 
-            body=f"""
+            f"""
             Admin Action Notification
 
             Admin: {admin_email}
@@ -414,51 +499,67 @@ class AdminManager:
             Action: {action_type.value}
             Reason: {request.reason}
             Duration: {'Permanent' if request.duration_hours is None else f'{request.duration_hours} hours'}
-            Timestamp: {datetime.now(timezone.utc).isoformat()}
+            Timestamp: {datetime.now(UTC).isoformat()}
 
             This is an automated notification from Klerno Labs Admin System.
             """
 
             # Note: Email sending would require SMTP configuration
             # For now, we'll log the notification
-            logger.info(f"Email notification prepared for {self.notification_email}: {subject}")
+            logger.info(
+                f"Email notification prepared for {
+                    self.notification_email}: {subject}"
+            )
 
         except Exception as e:
             logger.error(f"Error sending notification: {e}")
 
-
-    def get_monthly_block_report(self, year: int, month: int) -> Dict[str, Any]:
+    def get_monthly_block_report(self, year: int, month: int) -> dict[str, Any]:
         """Generate monthly report of blocking actions."""
         try:
-            start_date=datetime(year, month, 1, tzinfo=timezone.utc)
+            start_date = datetime(year, month, 1, tzinfo=UTC)
             if month == 12:
-                end_date=datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+                end_date = datetime(year + 1, 1, 1, tzinfo=UTC)
             else:
-                end_date=datetime(year, month + 1, 1, tzinfo=timezone.utc)
+                end_date = datetime(year, month + 1, 1, tzinfo=UTC)
 
-            actions=self.get_admin_actions(start_date, end_date)
+            actions = self.get_admin_actions(start_date, end_date)
 
             # Filter blocking actions
-            blocking_actions=[a for a in actions if a.action in [
-                ActionType.BLOCK_TEMPORARY, ActionType.BLOCK_PERMANENT
-            ]]
+            blocking_actions = [
+                a
+                for a in actions
+                if a.action in [ActionType.BLOCK_TEMPORARY, ActionType.BLOCK_PERMANENT]
+            ]
 
             # Generate statistics
-            report={
+            report = {
                 "period": f"{year}-{month:02d}",
-                    "total_blocks": len(blocking_actions),
-                    "temporary_blocks": len([a for a in blocking_actions if a.action == ActionType.BLOCK_TEMPORARY]),
-                    "permanent_blocks": len([a for a in blocking_actions if a.action == ActionType.BLOCK_PERMANENT]),
-                    "actions": [
+                "total_blocks": len(blocking_actions),
+                "temporary_blocks": len(
+                    [
+                        a
+                        for a in blocking_actions
+                        if a.action == ActionType.BLOCK_TEMPORARY
+                    ]
+                ),
+                "permanent_blocks": len(
+                    [
+                        a
+                        for a in blocking_actions
+                        if a.action == ActionType.BLOCK_PERMANENT
+                    ]
+                ),
+                "actions": [
                     {
                         "admin": a.admin_email,
-                            "target": a.target_email,
-                            "action": a.action.value,
-                            "reason": a.reason,
-                            "timestamp": a.timestamp.isoformat()
+                        "target": a.target_email,
+                        "action": a.action.value,
+                        "reason": a.reason,
+                        "timestamp": a.timestamp.isoformat(),
                     }
                     for a in blocking_actions
-                ]
+                ],
             }
 
             return report
@@ -466,29 +567,31 @@ class AdminManager:
             logger.error(f"Error generating monthly report: {e}")
             return {"error": str(e)}
 
-
-    def get_all_users(self, admin_email: str) -> List[Dict[str, Any]]:
+    def get_all_users(self, admin_email: str) -> list[dict[str, Any]]:
         """Get all users for admin management."""
         try:
-            admin=self.get_user_by_email(admin_email)
+            admin = self.get_user_by_email(admin_email)
             if not admin or not admin.is_manager_or_higher():
                 return []
 
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
-                cursor.execute("""
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
                     SELECT email, role, status, created_at, last_login,
                            blocked_until, blocked_reason, blocked_by, is_premium
                     FROM users_enhanced
                     ORDER BY created_at DESC
-                """)
+                """
+                )
 
-                rows=cursor.fetchall()
-                users=[]
+                rows = cursor.fetchall()
+                users = []
 
                 for row in rows:
-                    users.append({
-                        "email": row[0],
+                    users.append(
+                        {
+                            "email": row[0],
                             "role": row[1],
                             "status": row[2],
                             "created_at": row[3],
@@ -496,34 +599,45 @@ class AdminManager:
                             "blocked_until": row[5],
                             "blocked_reason": row[6],
                             "blocked_by": row[7],
-                            "is_premium": bool(row[8])
-                    })
+                            "is_premium": bool(row[8]),
+                        }
+                    )
 
                 return users
         except Exception as e:
             logger.error(f"Error getting all users: {e}")
             return []
 
-
-    def update_notification_email(self, new_email: str, admin_email: str) -> Dict[str, Any]:
+    def update_notification_email(
+        self, new_email: str, admin_email: str
+    ) -> dict[str, Any]:
         """Update the notification email address."""
         try:
-            admin=self.get_user_by_email(admin_email)
+            admin = self.get_user_by_email(admin_email)
             if not admin or not admin.is_owner():
-                return {"success": False, "message": "Only owner can update notification email"}
+                return {
+                    "success": False,
+                    "message": "Only owner can update notification email",
+                }
 
-            self.notification_email=new_email
+            self.notification_email = new_email
 
             # Store in database
             with sqlite3.connect(self.db_path) as conn:
-                cursor=conn.cursor()
-                cursor.execute("""
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
                     INSERT OR REPLACE INTO system_settings (key, value)
                     VALUES ('notification_email', ?)
-                """, (new_email,))
+                """,
+                    (new_email,),
+                )
                 conn.commit()
 
-            return {"success": True, "message": f"Notification email updated to {new_email}"}
+            return {
+                "success": True,
+                "message": f"Notification email updated to {new_email}",
+            }
         except Exception as e:
             logger.error(f"Error updating notification email: {e}")
             return {"success": False, "message": f"Error updating email: {str(e)}"}

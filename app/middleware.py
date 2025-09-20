@@ -4,7 +4,7 @@ Middleware for request / response logging, metrics, and monitoring.
 
 import time
 import uuid
-from typing import Callable
+from collections.abc import Callable
 
 import structlog
 from fastapi import Request, Response
@@ -14,32 +14,25 @@ from starlette.responses import PlainTextResponse
 
 from app.logging_config import log_request_response
 
-
 logger = structlog.get_logger("middleware")
 
 
 # Prometheus metrics
 REQUEST_COUNT = Counter(
-    "http_requests_total",
-    "Total HTTP requests",
-    ["method", "endpoint", "status_code"]
+    "http_requests_total", "Total HTTP requests", ["method", "endpoint", "status_code"]
 )
 
 REQUEST_DURATION = Histogram(
     "http_request_duration_seconds",
     "HTTP request duration",
-    ["method", "endpoint", "status_code"]
+    ["method", "endpoint", "status_code"],
 )
 
-ACTIVE_REQUESTS = Counter(
-    "http_requests_active",
-    "Active HTTP requests"
-)
+ACTIVE_REQUESTS = Counter("http_requests_active", "Active HTTP requests")
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """Middleware for logging HTTP requests and responses."""
-
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         # Generate request ID
@@ -55,7 +48,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             method=request.method,
             url=str(request.url),
             user_agent=request.headers.get("user-agent"),
-            request_id=request_id
+            request_id=request_id,
         )
 
         # Process request
@@ -70,7 +63,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 url=str(request.url),
                 duration=duration,
                 exception=str(exc),
-                request_id=request_id
+                request_id=request_id,
             )
             raise
 
@@ -89,7 +82,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             status_code=response.status_code,
             duration=duration,
             request_id=request_id,
-            user_id=user_id
+            user_id=user_id,
         )
 
         return response
@@ -97,7 +90,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 class MetricsMiddleware(BaseHTTPMiddleware):
     """Middleware for collecting Prometheus metrics."""
-
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         # Skip metrics collection for the metrics endpoint itself
@@ -118,15 +110,11 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             endpoint = self._get_endpoint_path(request)
 
             REQUEST_COUNT.labels(
-                method=request.method,
-                endpoint=endpoint,
-                status_code=500
+                method=request.method, endpoint=endpoint, status_code=500
             ).inc()
 
             REQUEST_DURATION.labels(
-                method=request.method,
-                endpoint=endpoint,
-                status_code=500
+                method=request.method, endpoint=endpoint, status_code=500
             ).observe(duration)
 
             ACTIVE_REQUESTS.dec()
@@ -138,22 +126,17 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
         # Record metrics
         REQUEST_COUNT.labels(
-            method=request.method,
-            endpoint=endpoint,
-            status_code=response.status_code
+            method=request.method, endpoint=endpoint, status_code=response.status_code
         ).inc()
 
         REQUEST_DURATION.labels(
-            method=request.method,
-            endpoint=endpoint,
-            status_code=response.status_code
+            method=request.method, endpoint=endpoint, status_code=response.status_code
         ).observe(duration)
 
         # Decrement active requests
         ACTIVE_REQUESTS.dec()
 
         return response
-
 
     def _get_endpoint_path(self, request: Request) -> str:
         """Extract endpoint path for metrics, normalizing dynamic segments."""
@@ -162,17 +145,18 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         # Normalize common dynamic path patterns
         # Replace UUIDs with placeholder
         import re
+
         path = re.sub(
-            r'/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',
-            '/{id}',
-            path
+            r"/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+            "/{id}",
+            path,
         )
 
         # Replace numeric IDs
-        path = re.sub(r'/\d+', '/{id}', path)
+        path = re.sub(r"/\d+", "/{id}", path)
 
         # Replace wallet addresses (common pattern: rXXX...)
-        path = re.sub(r'/r[a-zA-Z0-9]{25,}', '/{wallet}', path)
+        path = re.sub(r"/r[a-zA-Z0-9]{25,}", "/{wallet}", path)
 
         return path
 
@@ -180,37 +164,38 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Middleware for adding security headers."""
 
-
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         response = await call_next(request)
 
         # Add security headers
-        response.headers.update({
-            "X-Content-Type-Options": "nosniff",
-            "X-Frame-Options": "DENY",
-            "X-XSS-Protection": "1; mode=block",
-            "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-            "Content-Security-Policy": (
-                "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-                "style-src 'self' 'unsafe-inline'; "
-                "img-src 'self' data: https:; "
-                "font-src 'self' https:; "
-                "connect-src 'self' https:; "
-                "frame-ancestors 'none';"
-            ),
-            "Referrer-Policy": "strict-origin-when-cross-origin",
-            "Permissions-Policy": (
-                "geolocation=(), "
-                "microphone=(), "
-                "camera=(), "
-                "payment=(), "
-                "usb=(), "
-                "magnetometer=(), "
-                "gyroscope=(), "
-                "speaker=()"
-            )
-        })
+        response.headers.update(
+            {
+                "X-Content-Type-Options": "nosniff",
+                "X-Frame-Options": "DENY",
+                "X-XSS-Protection": "1; mode=block",
+                "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+                "Content-Security-Policy": (
+                    "default-src 'self'; "
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                    "style-src 'self' 'unsafe-inline'; "
+                    "img-src 'self' data: https:; "
+                    "font-src 'self' https:; "
+                    "connect-src 'self' https:; "
+                    "frame-ancestors 'none';"
+                ),
+                "Referrer-Policy": "strict-origin-when-cross-origin",
+                "Permissions-Policy": (
+                    "geolocation=(), "
+                    "microphone=(), "
+                    "camera=(), "
+                    "payment=(), "
+                    "usb=(), "
+                    "magnetometer=(), "
+                    "gyroscope=(), "
+                    "speaker=()"
+                ),
+            }
+        )
 
         return response
 
@@ -222,7 +207,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
         self.requests = {}  # ip -> list of timestamps
-
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         # Skip rate limiting for health checks
@@ -241,17 +225,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 "Rate limit exceeded",
                 client_ip=client_ip,
                 path=request.url.path,
-                method=request.method
+                method=request.method,
             )
 
             from app.exceptions import RateLimitException
+
             raise RateLimitException(retry_after=60)
 
         # Record request
         self._record_request(client_ip, current_time)
 
         return await call_next(request)
-
 
     def _get_client_ip(self, request: Request) -> str:
         """Extract client IP address."""
@@ -273,8 +257,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         for ip in list(self.requests.keys()):
             self.requests[ip] = [
-                timestamp for timestamp in self.requests[ip]
-                if timestamp > cutoff_time
+                timestamp for timestamp in self.requests[ip] if timestamp > cutoff_time
             ]
 
             # Remove empty entries
@@ -299,6 +282,5 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 def metrics_endpoint() -> PlainTextResponse:
     """Prometheus metrics endpoint."""
     return PlainTextResponse(
-        generate_latest(),
-        media_type="text/plain; version=0.0.4; charset=utf-8"
+        generate_latest(), media_type="text/plain; version=0.0.4; charset=utf-8"
     )

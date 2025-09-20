@@ -11,15 +11,15 @@ from dotenv import find_dotenv, load_dotenv
 from fastapi import Header, HTTPException, Request, status
 
 # --- Load .env robustly (works from OneDrive, nested folders, etc.) ---
-PROJECT_ROOT=Path(__file__).resolve().parents[1]
-DOTENV_PATH=find_dotenv(usecwd=True) or str(PROJECT_ROOT / ".env")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DOTENV_PATH = find_dotenv(usecwd=True) or str(PROJECT_ROOT / ".env")
 load_dotenv(dotenv_path=DOTENV_PATH, override=False)
 
 # --- File - based key storage (used when ENV key is not set) ---
-_DATA_DIR=PROJECT_ROOT / "data"
+_DATA_DIR = PROJECT_ROOT / "data"
 _DATA_DIR.mkdir(parents=True, exist_ok=True)
-_KEY_FILE=_DATA_DIR / "api_key.secret"
-_META_FILE=_DATA_DIR / "api_key.meta"
+_KEY_FILE = _DATA_DIR / "api_key.secret"
+_META_FILE = _DATA_DIR / "api_key.meta"
 
 
 def expected_api_key() -> str:
@@ -28,7 +28,7 @@ def expected_api_key() -> str:
       1) ENV: X_API_KEY (or API_KEY)
       2) File: data / api_key.secret (written by admin rotation)
     """
-    env=(os.getenv("X_API_KEY") or os.getenv("API_KEY") or "").strip()
+    env = (os.getenv("X_API_KEY") or os.getenv("API_KEY") or "").strip()
     if env:
         return env
     if _KEY_FILE.exists():
@@ -64,8 +64,8 @@ def api_key_last_updated() -> int | None:
 
 async def enforce_api_key(
     request: Request,
-        x_api_key: str | None=Header(default=None),
-        ) -> bool:
+    x_api_key: str | None = Header(default=None),
+) -> bool:
     """
     Authorize EITHER:
       • x - api - key header that matches the expected key, OR
@@ -74,9 +74,9 @@ async def enforce_api_key(
     Dev - friendly: if no key is configured at all, allow requests.
     Enhanced with audit logging for security events.
     """
-    from .audit_logger import log_api_access, log_security_event, AuditEventType
+    from .audit_logger import AuditEventType, log_api_access, log_security_event
 
-    exp=expected_api_key()
+    exp = expected_api_key()
 
     # 0) Dev mode: if no key configured, allow.
     if not exp:
@@ -95,11 +95,23 @@ async def enforce_api_key(
 
         try:
             # Many implementations accept Request; if not, call without args.
-            user=require_user(request)  # may raise HTTPException
-            log_api_access(str(request.url.path), request.method, str(user.get("id")), False, request)
+            user = require_user(request)  # may raise HTTPException
+            log_api_access(
+                str(request.url.path),
+                request.method,
+                str(user.get("id")),
+                False,
+                request,
+            )
         except TypeError:
-            user=require_user()  # type: ignore
-            log_api_access(str(request.url.path), request.method, str(user.get("id")), False, request)
+            user = require_user()  # type: ignore
+            log_api_access(
+                str(request.url.path),
+                request.method,
+                str(user.get("id")),
+                False,
+                request,
+            )
 
         return True
     except Exception:
@@ -108,38 +120,40 @@ async def enforce_api_key(
     # 3) Log unauthorized access attempt and deny
     log_security_event(
         AuditEventType.API_ACCESS_DENIED,
-            {
+        {
             "endpoint": str(request.url.path),
-                "method": request.method,
-                "has_api_key": bool(x_api_key),
-                "reason": "invalid_credentials"
+            "method": request.method,
+            "has_api_key": bool(x_api_key),
+            "reason": "invalid_credentials",
         },
-            request
+        request,
     )
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Unauthorized: missing or invalid API key / session",
-            )
+        detail="Unauthorized: missing or invalid API key / session",
+    )
 
 
 def rotate_api_key() -> str:
     """Admin - only: generate and persist a new API key (file). Includes audit logging."""
-    from .audit_logger import audit_logger, AuditEvent, AuditEventType
+    from .audit_logger import AuditEvent, AuditEventType, audit_logger
 
-    old_key_preview=preview_api_key().get("preview", "none")
-    key=generate_api_key()
+    old_key_preview = preview_api_key().get("preview", "none")
+    key = generate_api_key()
     _write_api_key(key)
 
     # Log the key rotation for security auditing
     audit_logger.log_event(
         AuditEvent(
             event_type=AuditEventType.API_KEY_ROTATION,
-                outcome="success",
-                details={
+            outcome="success",
+            details={
                 "old_key_preview": old_key_preview,
-                    "new_key_preview": key[:4] + "..." + key[-4:] if len(key) >= 8 else "***"
-            }
+                "new_key_preview": (
+                    key[:4] + "..." + key[-4:] if len(key) >= 8 else "***"
+                ),
+            },
         )
     )
 
@@ -148,13 +162,13 @@ def rotate_api_key() -> str:
 
 def preview_api_key() -> dict:
     """Return masked preview + metadata (never the full key)."""
-    key=expected_api_key()
+    key = expected_api_key()
     if not key:
         return {"configured": False}
-    preview=(key[:4] + "..." + key[-4:]) if len(key) >= 8 else "***"
+    preview = (key[:4] + "..." + key[-4:]) if len(key) >= 8 else "***"
     return {
         "configured": True,
-            "preview": preview,
-            "updated_at": api_key_last_updated(),
-            "source": "env" if (os.getenv("X_API_KEY") or os.getenv("API_KEY")) else "file",
-            }
+        "preview": preview,
+        "updated_at": api_key_last_updated(),
+        "source": "env" if (os.getenv("X_API_KEY") or os.getenv("API_KEY")) else "file",
+    }
