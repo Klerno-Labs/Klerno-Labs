@@ -87,8 +87,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `JWT_SECRET` | ✅ Yes | - | JWT token signing secret (32+ chars) |
-| `ADMIN_EMAIL` | ⚠️ Recommended | admin@klerno.com | Default admin email |
-| `ADMIN_PASSWORD` | ⚠️ Recommended | SecureAdminPass123! | Default admin password |
+| `ADMIN_EMAIL` | ⚠️ Recommended | Klerno@outlook.com | Default admin email |
+| `ADMIN_PASSWORD` | ⚠️ Recommended | Labs2025 | Default admin password |
 
 ### Optional Environment Variables
 
@@ -174,8 +174,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 - ⚠️ **Backup Strategy**: Implement data backup procedures
 
 ### Default Credentials (CHANGE IN PRODUCTION)
-- **Admin Email**: admin@klerno.com
-- **Admin Password**: SecureAdminPass123!
+- **Admin Email**: Klerno@outlook.com
+- **Admin Password**: Labs2025
 
 ## 📈 Performance Tuning
 

@@ -7,8 +7,8 @@ echo =======================================================
 
 REM Set production environment variables
 set JWT_SECRET=production-jwt-secret-key-change-this-in-production-123456789abcdef
-set ADMIN_EMAIL=admin@klerno.com
-set ADMIN_PASSWORD=SecureAdminPass123!
+set ADMIN_EMAIL=Klerno@outlook.com
+set ADMIN_PASSWORD=Labs2025
 set ENVIRONMENT=production
 set LOG_LEVEL=INFO
 

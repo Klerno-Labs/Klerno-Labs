@@ -7,8 +7,8 @@ echo "=============================================="
 
 # Set production environment variables
 export JWT_SECRET="production-jwt-secret-key-change-this-in-production-123456789abcdef"
-export ADMIN_EMAIL="admin@klerno.com"
-export ADMIN_PASSWORD="SecureAdminPass123!"
+export ADMIN_EMAIL="Klerno@outlook.com"
+export ADMIN_PASSWORD="Labs2025"
 export ENVIRONMENT="production"
 export LOG_LEVEL="INFO"
 
