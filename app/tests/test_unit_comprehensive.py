@@ -13,7 +13,6 @@ from app.compliance import ComplianceEngine, ComplianceTag
 from app.guardian import GuardianEngine
 from app.models import Transaction, User
 from app.paywall import PaywallManager
-from app.security_session import decode_jwt, issue_jwt
 
 
 class TestUserModel:
