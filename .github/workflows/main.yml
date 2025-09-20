@@ -2,9 +2,9 @@ name: Klerno Labs Final
 
 on:
   push:
-    branches: [Klerno labs branch]
+    branches: [main]
   pull_request:
-    branches: [delete me]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
