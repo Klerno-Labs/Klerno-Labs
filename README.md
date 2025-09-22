@@ -63,6 +63,11 @@ be removed. For local installs of only the test helpers use:
 python -m pip install -r dev-requirements.txt
 ```
 
+CI status
+---------
+
+![CI - tests](https://github.com/auricrypt-ux/custowell-copilot/actions/workflows/pytest.yml/badge.svg)
+
 ## 👤 First Time Setup
 
 1. Visit http://localhost:8000/auth/signup
