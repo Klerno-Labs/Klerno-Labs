@@ -1037,7 +1037,7 @@ class PerformanceOptimizer:
             # Database benchmark (if available)
             if self.db_pool:
                 db_start = time.time()
-                for i in range(100):
+                for _i in range(100):
                     await self.db_pool.execute_query("SELECT 1 as test_value")
 
                 db_duration = time.time() - db_start

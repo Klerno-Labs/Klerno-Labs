@@ -13,7 +13,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 import yaml
 
@@ -79,7 +79,7 @@ class CICDPipeline:
         self.backups_path.mkdir(parents=True, exist_ok=True)
 
         # Pipeline state
-        self.current_build = None
+        self.current_build: Optional[BuildArtifact] = None
         self.deployment_history: list[dict] = []
         self.rollback_points: list[dict] = []
 
@@ -217,8 +217,8 @@ class CICDPipeline:
     def run_pipeline(
         self,
         target_branch: str = "main",
-        skip_stages: list[str] = None,
-        environment_overrides: dict[str, str] = None,
+        skip_stages: Optional[List[str]] = None,
+        environment_overrides: Optional[Dict[str, str]] = None,
     ) -> dict[str, Any]:
         """Run the complete CI/CD pipeline"""
 
@@ -304,7 +304,7 @@ class CICDPipeline:
         return results
 
     def _run_stage(
-        self, stage_config: dict, environment_overrides: dict = None
+        self, stage_config: dict, environment_overrides: Optional[Dict[str, str]] = None
     ) -> dict[str, Any]:
         """Run a single pipeline stage"""
         stage_name = stage_config["name"]
@@ -473,7 +473,7 @@ class CICDPipeline:
             coverage_match = re.search(r"TOTAL.*?(\d+)%", output)
             if coverage_match:
                 return float(coverage_match.group(1))
-        except:
+        except Exception:
             pass
 
         return 0.0
@@ -493,7 +493,7 @@ class CICDPipeline:
                     severity = result.get("issue_severity", "").lower()
                     if severity in issues:
                         issues[severity] += 1
-        except:
+        except Exception:
             pass
 
         return issues

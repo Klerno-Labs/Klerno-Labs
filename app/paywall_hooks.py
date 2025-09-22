@@ -63,7 +63,7 @@ async def stripe_webhook(request: Request):
     try:
         event = stripe_sdk.Webhook.construct_event(payload, sig_header, secret)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from None
 
     if event.get("type") in (
         "checkout.session.completed",

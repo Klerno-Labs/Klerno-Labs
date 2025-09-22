@@ -520,7 +520,7 @@ class EnterpriseHealthMonitor:
             # Load average (Unix only)
             try:
                 load_average = list(psutil.getloadavg())
-            except:
+            except Exception:
                 load_average = [0.0, 0.0, 0.0]
 
             # System uptime

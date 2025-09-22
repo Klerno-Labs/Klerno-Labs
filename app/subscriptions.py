@@ -31,6 +31,7 @@ Manages user subscriptions, tier pricing, and access control.
 import sqlite3
 from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, HTTPException, status
@@ -201,10 +202,8 @@ def init_subscription_db():
 def get_db_connection():
     """Get a database connection."""
     if settings.USE_SQLITE:
-        # Ensure directory exists
-        import os
-
-        os.makedirs(os.path.dirname(settings.SQLITE_PATH), exist_ok=True)
+        # Ensure directory exists using pathlib
+        Path(settings.SQLITE_PATH).resolve().parent.mkdir(parents=True, exist_ok=True)
 
         conn = sqlite3.connect(settings.SQLITE_PATH)
         conn.row_factory = sqlite3.Row
@@ -695,5 +694,6 @@ def record_transaction_usage(user_id: str, count: int = 1):
     conn.close()
 
 
-# Initialize the database on module import
-init_subscription_db()
+# In the shim we intentionally do not initialize DB on import to avoid
+# filesystem/database side-effects during test-time imports. The real
+# implementation initializes the DB when the application starts.

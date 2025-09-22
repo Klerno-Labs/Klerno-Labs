@@ -440,7 +440,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
         tags: list[str] = None,
     ) -> CommunityPost:
         """Create a new community post"""
-        post_id = max(self.posts.keys(), default=0) + 1
+        post_id = max(self.posts, default=0) + 1
 
         post = CommunityPost(
             id=post_id,
@@ -558,7 +558,7 @@ class CollaborationFeatures:
         self, name: str, description: str, owner_id: int, team_members: list[int]
     ) -> dict[str, Any]:
         """Create a shared workspace for team collaboration"""
-        workspace_id = max(self.shared_workspaces.keys(), default=0) + 1
+        workspace_id = max(self.shared_workspaces, default=0) + 1
 
         workspace = {
             "id": workspace_id,

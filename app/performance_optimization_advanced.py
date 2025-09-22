@@ -84,7 +84,7 @@ class AdvancedCache:
             # Try decompression first
             decompressed = gzip.decompress(data)
             return pickle.loads(decompressed)
-        except:
+        except Exception:
             # If decompression fails, try direct pickle
             return pickle.loads(data)
 
@@ -92,7 +92,7 @@ class AdvancedCache:
         """Calculate approximate size of value in bytes."""
         try:
             return len(self._serialize_value(value))
-        except:
+        except Exception:
             return 1024  # Default size if calculation fails
 
     def _evict_lru(self) -> None:
@@ -135,7 +135,7 @@ class AdvancedCache:
 
                 try:
                     return self._deserialize_value(entry.value)
-                except:
+                except Exception:
                     # If deserialization fails, remove entry
                     self.delete(key)
                     self.miss_count += 1

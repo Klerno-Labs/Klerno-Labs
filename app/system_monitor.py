@@ -123,7 +123,13 @@ class SystemMonitor:
 
     """Comprehensive system monitoring for enterprise admin dashboard."""
 
-    def __init__(self, db_path: str = "data/klerno.db"):
+    def __init__(self, db_path: str = "data/klerno.db", init_db: bool = False):
+        """Create a SystemMonitor instance.
+
+        By default this constructor does not perform any filesystem or
+        database initialization. Pass init_db=True to create monitoring
+        tables immediately (used by application startup).
+        """
         self.db_path = db_path
         self.start_time = time.time()
         self.request_count = 0
@@ -131,7 +137,12 @@ class SystemMonitor:
         self.error_count = 0
         self.active_sessions = set()
         self.failed_logins = 0
-        self.init_monitoring_tables()
+
+        # Avoid side-effects during import/normal construction. Table
+        # initialization is opt-in to keep tests and tooling safe; call
+        # init_monitoring_tables() explicitly when needed.
+        if init_db:
+            self.init_monitoring_tables()
 
     def init_monitoring_tables(self):
         """Initialize monitoring database tables."""

@@ -146,8 +146,7 @@ class AntiTheftProtection:
     def verify_request_integrity(request: Request) -> bool:
         """Verify request hasn't been tampered with."""
         # Check for suspicious headers that indicate automation / scraping
-
-        user_agent = request.headers.get("user - agent", "").lower()
+        user_agent = request.headers.get("user-agent", "").lower()
 
         # Block obvious bots / scrapers
         if any(bot in user_agent for bot in SecurityConfig.BLOCKED_USER_AGENTS):
@@ -380,7 +379,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             return "auth"
         elif path.startswith("/admin/"):
             return "admin"
-        elif path.startswith("/api / payment") or path.startswith("/paywall"):
+        elif path.startswith("/api/payment") or path.startswith("/paywall"):
             return "payment"
         elif path.startswith("/api/"):
             return "api"
@@ -404,7 +403,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             "path": request.url.path,
             "status_code": response.status_code,
             "duration_ms": round(duration * 1000, 2),
-            "user_agent": request.headers.get("user - agent", "")[:200],
+            "user_agent": request.headers.get("user-agent", "")[:200],
             "referer": request.headers.get("referer", "")[:200],
         }
 

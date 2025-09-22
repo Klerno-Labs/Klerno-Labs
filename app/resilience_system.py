@@ -311,12 +311,10 @@ class RetryManager:
                 last_exception = e
 
                 # Check if we should retry this exception
-                if policy.retry_on_exceptions:
-                    if not any(
-                        isinstance(e, exc_type)
-                        for exc_type in policy.retry_on_exceptions
-                    ):
-                        raise e
+                if policy.retry_on_exceptions and not any(
+                    isinstance(e, exc_type) for exc_type in policy.retry_on_exceptions
+                ):
+                    raise e
 
                 if attempt < policy.max_attempts - 1:
                     delay = self._calculate_delay(attempt, policy)
@@ -357,12 +355,10 @@ class RetryManager:
                 last_exception = e
 
                 # Check if we should retry this exception
-                if policy.retry_on_exceptions:
-                    if not any(
-                        isinstance(e, exc_type)
-                        for exc_type in policy.retry_on_exceptions
-                    ):
-                        raise e
+                if policy.retry_on_exceptions and not any(
+                    isinstance(e, exc_type) for exc_type in policy.retry_on_exceptions
+                ):
+                    raise e
 
                 if attempt < policy.max_attempts - 1:
                     delay = self._calculate_delay(attempt, policy)

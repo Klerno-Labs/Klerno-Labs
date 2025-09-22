@@ -27,8 +27,6 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
-logger = logging.getLogger(__name__)
-
 
 class ThreatLevel(str, Enum):
     """Threat severity levels."""
@@ -134,13 +132,15 @@ class BehavioralAnalyzer:
                 profile["ip_addresses"].add(activity["ip_address"])
                 # Keep only last 20 IP addresses
                 if len(profile["ip_addresses"]) > 20:
-                    profile["ip_addresses"] = set(list(profile["ip_addresses"])[-20:])
+                    tmp_ips = list(profile["ip_addresses"])[-20:]
+                    profile["ip_addresses"] = set(tmp_ips)
 
             if "user_agent" in activity:
                 profile["user_agents"].add(activity["user_agent"])
                 # Keep only last 10 user agents
                 if len(profile["user_agents"]) > 10:
-                    profile["user_agents"] = set(list(profile["user_agents"])[-10:])
+                    tmp_agents = list(profile["user_agents"])[-10:]
+                    profile["user_agents"] = set(tmp_agents)
 
             if "endpoint" in activity:
                 profile["request_patterns"][activity["endpoint"]] += 1
@@ -183,7 +183,9 @@ class BehavioralAnalyzer:
                     {
                         "type": "unusual_login_time",
                         "severity": "medium",
-                        "description": f"Login at unusual hour: {current_hour}",
+                        "description": (
+                            f"Login at unusual hour: {current_hour}"
+                        ),
                         "confidence": 0.6,
                     }
                 )
@@ -219,7 +221,9 @@ class BehavioralAnalyzer:
                     {
                         "type": "high_request_frequency",
                         "severity": "high",
-                        "description": f"High frequency requests to {current_endpoint}",
+                        "description": (
+                            f"High frequency requests to {current_endpoint}"
+                        ),
                         "confidence": 0.8,
                     }
                 )
@@ -527,7 +531,13 @@ class CryptographicManager:
         self.encryption_keys: dict[str, bytes] = {}
         self.signing_keys: dict[str, rsa.RSAPrivateKey] = {}
         self.session_keys: dict[str, bytes] = {}
-        self._initialize_keys()
+        self._initialized = False
+
+    def ensure_initialized(self) -> None:
+        """Ensure keys are generated. Safe to call multiple times."""
+        if not getattr(self, "_initialized", False):
+            self._initialize_keys()
+            self._initialized = True
 
     def _initialize_keys(self) -> None:
         """Initialize cryptographic keys."""
@@ -542,6 +552,8 @@ class CryptographicManager:
 
     def encrypt_sensitive_data(self, data: str, key_id: str = "master") -> str:
         """Encrypt sensitive data."""
+        # Ensure keys exist (lazy initialize)
+        self.ensure_initialized()
         if key_id not in self.encryption_keys:
             raise ValueError(f"Encryption key {key_id} not found")
 
@@ -553,6 +565,7 @@ class CryptographicManager:
         self, encrypted_data: str, key_id: str = "master"
     ) -> str:
         """Decrypt sensitive data."""
+        self.ensure_initialized()
         if key_id not in self.encryption_keys:
             raise ValueError(f"Encryption key {key_id} not found")
 
@@ -562,6 +575,7 @@ class CryptographicManager:
 
     def sign_data(self, data: str, key_id: str = "master") -> str:
         """Sign data with RSA private key."""
+        self.ensure_initialized()
         if key_id not in self.signing_keys:
             raise ValueError(f"Signing key {key_id} not found")
 
@@ -579,6 +593,7 @@ class CryptographicManager:
         self, data: str, signature: str, key_id: str = "master"
     ) -> bool:
         """Verify data signature."""
+        self.ensure_initialized()
         if key_id not in self.signing_keys:
             raise ValueError(f"Signing key {key_id} not found")
 
@@ -601,6 +616,8 @@ class CryptographicManager:
 
     def generate_session_key(self, session_id: str) -> str:
         """Generate session encryption key."""
+        # Ensure master key exists if needed
+        self.ensure_initialized()
         key = secrets.token_bytes(32)  # 256 - bit key
         self.session_keys[session_id] = key
         return key.hex()
@@ -794,8 +811,33 @@ class SecurityOrchestrator:
             return "low"
 
 
-# Global security orchestrator
-security_orchestrator = SecurityOrchestrator()
+# Global security orchestrator (lazy-instantiated to avoid heavy import-time work)
+
+
+class _LazySecurityOrchestrator:
+    """Lazy proxy that creates a SecurityOrchestrator on first access."""
+
+    def __init__(self, factory):
+        self._factory = factory
+        self._obj: SecurityOrchestrator | None = None
+
+    def _ensure(self):
+        if self._obj is None:
+            self._obj = self._factory()
+
+    def __getattr__(self, name):
+        self._ensure()
+        return getattr(self._obj, name)
+
+    def __call__(self, *args, **kwargs):
+        self._ensure()
+        if callable(self._obj):
+            return self._obj(*args, **kwargs)
+        raise TypeError(f"'{type(self._obj).__name__}' object is not callable")
+
+
+# Public lazy instance
+security_orchestrator = _LazySecurityOrchestrator(SecurityOrchestrator)
 
 
 def analyze_security_request(request_data: dict[str, Any]) -> dict[str, Any]:

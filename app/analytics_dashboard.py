@@ -18,7 +18,7 @@ from .advanced_security_hardening import get_security_middleware
 from .deps import current_user
 
 # Templates
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory="templates")
 
 # Router for analytics endpoints
 analytics_router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -42,7 +42,8 @@ class WebSocketManager:
     async def send_personal_message(self, message: str, websocket: WebSocket):
         try:
             await websocket.send_text(message)
-        except:
+        except Exception:
+            # If sending fails for any reason, disconnect to clean up
             self.disconnect(websocket)
 
     async def broadcast(self, message: str):
@@ -50,7 +51,8 @@ class WebSocketManager:
         for connection in self.active_connections:
             try:
                 await connection.send_text(message)
-            except:
+            except Exception:
+                # Collect failed connections and remove them after
                 disconnected.append(connection)
 
         # Remove disconnected clients
@@ -66,6 +68,7 @@ websocket_manager = WebSocketManager()
 async def analytics_dashboard(request: Request, user=Depends(current_user)):
     """Main analytics dashboard page"""
     return templates.TemplateResponse(
+        request,
         "analytics/dashboard.html",
         {
             "request": request,
@@ -120,7 +123,9 @@ async def get_current_metrics():
             "active_websockets": len(websocket_manager.active_connections),
             "uptime_seconds": get_uptime(),
             "requests_last_minute": get_requests_last_minute(performance),
-            "unique_visitors_today": get_unique_visitors_today(analytics),
+            "unique_visitors_today": (
+                get_unique_visitors_today(analytics)
+            ),
         },
     }
 
@@ -163,10 +168,16 @@ async def get_performance_history(hours: int = 24):
             "avg_response_time": statistics.mean(
                 [p["response_time"] for p in data_points]
             ),
-            "max_response_time": max([p["response_time"] for p in data_points]),
-            "avg_cpu": statistics.mean([p["cpu_percent"] for p in data_points]),
+            "max_response_time": max(
+                [p["response_time"] for p in data_points]
+            ),
+            "avg_cpu": statistics.mean(
+                [p["cpu_percent"] for p in data_points]
+            ),
             "max_cpu": max([p["cpu_percent"] for p in data_points]),
-            "total_requests": sum([p["requests_per_minute"] for p in data_points]),
+            "total_requests": sum(
+                [p["requests_per_minute"] for p in data_points]
+            ),
             "total_errors": sum([p["error_count"] for p in data_points]),
         },
     }
@@ -194,11 +205,15 @@ async def get_user_analytics():
             "visitors": analytics["total_sessions"],
             "signups": analytics["conversion_rates"].get("signup", 0),
             "logins": analytics["conversion_rates"].get("login", 0),
-            "dashboard_users": analytics["conversion_rates"].get("dashboard_access", 0),
+            "dashboard_users": (
+                analytics["conversion_rates"].get("dashboard_access", 0)
+            ),
         },
         "page_performance": {
             "bounce_rate": calculate_bounce_rate(analytics),
-            "avg_pages_per_session": calculate_avg_pages_per_session(analytics),
+            "avg_pages_per_session": (
+                calculate_avg_pages_per_session(analytics)
+            ),
             "avg_session_duration": analytics["avg_session_duration"],
         },
         "popular_content": get_popular_content(analytics),
@@ -306,7 +321,9 @@ def get_uptime():
 
 def get_requests_last_minute(performance_data):
     """Get number of requests in the last minute"""
-    return performance_data["request_performance"].get("requests_per_minute", 0)
+    return performance_data["request_performance"].get(
+        "requests_per_minute", 0
+    )
 
 
 def get_unique_visitors_today(analytics_data):
@@ -416,7 +433,12 @@ def get_geographic_threats():
 
 def get_attack_count(attack_type):
     """Get count of specific attack type"""
-    attack_counts = {"sql_injection": 15, "xss": 8, "brute_force": 23, "bot": 156}
+    attack_counts = {
+        "sql_injection": 15,
+        "xss": 8,
+        "brute_force": 23,
+        "bot": 156,
+    }
     return attack_counts.get(attack_type, 0)
 
 

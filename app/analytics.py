@@ -38,7 +38,7 @@ class AdvancedAnalytics:
     def __init__(self):
         self.risk_thresholds = {"low": 0.33, "medium": 0.66, "high": 1.0}
 
-    def generate_comprehensive_metrics(self, days: int = 30) -> AnalyticsMetrics:
+    def generate_comprehensive_metrics(self, days: int = 30):
         """Generate comprehensive analytics metrics for the dashboard"""
         # Get data from the last N days
         cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=days)
@@ -49,7 +49,8 @@ class AdvancedAnalytics:
 
         df = pd.DataFrame(rows)
         df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-        df["risk_score"] = df.apply(lambda row: self._get_risk_score(row), axis=1)
+        # Use a direct function reference to keep the line short
+        df["risk_score"] = df.apply(self._get_risk_score, axis=1)
         df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0)
 
         # Filter by date range
@@ -58,22 +59,28 @@ class AdvancedAnalytics:
         if recent_df.empty:
             return self._empty_metrics()
 
+        # Precompute commonly-used metrics to keep call-site short
+        total_transactions = len(recent_df)
+        total_volume = float(recent_df["amount"].sum())
+        avg_risk_score = float(recent_df["risk_score"].mean())
+        rt = self.risk_thresholds
+        high_risk_count = int((recent_df["risk_score"] >= rt["medium"]).sum())
+        medium_risk_count = int(
+            (
+                (recent_df["risk_score"] >= rt["low"]) & (
+                    recent_df["risk_score"] < rt["medium"]
+                )
+            ).sum()
+        )
+        low_risk_count = int((recent_df["risk_score"] < rt["low"]).sum())
+
         return AnalyticsMetrics(
-            total_transactions=len(recent_df),
-            total_volume=float(recent_df["amount"].sum()),
-            avg_risk_score=float(recent_df["risk_score"].mean()),
-            high_risk_count=int(
-                (recent_df["risk_score"] >= self.risk_thresholds["medium"]).sum()
-            ),
-            medium_risk_count=int(
-                (
-                    (recent_df["risk_score"] >= self.risk_thresholds["low"])
-                    & (recent_df["risk_score"] < self.risk_thresholds["medium"])
-                ).sum()
-            ),
-            low_risk_count=int(
-                (recent_df["risk_score"] < self.risk_thresholds["low"]).sum()
-            ),
+            total_transactions=total_transactions,
+            total_volume=total_volume,
+            avg_risk_score=avg_risk_score,
+            high_risk_count=high_risk_count,
+            medium_risk_count=medium_risk_count,
+            low_risk_count=low_risk_count,
             unique_addresses=self._count_unique_addresses(recent_df),
             top_risk_addresses=self._get_top_risk_addresses(recent_df),
             risk_trend=self._calculate_risk_trend(recent_df),
@@ -226,7 +233,11 @@ class AdvancedAnalytics:
     def _analyze_network_patterns(self, df: pd.DataFrame) -> dict[str, Any]:
         """Analyze network patterns and connections"""
         if df.empty:
-            return {"total_connections": 0, "clusters": [], "centrality_metrics": {}}
+            return {
+                "total_connections": 0,
+                "clusters": [],
+                "centrality_metrics": {},
+            }
 
         # Create address interaction matrix
         connections = {}
@@ -240,7 +251,8 @@ class AdvancedAnalytics:
                 connections[from_addr].add(to_addr)
 
         # Calculate basic network metrics
-        total_connections = sum(len(targets) for targets in connections.values())
+        vals = connections.values()
+        total_connections = sum(len(targets) for targets in vals)
 
         # Find addresses with most connections (hubs)
         hub_addresses = sorted(
@@ -265,11 +277,15 @@ class AdvancedAnalytics:
             return 0.0
 
         # Calculate z - scores for amount anomalies
-        amounts = df["amount"].values
-        if len(amounts) > 1 and np.std(amounts) > 0:
-            z_scores = np.abs((amounts - np.mean(amounts)) / np.std(amounts))
-            anomaly_count = np.sum(z_scores > 2)  # More than 2 standard deviations
-            return float(anomaly_count / len(amounts))
+        # Ensure amounts is a float ndarray so numpy mean/std match typing
+        amounts = np.asarray(df["amount"].astype(float).values)
+        if len(amounts) > 1:
+            mean = float(np.mean(amounts))
+            std = float(np.std(amounts))
+            if std > 0:
+                z_scores = np.abs((amounts - mean) / std)
+                anomaly_count = np.sum(z_scores > 2)
+                return float(anomaly_count / len(amounts))
 
         return 0.0
 
@@ -295,66 +311,90 @@ class AdvancedAnalytics:
 class InsightsEngine:
     """AI - powered insights generator"""
 
-    def generate_insights(self, metrics: AnalyticsMetrics) -> list[dict[str, Any]]:
-        """Generate AI - powered insights from analytics data"""
+    def generate_insights(self, metrics: AnalyticsMetrics):
+        """Generate AI-powered insights from analytics data"""
         insights = []
 
+        # Short locals to reduce long f-strings and keep line lengths down
+        avg = metrics.avg_risk_score
+        total = metrics.total_volume
+        anomaly = metrics.anomaly_score
+        network = metrics.network_analysis or {}
+
         # Risk level insights
-        if metrics.avg_risk_score > 0.7:
+        if avg > 0.7:
             insights.append(
                 {
                     "type": "warning",
                     "title": "High Average Risk Detected",
-                    "description": f"Average risk score of {metrics.avg_risk_score:.3f} is significantly elevated. Immediate review recommended.",
-                    "action": "Review high - risk transactions and consider adjusting risk thresholds.",
+                    "description": f"Avg risk {avg:.3f} elevated; review.",
+                    "action": (
+                        "Review high-risk transactions and consider "
+                        "adjusting risk thresholds."
+                    ),
                     "priority": "high",
                 }
             )
-        elif metrics.avg_risk_score > 0.5:
+        elif avg > 0.5:
             insights.append(
                 {
                     "type": "info",
                     "title": "Moderate Risk Environment",
-                    "description": f"Risk levels are moderate at {metrics.avg_risk_score:.3f}. Monitor for trends.",
-                    "action": "Continue monitoring and prepare enhanced due diligence procedures.",
+                    "description": f"Risk levels moderate at {avg:.3f}.",
+                    "action": (
+                        "Continue monitoring and prepare enhanced "
+                        "due-diligence procedures."
+                    ),
                     "priority": "medium",
                 }
             )
 
         # Volume insights
-        if metrics.total_volume > 1000000:  # $1M threshold
+        if total > 1000000:  # $1M threshold
             insights.append(
                 {
                     "type": "info",
                     "title": "High Transaction Volume",
-                    "description": f"Total transaction volume of ${metrics.total_volume:,.2f} detected.",
-                    "action": "Consider volume - based risk adjustments and enhanced monitoring.",
+                    "description": f"Total volume ${total:,.2f}.",
+                    "action": (
+                        "Consider volume-based risk adjustments and "
+                        "enhanced monitoring."
+                    ),
                     "priority": "medium",
                 }
             )
 
         # Anomaly insights
-        if metrics.anomaly_score > 0.1:
+        if anomaly > 0.1:
             insights.append(
                 {
                     "type": "warning",
                     "title": "Transaction Anomalies Detected",
-                    "description": f"{metrics.anomaly_score:.1%} of transactions show anomalous patterns.",
-                    "action": "Investigate unusual transaction amounts and patterns.",
+                    "description": f"{anomaly:.1%} transactions anomalous.",
+                    "action": (
+                        "Investigate unusual transaction amounts "
+                        "and patterns."
+                    ),
                     "priority": "high",
                 }
             )
 
         # Network insights
-        if metrics.network_analysis.get("hub_addresses"):
-            top_hub = metrics.network_analysis["hub_addresses"][0]
+        if network.get("hub_addresses"):
+            top_hub = network["hub_addresses"][0]
             if top_hub["connection_count"] > 10:
                 insights.append(
                     {
                         "type": "info",
                         "title": "Network Hub Identified",
-                        "description": f'Address {top_hub["address"][:10]}... has {top_hub["connection_count"]} connections.',
-                        "action": "Review hub address for potential money laundering patterns.",
+                        "description": (
+                            f"Address {top_hub['address'][:10]}... has "
+                            f"{top_hub['connection_count']} connections."
+                        ),
+                        "action": (
+                            "Review hub address for potential money "
+                            "laundering patterns."
+                        ),
                         "priority": "medium",
                     }
                 )
@@ -362,6 +402,38 @@ class InsightsEngine:
         return insights
 
 
-# Global analytics instance
-analytics_engine = AdvancedAnalytics()
-insights_engine = InsightsEngine()
+# Global analytics instances: create lazily to avoid heavy import-time work
+
+
+class _LazyProxy:
+    """Simple lazy-initialization proxy for preserving public symbols.
+
+    Instantiates the real object on first attribute access. This keeps the
+    module API stable (callers can import `analytics_engine`) while avoiding
+    eager construction during import.
+    """
+
+    def __init__(self, factory):
+        self._factory = factory
+        self._obj = None
+
+    def _ensure(self):
+        if self._obj is None:
+            self._obj = self._factory()
+
+    def __getattr__(self, name):
+        self._ensure()
+        return getattr(self._obj, name)
+
+    def __call__(self, *args, **kwargs):
+        self._ensure()
+        # If the proxied object is callable, delegate the call. Otherwise,
+        # raise a clear TypeError to match normal Python behavior.
+        if callable(self._obj):
+            return self._obj(*args, **kwargs)
+        raise TypeError(f"'{type(self._obj).__name__}' object is not callable")
+
+
+# Public lazy instances
+analytics_engine = _LazyProxy(AdvancedAnalytics)
+insights_engine = _LazyProxy(InsightsEngine)

@@ -13,7 +13,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Deque, Optional
 
 from cryptography.fernet import Fernet
 
@@ -52,7 +52,8 @@ class AdvancedSecurityHardening:
 
     def __init__(self, db_path: str = "./data/security.db"):
         self.db_path = db_path
-        self.rate_limits: dict[str, deque] = defaultdict(deque)
+        # rate_limits stores timestamps (floats) per IP
+        self.rate_limits: dict[str, Deque[float]] = defaultdict(deque)
         self.blocked_ips: set[str] = set()
         self.threat_intel: dict[str, ThreatIntelligence] = {}
         self.security_events: list[SecurityEvent] = []
@@ -177,13 +178,13 @@ class AdvancedSecurityHardening:
         key_file = Path("./data/encryption.key")
 
         if key_file.exists():
-            with open(key_file, "rb") as f:
+            with key_file.open("rb") as f:
                 return f.read()
         else:
             # Generate new key
             key = Fernet.generate_key()
             key_file.parent.mkdir(exist_ok=True, parents=True)
-            with open(key_file, "wb") as f:
+            with key_file.open("wb") as f:
                 f.write(key)
             logger.info("🔐 Generated new encryption key")
             return key
@@ -252,7 +253,7 @@ class AdvancedSecurityHardening:
         return ip_address in self.blocked_ips
 
     def block_ip(
-        self, ip_address: str, reason: str, duration: timedelta | None = None
+        self, ip_address: str, reason: str, duration: Optional[timedelta] = None
     ) -> None:
         """Block an IP address."""
         self.blocked_ips.add(ip_address)
@@ -287,7 +288,7 @@ class AdvancedSecurityHardening:
         except Exception as e:
             logger.error(f"Error blocking IP {ip_address}: {e}")
 
-    def check_rate_limit(self, ip_address: str, max_requests: int = None) -> bool:
+    def check_rate_limit(self, ip_address: str, max_requests: Optional[int] = None) -> bool:
         """Check if IP is within rate limits."""
         max_requests = max_requests or self.max_requests_per_minute
         now = time.time()

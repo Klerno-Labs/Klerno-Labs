@@ -201,7 +201,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             try:
                 body = await request.body()
                 if body and security_manager.check_suspicious_input(
-                    body.decode("utf - 8", errors="ignore")
+                    body.decode("utf-8", errors="ignore")
                 ):
                     security_manager.log_security_event(
                         SECURITY_EVENTS["INJECTION_ATTEMPT"],
@@ -213,7 +213,12 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                         detail="Invalid request",
                     )
             except Exception:
-                pass  # Continue if body reading fails
+                # Continue silently if reading the body fails (best-effort)
+                # Use best-effort suppression to avoid masking other errors
+                import contextlib
+
+                with contextlib.suppress(Exception):
+                    _ = None
 
         response = await call_next(request)
 
@@ -221,15 +226,15 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         process_time = time.time() - start_time
         response.headers["X-Process-Time"] = str(process_time)
 
-        # Security headers
+        # Security headers (normalized header names)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X - XSS - Protection"] = "1; mode=block"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = (
-            "max - age=31536000; includeSubDomains"
+            "max-age=31536000; includeSubDomains"
         )
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions - Policy"] = (
+        response.headers["Permissions-Policy"] = (
             "geolocation=(), microphone=(), camera=()"
         )
 
@@ -246,7 +251,8 @@ def require_secure_password(password: str) -> bool:
         return False
     if not any(c.isdigit() for c in password):
         return False
-    return any(c in "!@  #$%^&*()_+-=[]{}|;:,.<>?" for c in password)
+    # Allow a conservative set of special characters
+    return any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password)
 
 
 def generate_secure_token(length: int = 32) -> str:

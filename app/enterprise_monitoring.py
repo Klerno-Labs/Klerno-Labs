@@ -19,24 +19,28 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Any
+from typing import Any, DefaultDict, Deque, Optional
 
 import psutil
 
 logger = logging.getLogger(__name__)
 
-# Configure enterprise logging
-try:
-    import os
+from contextlib import suppress
 
-    logs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
-    os.makedirs(logs_dir, exist_ok=True)
+# Configure enterprise logging
+from pathlib import Path
+
+try:
+    # Locate repo-level logs directory next to package root
+    logs_dir = Path(__file__).resolve().parents[1] / "logs"
+    with suppress(Exception):
+        logs_dir.mkdir(parents=True, exist_ok=True)
 
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
         handlers=[
-            logging.FileHandler(os.path.join(logs_dir, "enterprise.log")),
+            logging.FileHandler(str(logs_dir / "enterprise.log")),
             logging.StreamHandler(),
         ],
     )
@@ -121,8 +125,9 @@ class MetricsCollector:
     """Collects and stores metrics."""
 
     def __init__(self, max_samples: int = 10000):
-        self.metrics: deque = deque(maxlen=max_samples)
-        self.aggregates: dict[str, dict] = defaultdict(dict)
+        self.metrics: Deque[Metric] = deque(maxlen=max_samples)
+        # aggregates maps metric_key -> aggregated stats dict
+        self.aggregates: DefaultDict[str, dict[str, Any]] = defaultdict(dict)
         self.lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
 
@@ -139,7 +144,7 @@ class MetricsCollector:
                 )
 
     def increment_counter(
-        self, name: str, value: int = 1, tags: dict[str, str] = None
+        self, name: str, value: int = 1, tags: Optional[dict[str, str]] = None
     ) -> None:
         """Increment a counter metric."""
         metric = Metric(
@@ -155,8 +160,8 @@ class MetricsCollector:
         self,
         name: str,
         value: int | float,
-        tags: dict[str, str] = None,
-        unit: str = None,
+        tags: Optional[dict[str, str]] = None,
+        unit: Optional[str] = None,
     ) -> None:
         """Set a gauge metric."""
         metric = Metric(
@@ -170,7 +175,7 @@ class MetricsCollector:
         self.record_metric(metric)
 
     def record_timer(
-        self, name: str, duration_ms: float, tags: dict[str, str] = None
+        self, name: str, duration_ms: float, tags: Optional[dict[str, str]] = None
     ) -> None:
         """Record a timer metric."""
         metric = Metric(
@@ -184,7 +189,7 @@ class MetricsCollector:
         self.record_metric(metric)
 
     def record_histogram(
-        self, name: str, value: int | float, tags: dict[str, str] = None
+        self, name: str, value: int | float, tags: Optional[dict[str, str]] = None
     ) -> None:
         """Record a histogram metric."""
         metric = Metric(

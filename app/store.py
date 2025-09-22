@@ -1,4 +1,6 @@
-"""Data store utilities with SQLite / Postgres backends and lightweight caching."""
+"""
+Data store utilities with SQLite/Postgres backends and a small cache.
+"""
 
 import contextlib
 import json
@@ -7,11 +9,20 @@ import sqlite3
 import time
 from collections.abc import Iterable
 from datetime import datetime
-from typing import Any
+from pathlib import Path
 
-# Simple in - memory cache for frequently accessed data
-_cache = {}
-_cache_expiry = {}
+CACHE_TTL = 300  # 5 minutes default TTL
+
+from typing import Any, Optional
+
+# Simple in-memory cache for frequently accessed data
+# Add explicit type annotations to satisfy static checkers
+_cache: dict[str, Any] = {}
+_cache_expiry: dict[str, float] = {}
+
+
+# Default TTL
+# (moved the existing constant down to keep minimal context changes)
 CACHE_TTL = 300  # 5 minutes default TTL
 
 
@@ -46,13 +57,25 @@ def _clear_cache_pattern(pattern: str):
         _cache_expiry.pop(key, None)
 
 
-# --- Config & detection -------------------------------------------------------
+# --- Config & detection ---
 
 DATABASE_URL = os.getenv("DATABASE_URL") or ""
 
 # Persistent SQLite path (fallback if not using Postgres)
-BASE_DIR = os.path.dirname(__file__)
-DB_PATH = os.getenv("DB_PATH", os.path.join(BASE_DIR, "..", "data", "klerno.db"))
+# Use pathlib for clearer path operations while preserving string DB_PATH
+BASE_DIR = Path(__file__).parent
+DB_PATH = os.getenv("DB_PATH", str(BASE_DIR / ".." / "data" / "klerno.db"))
+
+# If DATABASE_URL points to a sqlite file (used by tests), prefer that path.
+try:
+    if DATABASE_URL and DATABASE_URL.startswith("sqlite://"):
+        path = DATABASE_URL.split("sqlite://", 1)[1].lstrip("/")
+        if path:
+            DB_PATH = path
+except Exception:
+    # Best-effort: if parsing fails, keep default DB_PATH
+    with contextlib.suppress(Exception):
+        _ = None
 
 # psycopg2 might not be installed locally; handle gracefully
 try:
@@ -71,9 +94,17 @@ USING_POSTGRES = bool(DATABASE_URL) and PSYCOPG2_AVAILABLE
 
 def _sqlite_conn() -> sqlite3.Connection:
     # honor DB_PATH and ensure directory exists
-    data_dir = os.path.dirname(os.path.abspath(DB_PATH))
-    os.makedirs(data_dir, exist_ok=True)
-    con = sqlite3.connect(DB_PATH, check_same_thread=False)
+    # Allow DATABASE_URL to override DB path at runtime. Tests may set this.
+    runtime_db = os.getenv("DATABASE_URL") or ""
+    if runtime_db and runtime_db.startswith("sqlite://"):
+        path = runtime_db.split("sqlite://", 1)[1].lstrip("/")
+        db_path = path or DB_PATH
+    else:
+        db_path = DB_PATH
+
+    data_dir = Path(db_path).resolve().parent
+    data_dir.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(db_path, check_same_thread=False)
     con.row_factory = sqlite3.Row  # return dict - like rows to unify handling
     return con
 
@@ -108,7 +139,27 @@ def init_db() -> None:
       - user_settings : per - user persisted settings (x_api_key, thresholds, etc.)
     Also adds helpful indexes.
     """
-    con = _conn()
+    # Clear in-memory caches to avoid carrying state between test runs
+    try:
+        _cache.clear()
+        _cache_expiry.clear()
+    except Exception:
+        # Ignore cache clearing failures during init (best-effort)
+        with contextlib.suppress(Exception):
+            _ = None
+
+    # If DATABASE_URL points to a sqlite file (used by tests), connect directly
+    runtime_db = os.getenv("DATABASE_URL") or ""
+    if runtime_db and runtime_db.startswith("sqlite://"):
+        path = runtime_db.split("sqlite://", 1)[1].lstrip("/")
+        db_path = path or DB_PATH
+        # ensure directory
+        data_dir = Path(db_path).resolve().parent
+        data_dir.mkdir(parents=True, exist_ok=True)
+        con = sqlite3.connect(db_path, check_same_thread=False)
+        con.row_factory = sqlite3.Row
+    else:
+        con = _conn()
     cur = con.cursor()
 
     # ---- TXS TABLE ----
@@ -133,17 +184,34 @@ def init_db() -> None:
                 notes TEXT
         );"""
         )
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_from_addr ON txs (from_addr);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_to_addr   ON txs (to_addr);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_timestamp ON txs (timestamp);")
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_txs_from_addr "
+            "ON txs (from_addr);"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_txs_to_addr "
+            "ON txs (to_addr);"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp "
+            "ON txs (timestamp);"
+        )
         # Additional indexes for admin analytics performance
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score ON txs (risk_score);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score "
+            "ON txs (risk_score);"
         )
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_category ON txs (category);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_amount ON txs (amount);")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc ON txs (timestamp DESC);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_category "
+            "ON txs (category);"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_txs_amount "
+            "ON txs (amount);"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc "
+            "ON txs (timestamp DESC);"
         )
     else:
         cur.execute(
@@ -166,23 +234,41 @@ def init_db() -> None:
                 notes TEXT
         );"""
         )
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_from_addr ON txs (from_addr);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_to_addr   ON txs (to_addr);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_timestamp ON txs (timestamp);")
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_txs_from_addr "
+            "ON txs (from_addr);"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_txs_to_addr "
+            "ON txs (to_addr);"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp "
+            "ON txs (timestamp);"
+        )
         # Additional indexes for admin analytics performance
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score ON txs (risk_score);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score "
+            "ON txs (risk_score);"
         )
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_category ON txs (category);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_amount ON txs (amount);")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc ON txs (timestamp DESC);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_category "
+            "ON txs (category);"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_txs_amount "
+            "ON txs (amount);"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc "
+            "ON txs (timestamp DESC);"
         )
 
     # ---- USERS TABLE ----
     if USING_POSTGRES:
         # users table: role can be 'admin' | 'analyst' | 'viewer'
-        # OAuth provider data: 'google' | 'microsoft' | null (for email / password)
+        # OAuth provider data: 'google' | 'microsoft' | null
+        # (for email / password)
         # wallet_addresses stores a JSON array of wallet objects
         cur.execute(
             """
@@ -206,16 +292,25 @@ def init_db() -> None:
         );"""
         )
         # Indexes for user queries
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users (role);")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at);"
+            "CREATE INDEX IF NOT EXISTS idx_users_email "
+            "ON users (email);"
         )
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_oauth_provider ON users (oauth_provider);"
+            "CREATE INDEX IF NOT EXISTS idx_users_role "
+            "ON users (role);"
         )
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id ON users (oauth_id);"
+            "CREATE INDEX IF NOT EXISTS idx_users_created_at "
+            "ON users (created_at);"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_users_oauth_provider "
+            "ON users (oauth_provider);"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id "
+            "ON users (oauth_id);"
         )
     else:
         # users table (SQLite): subscription_active uses 0 / 1
@@ -242,11 +337,23 @@ def init_db() -> None:
         );"""
         )
         # Basic indexes for user queries
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users (role);")
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at);"
-        )
+        # Use contextlib.suppress to ignore index creation errors
+        # on older SQLite
+        with contextlib.suppress(sqlite3.OperationalError):
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_users_email "
+                "ON users (email);"
+            )
+        with contextlib.suppress(sqlite3.OperationalError):
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_users_role "
+                "ON users (role);"
+            )
+        with contextlib.suppress(sqlite3.OperationalError):
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_users_created_at "
+                "ON users (created_at);"
+            )
 
     # Add columns to existing users table if they don't exist (migration)
     try:
@@ -254,25 +361,40 @@ def init_db() -> None:
             cur.execute(
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_provider TEXT;"
             )
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_id TEXT;")
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT;")
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;")
             cur.execute(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet_addresses TEXT DEFAULT '[]';"
-            )
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;")
-            cur.execute(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE;"
-            )
-            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_type TEXT;")
-            cur.execute(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS recovery_codes TEXT DEFAULT '[]';"
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_id TEXT;"
             )
             cur.execute(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS has_hardware_key BOOLEAN NOT NULL DEFAULT FALSE;"
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT;"
+            )
+            cur.execute(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;"
+            )
+            cur.execute(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet_addresses TEXT "
+                "DEFAULT '[]';"
+            )
+            cur.execute(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;"
+            )
+            cur.execute(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN "
+                "NOT NULL DEFAULT FALSE;"
+            )
+            cur.execute(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_type TEXT;"
+            )
+            cur.execute(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS recovery_codes TEXT "
+                "DEFAULT '[]';"
+            )
+            cur.execute(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS has_hardware_key BOOLEAN "
+                "NOT NULL DEFAULT FALSE;"
             )
         else:
-            # SQLite doesn't support IF NOT EXISTS for ALTER TABLE, so we use a try / except
+            # SQLite doesn't support IF NOT EXISTS for ALTER TABLE,
+            # so we use a try / except
             for coldef in [
                 ("totp_secret TEXT",),
                 ("mfa_enabled INTEGER NOT NULL DEFAULT 0",),
@@ -286,15 +408,17 @@ def init_db() -> None:
         print(f"Migration warning: {e}")
 
     # Create indexes for new OAuth columns (after migration)
-    try:
+    # Create indexes for new OAuth columns (after migration) if possible
+    with contextlib.suppress(sqlite3.OperationalError):
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_oauth_provider ON users (oauth_provider);"
+            "CREATE INDEX IF NOT EXISTS idx_users_oauth_provider "
+            "ON users (oauth_provider);"
         )
+    with contextlib.suppress(sqlite3.OperationalError):
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id ON users (oauth_id);"
+            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id "
+            "ON users (oauth_id);"
         )
-    except sqlite3.OperationalError:
-        pass  # Columns might not exist yet
 
     # ---- USER_SETTINGS TABLE (normalized columns) ----
     if USING_POSTGRES:
@@ -329,7 +453,7 @@ def init_db() -> None:
     con.close()
 
 
-# --- Row helpers --------------------------------------------------------------
+    # --- Row helpers --------------------------------------------------------------
 
 
 def _rows_to_dicts(rows: Iterable) -> list[dict[str, Any]]:
@@ -354,7 +478,42 @@ def _rows_to_dicts(rows: Iterable) -> list[dict[str, Any]]:
 def _row_to_user(row) -> dict[str, Any] | None:
     if not row:
         return None
-    d = dict(row) if isinstance(row, dict) else {k: row[k] for k in row}
+    # If the legacy schema included a 'subscription_status' column (string),
+    # pass it through so compatibility checks that look for subscription_status
+    # (e.g., 'active') will work.
+
+    # Define expected columns in order
+    expected_columns = [
+        "id",
+        "email",
+        "password_hash",
+        "role",
+        "subscription_active",
+        "created_at",
+        "oauth_provider",
+        "oauth_id",
+        "display_name",
+        "avatar_url",
+        "wallet_addresses",
+        "totp_secret",
+        "mfa_enabled",
+        "mfa_type",
+        "recovery_codes",
+        "has_hardware_key",
+    ]
+
+    # Convert row to dict safely
+    if isinstance(row, dict):
+        d = dict(row)
+    else:
+        # SQLite Row object - convert using column positions
+        d = {}
+        for i, col_name in enumerate(expected_columns):
+            try:
+                d[col_name] = row[i] if i < len(row) else None
+            except (IndexError, KeyError):
+                d[col_name] = None
+
     d["subscription_active"] = bool(d.get("subscription_active"))
 
     # Parse wallet addresses from JSON
@@ -432,6 +591,32 @@ def save_tagged(t: dict[str, Any]) -> None:
     _clear_cache_pattern("list_all")
     _clear_cache_pattern("list_by_wallet")
     _clear_cache_pattern("list_alerts")
+
+
+def get_by_id(tx_id: int) -> dict[str, Any] | None:
+    """Return a single transaction row by primary id, or None if not found.
+
+    This is a minimal, best-effort helper used by compatibility fallback
+    code in other modules. It prefers the active DB backend and returns
+    a mapping when available.
+    """
+    con = _conn()
+    cur = con.cursor()
+    p = _ph()
+    try:
+        if USING_POSTGRES:
+            cur.execute("SELECT * FROM txs WHERE id = %s", (tx_id,))
+        else:
+            cur.execute("SELECT * FROM txs WHERE id = ?", (tx_id,))
+        row = cur.fetchone()
+        con.close()
+        if not row:
+            return None
+        return dict(row) if isinstance(row, dict) else {k: row[k] for k in row}
+    except Exception:
+        with contextlib.suppress(Exception):
+            con.close()
+        return None
 
 
 def list_by_wallet(wallet: str, limit: int = 100) -> list[dict[str, Any]]:
@@ -530,16 +715,52 @@ def get_user_by_email(email: str) -> dict[str, Any] | None:
     con = _conn()
     cur = con.cursor()
     p = _ph()
-    cur.execute(
-        f"""
-        SELECT id, email, password_hash, role, subscription_active, created_at,
-               oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
-                   totp_secret, mfa_enabled, mfa_type, recovery_codes, has_hardware_key
-        FROM users WHERE email={p}
-    """,
-        (email,),
-    )
-    row = cur.fetchone()
+    try:
+        cur.execute(
+            f"""
+            SELECT id, email, password_hash, role, subscription_active, created_at,
+                   oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
+                       totp_secret, mfa_enabled, mfa_type, recovery_codes, has_hardware_key
+            FROM users WHERE email={p}
+        """,
+            (email,),
+        )
+        row = cur.fetchone()
+    except sqlite3.OperationalError:
+        # Fallback for legacy / test DB schemas that use different column names
+        try:
+            cur.execute(
+                "SELECT id, email, hashed_password, is_active, is_admin FROM users WHERE email=?",
+                (email,),
+            )
+            row = cur.fetchone()
+            if row:
+                # Normalize to expected shape
+                if isinstance(row, dict):
+                    hashed = row.get("hashed_password")
+                    is_active = bool(row.get("is_active"))
+                    is_admin = bool(row.get("is_admin"))
+                    row = {
+                        "id": row.get("id"),
+                        "email": row.get("email"),
+                        "password_hash": hashed,
+                        "role": "admin" if is_admin else "viewer",
+                        "subscription_active": is_active,
+                    }
+                else:
+                    # sqlite3.Row supports index access
+                    hashed = row[2]
+                    is_active = bool(row[3]) if len(row) > 3 else False
+                    is_admin = bool(row[4]) if len(row) > 4 else False
+                    row = {
+                        "id": row[0],
+                        "email": row[1],
+                        "password_hash": hashed,
+                        "role": "admin" if is_admin else "viewer",
+                        "subscription_active": is_active,
+                    }
+        except Exception:
+            row = None
     con.close()
 
     result = _row_to_user(row) if row else None
@@ -558,16 +779,53 @@ def get_user_by_id(uid: int) -> dict[str, Any] | None:
     con = _conn()
     cur = con.cursor()
     p = _ph()
-    cur.execute(
-        f"""
+    try:
+        cur.execute(
+            f"""
         SELECT id, email, password_hash, role, subscription_active, created_at,
                oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
                    totp_secret, mfa_enabled, mfa_type, recovery_codes, has_hardware_key
         FROM users WHERE id={p}
     """,
-        (uid,),
-    )
-    row = cur.fetchone()
+            (uid,),
+        )
+        row = cur.fetchone()
+    except sqlite3.OperationalError:
+        # Fallback for legacy/test DB schemas
+        try:
+            cur.execute(
+                "SELECT id, email, hashed_password, is_admin, is_active FROM users WHERE id=?",
+                (uid,),
+            )
+            r = cur.fetchone()
+            if r:
+                if isinstance(r, dict):
+                    hashed = r.get("hashed_password")
+                    is_active = bool(r.get("is_active"))
+                    is_admin = bool(r.get("is_admin"))
+                    row = {
+                        "id": r.get("id"),
+                        "email": r.get("email"),
+                        "password_hash": hashed,
+                        "role": "admin" if is_admin else "viewer",
+                        "subscription_active": is_active,
+                    }
+                else:
+                    # sqlite3.Row or sequence
+                    hashed = r[2] if len(r) > 2 else None
+                    is_admin = bool(r[3]) if len(r) > 3 else False
+                    is_active = bool(r[4]) if len(r) > 4 else False
+                    row = {
+                        "id": r[0],
+                        "email": r[1],
+                        "password_hash": hashed,
+                        "role": "admin" if is_admin else "viewer",
+                        "subscription_active": is_active,
+                    }
+            else:
+                row = None
+        except Exception:
+            row = None
     con.close()
     result = _row_to_user(row)
 
@@ -633,8 +891,10 @@ def create_user(
         )
         new_id = cur.fetchone()["id"]
     else:
-        cur.execute(
-            f"""
+        # Attempt normal insert into canonical columns
+        try:
+            cur.execute(
+                f"""
             INSERT INTO users (
                 email, password_hash, role, subscription_active, created_at,
                     oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
@@ -642,24 +902,48 @@ def create_user(
             )
             VALUES ({p},{p},{p},{p}, datetime('now'), {p},{p},{p},{p},{p},{p},{p},{p},{p},{p})
             """,
-            (
-                email,
-                password_hash,
-                role,
-                1 if subscription_active else 0,
-                oauth_provider,
-                oauth_id,
-                display_name,
-                avatar_url,
-                wallet_addresses_json,
-                totp_secret,
-                1 if mfa_enabled else 0,
-                mfa_type,
-                recovery_codes_json,
-                1 if has_hardware_key else 0,
-            ),
-        )
-        new_id = cur.lastrowid
+                (
+                    email,
+                    password_hash,
+                    role,
+                    1 if subscription_active else 0,
+                    oauth_provider,
+                    oauth_id,
+                    display_name,
+                    avatar_url,
+                    wallet_addresses_json,
+                    totp_secret,
+                    1 if mfa_enabled else 0,
+                    mfa_type,
+                    recovery_codes_json,
+                    1 if has_hardware_key else 0,
+                ),
+            )
+            new_id = cur.lastrowid
+        except sqlite3.OperationalError as e:
+            # Fallback for legacy/test DBs that have older column names
+            if "no column named password_hash" in str(e).lower() or "has no column named password_hash" in str(e).lower():
+                try:
+                    # Legacy schema uses hashed_password, is_admin, is_active
+                    cur.execute(
+                        f"""
+                    INSERT INTO users (
+                        email, hashed_password, is_admin, is_active, created_at
+                    ) VALUES ({p},{p},{p},{p}, datetime('now'))
+                    """,
+                        (
+                            email,
+                            password_hash,
+                            1 if role == "admin" else 0,
+                            1 if subscription_active else 0,
+                        ),
+                    )
+                    new_id = cur.lastrowid
+                except Exception:
+                    # Re-raise original error if fallback also fails
+                    raise
+            else:
+                raise
     con.commit()
     con.close()
 

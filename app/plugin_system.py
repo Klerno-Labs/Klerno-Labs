@@ -6,9 +6,9 @@ Provides extensible API functionality through a plugin architecture
 import importlib
 import inspect
 import logging
-import os
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
@@ -144,15 +144,16 @@ class PluginManager:
             logger.error(f"Failed to register plugin {plugin_class.__name__}: {e}")
             return False
 
-    def load_plugins_from_directory(self, directory: str):
+    def load_plugins_from_directory(self, directory: str | Path):
         """Load all plugins from a directory"""
-        if not os.path.exists(directory):
+        dir_path = Path(directory)
+        if not dir_path.exists():
             logger.warning(f"Plugin directory {directory} does not exist")
             return
 
-        for filename in os.listdir(directory):
-            if filename.endswith(".py") and not filename.startswith("_"):
-                self._load_plugin_file(os.path.join(directory, filename))
+        for p in dir_path.iterdir():
+            if p.is_file() and p.suffix == ".py" and not p.name.startswith("_"):
+                self._load_plugin_file(str(p))
 
     def _load_plugin_file(self, filepath: str):
         """Load a plugin from a Python file"""
@@ -184,7 +185,7 @@ class PluginManager:
         if plugin_name in self.plugins:
             plugin = self.plugins[plugin_name]
             return {
-                "metadata": plugin.metadata.dict(),
+                "metadata": plugin.metadata.model_dump(),
                 "status": "active",
                 "hooks_registered": len(
                     [
@@ -202,7 +203,11 @@ class PluginManager:
     def list_plugins(self) -> list[dict[str, Any]]:
         """List all registered plugins"""
         return [
-            {"name": name, "metadata": plugin.metadata.dict(), "status": "active"}
+            {
+                "name": name,
+                "metadata": plugin.metadata.model_dump(),
+                "status": "active",
+            }
             for name, plugin in self.plugins.items()
         ]
 
@@ -357,9 +362,9 @@ def initialize_plugin_system(app: FastAPI) -> PluginManager:
     plugin_manager.register_plugin(CompliancePlugin)
 
     # Load plugins from directory if it exists
-    plugins_dir = os.path.join(os.path.dirname(__file__), "plugins")
-    if os.path.exists(plugins_dir):
-        plugin_manager.load_plugins_from_directory(plugins_dir)
+    plugins_dir = Path(__file__).parent / "plugins"
+    if plugins_dir.exists():
+        plugin_manager.load_plugins_from_directory(str(plugins_dir))
 
     return plugin_manager
 

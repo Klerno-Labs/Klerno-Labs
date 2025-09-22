@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -318,7 +318,7 @@ class EnterpriseErrorHandler:
         error: Exception,
         service: str,
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-        context: dict[str, Any] = None,
+        context: Optional[dict[str, Any]] = None,
     ) -> ErrorEvent:
         """Handle and record error event"""
 

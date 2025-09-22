@@ -120,3 +120,86 @@ def score_risk(tx: Any) -> tuple[float, list[str]]:
 
 def score_risk_value(tx: Any) -> float:
     return score_risk(tx)[0]
+
+
+# Backwards-compatible GuardianEngine expected by tests
+class GuardianEngine:
+    """Minimal Guardian engine used by unit tests.
+
+    Provides async anomaly detection and simple pattern recognition.
+    """
+
+    def __init__(self):
+        pass
+
+    async def detect_anomalies(self, transactions: list[dict]) -> list[dict]:
+        # Very small anomaly detector: flag txs with amount far above median
+        amounts = [
+            abs(Decimal(str(t.get("amount", 0))))
+            for t in transactions
+        ]
+        if not amounts:
+            return []
+        median = sorted(amounts)[len(amounts) // 2]
+        anomalies: list[dict] = []
+        for t in transactions:
+            try:
+                if Decimal(str(t.get("amount", 0))) > median * 10:
+                    anomalies.append(t)
+            except Exception:
+                # ignore malformed entries
+                continue
+        return anomalies
+
+    async def detect_patterns(self, transactions: list[dict]) -> list[dict]:
+        # Return a list of pattern dicts used by tests. Detect simple
+        # structured layering: repeated transfers of the same amount to
+        # different accounts.
+        total = sum(float(t.get("amount", 0)) for t in transactions)
+        patterns: list[dict] = []
+
+        # naive detection: if multiple transactions have same amount and
+        # different recipients, flag as structured_layering
+        amounts_map: dict[float, set[str]] = {}
+        for t in transactions:
+            amt = float(t.get("amount", 0))
+            to_acc = str(t.get("to_account") or t.get("to") or "")
+            amounts_map.setdefault(amt, set()).add(to_acc)
+
+        for amt, recipients in amounts_map.items():
+            if len(recipients) >= 3:
+                patterns.append(
+                    {
+                        "type": "structured_layering",
+                        "amount": amt,
+                        "count": len(recipients),
+                    }
+                )
+
+        # Always include a summary pattern
+        patterns.append(
+            {"type": "summary", "count": len(transactions), "total": total}
+        )
+        return patterns
+
+    # Backwards-compatible instance method name expected by older code/tests
+    async def analyze_patterns(self, transactions: list[dict]) -> list[dict]:
+        return await self.detect_patterns(transactions)
+
+
+# Backwards-compatible name expected by older tests
+async def analyze_patterns(transactions: list[dict]) -> list[dict]:
+    # Use a cached engine to avoid allocating an engine on each call.
+    engine = _get_guardian_engine()
+    return await engine.detect_patterns(transactions)
+
+
+_guardian_instance: GuardianEngine | None = None
+
+
+def _get_guardian_engine() -> GuardianEngine:
+    """Return cached GuardianEngine; create lazily on first use."""
+    global _guardian_instance
+    if _guardian_instance is None:
+        _guardian_instance = GuardianEngine()
+    return _guardian_instance

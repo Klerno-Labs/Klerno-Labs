@@ -4,6 +4,7 @@ Real-time system monitoring with alerting for 0.01% quality applications
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import sqlite3
@@ -20,23 +21,15 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MetricPoint:
-    """Individual metric data point."""
+    """Simple metric point used by the monitor buffer.
+
+    Kept minimal so existing code can reference MetricPoint for typing.
+    """
 
     timestamp: datetime
     metric_name: str
     value: float
-    tags: dict[str, str]
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for JSON serialization."""
-        return {
-            "timestamp": self.timestamp.isoformat(),
-            "metric_name": self.metric_name,
-            "value": self.value,
-            "tags": self.tags,
-        }
-
-
+    tags: dict[str, str] | None = None
 @dataclass
 class Alert:
     """System alert definition."""
@@ -54,7 +47,9 @@ class Alert:
 
 
 class EnterpriseMonitor:
-    """Enterprise-grade monitoring system with real-time metrics and alerting."""
+    """Enterprise-grade monitoring system with real-time
+    metrics and alerting.
+    """
 
     def __init__(self, db_path: str = "./data/monitoring.db"):
         self.db_path = db_path
@@ -256,7 +251,7 @@ class EnterpriseMonitor:
             )
 
             # Process metrics
-            try:
+            with contextlib.suppress(psutil.NoSuchProcess):
                 process = psutil.Process()
                 metrics.append(
                     MetricPoint(
@@ -285,9 +280,6 @@ class EnterpriseMonitor:
                     )
                 )
 
-            except psutil.NoSuchProcess:
-                pass
-
         except Exception as e:
             logger.error(f"Error collecting system metrics: {e}")
 
@@ -298,11 +290,14 @@ class EnterpriseMonitor:
         self.metrics_buffer.append(metric)
 
     def add_custom_metric(
-        self, name: str, value: float, tags: dict[str, str] = None
+        self, name: str, value: float, tags: dict[str, str] | None = None
     ) -> None:
         """Add a custom metric."""
         metric = MetricPoint(
-            timestamp=datetime.now(), metric_name=name, value=value, tags=tags or {}
+            timestamp=datetime.now(),
+            metric_name=name,
+            value=value,
+            tags=tags or {},
         )
         self.add_metric(metric)
 
@@ -332,7 +327,9 @@ class EnterpriseMonitor:
             conn.commit()
             conn.close()
 
-            logger.debug(f"Flushed {len(self.metrics_buffer)} metrics to database")
+            logger.debug(
+                f"Flushed {len(self.metrics_buffer)} metrics to database"
+            )
             self.metrics_buffer.clear()
 
         except Exception as e:
@@ -396,6 +393,10 @@ class EnterpriseMonitor:
                     triggered_alerts.append(alert_data)
 
                     # Log to alert history
+                    message = (
+                        f"{alert.description} (Current: {avg_value:.2f}, "
+                        f"Threshold: {alert.threshold})"
+                    )
                     cursor.execute(
                         """
                         INSERT INTO alert_history
@@ -406,7 +407,7 @@ class EnterpriseMonitor:
                             alert.id,
                             alert.name,
                             alert.severity,
-                            f"{alert.description} (Current: {avg_value:.2f}, Threshold: {alert.threshold})",
+                            message,
                             alert.triggered_at.isoformat(),
                         ),
                     )
@@ -418,7 +419,12 @@ class EnterpriseMonitor:
                 elif not condition_met and alert.active:
                     # Alert resolved
                     resolved_at = datetime.now()
-                    duration = (resolved_at - alert.triggered_at).total_seconds()
+                    if alert.triggered_at is not None:
+                        duration = (
+                            resolved_at - alert.triggered_at
+                        ).total_seconds()
+                    else:
+                        duration = 0.0
 
                     cursor.execute(
                         """
@@ -482,7 +488,9 @@ class EnterpriseMonitor:
                     "name": alert.name,
                     "severity": alert.severity,
                     "triggered_at": (
-                        alert.triggered_at.isoformat() if alert.triggered_at else None
+                        alert.triggered_at.isoformat()
+                        if alert.triggered_at
+                        else None
                     ),
                 }
                 for alert in self.alerts.values()
@@ -492,7 +500,8 @@ class EnterpriseMonitor:
             # Get recent alert history
             cursor.execute(
                 """
-                SELECT alert_name, severity, triggered_at, resolved_at, duration_seconds
+                SELECT alert_name, severity, triggered_at,
+                       resolved_at, duration_seconds
                 FROM alert_history
                 WHERE triggered_at >= ?
                 ORDER BY triggered_at DESC
@@ -520,7 +529,9 @@ class EnterpriseMonitor:
                 "metrics_summary": metrics_summary,
                 "active_alerts": active_alerts,
                 "alert_history": alert_history,
-                "system_status": "healthy" if not active_alerts else "degraded",
+                "system_status": (
+                    "healthy" if not active_alerts else "degraded"
+                ),
             }
 
         except Exception as e:

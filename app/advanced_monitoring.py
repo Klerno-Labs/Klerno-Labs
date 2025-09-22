@@ -58,7 +58,7 @@ class PerformanceTracker:
         self,
         name: str,
         value: float,
-        labels: dict[str, str] = None,
+        labels: dict[str, str] | None = None,
         metric_type: MetricType = MetricType.GAUGE,
     ):
         """Record a performance metric"""
@@ -130,7 +130,7 @@ class PerformanceTracker:
             cpu_percent = psutil.cpu_percent(interval=1)
             memory = psutil.virtual_memory()
             disk = psutil.disk_usage("/")
-        except:
+        except Exception:
             cpu_percent = 0
             memory = None
             disk = None
@@ -352,14 +352,15 @@ class RegressionDetector:
 class AdvancedMonitoringMiddleware(BaseHTTPMiddleware):
     """Comprehensive monitoring middleware"""
 
-    def __init__(self, app):
+    def __init__(self, app, start_background: bool = False):
         super().__init__(app)
         self.performance_tracker = PerformanceTracker()
         self.user_analytics = UserAnalytics()
         self.regression_detector = RegressionDetector()
 
-        # Start background monitoring task
-        asyncio.create_task(self._background_monitoring())
+        # Start background monitoring task only if explicitly requested
+        if start_background:
+            asyncio.create_task(self._background_monitoring())
 
     async def dispatch(self, request: Request, call_next):
         """Main monitoring dispatch"""
@@ -479,9 +480,16 @@ class AdvancedMonitoringMiddleware(BaseHTTPMiddleware):
 monitoring_middleware = None
 
 
-def get_monitoring_middleware():
-    """Get or create monitoring middleware instance"""
+def get_monitoring_middleware(start_background: bool = False):
+    """Get or create monitoring middleware instance.
+
+    By default the background monitoring loop is not started. Pass
+    `start_background=True` when running in production to enable the
+    periodic monitoring task.
+    """
     global monitoring_middleware
     if not monitoring_middleware:
-        monitoring_middleware = AdvancedMonitoringMiddleware(None)
+        monitoring_middleware = AdvancedMonitoringMiddleware(
+            None, start_background=start_background
+        )
     return monitoring_middleware

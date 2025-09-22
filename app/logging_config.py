@@ -6,7 +6,7 @@ Provides consistent, structured logging throughout the application.
 import logging
 import sys
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Optional
 
 import structlog
 from pythonjsonlogger.json import JsonFormatter
@@ -44,7 +44,15 @@ def configure_logging() -> None:
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     # File handler for Promtail/Loki
-    file_handler = logging.FileHandler("logs/app.log", mode="a", encoding="utf-8")
+    # Ensure logs directory exists to avoid FileNotFoundError on startup/tests
+    from contextlib import suppress
+    from pathlib import Path
+
+    logs_path = Path("logs")
+    with suppress(Exception):
+        logs_path.mkdir(parents=True, exist_ok=True)
+
+    file_handler = logging.FileHandler(str(logs_path / "app.log"), mode="a", encoding="utf-8")
 
     if settings.app_env == "production":
         console_handler.setFormatter(json_formatter)
@@ -101,8 +109,8 @@ def log_request_response(
     url: str,
     status_code: int,
     duration: float,
-    request_id: str = None,
-    user_id: str = None,
+    request_id: Optional[str] = None,
+    user_id: Optional[str] = None,
     **kwargs,
 ) -> None:
     """Log HTTP request / response details."""
@@ -134,9 +142,9 @@ def log_request_response(
 
 def log_security_event(
     event_type: str,
-    user_id: str = None,
-    ip_address: str = None,
-    details: dict[str, Any] = None,
+    user_id: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    details: Optional[dict[str, Any]] = None,
     **kwargs,
 ) -> None:
     """Log security - related events."""
@@ -171,10 +179,10 @@ def log_security_event(
 
 def log_business_event(
     event_type: str,
-    entity_type: str = None,
-    entity_id: str = None,
-    user_id: str = None,
-    details: dict[str, Any] = None,
+    entity_type: Optional[str] = None,
+    entity_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    details: Optional[dict[str, Any]] = None,
     **kwargs,
 ) -> None:
     """Log business logic events."""

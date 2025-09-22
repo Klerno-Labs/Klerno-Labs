@@ -4,7 +4,7 @@ Provides consistent error responses and logging.
 """
 
 import traceback
-from typing import Any
+from typing import Any, Optional
 
 import structlog
 from fastapi import HTTPException, Request
@@ -37,7 +37,7 @@ class KlernoException(Exception):
 class ValidationException(KlernoException):
     """Exception for validation errors."""
 
-    def __init__(self, message: str, field: str = None, details: dict[str, Any] = None):
+    def __init__(self, message: str, field: Optional[str] = None, details: Optional[dict[str, Any]] = None):
         self.field = field
         super().__init__(
             message=message,
@@ -51,7 +51,7 @@ class AuthenticationException(KlernoException):
     """Exception for authentication errors."""
 
     def __init__(
-        self, message: str = "Authentication failed", details: dict[str, Any] = None
+        self, message: str = "Authentication failed", details: Optional[dict[str, Any]] = None
     ):
         super().__init__(
             message=message,
@@ -64,7 +64,7 @@ class AuthenticationException(KlernoException):
 class AuthorizationException(KlernoException):
     """Exception for authorization errors."""
 
-    def __init__(self, message: str = "Access denied", details: dict[str, Any] = None):
+    def __init__(self, message: str = "Access denied", details: Optional[dict[str, Any]] = None):
         super().__init__(
             message=message,
             error_code="AUTHORIZATION_ERROR",
@@ -77,7 +77,7 @@ class ResourceNotFoundException(KlernoException):
     """Exception for resource not found errors."""
 
     def __init__(
-        self, resource: str, identifier: str = None, details: dict[str, Any] = None
+        self, resource: str, identifier: Optional[str] = None, details: Optional[dict[str, Any]] = None
     ):
         message = f"{resource} not found"
         if identifier:
@@ -94,7 +94,7 @@ class ResourceNotFoundException(KlernoException):
 class RateLimitException(KlernoException):
     """Exception for rate limiting errors."""
 
-    def __init__(self, message: str = "Rate limit exceeded", retry_after: int = None):
+    def __init__(self, message: str = "Rate limit exceeded", retry_after: Optional[int] = None):
         details = {}
         if retry_after:
             details["retry_after"] = retry_after
@@ -111,7 +111,7 @@ class ExternalServiceException(KlernoException):
     """Exception for external service errors."""
 
     def __init__(
-        self, service: str, message: str = None, details: dict[str, Any] = None
+        self, service: str, message: Optional[str] = None, details: Optional[dict[str, Any]] = None
     ):
         msg = message or f"External service '{service}' unavailable"
 
@@ -127,8 +127,8 @@ def create_error_response(
     error_code: str,
     message: str,
     status_code: int,
-    details: dict[str, Any] | None = None,
-    request_id: str | None = None,
+    details: Optional[dict[str, Any]] = None,
+    request_id: Optional[str] = None,
 ) -> JSONResponse:
     """Create standardized error response."""
     content = {

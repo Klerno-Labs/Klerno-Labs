@@ -188,7 +188,7 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
                                     return Response(status_code=304)
                             except ValueError:
                                 pass
-                except:
+                except Exception:
                     pass
 
             # Add security headers

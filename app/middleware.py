@@ -255,7 +255,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         """Remove requests older than 1 minute."""
         cutoff_time = current_time - 60  # 1 minute ago
 
-        for ip in list(self.requests.keys()):
+        for ip in list(self.requests):
             self.requests[ip] = [
                 timestamp for timestamp in self.requests[ip] if timestamp > cutoff_time
             ]
