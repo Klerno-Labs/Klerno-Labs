@@ -11,8 +11,7 @@ router = APIRouter()
 
 # Long SQL snippets extracted to named constants to avoid very long lines
 _SQL_CHECK_TRANSACTIONS = (
-    "SELECT name FROM sqlite_master WHERE type='table' "
-    "AND name='transactions'"
+    "SELECT name FROM sqlite_master WHERE type='table' " "AND name='transactions'"
 )
 _SQL_SELECT_TRANSACTIONS = (
     "SELECT id, user_id, amount, currency, status, created_at "
@@ -27,15 +26,12 @@ _SQL_SELECT_TRANSACTION_BY_ID = (
     "FROM transactions WHERE id = ?"
 )
 _SQL_CHECK_COMPLIANCE = (
-    "SELECT name FROM sqlite_master WHERE type='table' "
-    "AND name='compliance_tags'"
+    "SELECT name FROM sqlite_master WHERE type='table' " "AND name='compliance_tags'"
 )
 
 
 @router.post("/transactions", status_code=201)
-def create_transaction(
-    payload: dict[str, Any] = Body(...), user=Depends(current_user)
-):
+def create_transaction(payload: dict[str, Any] = Body(...), user=Depends(current_user)):
     """Compatibility-friendly transaction creator.
 
     - Accepts anonymous submissions (tests may create a user but omit auth).
@@ -71,8 +67,8 @@ def create_transaction(
         cur = con.cursor()
         # Detect sqlite: check sqlite_master for table name
         exists = False
-    # For non-sqlite backends the query may fail.
-    # Use best-effort introspection when detection might error.
+        # For non-sqlite backends the query may fail.
+        # Use best-effort introspection when detection might error.
         with contextlib.suppress(Exception):
             cur.execute(_SQL_CHECK_TRANSACTIONS)
             exists = cur.fetchone() is not None
@@ -146,14 +142,10 @@ def create_transaction(
             tx = {
                 "tx_id": payload.get("tx_id") or payload.get("id") or "",
                 "timestamp": (
-                    payload.get("timestamp")
-                    or payload.get("created_at")
-                    or ""
+                    payload.get("timestamp") or payload.get("created_at") or ""
                 ),
                 "chain": payload.get("chain", "XRP"),
-                "from_addr": (
-                    payload.get("from_addr") or payload.get("from_address")
-                ),
+                "from_addr": (payload.get("from_addr") or payload.get("from_address")),
                 "to_addr": payload.get("to_addr") or payload.get("to_address"),
                 "amount": amount,
                 "symbol": currency,
@@ -212,9 +204,7 @@ def list_transactions(
                             "id": r[0],
                             "user_id": r[1] if len(r) > 1 else None,
                             "amount": (
-                                float(r[2])
-                                if len(r) > 2 and r[2] is not None
-                                else 0
+                                float(r[2]) if len(r) > 2 and r[2] is not None else 0
                             ),
                             "currency": r[3] if len(r) > 3 else None,
                             "status": r[4] if len(r) > 4 else None,
@@ -232,7 +222,7 @@ def list_transactions(
 
     # Fallback: use canonical store.list_all
     items = store.list_all(limit=limit)
-    return items[offset:offset + limit]
+    return items[offset : offset + limit]
 
 
 @router.get("/transactions/{transaction_id}/compliance-tags")
@@ -245,6 +235,7 @@ def get_compliance_tags(transaction_id: int, user=Depends(current_user)):
     """
     try:
         import os
+
         db_url = os.getenv("DATABASE_URL") or ""
         if db_url and db_url.startswith("sqlite://"):
             db_path = db_url.split("sqlite://", 1)[1].lstrip("/")
@@ -316,11 +307,7 @@ def get_transaction(transaction_id: int, user=Depends(current_user)):
             return {
                 "id": r[0],
                 "user_id": r[1] if len(r) > 1 else None,
-                "amount": (
-                    float(r[2])
-                    if len(r) > 2 and r[2] is not None
-                    else 0
-                ),
+                "amount": (float(r[2]) if len(r) > 2 and r[2] is not None else 0),
                 "currency": r[3] if len(r) > 3 else None,
                 "status": r[4] if len(r) > 4 else None,
                 "created_at": r[5] if len(r) > 5 else None,
@@ -339,9 +326,7 @@ def get_transaction(transaction_id: int, user=Depends(current_user)):
             if not item:
                 from fastapi import HTTPException
 
-                raise HTTPException(
-                    status_code=404, detail="transaction not found"
-                )
+                raise HTTPException(status_code=404, detail="transaction not found")
             return item
 
     from fastapi import HTTPException

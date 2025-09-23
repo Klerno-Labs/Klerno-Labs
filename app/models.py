@@ -231,7 +231,9 @@ class Transaction:
         if self.amount < 0:
             # Allow negative only for XRP (or when chain explicitly is XRP)
             chain = kwargs.get("chain")
-            if not (str(symbol).upper() == "XRP" or (chain and str(chain).upper() == "XRP")):
+            if not (
+                str(symbol).upper() == "XRP" or (chain and str(chain).upper() == "XRP")
+            ):
                 raise ValueError("amount must be non-negative for fiat currencies")
 
         # currency maps to symbol

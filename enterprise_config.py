@@ -78,7 +78,7 @@ class EnterpriseConfig:
             self.features = EnterpriseFeatures()
 
     @classmethod
-    def from_env(cls) -> 'EnterpriseConfig':
+    def from_env(cls) -> "EnterpriseConfig":
         """Create configuration from environment variables."""
         config = cls()
 
@@ -112,20 +112,22 @@ class EnterpriseConfig:
         return {
             "enterprise_mode": self.enterprise_mode,
             "environment": self.environment,
-            "total_features": sum([
-                self.features.monitoring_enabled,
-                self.features.security_hardening,
-                self.features.analytics_enabled,
-                self.features.financial_compliance,
-                self.features.ai_processing,
-                self.features.guardian_protection,
-                self.features.advanced_caching,
-                self.features.load_balancing,
-                self.features.threat_intelligence,
-                self.features.behavioral_analysis,
-                self.features.real_time_metrics,
-                self.features.business_intelligence,
-            ]),
+            "total_features": sum(
+                [
+                    self.features.monitoring_enabled,
+                    self.features.security_hardening,
+                    self.features.analytics_enabled,
+                    self.features.financial_compliance,
+                    self.features.ai_processing,
+                    self.features.guardian_protection,
+                    self.features.advanced_caching,
+                    self.features.load_balancing,
+                    self.features.threat_intelligence,
+                    self.features.behavioral_analysis,
+                    self.features.real_time_metrics,
+                    self.features.business_intelligence,
+                ]
+            ),
             "features": {
                 "monitoring": self.features.monitoring_enabled,
                 "security": self.features.security_hardening,
@@ -137,7 +139,7 @@ class EnterpriseConfig:
                 "behavioral_analysis": self.features.behavioral_analysis,
                 "real_time_metrics": self.features.real_time_metrics,
                 "business_intelligence": self.features.business_intelligence,
-            }
+            },
         }
 
     def validate(self) -> list[str]:

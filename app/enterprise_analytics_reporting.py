@@ -12,7 +12,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Sequence, Mapping
+from typing import Any, Mapping, Sequence
 
 import numpy as np
 import pandas as pd

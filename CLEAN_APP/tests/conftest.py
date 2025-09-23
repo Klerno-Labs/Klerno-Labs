@@ -3,7 +3,7 @@ import sys
 
 # Ensure the workspace root (two levels up from this tests folder) is on sys.path
 # so tests that import `app` (which lives at the workspace root) can find it.
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
@@ -17,7 +17,9 @@ try:
     # `app.auth` has optional deps that aren't installed during collection.
     import app.legacy_helpers as _legacy
 
-    if hasattr(_legacy, "create_access_token") and not hasattr(builtins, "create_access_token"):
+    if hasattr(_legacy, "create_access_token") and not hasattr(
+        builtins, "create_access_token"
+    ):
         # Use setattr and a typed ignore to avoid static type complaints about
         # adding attributes to the builtins module during test collection.
         setattr(builtins, "create_access_token", _legacy.create_access_token)  # type: ignore[attr-defined]

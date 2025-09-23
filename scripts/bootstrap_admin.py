@@ -57,14 +57,16 @@ def main():
 
     pw_hash = hash_pw(password)
     try:
-        user = store.create_user(email=email, password_hash=pw_hash, role="admin", subscription_active=True)
+        user = store.create_user(
+            email=email, password_hash=pw_hash, role="admin", subscription_active=True
+        )
         # store.create_user may return dict-like or a model; handle both safely
         if isinstance(user, dict):
-            uid = user.get('id')
-            uemail = user.get('email')
+            uid = user.get("id")
+            uemail = user.get("email")
         else:
-            uid = getattr(user, 'id', None)
-            uemail = getattr(user, 'email', None)
+            uid = getattr(user, "id", None)
+            uemail = getattr(user, "email", None)
         print(f"Created admin user: {uemail} (id={uid})")
         print("You can now start the app and sign in with these credentials.")
     except Exception as e:
@@ -72,5 +74,5 @@ def main():
         raise SystemExit(2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

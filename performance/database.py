@@ -249,18 +249,9 @@ class QueryOptimizer:
         """Create performance indexes"""
         indexes = [
             # User indexes
-            (
-                "CREATE INDEX IF NOT EXISTS idx_users_email "
-                "ON users(email)"
-            ),
-            (
-                "CREATE INDEX IF NOT EXISTS idx_users_active "
-                "ON users(is_active)"
-            ),
-            (
-                "CREATE INDEX IF NOT EXISTS idx_users_created "
-                "ON users(created_at)"
-            ),
+            ("CREATE INDEX IF NOT EXISTS idx_users_email " "ON users(email)"),
+            ("CREATE INDEX IF NOT EXISTS idx_users_active " "ON users(is_active)"),
+            ("CREATE INDEX IF NOT EXISTS idx_users_created " "ON users(created_at)"),
             # Transaction indexes
             (
                 "CREATE INDEX IF NOT EXISTS idx_transactions_user_id "
@@ -474,9 +465,7 @@ class DatabaseService:
         await self.pool.execute_transaction(queries)
 
         # Get the transaction ID (this is a simplified version)
-        result = await self.pool.execute_query(
-            "SELECT last_insert_rowid() as id"
-        )
+        result = await self.pool.execute_query("SELECT last_insert_rowid() as id")
         return result[0]["id"] if result else None
 
     def get_stats(self) -> dict[str, Any]:
@@ -512,8 +501,7 @@ def with_db_stats(func):
             result = await func(*args, **kwargs)
             execution_time = time.time() - start_time
             logger.info(
-                f"DB operation {func.__name__} completed in "
-                f"{execution_time:.3f}s"
+                f"DB operation {func.__name__} completed in " f"{execution_time:.3f}s"
             )
             return result
         except Exception as e:

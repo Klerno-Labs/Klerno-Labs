@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from functools import wraps
-from typing import Any, Awaitable, Optional, TypeVar, DefaultDict
+from typing import Any, Awaitable, DefaultDict, Optional, TypeVar
 
 # weakref not used
 

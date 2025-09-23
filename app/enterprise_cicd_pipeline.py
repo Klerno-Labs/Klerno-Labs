@@ -13,7 +13,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, cast, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import yaml
 

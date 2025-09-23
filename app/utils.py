@@ -2,6 +2,7 @@
 
 This is intentionally minimal: implement the few functions tests import.
 """
+
 import re
 from decimal import Decimal
 

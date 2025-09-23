@@ -11,7 +11,8 @@ with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
     db_path = tmp.name
 
 conn = sqlite3.connect(db_path)
-conn.execute('''
+conn.execute(
+    """
 CREATE TABLE users (
     id INTEGER PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
@@ -20,11 +21,12 @@ CREATE TABLE users (
     is_admin BOOLEAN DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
-''')
+"""
+)
 conn.commit()
 conn.close()
 
-os.environ['DATABASE_URL'] = f"sqlite:///{db_path}"
+os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
 
 from app.main import app
 
@@ -32,25 +34,27 @@ client = TestClient(app)
 
 # Try posting form data as tests do
 resp = client.post(
-    '/auth/login',
+    "/auth/login",
     data={
-        'username': 'test@example.com',
-        'password': 'testpassword',
+        "username": "test@example.com",
+        "password": "testpassword",
     },
 )
-print('status', resp.status_code)
+print("status", resp.status_code)
 try:
-    print('json:', resp.json())
+    print("json:", resp.json())
 except Exception:
-    print('text:', resp.text)
+    print("text:", resp.text)
 
 # Try JSON
-resp2 = client.post('/auth/login', json={'username': 'test@example.com', 'password': 'testpassword'})
-print('status json', resp2.status_code)
+resp2 = client.post(
+    "/auth/login", json={"username": "test@example.com", "password": "testpassword"}
+)
+print("status json", resp2.status_code)
 try:
-    print('json2:', resp2.json())
+    print("json2:", resp2.json())
 except Exception:
-    print('text2:', resp2.text)
+    print("text2:", resp2.text)
 
 # cleanup (best-effort)
 with contextlib.suppress(Exception):

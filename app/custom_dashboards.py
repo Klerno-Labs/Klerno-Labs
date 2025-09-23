@@ -217,7 +217,9 @@ class DashboardManager:
         conn.close()
         return dashboards
 
-    def get_dashboard(self, dashboard_id: str, user_id: Optional[str] = None) -> Dashboard | None:
+    def get_dashboard(
+        self, dashboard_id: str, user_id: Optional[str] = None
+    ) -> Dashboard | None:
         """Get specific dashboard by ID."""
         conn = get_db_connection()
         cursor = conn.cursor()

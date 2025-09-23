@@ -35,7 +35,6 @@ def workspace_root():
     return ROOT
 
 
-
 @pytest.fixture(scope="session")
 def event_loop():
     """Create an instance of the default event loop for the test session."""

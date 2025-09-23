@@ -24,11 +24,7 @@ if env_file.exists():
 # fall back to a weak, deterministic secret to allow imports and tests to
 # proceed. In production you MUST set a strong JWT_SECRET env var.
 SECRET_KEY = os.getenv("JWT_SECRET")
-if (
-    not SECRET_KEY
-    or len(SECRET_KEY) < 32
-    or SECRET_KEY == "CHANGE_ME_32+_chars"
-):
+if not SECRET_KEY or len(SECRET_KEY) < 32 or SECRET_KEY == "CHANGE_ME_32+_chars":
     # Don't exit during tests — use a default local secret and print a warning.
     try:
         import warnings
@@ -45,9 +41,7 @@ if (
     )
 
 ALGO = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(
-    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
-)
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 _pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -60,9 +54,7 @@ def verify_pw(password: str, hashed: str) -> bool:
     return _pwd.verify(password, hashed)
 
 
-def issue_jwt(
-    uid: int, email: str, role: str, minutes: int | None = None
-) -> str:
+def issue_jwt(uid: int, email: str, role: str, minutes: int | None = None) -> str:
     """Create a JWT with both sub=email and uid (numeric user id).
 
     The token includes both `uid` and `user_id` keys to support
@@ -70,9 +62,7 @@ def issue_jwt(
     """
     # Respect explicit 0 values (tests may set expiry to 0). Only use the
     # default when minutes is None.
-    exp_minutes = (
-        ACCESS_TOKEN_EXPIRE_MINUTES if minutes is None else minutes
-    )
+    exp_minutes = ACCESS_TOKEN_EXPIRE_MINUTES if minutes is None else minutes
     now = datetime.now(UTC)
     payload = {
         "sub": email,

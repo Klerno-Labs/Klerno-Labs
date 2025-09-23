@@ -110,16 +110,12 @@ async def enforce_api_key(
 
     # 0) Dev mode: if no key configured, allow.
     if not exp:
-        log_api_access(
-            str(request.url.path), request.method, None, False, request
-        )
+        log_api_access(str(request.url.path), request.method, None, False, request)
         return True
 
     # 1) Header path for external clients / integrations.
     if x_api_key and hmac.compare_digest(x_api_key.strip(), exp):
-        log_api_access(
-            str(request.url.path), request.method, None, True, request
-        )
+        log_api_access(str(request.url.path), request.method, None, True, request)
         return True
 
     # 2) Session fallback for browser dashboard (valid JWT cookie).
@@ -209,8 +205,6 @@ def preview_api_key() -> dict:
         "preview": preview,
         "updated_at": api_key_last_updated(),
         "source": (
-            "env"
-            if (os.getenv("X_API_KEY") or os.getenv("API_KEY"))
-            else "file"
+            "env" if (os.getenv("X_API_KEY") or os.getenv("API_KEY")) else "file"
         ),
     }

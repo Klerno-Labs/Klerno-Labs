@@ -1,4 +1,3 @@
-
 """Lightweight compatibility shim for xrpl_payments_mock.
 
 This module used to contain a test/mock helper. It's now a minimal shim

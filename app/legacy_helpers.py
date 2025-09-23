@@ -14,6 +14,7 @@ The goal of edits in this session is to safely remove this module if
 it proves unused; keeping it minimal reduces risk while still matching
 the original behavior tests rely on.
 """
+
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -22,9 +23,7 @@ from typing import Any
 import jwt
 
 # Mirror the main app defaults so the fallback tokens look like real JWTs
-_SECRET = os.getenv(
-    "JWT_SECRET", "test-secret-for-local-development-please-change"
-)
+_SECRET = os.getenv("JWT_SECRET", "test-secret-for-local-development-please-change")
 _ALGO = "HS256"
 
 
@@ -56,7 +55,9 @@ def create_access_token(data: dict | Any, *a, **kw) -> str:
         minutes = None
         try:
             if "app.auth" in sys.modules:
-                minutes = getattr(sys.modules.get("app.auth"), "ACCESS_TOKEN_EXPIRE_MINUTES", None)
+                minutes = getattr(
+                    sys.modules.get("app.auth"), "ACCESS_TOKEN_EXPIRE_MINUTES", None
+                )
         except Exception:
             minutes = None
 

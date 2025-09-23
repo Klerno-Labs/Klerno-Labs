@@ -4,6 +4,7 @@ This is NOT production-grade encryption. It's only intended to satisfy
 test imports and round-trip behavior (encrypt -> decrypt) during unit
 tests. For real apps use a proper KMS or cryptography library.
 """
+
 import base64
 import json
 from typing import Any

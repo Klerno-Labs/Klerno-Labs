@@ -66,9 +66,7 @@ def create_access_token(data: dict, expires_delta: int | None = None) -> str:
     # If expires_delta is None, use the module-level constant so tests can
     # monkeypatch it. If expires_delta is provided (explicit), prefer it.
     minutes = (
-        expires_delta
-        if expires_delta is not None
-        else ACCESS_TOKEN_EXPIRE_MINUTES
+        expires_delta if expires_delta is not None else ACCESS_TOKEN_EXPIRE_MINUTES
     )
     return security_session.issue_jwt(uid, sub, role, minutes)
 
@@ -76,6 +74,7 @@ def create_access_token(data: dict, expires_delta: int | None = None) -> str:
 # Compatibility alias for token verification
 def verify_token(token: str) -> dict:
     return security_session.decode_jwt(token)
+
 
 # ---------- Schemas ----------
 
@@ -402,10 +401,7 @@ def confirm_password_reset(payload: PasswordResetConfirm):
     if not is_valid:
         raise HTTPException(status_code=400, detail="; ".join(errors))
 
-    if (
-        policy.config.check_breaches
-        and policy.check_breached(payload.new_password)
-    ):
+    if policy.config.check_breaches and policy.check_breached(payload.new_password):
         breach_msg = "Password appears in breach DB; choose another."
         raise HTTPException(status_code=400, detail=breach_msg)
 
@@ -471,7 +467,7 @@ def signup_form(
                     "show_demo_credentials": S.app_env == "dev",
                 },
             )
-    # bootstrap: first user or ENV admin becomes admin and active
+        # bootstrap: first user or ENV admin becomes admin and active
         role = "viewer"
         sub_active = False
         if email == S.admin_email or store.users_count() == 0:
@@ -636,7 +632,7 @@ def login_form(
                     },
                 )
 
-    # Set session and either redirect (browser) or return JSON for API clients
+        # Set session and either redirect (browser) or return JSON for API clients
         if not user:
             raise HTTPException(status_code=500, detail="Unexpected server error")
         token = issue_jwt(user["id"], user["email"], user["role"])

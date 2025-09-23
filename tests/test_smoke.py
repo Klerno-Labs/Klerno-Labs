@@ -20,7 +20,9 @@ def test_smoke_login(tmp_path, monkeypatch):
     email = "klerno@outlook.com"
     password = "Labs2025"
     pw_hash = hash_pw(password)
-    store.create_user(email=email, password_hash=pw_hash, role="admin", subscription_active=True)
+    store.create_user(
+        email=email, password_hash=pw_hash, role="admin", subscription_active=True
+    )
 
     # Landing page
     r = client.get("/")
@@ -31,7 +33,11 @@ def test_smoke_login(tmp_path, monkeypatch):
     assert r.status_code == 200
 
     # Form login (simulate browser form post)
-    r = client.post("/auth/login", data={"email": email, "password": password}, allow_redirects=False)
+    r = client.post(
+        "/auth/login",
+        data={"email": email, "password": password},
+        allow_redirects=False,
+    )
     assert r.status_code in (200, 302)
 
     # Check for session cookie

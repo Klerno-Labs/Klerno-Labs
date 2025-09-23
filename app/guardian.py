@@ -134,10 +134,7 @@ class GuardianEngine:
 
     async def detect_anomalies(self, transactions: list[dict]) -> list[dict]:
         # Very small anomaly detector: flag txs with amount far above median
-        amounts = [
-            abs(Decimal(str(t.get("amount", 0))))
-            for t in transactions
-        ]
+        amounts = [abs(Decimal(str(t.get("amount", 0)))) for t in transactions]
         if not amounts:
             return []
         median = sorted(amounts)[len(amounts) // 2]
@@ -177,9 +174,7 @@ class GuardianEngine:
                 )
 
         # Always include a summary pattern
-        patterns.append(
-            {"type": "summary", "count": len(transactions), "total": total}
-        )
+        patterns.append({"type": "summary", "count": len(transactions), "total": total})
         return patterns
 
     # Backwards-compatible instance method name expected by older code/tests

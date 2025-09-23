@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+
 import requests
 
 # Transaction model is imported inside the function to avoid top-level import issues

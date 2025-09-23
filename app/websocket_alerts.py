@@ -1,4 +1,3 @@
-
 """Compatibility shim for removed websocket_alerts module.
 
 This module provided enterprise-only WebSocket alerting. To avoid
@@ -36,8 +35,7 @@ class _NoopWebsocketManager:
         recommendations: list[str],
     ):
         logger.debug(
-            "websocket_alerts.send_risk_alert (noop) user=%s score=%s "
-            "level=%s",
+            "websocket_alerts.send_risk_alert (noop) user=%s score=%s " "level=%s",
             user_id,
             risk_score,
             risk_level,
@@ -84,8 +82,7 @@ class _NoopWebsocketManager:
         data: dict[str, Any] | None = None,
     ):
         logger.debug(
-            "websocket_alerts.broadcast_system_alert (noop) "
-            "title=%s severity=%s",
+            "websocket_alerts.broadcast_system_alert (noop) " "title=%s severity=%s",
             title,
             severity,
         )
@@ -144,9 +141,7 @@ async def broadcast_system_alert(
     data: dict[str, Any] | None = None,
 ):
     """Broadcast system alert to all users (noop shim)."""
-    await websocket_manager.broadcast_system_alert(
-        title, message, severity, data
-    )
+    await websocket_manager.broadcast_system_alert(title, message, severity, data)
 
 
 def is_websocket_feature_available(user_tier: str) -> bool:

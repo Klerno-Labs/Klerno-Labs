@@ -114,9 +114,7 @@ async def verify_xrp_payment_request(
         payment_request["id"] = payment_id
 
         # Verify the payment
-        verified, message, tx_details = verify_payment(
-            payment_request, tx_hash
-        )
+        verified, message, tx_details = verify_payment(payment_request, tx_hash)
 
         if verified:
             # Set the subscription cookie
@@ -172,9 +170,7 @@ async def verify_payment_endpoint(
             return JSONResponse(
                 content={
                     "success": False,
-                    "error": result.get(
-                        "error", "Payment verification failed"
-                    ),
+                    "error": result.get("error", "Payment verification failed"),
                 }
             )
     except Exception as e:

@@ -38,7 +38,9 @@ def send_email(to_email: str, subject: str, content: str):
     the SendGrid API on success, and raises a RuntimeError on misconfiguration.
     """
     if not FROM_EMAIL:
-        raise RuntimeError("Sender address not configured. Set SENDGRID_FROM to use mailer")
+        raise RuntimeError(
+            "Sender address not configured. Set SENDGRID_FROM to use mailer"
+        )
 
     sg = _get_sendgrid_client()
 

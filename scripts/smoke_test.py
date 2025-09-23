@@ -20,33 +20,33 @@ if not wait_for(base + "/health", timeout=15):
     print("Server not responding at", base)
     raise SystemExit(1)
 
-print('GET /')
-r = requests.get(base + '/')
-print(r.status_code, 'len=', len(r.text))
+print("GET /")
+r = requests.get(base + "/")
+print(r.status_code, "len=", len(r.text))
 
-print('GET /auth/login')
-r = requests.get(base + '/auth/login')
-print(r.status_code, 'len=', len(r.text))
+print("GET /auth/login")
+r = requests.get(base + "/auth/login")
+print(r.status_code, "len=", len(r.text))
 
-print('POST /auth/login (form)')
+print("POST /auth/login (form)")
 resp = requests.post(
-    base + '/auth/login',
+    base + "/auth/login",
     data={
-        'email': 'klerno@outlook.com',
-        'password': 'Labs2025',
+        "email": "klerno@outlook.com",
+        "password": "Labs2025",
     },
     allow_redirects=False,
 )
-print('status', resp.status_code)
-print('headers:', dict(resp.headers))
-print('cookies:', resp.cookies.get_dict())
-print('location:', resp.headers.get('location'))
+print("status", resp.status_code)
+print("headers:", dict(resp.headers))
+print("cookies:", resp.cookies.get_dict())
+print("location:", resp.headers.get("location"))
 
 # If login returned Set-Cookie, try /dashboard
-if resp.cookies.get('session'):
+if resp.cookies.get("session"):
     s = requests.Session()
     s.cookies.update(resp.cookies.get_dict())
-    r2 = s.get(base + '/dashboard')
-    print('/dashboard status', r2.status_code)
+    r2 = s.get(base + "/dashboard")
+    print("/dashboard status", r2.status_code)
 else:
-    print('No session cookie received; login likely failed')
+    print("No session cookie received; login likely failed")
