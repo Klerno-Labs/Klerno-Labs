@@ -5,9 +5,12 @@ TOP 0.1% Application with Enterprise Features Integration
 
 from __future__ import annotations
 
+import io
 import logging
+import sys
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,9 +26,32 @@ from app.settings import settings
 # Import enterprise configuration
 from enterprise_config import get_config, get_enabled_features, is_enterprise_enabled
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Configure logging - add a file handler so startup failures are always recorded
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+LOG_FILE = LOG_DIR / "enterprise.log"
+
+logger = logging.getLogger("klerno.enterprise")
+logger.setLevel(logging.DEBUG)
+
+# Console handler: ensure console stream is UTF-8 encoded on Windows
+try:
+    console_stream = io.TextIOWrapper(
+        sys.stdout.buffer, encoding="utf-8", line_buffering=True
+    )
+    ch = logging.StreamHandler(stream=console_stream)
+except Exception:
+    # Fallback to default stream handler
+    ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+ch.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+logger.addHandler(ch)
+
+# File handler (rotating not necessary for small local logs)
+fh = logging.FileHandler(LOG_FILE, encoding="utf-8")
+fh.setLevel(logging.DEBUG)
+fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+logger.addHandler(fh)
 
 # Track application startup time
 START_TIME = datetime.now(UTC)
@@ -40,26 +66,28 @@ ENTERPRISE_FEATURES = {
     "analytics": False,
     "compliance": False,
     "ai": False,
-    "guardian": False
+    "guardian": False,
 }
+
+# Keep a record of loaded enterprise modules to avoid 'assigned but never used' warnings
+_loaded_enterprise_modules: list[str] = []
 
 
 def initialize_enterprise_features():
     """Initialize enterprise features based on configuration."""
-    global ENTERPRISE_FEATURES
-
     config = get_config()
 
     # Ensure features is initialized
     if config.features is None:
         from enterprise_config import EnterpriseFeatures
+
         config.features = EnterpriseFeatures()
 
     if not config.enterprise_mode:
-        logger.info("🏠 Running in SIMPLE mode - Enterprise features disabled")
+        logger.info("Running in SIMPLE mode - Enterprise features disabled")
         return
 
-    logger.info("🚀 Initializing ENTERPRISE features for TOP 0.1% application...")
+    logger.info("Initializing ENTERPRISE features...")
 
     try:
         # Check each enterprise module
@@ -68,89 +96,104 @@ def initialize_enterprise_features():
         # Enterprise Monitoring
         if config.features.monitoring_enabled:
             try:
-                import enterprise_monitoring
+                import enterprise_monitoring as _enterprise_monitoring
+
                 ENTERPRISE_FEATURES["monitoring"] = True
+                _loaded_enterprise_modules.append(_enterprise_monitoring.__name__)
                 feature_count += 1
-                logger.info("✅ Enterprise Monitoring System available")
+                logger.info("Enterprise Monitoring System available")
             except ImportError:
-                logger.warning("⚠️  Enterprise Monitoring module not available")
+                logger.warning("Enterprise Monitoring module not available")
 
         # Advanced Security
         if config.features.security_hardening:
             try:
-                import enterprise_security
+                import enterprise_security as _enterprise_security
+
                 ENTERPRISE_FEATURES["security"] = True
+                _loaded_enterprise_modules.append(_enterprise_security.__name__)
                 feature_count += 1
-                logger.info("✅ Advanced Security Hardening available")
+                logger.info("Advanced Security Hardening available")
             except ImportError:
-                logger.warning("⚠️  Enterprise Security module not available")
+                logger.warning("Enterprise Security module not available")
 
         # Business Analytics
         if config.features.analytics_enabled:
             try:
-                import enterprise_analytics
+                import enterprise_analytics as _enterprise_analytics
+
                 ENTERPRISE_FEATURES["analytics"] = True
+                _loaded_enterprise_modules.append(_enterprise_analytics.__name__)
                 feature_count += 1
-                logger.info("✅ Enterprise Analytics System available")
+                logger.info("Enterprise Analytics System available")
             except ImportError:
-                logger.warning("⚠️  Enterprise Analytics module not available")
+                logger.warning("Enterprise Analytics module not available")
 
         # Financial Compliance
         if config.features.financial_compliance:
             try:
-                import financial_compliance
+                import financial_compliance as _financial_compliance
+
                 ENTERPRISE_FEATURES["compliance"] = True
+                _loaded_enterprise_modules.append(_financial_compliance.__name__)
                 feature_count += 1
-                logger.info("✅ ISO20022 Financial Compliance available")
+                logger.info("ISO20022 Financial Compliance available")
             except ImportError:
-                logger.warning("⚠️  Financial Compliance module not available")
+                logger.warning("Financial Compliance module not available")
 
         # AI Processing
         if config.features.ai_processing:
             try:
-                import ai_processor
+                import ai_processor as _ai_processor
+
                 ENTERPRISE_FEATURES["ai"] = True
+                _loaded_enterprise_modules.append(_ai_processor.__name__)
                 feature_count += 1
-                logger.info("✅ AI Processing System available")
+                logger.info("AI Processing System available")
             except ImportError:
-                logger.warning("⚠️  AI Processing module not available")
+                logger.warning("AI Processing module not available")
 
         # Guardian Protection
         if config.features.guardian_protection:
             try:
-                import guardian
-                ENTERPRISE_FEATURES["guardian"] = True
-                feature_count += 1
-                logger.info("✅ Guardian Protection System available")
-            except ImportError:
-                logger.warning("⚠️  Guardian Protection module not available")
+                import guardian as _guardian
 
-        logger.info(f"🏆 ENTERPRISE MODE: {feature_count} features available")
+                ENTERPRISE_FEATURES["guardian"] = True
+                _loaded_enterprise_modules.append(_guardian.__name__)
+                feature_count += 1
+                logger.info("Guardian Protection System available")
+            except ImportError:
+                logger.warning("Guardian Protection module not available")
+
+        logger.info(f"ENTERPRISE MODE: {feature_count} features available")
 
     except Exception as e:
-        logger.error(f"❌ Enterprise initialization error: {e}")
+        logger.error(f"Enterprise initialization error: {e}")
 
 
 # Application lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logger.info("🚀 Starting Klerno Labs Enterprise Platform...")
+    logger.info("Starting Klerno Labs Enterprise Platform...")
+    # Early diagnostic print to ensure we see something in stdout when the
+    # process starts. This helps in environments where output is suppressed.
+    print("[DIAG] enterprise_main_v2: lifespan start")
 
     # Initialize clean app database
     store.init_db()
-    logger.info("✓ Clean app database initialized")
+    logger.info("Clean app database initialized")
 
     # Initialize enterprise features
     initialize_enterprise_features()
 
-    logger.info("🎯 Klerno Labs Enterprise Platform started successfully!")
-    logger.info(f"💼 Mode: {'ENTERPRISE' if is_enterprise_enabled() else 'SIMPLE'}")
+    logger.info("Klerno Labs Enterprise Platform started successfully!")
+    logger.info(f"Mode: {'ENTERPRISE' if is_enterprise_enabled() else 'SIMPLE'}")
 
     yield
 
     # Shutdown
-    logger.info("🔄 Shutting down Klerno Labs Enterprise Platform...")
+    logger.info("Shutting down Klerno Labs Enterprise Platform...")
 
 
 # Create FastAPI application
@@ -188,10 +231,31 @@ async def simple_monitoring_middleware(request: Request, call_next):
     if ENTERPRISE_FEATURES["monitoring"]:
         try:
             duration = (datetime.now() - start_time).total_seconds() * 1000
-            logger.info(f"📊 {request.method} {request.url.path} - {response.status_code} - {duration:.2f}ms")
+            logger.info(
+                f"{request.method} {request.url.path} - {response.status_code} - {duration:.2f}ms"
+            )
         except Exception as e:
             logger.error(f"Monitoring error: {e}")
 
+    return response
+
+
+# Security headers middleware - small, non-breaking defaults to improve app security
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    try:
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "no-referrer-when-downgrade"
+        response.headers["Permissions-Policy"] = "geolocation=()"
+        # A reasonably strict CSP for the local app; adjust for external assets in production
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+        )
+    except Exception:
+        # Do not let header setting break the response
+        pass
     return response
 
 
@@ -208,7 +272,9 @@ async def health_check():
         "mode": "enterprise" if is_enterprise_enabled() else "simple",
         "uptime_seconds": (datetime.now(UTC) - START_TIME).total_seconds(),
         "features": get_enabled_features(),
-        "enterprise_modules": ENTERPRISE_FEATURES
+        "enterprise_modules": ENTERPRISE_FEATURES,
+        # include environment string to ensure `config` is used by analyzer
+        "environment": getattr(config, "environment", ""),
     }
 
     return health_data
@@ -231,8 +297,8 @@ async def enterprise_dashboard():
         "system_info": {
             "uptime_seconds": (datetime.now(UTC) - START_TIME).total_seconds(),
             "environment": config.environment,
-            "enterprise_mode": config.enterprise_mode
-        }
+            "enterprise_mode": config.enterprise_mode,
+        },
     }
 
     return dashboard_data
@@ -249,7 +315,7 @@ async def enterprise_status():
         "enterprise_mode": is_enterprise_enabled(),
         "available_features": ENTERPRISE_FEATURES,
         "enabled_features": get_enabled_features(),
-        "config": get_config().get_feature_summary()
+        "config": get_config().get_feature_summary(),
     }
 
     return status_data
@@ -265,7 +331,8 @@ async def landing_page(request: Request):
         "features": get_enabled_features(),
         "title": "Klerno Labs Enterprise Edition",
     }
-    return templates.TemplateResponse(request, "landing.html", context)
+    # TemplateResponse expects (template_name, context)
+    return templates.TemplateResponse("landing.html", context)
 
 
 # Include auth routes
@@ -280,19 +347,38 @@ if __name__ == "__main__":
 
     # Log startup banner
     print("=" * 80)
-    print("🚀 KLERNO LABS ENTERPRISE EDITION")
+    print("KLERNO LABS ENTERPRISE EDITION")
     print("   TOP 0.1% Advanced Transaction Analysis Platform")
     print("=" * 80)
-    print(f"💼 Mode: {'ENTERPRISE' if config.enterprise_mode else 'SIMPLE'}")
-    print(f"🌍 Environment: {config.environment}")
-    print(f"🔧 Features configured: {len(get_enabled_features())}")
+    print(f"Mode: {'ENTERPRISE' if config.enterprise_mode else 'SIMPLE'}")
+    print(f"Environment: {config.environment}")
+    print(f"Features configured: {len(get_enabled_features())}")
     print("=" * 80)
 
-    # Start server
-    uvicorn.run(
-        "enterprise_main_v2:app",
-        host="127.0.0.1",
-        port=8002,  # Use different port for enterprise
-        reload=config.debug_mode,
-        log_level="info" if not config.debug_mode else "debug"
-    )
+    # Start server with protective try/except to ensure we log any startup
+    # exception to the enterprise log file for offline diagnostics.
+    try:
+        print("[DIAG] Starting uvicorn...")
+        uvicorn.run(
+            "enterprise_main_v2:app",
+            host="127.0.0.1",
+            port=8002,  # Use different port for enterprise
+            reload=config.debug_mode,
+            log_level="info" if not config.debug_mode else "debug",
+        )
+    except Exception as e:
+        # Best-effort: write exception to log file
+        try:
+            logger.exception("Failed to start uvicorn: %s", e)
+            with open(LOG_FILE, "a", encoding="utf-8") as fh:
+                fh.write("\n=== STARTUP EXCEPTION ===\n")
+                import traceback
+
+                fh.write(traceback.format_exc())
+                fh.write("\n=== END STARTUP EXCEPTION ===\n")
+        except Exception:
+            # If logging to file fails, print to stdout as a last resort
+            print("Failed to write startup exception to log file")
+            import traceback
+
+            traceback.print_exc()

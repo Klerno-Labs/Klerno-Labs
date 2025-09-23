@@ -18,6 +18,37 @@ from .subscriptions import get_db_connection
 from .utils import to_mapping
 
 
+def _to_iso(timestamp: Any) -> str:
+    """Safely convert timestamp-like values to ISO string.
+
+    Accepts datetime, str, epoch numbers, or objects with `isoformat`.
+    Falls back to current UTC time when conversion fails or timestamp is None.
+    """
+    if timestamp is None:
+        return datetime.now(UTC).isoformat()
+
+    if isinstance(timestamp, str):
+        return timestamp
+
+    try:
+        iso = getattr(timestamp, "isoformat", None)
+        if callable(iso):
+            return str(iso())
+    except Exception:
+        pass
+
+    if isinstance(timestamp, (int, float)):
+        try:
+            return datetime.fromtimestamp(timestamp, UTC).isoformat()
+        except Exception:
+            pass
+
+    try:
+        return str(timestamp)
+    except Exception:
+        return datetime.now(UTC).isoformat()
+
+
 class ReportType(str, Enum):
     """Types of compliance reports."""
 
@@ -61,16 +92,16 @@ class ComplianceReport:
     parameters: dict[str, Any]
     status: str = "pending"
     file_path: str | None = None
-    created_at: datetime = None
+    created_at: datetime | None = None
     completed_at: datetime | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert report to dictionary."""
         result = asdict(self)
         if self.created_at:
-            result["created_at"] = self.created_at.isoformat()
+            result["created_at"] = _to_iso(self.created_at)
         if self.completed_at:
-            result["completed_at"] = self.completed_at.isoformat()
+            result["completed_at"] = _to_iso(self.completed_at)
         return result
 
 
@@ -151,8 +182,7 @@ class ComplianceReportingEngine:
         report_id = str(uuid.uuid4())
 
         date_range_str = (
-            f"{start_date.strftime('%Y-%m-%d')} to "
-            f"{end_date.strftime('%Y-%m-%d')}"
+            f"{start_date.strftime('%Y-%m-%d')} to " f"{end_date.strftime('%Y-%m-%d')}"
         )
 
         report = ComplianceReport(
@@ -161,12 +191,11 @@ class ComplianceReportingEngine:
             report_type=ReportType.AML_SUMMARY,
             title=(f"AML Compliance Report - " f"{date_range_str}"),
             description=(
-                "Anti - Money Laundering compliance summary and "
-                "risk assessment"
+                "Anti - Money Laundering compliance summary and " "risk assessment"
             ),
             date_range={
-                "start_date": start_date.isoformat(),
-                "end_date": end_date.isoformat(),
+                "start_date": _to_iso(start_date),
+                "end_date": _to_iso(end_date),
             },
             parameters={
                 "output_format": output_format.value,
@@ -207,8 +236,7 @@ class ComplianceReportingEngine:
         report_id = str(uuid.uuid4())
 
         date_range_str = (
-            f"{start_date.strftime('%Y-%m-%d')} to "
-            f"{end_date.strftime('%Y-%m-%d')}"
+            f"{start_date.strftime('%Y-%m-%d')} to " f"{end_date.strftime('%Y-%m-%d')}"
         )
 
         report = ComplianceReport(
@@ -216,13 +244,10 @@ class ComplianceReportingEngine:
             user_id=user_id,
             report_type=ReportType.TRANSACTION_MONITORING,
             title=(f"Transaction Monitoring Report - " f"{date_range_str}"),
-            description=(
-                "Comprehensive transaction monitoring and "
-                "risk analysis"
-            ),
+            description=("Comprehensive transaction monitoring and " "risk analysis"),
             date_range={
-                "start_date": start_date.isoformat(),
-                "end_date": end_date.isoformat(),
+                "start_date": _to_iso(start_date),
+                "end_date": _to_iso(end_date),
             },
             parameters={
                 "risk_threshold": risk_threshold,
@@ -258,8 +283,7 @@ class ComplianceReportingEngine:
         report_id = str(uuid.uuid4())
 
         date_range_str = (
-            f"{start_date.strftime('%Y-%m-%d')} to "
-            f"{end_date.strftime('%Y-%m-%d')}"
+            f"{start_date.strftime('%Y-%m-%d')} to " f"{end_date.strftime('%Y-%m-%d')}"
         )
 
         report = ComplianceReport(
@@ -268,12 +292,11 @@ class ComplianceReportingEngine:
             report_type=ReportType.SUSPICIOUS_ACTIVITY,
             title=(f"Suspicious Activity Report - " f"{date_range_str}"),
             description=(
-                "Detailed analysis of suspicious transactions "
-                "and patterns"
+                "Detailed analysis of suspicious transactions " "and patterns"
             ),
             date_range={
-                "start_date": start_date.isoformat(),
-                "end_date": end_date.isoformat(),
+                "start_date": _to_iso(start_date),
+                "end_date": _to_iso(end_date),
             },
             parameters={
                 "min_risk_score": 0.7,
@@ -390,7 +413,7 @@ class ComplianceReportingEngine:
                 json.dumps(report.date_range),
                 json.dumps(report.parameters),
                 report.status,
-                report.created_at.isoformat(),
+                _to_iso(report.created_at),
             ),
         )
 
@@ -411,7 +434,7 @@ class ComplianceReportingEngine:
             (
                 report.status,
                 report.file_path,
-                report.completed_at.isoformat() if report.completed_at else None,
+                _to_iso(report.completed_at) if report.completed_at else None,
                 report.id,
             ),
         )
@@ -427,7 +450,7 @@ class ComplianceReportingEngine:
         # Mock AML data - replace with real queries
         import random
 
-        transactions = []
+        transactions: list[dict[str, Any]] = []
         for i in range(100):
             tx_date = start_date + timedelta(
                 days=random.randint(0, (end_date - start_date).days)
@@ -435,9 +458,9 @@ class ComplianceReportingEngine:
             transactions.append(
                 {
                     "transaction_id": f"tx_{i + 1}",
-                    "date": tx_date.isoformat(),
+                    "date": _to_iso(tx_date),
                     "amount": random.uniform(100, 50000),
-                    "risk_score": random.uniform(0.1, 0.9),
+                    "risk_score": float(random.uniform(0.1, 0.9)),
                     "from_address": f"addr_{random.randint(1000, 9999)}",
                     "to_address": f"addr_{random.randint(1000, 9999)}",
                     "flags": random.choice(
@@ -456,20 +479,46 @@ class ComplianceReportingEngine:
                 "total_transactions": len(transactions),
                 "total_amount": sum(tx["amount"] for tx in transactions),
                 "high_risk_count": len(
-                    [tx for tx in transactions if tx["risk_score"] > 0.7]
+                    [
+                        tx
+                        for tx in transactions
+                        if float(tx.get("risk_score", 0.0)) > 0.7
+                    ]
                 ),
-                "flagged_count": len([tx for tx in transactions if tx["flags"]]),
+                "flagged_count": len(
+                    [tx for tx in transactions if bool(tx.get("flags"))]
+                ),
             },
             "transactions": transactions,
             "risk_analysis": {
-                "avg_risk_score": sum(tx["risk_score"] for tx in transactions)
-                / len(transactions),
+                "avg_risk_score": (
+                    sum(float(tx.get("risk_score", 0.0)) for tx in transactions)
+                    / len(transactions)
+                    if transactions
+                    else 0.0
+                ),
                 "risk_distribution": {
-                    "low": len([tx for tx in transactions if tx["risk_score"] < 0.3]),
-                    "medium": len(
-                        [tx for tx in transactions if 0.3 <= tx["risk_score"] < 0.7]
+                    "low": len(
+                        [
+                            tx
+                            for tx in transactions
+                            if float(tx.get("risk_score", 0.0)) < 0.3
+                        ]
                     ),
-                    "high": len([tx for tx in transactions if tx["risk_score"] >= 0.7]),
+                    "medium": len(
+                        [
+                            tx
+                            for tx in transactions
+                            if 0.3 <= float(tx.get("risk_score", 0.0)) < 0.7
+                        ]
+                    ),
+                    "high": len(
+                        [
+                            tx
+                            for tx in transactions
+                            if float(tx.get("risk_score", 0.0)) >= 0.7
+                        ]
+                    ),
                 },
             },
         }
@@ -492,12 +541,12 @@ class ComplianceReportingEngine:
             data.append(
                 {
                     "transaction_id": f"mon_tx_{i + 1}",
-                    "timestamp": (
+                    "timestamp": _to_iso(
                         start_date
                         + timedelta(
                             days=random.randint(0, (end_date - start_date).days)
                         )
-                    ).isoformat(),
+                    ),
                     "amount": random.uniform(1000, 100000),
                     "risk_score": risk_score,
                     "risk_level": "HIGH" if risk_score > 0.7 else "MEDIUM",
@@ -525,12 +574,12 @@ class ComplianceReportingEngine:
             suspicious_transactions.append(
                 {
                     "transaction_id": f"sar_tx_{i + 1}",
-                    "date": (
+                    "date": _to_iso(
                         start_date
                         + timedelta(
                             days=random.randint(0, (end_date - start_date).days)
                         )
-                    ).isoformat(),
+                    ),
                     "amount": random.uniform(10000, 500000),
                     "risk_score": random.uniform(0.8, 1.0),
                     "suspicious_indicators": random.choice(
@@ -554,8 +603,8 @@ class ComplianceReportingEngine:
 
         return {
             "period": {
-                "start_date": start_date.isoformat(),
-                "end_date": end_date.isoformat(),
+                "start_date": _to_iso(start_date),
+                "end_date": _to_iso(end_date),
             },
             "summary": {
                 "total_suspicious": len(suspicious_transactions),
@@ -585,8 +634,7 @@ class ComplianceReportingEngine:
         os.makedirs(reports_dir, exist_ok=True)
 
         filename = (
-            f"{report.id}_" f"{report.report_type.value}."
-            f"{output_format.value}"
+            f"{report.id}_" f"{report.report_type.value}." f"{output_format.value}"
         )
         file_path = os.path.join(reports_dir, filename)
 
@@ -636,9 +684,7 @@ class ComplianceReportingEngine:
 
         return file_path
 
-    def _create_sar_report(
-        self, report: ComplianceReport, data: dict[str, Any]
-    ) -> str:
+    def _create_sar_report(self, report: ComplianceReport, data: dict[str, Any]) -> str:
         """Create SAR report file."""
         import os
 
@@ -678,11 +724,7 @@ def get_compliance_metrics(
     user_id: str, start_date: datetime, end_date: datetime
 ) -> ComplianceMetrics:
     """Get compliance metrics."""
-    return (
-        compliance_engine.get_compliance_metrics(
-            user_id, start_date, end_date
-        )
-    )
+    return compliance_engine.get_compliance_metrics(user_id, start_date, end_date)
 
 
 def get_user_reports(user_id: str) -> list[ComplianceReport]:

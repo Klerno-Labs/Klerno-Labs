@@ -30,6 +30,8 @@ class MetricPoint:
     metric_name: str
     value: float
     tags: dict[str, str] | None = None
+
+
 @dataclass
 class Alert:
     """System alert definition."""
@@ -119,7 +121,7 @@ class EnterpriseMonitor:
         conn.commit()
         conn.close()
 
-        logger.info("✅ Monitoring database initialized")
+    logger.info("[OK] Monitoring database initialized")
 
     def _setup_default_alerts(self) -> None:
         """Setup default system alerts."""
@@ -179,7 +181,7 @@ class EnterpriseMonitor:
         for alert in default_alerts:
             self.alerts[alert.id] = alert
 
-        logger.info(f"✅ Configured {len(default_alerts)} default alerts")
+        logger.info(f"[OK] Configured {len(default_alerts)} default alerts")
 
     def collect_system_metrics(self) -> list[MetricPoint]:
         """Collect comprehensive system metrics."""
@@ -189,14 +191,27 @@ class EnterpriseMonitor:
         try:
             # CPU metrics
             cpu_percent = psutil.cpu_percent(interval=1)
-            metrics.append(
-                MetricPoint(
-                    timestamp=now,
-                    metric_name="system.cpu.percent",
-                    value=cpu_percent,
-                    tags={"host": "localhost", "type": "system"},
+            # Ensure cpu_percent is a numeric value before casting; avoid
+            # calling float() on arbitrary types (list/dict) which some
+            # environment wrappers may return.
+            cpu_percent_val = None
+            if isinstance(cpu_percent, (int, float)):
+                cpu_percent_val = float(cpu_percent)
+            elif isinstance(cpu_percent, str):
+                try:
+                    cpu_percent_val = float(cpu_percent)
+                except Exception:
+                    cpu_percent_val = None
+
+            if cpu_percent_val is not None:
+                metrics.append(
+                    MetricPoint(
+                        timestamp=now,
+                        metric_name="system.cpu.percent",
+                        value=cpu_percent_val,
+                        tags={"host": "localhost", "type": "system"},
+                    )
                 )
-            )
 
             # Memory metrics
             memory = psutil.virtual_memory()
@@ -232,23 +247,29 @@ class EnterpriseMonitor:
 
             # Network metrics
             network = psutil.net_io_counters()
-            metrics.append(
-                MetricPoint(
-                    timestamp=now,
-                    metric_name="system.network.bytes_sent",
-                    value=network.bytes_sent,
-                    tags={"host": "localhost", "type": "system"},
-                )
-            )
+            # network may be a struct or a mapping depending on psutil version
+            bytes_sent = getattr(network, "bytes_sent", None)
+            bytes_recv = getattr(network, "bytes_recv", None)
 
-            metrics.append(
-                MetricPoint(
-                    timestamp=now,
-                    metric_name="system.network.bytes_recv",
-                    value=network.bytes_recv,
-                    tags={"host": "localhost", "type": "system"},
+            if bytes_sent is not None:
+                metrics.append(
+                    MetricPoint(
+                        timestamp=now,
+                        metric_name="system.network.bytes_sent",
+                        value=float(bytes_sent),
+                        tags={"host": "localhost", "type": "system"},
+                    )
                 )
-            )
+
+            if bytes_recv is not None:
+                metrics.append(
+                    MetricPoint(
+                        timestamp=now,
+                        metric_name="system.network.bytes_recv",
+                        value=float(bytes_recv),
+                        tags={"host": "localhost", "type": "system"},
+                    )
+                )
 
             # Process metrics
             with contextlib.suppress(psutil.NoSuchProcess):
@@ -327,9 +348,7 @@ class EnterpriseMonitor:
             conn.commit()
             conn.close()
 
-            logger.debug(
-                f"Flushed {len(self.metrics_buffer)} metrics to database"
-            )
+            logger.debug(f"Flushed {len(self.metrics_buffer)} metrics to database")
             self.metrics_buffer.clear()
 
         except Exception as e:
@@ -420,9 +439,7 @@ class EnterpriseMonitor:
                     # Alert resolved
                     resolved_at = datetime.now()
                     if alert.triggered_at is not None:
-                        duration = (
-                            resolved_at - alert.triggered_at
-                        ).total_seconds()
+                        duration = (resolved_at - alert.triggered_at).total_seconds()
                     else:
                         duration = 0.0
 
@@ -439,7 +456,7 @@ class EnterpriseMonitor:
                     alert.triggered_at = None
 
                     logger.info(
-                        f"✅ Alert resolved: {alert.name} after {duration:.1f}s"
+                        f"[OK] Alert resolved: {alert.name} after {duration:.1f}s"
                     )
 
             conn.commit()
@@ -488,9 +505,7 @@ class EnterpriseMonitor:
                     "name": alert.name,
                     "severity": alert.severity,
                     "triggered_at": (
-                        alert.triggered_at.isoformat()
-                        if alert.triggered_at
-                        else None
+                        alert.triggered_at.isoformat() if alert.triggered_at else None
                     ),
                 }
                 for alert in self.alerts.values()
@@ -529,9 +544,7 @@ class EnterpriseMonitor:
                 "metrics_summary": metrics_summary,
                 "active_alerts": active_alerts,
                 "alert_history": alert_history,
-                "system_status": (
-                    "healthy" if not active_alerts else "degraded"
-                ),
+                "system_status": ("healthy" if not active_alerts else "degraded"),
             }
 
         except Exception as e:

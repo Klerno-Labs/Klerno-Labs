@@ -1,6 +1,6 @@
-# app / integrations / bscscan.py
 from __future__ import annotations
 
+# app / integrations / bscscan.py
 import os
 import time
 from typing import Any
@@ -8,9 +8,9 @@ from typing import Any
 import requests
 
 try:
-    from app.models import Transaction
+    from app.models import Transaction  # type: ignore[no-redef]
 except Exception:
-    from ..models import Transaction
+    from ..models import Transaction  # type: ignore[no-redef]
 
 BASE_URL = "https://api.bscscan.com/api"
 DEFAULT_LIMIT = 25
@@ -96,19 +96,22 @@ def fetch_account_tx_bscscan(
 def bscscan_json_to_transactions(
     account: str,
     payload: dict[str, Any],
-) -> list[Transaction]:
+):
     """
     Normalize BscScan payloads into a List[Transaction].
     Handles native BNB sends, token transfers, and internal txs.
     """
     acct = (account or "").lower().strip()
-    items: list[Transaction] = []
-    seen = set()
+    items = []
+    # keys are tuples of (category, hash, optional index/trace)
+    from typing import Tuple, Any
+
+    seen: set[Tuple[str, Any, Any]] = set()
 
     # ---- Normal (native BNB sends)
     for it in payload.get("normal", []):
         try:
-            key = ("normal", it.get("hash"))
+            key = ("normal", it.get("hash"), None)
             if key in seen:
                 continue
             seen.add(key)
@@ -164,9 +167,7 @@ def bscscan_json_to_transactions(
             else:
                 direction = "other"
 
-            amount = _scale(
-                it.get("value") or "0", it.get("tokenDecimal") or "18"
-            )
+            amount = _scale(it.get("value") or "0", it.get("tokenDecimal") or "18")
             symbol = (it.get("tokenSymbol") or "").upper() or "TOKEN"
 
             items.append(

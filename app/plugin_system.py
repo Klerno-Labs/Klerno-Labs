@@ -3,7 +3,7 @@ Plugin System for Klerno Labs
 Provides extensible API functionality through a plugin architecture
 """
 
-import importlib
+import importlib.util as importlib_util
 import inspect
 import logging
 from abc import ABC, abstractmethod
@@ -77,6 +77,9 @@ class BasePlugin(ABC):
 
     def add_api_route(self, app: FastAPI, path: str, endpoint: Callable, **kwargs):
         """Helper to add API routes with plugin prefix"""
+        if self.metadata is None:
+            raise RuntimeError("Plugin metadata not set; cannot add API route")
+
         plugin_path = f"/plugins/{self.metadata.name.lower()}{path}"
         app.add_api_route(plugin_path, endpoint, **kwargs)
 
@@ -158,9 +161,24 @@ class PluginManager:
     def _load_plugin_file(self, filepath: str):
         """Load a plugin from a Python file"""
         try:
-            spec = importlib.util.spec_from_file_location("plugin", filepath)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
+            spec = importlib_util.spec_from_file_location("plugin", filepath)
+            if spec is None:
+                raise ImportError("Failed to create module spec for plugin")
+
+            module = importlib_util.module_from_spec(spec)
+
+            # Some environments provide a spec without a loader or with a
+            # loader that doesn't expose exec_module. Guard against that.
+            loader = getattr(spec, "loader", None)
+            if loader is None or not hasattr(loader, "exec_module"):
+                raise ImportError("Plugin spec does not have a usable loader")
+
+            exec_fn = getattr(loader, "exec_module")
+            if not callable(exec_fn):
+                raise ImportError("Plugin loader.exec_module is not callable")
+
+            # Execute plugin module in isolated namespace
+            exec_fn(module)
 
             # Find plugin classes in the module
             for _name, obj in inspect.getmembers(module):
@@ -184,32 +202,55 @@ class PluginManager:
         """Get information about a specific plugin"""
         if plugin_name in self.plugins:
             plugin = self.plugins[plugin_name]
-            return {
-                "metadata": plugin.metadata.model_dump(),
-                "status": "active",
-                "hooks_registered": len(
-                    [
-                        h
-                        for h in self.hooks.values()
-                        if plugin
-                        in [
-                            cb.__self__ for cb in h.callbacks if hasattr(cb, "__self__")
-                        ]
+            # Normalize metadata to a mapping so callers always receive a dict
+            metadata: dict[str, Any] | None = None
+            if plugin.metadata is not None:
+                try:
+                    # pydantic v2+: model_dump
+                    metadata = plugin.metadata.model_dump()
+                except Exception:
+                    try:
+                        # pydantic v1: dict()
+                        metadata = plugin.metadata.dict()
+                    except Exception:
+                        # Provide a consistent mapping fallback
+                        metadata = {"info": str(plugin.metadata)}
+
+            hooks_registered = 0
+            for h in self.hooks.values():
+                try:
+                    callbacks = [
+                        cb.__self__ for cb in h.callbacks if hasattr(cb, "__self__")
                     ]
-                ),
+                    if plugin in callbacks:
+                        hooks_registered += 1
+                except Exception:
+                    continue
+
+            return {
+                "metadata": metadata,
+                "status": "active",
+                "hooks_registered": hooks_registered,
             }
         return None
 
     def list_plugins(self) -> list[dict[str, Any]]:
         """List all registered plugins"""
-        return [
-            {
-                "name": name,
-                "metadata": plugin.metadata.model_dump(),
-                "status": "active",
-            }
-            for name, plugin in self.plugins.items()
-        ]
+        out: list[dict[str, Any]] = []
+        for name, plugin in self.plugins.items():
+            metadata: dict[str, Any] | None = None
+            if plugin.metadata is not None:
+                try:
+                    metadata = plugin.metadata.model_dump()
+                except Exception:
+                    try:
+                        metadata = plugin.metadata.dict()
+                    except Exception:
+                        metadata = {"info": str(plugin.metadata)}
+
+            out.append({"name": name, "metadata": metadata, "status": "active"})
+
+        return out
 
     def set_plugin_data(self, plugin_name: str, key: str, value: Any):
         """Store data for a plugin"""

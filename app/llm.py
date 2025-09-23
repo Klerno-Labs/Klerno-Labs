@@ -44,8 +44,10 @@ def _safe_llm(system: str, user: str, temperature: float = 0.2) -> str:
         return "LLM not configured: set OPENAI_API_KEY."
 
     try:
-        if _use_v1:
-            resp = _client_v1.chat.completions.create(
+        if _use_v1 and _client_v1 is not None:
+            # New SDK v1+ shape: client.chat.completions.create(...)
+            client = _client_v1
+            resp = client.chat.completions.create(
                 model=_LLM_MODEL,
                 temperature=temperature,
                 messages=[
@@ -53,7 +55,11 @@ def _safe_llm(system: str, user: str, temperature: float = 0.2) -> str:
                     {"role": "user", "content": user},
                 ],
             )
-            return (resp.choices[0].message.content or "").strip()
+            # defensive access
+            try:
+                return (resp.choices[0].message.content or "").strip()
+            except Exception:
+                return str(resp)
         else:
             resp = _openai_legacy.ChatCompletion.create(
                 model=_LLM_MODEL if _LLM_MODEL else "gpt - 3.5 - turbo",
@@ -63,7 +69,10 @@ def _safe_llm(system: str, user: str, temperature: float = 0.2) -> str:
                     {"role": "user", "content": user},
                 ],
             )
-            return (resp["choices"][0]["message"]["content"] or "").strip()
+            try:
+                return (resp["choices"][0]["message"]["content"] or "").strip()
+            except Exception:
+                return str(resp)
     except Exception as e:
         return f"(LLM error: {e})"
 
@@ -131,12 +140,20 @@ def explain_batch(txs: list[dict[str, Any]]) -> dict[str, Any]:
         text = explain_tx(t)
         items.append({"tx_id": t.get("tx_id"), "explanation": text})
 
-    amounts = [
-        float(t.get("amount", 0) or 0)
-        for t in txs
-        if isinstance(t.get("amount", 0), (int, float, str))
-    ]
-    risk_scores = [float(t.get("risk_score", 0) or 0) for t in txs]
+    amounts = []
+    for t in txs:
+        val = t.get("amount", 0) or 0
+        if isinstance(val, (int, float, str)):
+            try:
+                amounts.append(float(val))
+            except Exception:
+                continue
+    risk_scores = []
+    for t in txs:
+        try:
+            risk_scores.append(float(t.get("risk_score", 0) or 0))
+        except Exception:
+            continue
 
     total = len(txs)
     total_amt = sum(a for a in amounts if not math.isnan(a))
@@ -197,8 +214,19 @@ def apply_filters(
     df = spec  # shorthand
     date_from = _parse_iso(df.get("date_from")) if df.get("date_from") else None
     date_to = _parse_iso(df.get("date_to")) if df.get("date_to") else None
-    min_risk = float(df.get("min_risk", 0)) if df.get("min_risk") is not None else None
-    max_risk = float(df.get("max_risk", 1)) if df.get("max_risk") is not None else None
+    min_risk = None
+    if df.get("min_risk") is not None:
+        try:
+            min_risk = float(str(df.get("min_risk")))
+        except Exception:
+            min_risk = None
+
+    max_risk = None
+    if df.get("max_risk") is not None:
+        try:
+            max_risk = float(str(df.get("max_risk")))
+        except Exception:
+            max_risk = None
     cats = {str(c).lower() for c in (df.get("categories") or [])}
     inc_w = {str(w) for w in (df.get("include_wallets") or [])}
     exc_w = {str(w) for w in (df.get("exclude_wallets") or [])}
@@ -213,9 +241,8 @@ def apply_filters(
 
         risk = None
         try:
-            risk = (
-                float(r.get("risk_score")) if r.get("risk_score") is not None else None
-            )
+            rv = r.get("risk_score")
+            risk = float(str(rv)) if rv is not None else None
         except Exception:
             risk = None
 
@@ -251,7 +278,12 @@ def explain_selection(question: str, rows: list[dict[str, Any]]) -> str:
     if n == 0:
         return "No rows matched the criteria."
 
-    risks = [float(r.get("risk_score", 0) or 0) for r in rows]
+    risks = []
+    for r in rows:
+        try:
+            risks.append(float(r.get("risk_score", 0) or 0))
+        except Exception:
+            continue
     avg_risk = round(sum(risks) / len(risks), 3) if risks else 0.0
     cats: dict[str, int] = {}
     for r in rows:

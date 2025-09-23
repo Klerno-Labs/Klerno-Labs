@@ -82,12 +82,11 @@ def issue_jwt(
         "iat": now,
         "exp": now + timedelta(minutes=exp_minutes),
     }
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGO)
+    return jwt.encode(payload, str(SECRET_KEY), algorithm=ALGO)
 
 
 def decode_jwt(token: str) -> dict:
-    return jwt.decode(token, SECRET_KEY, algorithms=[ALGO])
-
+    return jwt.decode(token, str(SECRET_KEY), algorithms=[ALGO])
 
 
 # Dependency injection helpers
@@ -111,8 +110,9 @@ def get_current_user(
         }
     except jwt.PyJWTError:
         # Avoid revealing internal exception details to callers
+        # Follow RFC 7235 header name exactly: 'WWW-Authenticate'
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
-            headers={"WWW - Authenticate": "Bearer"},
+            headers={"WWW-Authenticate": "Bearer"},
         ) from None

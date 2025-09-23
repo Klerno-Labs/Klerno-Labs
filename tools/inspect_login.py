@@ -31,7 +31,13 @@ from app.main import app
 client = TestClient(app)
 
 # Try posting form data as tests do
-resp = client.post('/auth/login', data={'username': 'test@example.com', 'password': 'testpassword'})
+resp = client.post(
+    '/auth/login',
+    data={
+        'username': 'test@example.com',
+        'password': 'testpassword',
+    },
+)
 print('status', resp.status_code)
 try:
     print('json:', resp.json())

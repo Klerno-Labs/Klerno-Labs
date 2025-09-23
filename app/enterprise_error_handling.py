@@ -16,7 +16,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Dict
+from .resilience_system import circuit_breaker
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -61,7 +62,7 @@ class CircuitBreakerConfig:
 
     failure_threshold: int = 5
     recovery_timeout: int = 60
-    expected_exception: type = Exception
+    expected_exception: type[BaseException] = Exception
     success_threshold: int = 3
     timeout: int = 30
 
@@ -73,10 +74,10 @@ class EnterpriseCircuitBreaker:
         self.name = name
         self.config = config
         self.state = CircuitBreakerState.CLOSED
-        self.failure_count = 0
-        self.success_count = 0
-        self.last_failure_time = None
-        self.stats = {
+        self.failure_count: int = 0
+        self.success_count: int = 0
+        self.last_failure_time: float | None = None
+        self.stats: dict[str, Any] = {
             "total_calls": 0,
             "successful_calls": 0,
             "failed_calls": 0,
@@ -141,13 +142,21 @@ class EnterpriseCircuitBreaker:
 
     def _record_success(self, execution_time: float):
         """Record successful execution"""
-        self.stats["successful_calls"] += 1
+        # Ensure numeric types
+        self.stats["successful_calls"] = int(self.stats.get("successful_calls", 0)) + 1
+        self.stats["failed_calls"] = int(self.stats.get("failed_calls", 0))
 
-        # Update average response time
-        total_calls = self.stats["successful_calls"] + self.stats["failed_calls"]
-        self.stats["avg_response_time"] = (
-            self.stats["avg_response_time"] * (total_calls - 1) + execution_time
-        ) / total_calls
+        # Update average response time safely
+        total_calls = int(self.stats["successful_calls"]) + int(
+            self.stats["failed_calls"]
+        )
+        if total_calls <= 0:
+            self.stats["avg_response_time"] = float(execution_time)
+        else:
+            prev_avg = float(self.stats.get("avg_response_time", 0.0))
+            self.stats["avg_response_time"] = (
+                prev_avg * (total_calls - 1) + execution_time
+            ) / max(1, total_calls)
 
         if self.state == CircuitBreakerState.HALF_OPEN:
             self.success_count += 1
@@ -157,17 +166,23 @@ class EnterpriseCircuitBreaker:
         else:
             self.failure_count = 0
 
-    def _record_failure(self, exception: Exception, execution_time: float):
+    def _record_failure(self, exception: BaseException, execution_time: float):
         """Record failed execution"""
-        self.stats["failed_calls"] += 1
+        # Ensure numeric types and safe updates
+        self.stats["failed_calls"] = int(self.stats.get("failed_calls", 0)) + 1
         self.failure_count += 1
-        self.last_failure_time = time.time()
+        self.last_failure_time = float(time.time())
 
-        # Update average response time
-        total_calls = self.stats["successful_calls"] + self.stats["failed_calls"]
-        self.stats["avg_response_time"] = (
-            self.stats["avg_response_time"] * (total_calls - 1) + execution_time
-        ) / total_calls
+        total_calls = int(self.stats.get("successful_calls", 0)) + int(
+            self.stats.get("failed_calls", 0)
+        )
+        prev_avg = float(self.stats.get("avg_response_time", 0.0))
+        if total_calls <= 0:
+            self.stats["avg_response_time"] = float(execution_time)
+        else:
+            self.stats["avg_response_time"] = (
+                prev_avg * (total_calls - 1) + execution_time
+            ) / max(1, total_calls)
 
         if (
             self.state == CircuitBreakerState.HALF_OPEN
@@ -237,6 +252,9 @@ class EnterpriseErrorHandler:
         self._monitoring_thread.start()
 
         logger.info("[ERROR-HANDLER] Enterprise error handling system initialized")
+
+        # Provide resilience decorator compatibility
+        self.circuit_breaker = circuit_breaker
 
     def _init_database(self):
         """Initialize error tracking database"""
@@ -442,7 +460,7 @@ class EnterpriseErrorHandler:
             recent_errors = [e for e in self.error_events if e.timestamp >= cutoff_time]
 
             # Group by service
-            service_errors = {}
+            service_errors: dict[str, list[ErrorEvent]] = {}
             severity_counts = {severity.value: 0 for severity in ErrorSeverity}
 
             for error in recent_errors:
@@ -472,6 +490,19 @@ class EnterpriseErrorHandler:
                         if e.severity == ErrorSeverity.CRITICAL and not e.resolved
                     ]
                 ),
+            }
+
+        # Compatibility alias expected by other modules
+        def get_error_statistics(self) -> dict[str, Any]:
+            """Alias for get_error_summary to match legacy API"""
+            # Provide a compact summary suitable for metrics
+            summary = self.get_error_summary(1)
+            return {
+                "total_errors": summary.get("total_errors", 0),
+                "error_rate": summary.get("total_errors", 0) / 1.0,
+                "circuit_breaker_state": {
+                    name: cb.get_stats() for name, cb in self.circuit_breakers.items()
+                },
             }
 
     @contextmanager
@@ -504,16 +535,20 @@ def handle_errors(service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM):
     return decorator
 
 
-def with_circuit_breaker(breaker_name: str, config: CircuitBreakerConfig = None):
+def with_circuit_breaker(
+    breaker_name: str, config: Optional[CircuitBreakerConfig] = None
+):
     """Decorator for circuit breaker protection"""
 
     def decorator(func: Callable) -> Callable:
         # Create circuit breaker if it doesn't exist
-        if config:
+        if config is not None:
             breaker = error_handler.create_circuit_breaker(breaker_name, config)
         else:
-            breaker = error_handler.get_circuit_breaker(breaker_name)
-            if not breaker:
+            existing = error_handler.get_circuit_breaker(breaker_name)
+            if existing is not None:
+                breaker = existing
+            else:
                 default_config = CircuitBreakerConfig()
                 breaker = error_handler.create_circuit_breaker(
                     breaker_name, default_config
@@ -530,7 +565,7 @@ def retry_on_failure(max_retries: int = 3, delay: float = 1.0, backoff: float = 
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            last_exception = None
+            last_exception: Exception | None = None
             current_delay = delay
 
             for attempt in range(max_retries + 1):
@@ -547,9 +582,14 @@ def retry_on_failure(max_retries: int = 3, delay: float = 1.0, backoff: float = 
                         current_delay *= backoff
                     else:
                         logger.error(f"[RETRY] All {max_retries + 1} attempts failed")
-                        raise last_exception
+                        if last_exception is not None:
+                            raise last_exception
+                        raise RuntimeError("Retry attempts exhausted")
 
-            raise last_exception
+            # Fallback in case loop exits unexpectedly
+            if last_exception is not None:
+                raise last_exception
+            raise RuntimeError("Retry attempts exhausted")
 
         return wrapper
 
@@ -587,7 +627,12 @@ def initialize_error_handling():
 
     except Exception as e:
         logger.error(f"[ERROR-HANDLER] Initialization failed: {e}")
-        return None
+        return error_handler
+
+
+def get_error_handler() -> EnterpriseErrorHandler:
+    """Compatibility shim: return the global error handler instance."""
+    return error_handler
 
 
 if __name__ == "__main__":

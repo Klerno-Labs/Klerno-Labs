@@ -211,6 +211,34 @@ class EnterpriseHealthMonitor:
             }
             logger.info(f"[HEALTH] Registered alert rule: {rule_name}")
 
+        def create_alert_rule(
+            self,
+            rule_id: str,
+            condition: str | Callable,
+            threshold: float | None = None,
+            severity: str = "warning",
+            actions: list[str] | None = None,
+            title: str = "",
+            message_template: str = "",
+        ) -> None:
+            """Compatibility alias for creating alert rules from integration hub."""
+
+            # For backward compatibility, accept simple parameters and convert to internal format
+            def cond():
+                return False
+
+            condition_callable = cond
+            if callable(condition):
+                condition_callable = condition
+
+            self.register_alert_rule(
+                rule_id,
+                condition_callable,
+                severity=severity,
+                title=title,
+                message_template=message_template,
+            )
+
     def _register_default_health_checks(self):
         """Register default health checks"""
 
@@ -442,7 +470,8 @@ class EnterpriseHealthMonitor:
                     # Log result
                     if result.status == "healthy":
                         logger.debug(
-                            f"[HEALTH] {service_name}: {result.status} ({result.response_time_ms:.1f}ms)"
+                            f"[HEALTH] {service_name}: {result.status} "
+                            + f"({result.response_time_ms:.1f}ms)"
                         )
                     else:
                         logger.warning(
@@ -497,6 +526,25 @@ class EnterpriseHealthMonitor:
         try:
             # CPU usage
             cpu_percent = psutil.cpu_percent(interval=1)
+            # Ensure cpu_percent is a float. psutil.cpu_percent can (rarely) be
+            # a list when called with percpu=True in other contexts; coerce
+            # defensively so the type-checker and consumers see a float.
+            # Only call float() on atomic values; if cpu_percent is a list/tuple,
+            # extract the first element. This keeps the type-checker happy.
+            if isinstance(cpu_percent, (list, tuple)):
+                if cpu_percent:
+                    first = cpu_percent[0]
+                    try:
+                        cpu_percent = float(first)
+                    except Exception:
+                        cpu_percent = 0.0
+                else:
+                    cpu_percent = 0.0
+            else:
+                try:
+                    cpu_percent = float(cpu_percent)
+                except Exception:
+                    cpu_percent = 0.0
 
             # Memory usage
             memory = psutil.virtual_memory()
@@ -507,11 +555,32 @@ class EnterpriseHealthMonitor:
 
             # Network IO
             network = psutil.net_io_counters()
+
+            # Helper to safely extract network attributes when `network` might
+            # be None or a dict-like object (common in tests / mocks).
+            def _safe_net_val(net, attr: str) -> int:
+                if net is None:
+                    return 0
+                # dict-like mock
+                if isinstance(net, dict):
+                    val = net.get(attr, 0)
+                else:
+                    val = getattr(net, attr, 0)
+
+                # Coerce to int with fallbacks
+                try:
+                    return int(val)
+                except Exception:
+                    try:
+                        return int(float(val))
+                    except Exception:
+                        return 0
+
             network_io = {
-                "bytes_sent": network.bytes_sent,
-                "bytes_recv": network.bytes_recv,
-                "packets_sent": network.packets_sent,
-                "packets_recv": network.packets_recv,
+                "bytes_sent": _safe_net_val(network, "bytes_sent"),
+                "bytes_recv": _safe_net_val(network, "bytes_recv"),
+                "packets_sent": _safe_net_val(network, "packets_sent"),
+                "packets_recv": _safe_net_val(network, "packets_recv"),
             }
 
             # Process count

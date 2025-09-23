@@ -68,16 +68,11 @@ def _to_mapping(obj) -> dict:
         return {}
 
 
-def _send_email(
-    subject: str, text: str, to_email: str | None = None
-) -> dict[str, Any]:
+def _send_email(subject: str, text: str, to_email: str | None = None) -> dict[str, Any]:
     """Lightweight SendGrid helper used only in admin routes."""
     recipient = (to_email or DEFAULT_TO).strip()
     if not (SENDGRID_KEY and ALERT_FROM and recipient):
-        reason = (
-            "missing SENDGRID_API_KEY / ALERT_EMAIL_FROM / "
-            "ALERT_EMAIL_TO"
-        )
+        reason = "missing SENDGRID_API_KEY / ALERT_EMAIL_FROM / " "ALERT_EMAIL_TO"
         return {"sent": False, "reason": reason}
     try:
         from sendgrid import SendGridAPIClient
@@ -101,7 +96,7 @@ def _send_email(
 # ---------- UI ----------
 def admin_home(request: Request, user=Depends(require_admin)):
     return templates.TemplateResponse(
-        request, "admin.html", {"request": request, "title": "Admin"}
+        "admin.html", {"request": request, "title": "Admin"}
     )
 
 
@@ -195,11 +190,7 @@ def admin_stats(user=Depends(require_admin)):
 
     con.close()
 
-    backend = (
-        "postgres"
-        if getattr(store, "USING_POSTGRES", False)
-        else "sqlite"
-    )
+    backend = "postgres" if getattr(store, "USING_POSTGRES", False) else "sqlite"
     result = {
         "backend": backend,
         "db_path": getattr(store, "DB_PATH", "data / klerno.db"),
@@ -321,10 +312,7 @@ def admin_user_analytics(user=Depends(require_admin)):
         ORDER BY date DESC
     """
     )
-    registration_trends = [
-        {"date": row[0], "count": row[1]}
-        for row in cur.fetchall()
-    ]
+    registration_trends = [{"date": row[0], "count": row[1]} for row in cur.fetchall()]
 
     # Get user role distribution
     cur.execute(
@@ -453,19 +441,18 @@ def admin_seed_demo(
 ):
     data_path = os.path.join(BASE_DIR, "..", "data", "sample_transactions.csv")
     if not os.path.exists(data_path):
-        raise HTTPException(
-            status_code=404, detail="sample_transactions.csv not found"
-        )
+        raise HTTPException(status_code=404, detail="sample_transactions.csv not found")
 
-    df = pd.read_csv(data_path)
+    # Explicitly annotate DataFrame to help type checkers understand pandas types
+    df: pd.DataFrame = pd.read_csv(data_path)
     if payload and payload.limit:
         df = df.head(int(payload.limit))
 
     if "timestamp" in df.columns:
-        df["timestamp"] = (
-            pd.to_datetime(df["timestamp"], errors="coerce")
-            .dt.strftime("%Y-%m-%dT%H:%M:%S")
-        )
+        # Use a temporary Series variable so static checkers recognize the
+        # result of pd.to_datetime as a Series with a .dt accessor.
+        tmp_ts: Any = pd.to_datetime(df["timestamp"], errors="coerce")
+        df["timestamp"] = tmp_ts.dt.strftime("%Y-%m-%dT%H:%M:%S")
     for col in (
         "memo",
         "notes",
@@ -477,10 +464,14 @@ def admin_seed_demo(
         "to_addr",
     ):
         if col in df.columns:
-            df[col] = df[col].fillna("").astype(str)
+            # Assign via a temporary Series to make the chaining explicit for
+            # static analyzers (fillna/astype -> Series)
+            tmp_col: Any = df[col].fillna("").astype(str)
+            df[col] = tmp_col
     for col in ("amount", "fee"):
         if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+            tmp_num: Any = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+            df[col] = tmp_num
 
     saved = 0
     for _, row in df.iterrows():
@@ -536,7 +527,7 @@ def admin_email_test(
 ):
     to_addr = payload.email if payload and payload.email else DEFAULT_TO
     subject = "Klerno Admin Test"
-    body = "✅ Admin test email from Klerno."
+    body = "[OK] Admin test email from Klerno."
     res = _send_email(subject, body, to_addr)
     return {"ok": bool(res.get("sent")), "result": res}
 
@@ -557,9 +548,7 @@ def admin_xrpl_ping(payload: XRPLPingPayload, user=Depends(require_admin)):
             try:
                 # Try relative import using import_module with package
                 if mod_path.startswith("."):
-                    mod = importlib.import_module(
-                        mod_path, package=__package__
-                    )
+                    mod = importlib.import_module(mod_path, package=__package__)
                 else:
                     mod = importlib.import_module(mod_path)
                 fetch_account_tx = getattr(mod, "fetch_account_tx", None)
@@ -657,16 +646,13 @@ def get_fund_config(user=Depends(require_admin)) -> dict[str, Any] | None:
 
 
 @router.post("/api / fund - management / config")
-def update_fund_config(
-    config: FundDistributionConfig, user=Depends(require_admin)
-):
+def update_fund_config(config: FundDistributionConfig, user=Depends(require_admin)):
     """Update fund distribution configuration."""
     # Validate percentages add up to 100%
     total_percentage = sum(w.percentage for w in config.wallets if w.active)
     if abs(total_percentage - 100.0) > 0.01:
         detail_msg = (
-            "Active wallet percentages must sum to 100%, got "
-            f"{total_percentage}%"
+            "Active wallet percentages must sum to 100%, got " f"{total_percentage}%"
         )
         raise HTTPException(status_code=400, detail=detail_msg)
 
@@ -715,16 +701,14 @@ def get_fund_transactions(
     ]
 
     return {
-        "transactions": transactions[offset:offset + limit],
+        "transactions": transactions[offset : offset + limit],
         "total": len(transactions),
         "has_more": offset + limit < len(transactions),
     }
 
 
 @router.post("/api / fund - management / distribute/{transaction_id}")
-def distribute_transaction_funds(
-    transaction_id: str, user=Depends(require_admin)
-):
+def distribute_transaction_funds(transaction_id: str, user=Depends(require_admin)):
     """Manually distribute funds for a specific transaction."""
     # In production, this would:
     # 1. Get the transaction details
@@ -843,9 +827,7 @@ def get_security_policy(admin=Depends(require_admin)) -> dict[str, Any] | None:
 
 
 @router.post("/security / policy")
-def update_security_policy(
-    config: SecurityPolicyConfig, admin=Depends(require_admin)
-):
+def update_security_policy(config: SecurityPolicyConfig, admin=Depends(require_admin)):
     """Update security policy configuration."""
     # Update password policy safely via getattr/setattr so missing attributes
     # on the config object don't raise static-analysis errors here. At
@@ -902,9 +884,7 @@ def update_security_policy(
 
 
 @router.get("/security / users")
-def get_users_security_status(
-    admin=Depends(require_admin)
-) -> dict[str, Any] | None:
+def get_users_security_status(admin=Depends(require_admin)) -> dict[str, Any] | None:
     """Get security status for all users."""
     # This would need a new store function to get all users with security info
     # For now, return mock data

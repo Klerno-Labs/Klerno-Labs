@@ -3,6 +3,7 @@
 import os
 import sys
 from functools import lru_cache
+from typing import Any, Dict, cast
 
 from pydantic import BaseModel
 
@@ -25,6 +26,8 @@ class Settings(BaseModel):
 
     # XRPL settings
     xrpl_rpc_url: str = os.getenv("XRPL_RPC_URL", "https://s2.ripple.com:51234")
+    # XRP wallet address used for demo payments and tests
+    XRP_WALLET_ADDRESS: str | None = os.getenv("XRP_WALLET_ADDRESS", None)
 
     # Email settings
     sendgrid_api_key: str = os.getenv("SENDGRID_API_KEY", "")
@@ -69,7 +72,7 @@ def get_settings() -> Settings:
     # Build a current-environment-backed settings instance so changes to
     # os.environ earlier in test collection are respected (avoids class-level
     # default evaluation at import time).
-    s = {
+    s: Dict[str, Any] = {
         "database_url": os.getenv("DATABASE_URL", "sqlite:///./data/klerno.db"),
         "redis_url": os.getenv("REDIS_URL", "redis://localhost:6379"),
         "jwt_secret": os.getenv("JWT_SECRET", "your-secret-key-change-in-production"),
@@ -78,6 +81,7 @@ def get_settings() -> Settings:
         "api_key": os.getenv("API_KEY", "dev-api-key"),
         "risk_threshold": float(os.getenv("RISK_THRESHOLD", "0.75")),
         "xrpl_rpc_url": os.getenv("XRPL_RPC_URL", "https://s2.ripple.com:51234"),
+        "XRP_WALLET_ADDRESS": os.getenv("XRP_WALLET_ADDRESS", None),
         "sendgrid_api_key": os.getenv("SENDGRID_API_KEY", ""),
         "alert_email_from": os.getenv("ALERT_EMAIL_FROM", "alerts@example.com"),
         "alert_email_to": os.getenv("ALERT_EMAIL_TO", "you@example.com"),
@@ -85,14 +89,19 @@ def get_settings() -> Settings:
         "SUB_PRICE_XRP": float(os.getenv("SUB_PRICE_XRP", "50.0")),
         "environment": os.getenv("ENVIRONMENT", "development"),
         "debug": os.getenv("DEBUG", "False").lower() == "true",
-    "port": int(os.getenv("PORT", os.getenv("APP_PORT", "8000"))),
-    "cors_origins": os.getenv("CORS_ORIGINS", "http://localhost,http://127.0.0.1").split(","),
+        "port": int(os.getenv("PORT", os.getenv("APP_PORT", "8000"))),
+        "cors_origins": os.getenv(
+            "CORS_ORIGINS", "http://localhost,http://127.0.0.1"
+        ).split(","),
         "app_env": os.getenv("APP_ENV", os.getenv("ENVIRONMENT", "test")),
-    "access_token_expire_minutes": int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")),
+        "access_token_expire_minutes": int(
+            os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
+        ),
         "admin_email": os.getenv("ADMIN_EMAIL", ""),
     }
 
-    return Settings(**s)
+    # pydantic expects correctly typed kwargs; cast for mypy compatibility
+    return Settings(**cast(Dict[str, Any], s))
 
 
 settings: Settings = get_settings()

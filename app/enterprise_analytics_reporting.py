@@ -12,7 +12,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence, Mapping
 
 import numpy as np
 import pandas as pd
@@ -650,7 +650,7 @@ class EnterpriseAnalytics:
             logger.error(f"[ANALYTICS] Failed to store metric value: {e}")
 
     def generate_report(
-        self, report_id: str, parameters: dict[str, Any] = None
+        self, report_id: str, parameters: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Generate a report"""
 
@@ -675,12 +675,21 @@ class EnterpriseAnalytics:
             conn.close()
 
             # Format result based on output format
+            result_data: Sequence[Mapping[str, Any]] | str
             if report_config.output_format == "json":
-                result_data = df.to_dict(orient="records")
+                from typing import cast
+
+                result_data = cast(
+                    Sequence[Mapping[str, Any]], df.to_dict(orient="records")
+                )
             elif report_config.output_format == "csv":
                 result_data = df.to_csv(index=False)
             else:
-                result_data = df.to_dict(orient="records")
+                from typing import cast
+
+                result_data = cast(
+                    Sequence[Mapping[str, Any]], df.to_dict(orient="records")
+                )
 
             execution_time = (datetime.now() - start_time).total_seconds()
 
@@ -728,8 +737,8 @@ class EnterpriseAnalytics:
         duration: float,
         status: str,
         result_data: dict,
-        error: str = None,
-    ):
+        error: str | None = None,
+    ) -> None:
         """Store report execution record"""
         try:
             conn = sqlite3.connect(self.database_path)

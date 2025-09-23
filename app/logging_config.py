@@ -14,6 +14,23 @@ from pythonjsonlogger.json import JsonFormatter
 from app.settings import get_settings
 
 
+def _to_iso(timestamp: Any) -> str:
+    """Safely convert timestamp-like values to ISO string for logging."""
+    try:
+        if timestamp is None:
+            return datetime.now(UTC).isoformat()
+        if isinstance(timestamp, str):
+            return timestamp
+        iso = getattr(timestamp, "isoformat", None)
+        if callable(iso):
+            return str(iso())
+        if isinstance(timestamp, (int, float)):
+            return datetime.fromtimestamp(timestamp, UTC).isoformat()
+        return str(timestamp)
+    except Exception:
+        return datetime.now(UTC).isoformat()
+
+
 def configure_logging() -> None:
     """Configure structured logging for the application."""
     settings = get_settings()
@@ -28,7 +45,8 @@ def configure_logging() -> None:
         "dev": "DEBUG",
         "test": "DEBUG",
     }
-    log_level_str = env_to_level.get(settings.app_env.lower(), "DEBUG")
+    app_env = getattr(settings, "app_env", None) or "development"
+    log_level_str = env_to_level.get(str(app_env).lower(), "DEBUG")
     log_level = getattr(logging, log_level_str)
 
     # Remove existing handlers
@@ -52,7 +70,9 @@ def configure_logging() -> None:
     with suppress(Exception):
         logs_path.mkdir(parents=True, exist_ok=True)
 
-    file_handler = logging.FileHandler(str(logs_path / "app.log"), mode="a", encoding="utf-8")
+    file_handler = logging.FileHandler(
+        str(logs_path / "app.log"), mode="a", encoding="utf-8"
+    )
 
     if settings.app_env == "production":
         console_handler.setFormatter(json_formatter)
@@ -116,7 +136,7 @@ def log_request_response(
     """Log HTTP request / response details."""
     logger = get_logger("http")
 
-    log_data = {
+    log_data: dict[str, Any] = {
         "method": method,
         "url": url,
         "status_code": status_code,
@@ -150,7 +170,7 @@ def log_security_event(
     """Log security - related events."""
     logger = get_logger("security")
 
-    log_data = {
+    log_data: dict[str, Any] = {
         "event_type": event_type,
         "timestamp": datetime.now(UTC).isoformat(),
     }
@@ -162,7 +182,12 @@ def log_security_event(
         log_data["ip_address"] = ip_address
 
     if details:
-        log_data["details"] = details
+        try:
+            log_data["details"] = (
+                dict(details) if not isinstance(details, str) else details
+            )
+        except Exception:
+            log_data["details"] = str(details)
 
     log_data.update(kwargs)
 
@@ -188,7 +213,7 @@ def log_business_event(
     """Log business logic events."""
     logger = get_logger("business")
 
-    log_data = {
+    log_data: dict[str, Any] = {
         "event_type": event_type,
         "timestamp": datetime.now(UTC).isoformat(),
     }
@@ -203,7 +228,12 @@ def log_business_event(
         log_data["user_id"] = user_id
 
     if details:
-        log_data["details"] = details
+        try:
+            log_data["details"] = (
+                dict(details) if not isinstance(details, str) else details
+            )
+        except Exception:
+            log_data["details"] = str(details)
 
     log_data.update(kwargs)
 
@@ -214,13 +244,13 @@ def log_performance_metric(
     operation: str,
     duration: float,
     success: bool = True,
-    details: dict[str, Any] = None,
+    details: Optional[dict[str, Any]] = None,
     **kwargs,
 ) -> None:
     """Log performance metrics."""
     logger = get_logger("performance")
 
-    log_data = {
+    log_data: dict[str, Any] = {
         "operation": operation,
         "duration_ms": round(duration * 1000, 2),
         "success": success,
@@ -228,7 +258,12 @@ def log_performance_metric(
     }
 
     if details:
-        log_data["details"] = details
+        try:
+            log_data["details"] = (
+                dict(details) if not isinstance(details, str) else details
+            )
+        except Exception:
+            log_data["details"] = str(details)
 
     log_data.update(kwargs)
 

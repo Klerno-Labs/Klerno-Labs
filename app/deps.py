@@ -102,15 +102,20 @@ def require_paid_or_admin(user: dict | None = Depends(current_user)) -> dict:
     from .subscriptions import get_user_subscription
 
     subscription = get_user_subscription(user["id"])
-    if subscription and subscription.is_active:
-        # Add subscription info to user dict
-        user["xrpl_subscription"] = {
-            "tier": subscription.tier.value,
-            "expires_at": (
-                subscription.expires_at.isoformat() if subscription.expires_at else None
-            ),
-        }
-        return user
+    if subscription:
+        # Subscription model uses attribute 'active' in this codebase
+        is_active = getattr(subscription, "active", None)
+        if is_active:
+            # Add subscription info to user dict
+            user["xrpl_subscription"] = {
+                "tier": subscription.tier.value,
+                "expires_at": (
+                    subscription.expires_at.isoformat()
+                    if subscription.expires_at
+                    else None
+                ),
+            }
+            return user
 
     raise HTTPException(
         status_code=status.HTTP_402_PAYMENT_REQUIRED,

@@ -17,7 +17,7 @@ import threading
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 import coverage
 import psutil
@@ -37,7 +37,7 @@ class TestResult:
     duration_ms: float
     error_message: str | None = None
     coverage_percentage: float | None = None
-    timestamp: datetime = None
+    timestamp: datetime | None = None
 
 
 @dataclass
@@ -482,8 +482,8 @@ class TestRunner:
         """Test stress performance."""
         try:
             # Monitor system resources during stress test
-            initial_memory = psutil.virtual_memory().percent
-            initial_cpu = psutil.cpu_percent()
+            initial_memory = cast(float, psutil.virtual_memory().percent)
+            initial_cpu = cast(float, psutil.cpu_percent())
 
             # Simulate stress
             tasks = []
@@ -493,8 +493,8 @@ class TestRunner:
 
             await asyncio.gather(*tasks, return_exceptions=True)
 
-            final_memory = psutil.virtual_memory().percent
-            final_cpu = psutil.cpu_percent()
+            final_memory = cast(float, psutil.virtual_memory().percent)
+            final_cpu = cast(float, psutil.cpu_percent())
 
             # Check if system remained stable
             memory_increase = final_memory - initial_memory
@@ -513,19 +513,19 @@ class TestRunner:
     async def _test_memory_performance(self) -> dict[str, Any]:
         """Test memory performance."""
         try:
-            initial_memory = psutil.virtual_memory().used
+            initial_memory = cast(int, psutil.virtual_memory().used)
 
             # Simulate memory - intensive operations
             large_data = []
             for _i in range(1000):
                 large_data.append(list(range(1000)))
 
-            peak_memory = psutil.virtual_memory().used
+            peak_memory = cast(int, psutil.virtual_memory().used)
 
             # Clean up
             del large_data
 
-            final_memory = psutil.virtual_memory().used
+            final_memory = cast(int, psutil.virtual_memory().used)
             memory_leaked = final_memory - initial_memory
 
             return {

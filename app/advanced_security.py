@@ -18,7 +18,7 @@ from collections import defaultdict, deque
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Any
+from typing import Any, DefaultDict
 
 from cryptography.fernet import Fernet
 
@@ -160,7 +160,7 @@ class BehavioralAnalyzer:
         self, user_id: str, current_activity: dict[str, Any]
     ) -> list[dict[str, Any]]:
         """Detect behavioral anomalies."""
-        anomalies = []
+        anomalies: list[dict[str, Any]] = []
 
         if user_id not in self.user_profiles:
             return anomalies
@@ -174,7 +174,7 @@ class BehavioralAnalyzer:
             current_hour = current_time.hour
 
             # If current hour is not in usual pattern (simple heuristic)
-            hour_counts = defaultdict(int)
+            hour_counts: dict[int, int] = defaultdict(int)
             for hour in usual_hours:
                 hour_counts[hour] += 1
 
@@ -183,9 +183,7 @@ class BehavioralAnalyzer:
                     {
                         "type": "unusual_login_time",
                         "severity": "medium",
-                        "description": (
-                            f"Login at unusual hour: {current_hour}"
-                        ),
+                        "description": (f"Login at unusual hour: {current_hour}"),
                         "confidence": 0.6,
                     }
                 )
@@ -261,7 +259,7 @@ class ThreatIntelligence:
     def __init__(self):
         self.malicious_ips: set[str] = set()
         self.suspicious_patterns: list[str] = []
-        self.reputation_cache: dict[str, dict] = {}
+        self.reputation_cache: dict[str, dict[str, Any]] = {}
         self.threat_feeds: list[str] = []
         self.lock = threading.Lock()
 
@@ -313,7 +311,7 @@ class ThreatIntelligence:
                 if cached["timestamp"] > datetime.now(UTC) - timedelta(hours=1):
                     return cached
 
-            reputation = {
+            reputation: dict[str, Any] = {
                 "ip": ip_address,
                 "is_malicious": ip_address in self.malicious_ips,
                 "threat_level": "low",
@@ -346,8 +344,8 @@ class ThreatIntelligence:
 
     def analyze_payload(self, payload: str) -> dict[str, Any]:
         """Analyze payload for malicious patterns."""
-        threats = []
-        confidence = 0.0
+        threats: list[dict[str, Any]] = []
+        confidence: float = 0.0
 
         payload_lower = payload.lower()
 
@@ -706,13 +704,14 @@ class SecurityOrchestrator:
             payload_analysis = self.threat_intelligence.analyze_payload(payload)
             if payload_analysis["threats"]:
                 for threat_data in payload_analysis["threats"]:
+                    desc = threat_data.get("description", "")
                     threat = SecurityThreat(
                         id=secrets.token_hex(8),
                         threat_type=AttackType(threat_data.get("type", "unknown")),
                         threat_level=ThreatLevel(payload_analysis["threat_level"]),
                         source_ip=ip_address,
                         target=endpoint,
-                        description=f"Malicious payload detected: {threat_data.get('description', '')}",
+                        description=f"Malicious payload detected: {desc}",
                         timestamp=datetime.now(UTC),
                         evidence=threat_data,
                         confidence_score=threat_data.get("confidence", 0.5),

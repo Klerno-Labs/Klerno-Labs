@@ -9,7 +9,7 @@ import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, DefaultDict
 
 import psutil
 from fastapi import Request
@@ -248,7 +248,7 @@ class UserAnalytics:
 
     def _get_popular_flows(self) -> list[dict[str, Any]]:
         """Get most popular user flows"""
-        flow_counts = defaultdict(int)
+        flow_counts: DefaultDict[str, int] = defaultdict(int)
 
         for flow in self.user_flows.values():
             if len(flow) >= 2:
@@ -269,8 +269,8 @@ class RegressionDetector:
     """Automated performance regression detection"""
 
     def __init__(self):
-        self.baseline_metrics = {}
-        self.alerts = []
+        self.baseline_metrics: dict[str, Any] = {}
+        self.alerts: list[dict[str, Any]] = []
         self.thresholds = {
             "response_time_increase": 0.5,  # 50% increase
             "error_rate_increase": 0.1,  # 10% increase
@@ -292,7 +292,7 @@ class RegressionDetector:
         self, current_metrics: dict[str, Any]
     ) -> list[dict[str, Any]]:
         """Check for performance regressions"""
-        alerts = []
+        alerts: list[dict[str, Any]] = []
 
         if not self.baseline_metrics:
             return alerts
@@ -434,7 +434,7 @@ class AdvancedMonitoringMiddleware(BaseHTTPMiddleware):
                 if time.time() - self._last_baseline_update > 3600:  # 1 hour
                     self.regression_detector.update_baseline(performance_summary)
                     self._last_baseline_update = time.time()
-                    print("📊 Performance baseline updated")
+                    print("[MONITOR] Performance baseline updated")
 
             except Exception as e:
                 print(f"Monitoring error: {e}")

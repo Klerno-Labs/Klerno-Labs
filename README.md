@@ -22,9 +22,9 @@ This is the **clean, consolidated version** of the Klerno Labs Enterprise Transa
    ```
 
 3. **Access the Application**:
-   - **Landing Page**: http://localhost:8000
-   - **Login**: http://localhost:8000/auth/login
-   - **Admin Dashboard**: http://localhost:8000/admin (after login as admin)
+   - **Landing Page**: [http://localhost:8000](http://localhost:8000)
+   - **Login**: [http://localhost:8000/auth/login](http://localhost:8000/auth/login)
+   - **Admin Dashboard**: [http://localhost:8000/admin](http://localhost:8000/admin) (after login as admin)
 
 ## Development
 
@@ -50,8 +50,7 @@ locally run:
 python -m pip install -r dev-requirements.txt
 ```
 
-Migration note
---------------
+### Migration note
 
 `app/legacy_helpers.py` is retained as a small compatibility shim for
 older tests that import `create_access_token`/`verify_token` from
@@ -63,14 +62,13 @@ be removed. For local installs of only the test helpers use:
 python -m pip install -r dev-requirements.txt
 ```
 
-CI status
----------
+### CI status
 
 ![CI - tests](https://github.com/auricrypt-ux/custowell-copilot/actions/workflows/pytest.yml/badge.svg)
 
 ## 👤 First Time Setup
 
-1. Visit http://localhost:8000/auth/signup
+1. Visit [http://localhost:8000/auth/signup](http://localhost:8000/auth/signup)
 2. Create your account (first user becomes admin automatically)
 3. Login and access the admin dashboard
 
@@ -127,6 +125,7 @@ This clean version was created by:
 ## 📈 Next Steps
 
 From this clean foundation, you can:
+
 - Add blockchain analysis features
 - Implement transaction monitoring
 - Add more sophisticated user management
@@ -136,9 +135,39 @@ From this clean foundation, you can:
 ## 🆘 Support
 
 This clean application provides the same core functionality as the original project but with:
+
 - 99% fewer files
 - No conflicting systems
 - Clear architecture
 - Easy maintenance
 
 The original project structure remains available for reference in the parent directory.
+
+## Run locally (Windows PowerShell)
+
+If you want to start the app locally and quickly verify the login flow (dev-only admin credentials are created automatically on first run), follow these steps in PowerShell:
+
+```powershell
+# Create and activate a Python 3.11 venv (one-time)
+python -m venv .venv-py311
+. .\.venv-py311\Scripts\Activate.ps1
+
+# Install runtime deps (use dev-requirements for test helpers if needed)
+python -m pip install -r requirements.txt
+
+# Start the server in the background (keeps this shell free)
+Start-Process -FilePath ".\.venv-py311\Scripts\python.exe" -ArgumentList '-m','uvicorn','app.main:app','--host','127.0.0.1','--port','8000','--log-level','info' -NoNewWindow
+
+# Run a small smoke-test (optional)
+. .\.venv-py311\Scripts\python.exe scripts\smoke_test.py
+```
+
+Default dev admin credentials (local development only):
+
+- email: `klerno@outlook.com`
+- password: `Labs2025`
+
+Troubleshooting:
+
+- If the server exits immediately, inspect the terminal that started uvicorn for startup logs. Common causes: missing python packages, or a locked port; install requirements and retry.
+- If templates fail to render, ensure the working directory is the project root so the `templates/` folder is on the app path.

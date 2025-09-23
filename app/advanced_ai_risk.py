@@ -123,7 +123,7 @@ class AdvancedAIRiskEngine:
     def analyze_transaction(
         self,
         transaction_data: dict[str, Any],
-        user_history: list[dict[str, Any]] = None,
+        user_history: list[dict[str, Any]] | None = None,
     ) -> AdvancedRiskScore:
         """Perform advanced AI risk analysis on a transaction."""
 
@@ -154,7 +154,7 @@ class AdvancedAIRiskEngine:
 
         # Extract detailed risk factors
         risk_factors = self._analyze_risk_factors(
-            features, transaction_data, user_history
+            features, transaction_data, user_history or []
         )
 
         # Generate AI insights and recommendations
@@ -274,10 +274,10 @@ class AdvancedAIRiskEngine:
         self,
         features: list[float],
         transaction: dict[str, Any],
-        history: list[dict[str, Any]],
+        history: list[dict[str, Any]] | None,
     ) -> RiskFactors:
         """Analyze individual risk factors."""
-
+        history = history or []
         return RiskFactors(
             transaction_frequency=min(1.0, features[1] / 50),  # Normalize to 0 - 1
             amount_anomaly=min(1.0, (np.exp(features[0]) - 1) / 50000),  # Normalize
@@ -331,7 +331,7 @@ class AdvancedAIRiskEngine:
         # Advanced ML insights
         if anomaly_score < -0.5:
             insights.append(
-                "📊 Machine learning models flag this as highly unusual transaction"
+                "[ALERT] Machine learning models flag this as highly unusual transaction"
             )
 
         return insights
@@ -343,7 +343,9 @@ class AdvancedAIRiskEngine:
         recommendations = []
 
         if risk_level in ["HIGH", "CRITICAL"]:
-            recommendations.append("🛡️ Consider requiring additional verification")
+            recommendations.append(
+                "[ACTION] Consider requiring additional verification"
+            )
             recommendations.append("👀 Manual review recommended")
 
         if factors.transaction_frequency > 0.6:

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 from re import Pattern
-from typing import Literal
+from typing import Literal, cast
 
 import yaml
 
@@ -77,17 +77,17 @@ class AddressBook:
     """Track owned addresses to detect internal transfers."""
 
     def __init__(self, owned: set[str] | None = None) -> None:
-        self.owned = {a.lower() for a in (owned or set())}
+        self.owned = {str(a).lower() for a in (owned or set())}
 
     def is_owned(self, addr: str | None) -> bool:
-        return bool(addr) and addr.lower() in self.owned
+        return bool(addr) and str(addr).lower() in self.owned
 
 
 def _is_internal_transfer(tx, book: AddressBook | None) -> bool:
     if not book:
         return False
-    fa = _norm(getattr(tx, "from_address", None)).lower()
-    ta = _norm(getattr(tx, "to_address", None)).lower()
+    fa = str(_norm(getattr(tx, "from_address", None))).lower()
+    ta = str(_norm(getattr(tx, "to_address", None))).lower()
     return bool(fa and ta and book.is_owned(fa) and book.is_owned(ta))
 
 
@@ -102,7 +102,7 @@ def tag_categories(tx, address_book: AddressBook | None = None) -> list[TagResul
     memo = _norm(getattr(tx, "memo", None))
     fee = _as_decimal(getattr(tx, "fee", None))
     amount = _as_decimal(getattr(tx, "amount", None))
-    direction = _norm(getattr(tx, "direction", None)).lower()
+    direction = str(_norm(getattr(tx, "direction", None))).lower()
 
     results: list[TagResult] = []
 
@@ -196,18 +196,18 @@ def tag_category(tx, address_book: AddressBook | None = None) -> Category:
     """Pick a single winner (scores first; PRIORITY breaks ties)."""
     results = tag_categories(tx, address_book=address_book)
     if not results:
-        return "unknown"
+        return cast(Category, "unknown")
 
     top_score = results[0].score
     contenders = [r for r in results if r.score == top_score]
     if len(contenders) == 1:
-        return contenders[0].category
+        return cast(Category, contenders[0].category)
 
     for pref in PRIORITY + ["expense", "unknown"]:
         for r in contenders:
             if r.category == pref:
-                return r.category
-    return contenders[0].category
+                return cast(Category, r.category)
+    return cast(Category, contenders[0].category)
 
 
 # Compatibility layer for tests: provide ComplianceTag and ComplianceEngine

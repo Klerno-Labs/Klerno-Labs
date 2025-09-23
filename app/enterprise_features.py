@@ -117,8 +117,8 @@ class SupportTicket:
     description: str
     status: str = "open"  # "open", "in_progress", "resolved", "closed"
     assigned_to: str | None = None
-    created_at: datetime = None
-    updated_at: datetime = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     resolved_at: datetime | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -429,7 +429,7 @@ class EnterpriseManager:
         )
 
         rows = cursor.fetchall()
-        metrics = []
+        metrics: list[SLAMetrics] = []
 
         for row in rows:
             metric = SLAMetrics(
@@ -537,7 +537,7 @@ class EnterpriseManager:
         )
 
         rows = cursor.fetchall()
-        models = []
+        models: list[CustomAIModel] = []
 
         for row in rows:
             model = CustomAIModel(
@@ -605,7 +605,7 @@ class EnterpriseManager:
         return ticket
 
     def get_support_tickets(
-        self, user_id: str, status: str = None
+        self, user_id: str, status: str | None = None
     ) -> list[SupportTicket]:
         """Get support tickets for user."""
         conn = get_db_connection()
@@ -627,7 +627,7 @@ class EnterpriseManager:
 
         cursor.execute(query, params)
         rows = cursor.fetchall()
-        tickets = []
+        tickets: list[SupportTicket] = []
 
         for row in rows:
             ticket = SupportTicket(
@@ -652,7 +652,7 @@ class EnterpriseManager:
         """Generate on - premise deployment package."""
 
         # Generate deployment configuration
-        config = {
+        config: dict[str, Any] = {
             "version": "1.0.0",
             "deployment_type": "on_premise",
             "user_id": user_id,
@@ -760,7 +760,7 @@ def create_support_ticket(
     )
 
 
-def get_support_tickets(user_id: str, status: str = None) -> list[SupportTicket]:
+def get_support_tickets(user_id: str, status: str | None = None) -> list[SupportTicket]:
     """Get support tickets."""
     return enterprise_manager.get_support_tickets(user_id, status)
 

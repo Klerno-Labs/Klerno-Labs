@@ -1,4 +1,3 @@
-import contextlib
 import os
 import sys
 from pathlib import Path
@@ -127,28 +126,29 @@ def test_client(test_db):
         yield client
 
 
+async def _async_client_impl(test_db):
+    """Create an async test client implementation used to expose a fixture.
+
+    We dynamically register this implementation as a fixture using either
+    pytest-asyncio's fixture wrapper (if installed) or pytest's regular
+    fixture decorator. This avoids having two functions named `async_client`
+    which static checkers complain about.
+    """
+    os.environ["DATABASE_URL"] = f"sqlite:///{test_db}"
+
+    from app.main import app
+
+    # Use ASGITransport for compatibility with newer httpx versions
+    # httpx typing can be strict about ASGI apps; ignore here for test harness
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:  # type: ignore[arg-type]
+        yield client
+
+
+# Register the implementation as a fixture object named `async_client`.
 if pytest_asyncio:
-    @pytest_asyncio.fixture
-    async def async_client(test_db):
-        """Create an async test client (pytest-asyncio mode)."""
-        os.environ["DATABASE_URL"] = f"sqlite:///{test_db}"
-
-        from app.main import app
-
-        # Use ASGITransport for compatibility with newer httpx versions
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            yield client
+    async_client = pytest_asyncio.fixture(_async_client_impl)
 else:
-    @pytest.fixture
-    async def async_client(test_db):
-        """Fallback async client fixture when pytest-asyncio not installed."""
-        os.environ["DATABASE_URL"] = f"sqlite:///{test_db}"
-
-        from app.main import app
-
-        # Use ASGITransport for compatibility with newer httpx versions
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            yield client
+    async_client = pytest.fixture(_async_client_impl)
 
 
 @pytest.fixture
@@ -287,7 +287,10 @@ class DatabaseTestUtils:
         transaction_id = cursor.lastrowid
         conn.commit()
         conn.close()
-        return transaction_id
+        # Ensure we return an int (sqlite may expose lastrowid as Optional)
+        if transaction_id is None:
+            raise RuntimeError("Failed to create transaction; lastrowid is None")
+        return int(transaction_id)
 
 
 class APITestUtils:

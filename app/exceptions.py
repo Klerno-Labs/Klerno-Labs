@@ -37,7 +37,12 @@ class KlernoException(Exception):
 class ValidationException(KlernoException):
     """Exception for validation errors."""
 
-    def __init__(self, message: str, field: Optional[str] = None, details: Optional[dict[str, Any]] = None):
+    def __init__(
+        self,
+        message: str,
+        field: Optional[str] = None,
+        details: Optional[dict[str, Any]] = None,
+    ):
         self.field = field
         super().__init__(
             message=message,

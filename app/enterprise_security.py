@@ -270,13 +270,14 @@ class AdminAccessLogger:
 
     @staticmethod
     def log_admin_action(
-        user_email: str, action: str, details: dict, request: Request = None
+        user_email: str, action: str, details: dict, request: Request | None = None
     ):
         """Log all admin actions for audit trail"""
+        # request may be None in some call sites (e.g., background tasks)
         security_manager.log_security_event(
             SECURITY_EVENTS["ADMIN_ACCESS"],
             {"admin_user": user_email, "action": action, "details": details},
-            request,
+            request if request is not None else None,
         )
 
 
@@ -348,14 +349,22 @@ def validate_production_environment():
 
 def get_content_security_policy() -> str:
     """Generate Content Security Policy header"""
-    return (
-        "default - src 'self'; "
-        "script - src 'self' 'unsafe - inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-        "style - src 'self' 'unsafe - inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-        "img - src 'self' data: https:; "
-        "font - src 'self' https://fonts.gstatic.com; "
-        "connect - src 'self'; "
-        "frame - ancestors 'none'; "
-        "form - action 'self'; "
-        "base - uri 'self';"
-    )
+    parts = [
+        "default - src 'self';",
+        (
+            "script - src 'self' 'unsafe - inline' https://cdn.jsdelivr.net "
+            "https://cdnjs.cloudflare.com;"
+        ),
+        (
+            "style - src 'self' 'unsafe - inline' https://cdn.jsdelivr.net "
+            "https://cdnjs.cloudflare.com;"
+        ),
+        "img - src 'self' data: https:;",
+        "font - src 'self' https://fonts.gstatic.com;",
+        "connect - src 'self';",
+        "frame - ancestors 'none';",
+        "form - action 'self';",
+        "base - uri 'self';",
+    ]
+
+    return " ".join(parts)

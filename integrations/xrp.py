@@ -1,13 +1,19 @@
+from __future__ import annotations
+
+import os
 from datetime import datetime
+import requests
 
-try:
-    from app.models import Transaction
-except Exception:
-    from ..models import Transaction
+# Transaction model is imported inside the function to avoid top-level import issues
 
 
-def xrpl_json_to_transactions(account: str, tx_list: list[dict]) -> list[Transaction]:
-    out: list[Transaction] = []
+def xrpl_json_to_transactions(account: str, tx_list: list[dict]):
+    try:
+        from app.models import Transaction  # type: ignore[no-redef]
+    except Exception:
+        from ..models import Transaction  # type: ignore[no-redef]
+
+    out = []
     for item in tx_list:
         tx = item.get("tx", {})
         tx_id = tx.get("hash", "unknown")
@@ -41,9 +47,6 @@ def xrpl_json_to_transactions(account: str, tx_list: list[dict]) -> list[Transac
 
 
 # --- Read - only XRPL fetch (public endpoint) ---
-import os
-
-import requests
 
 
 def fetch_account_tx(account: str, limit: int = 10) -> list[dict]:
@@ -81,6 +84,7 @@ def get_xrpl_client():
 
     In production this would return a configured XRPL client instance.
     """
+
     # Minimal local stub: raise if network calls attempted; tests patch this
     class _Stub:
         def is_connected(self):

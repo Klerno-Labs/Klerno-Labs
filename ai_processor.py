@@ -3,8 +3,15 @@ AI Processor Module for Enterprise Integration
 Provides access to AI processing functionality
 """
 
-# Import from app.ai.processor for backward compatibility
-from app.ai.processor import *
+"""Compatibility shim for app.ai.processor."""
 
-# Re-export all functionality
-__all__ = ['AIProcessor', 'process_transaction', 'analyze_risk']
+try:
+    import app.ai.processor as _ap  # type: ignore
+
+    AIProcessor = getattr(_ap, "AIProcessor", None)
+    process_transaction = getattr(_ap, "process_transaction", None)
+    analyze_risk = getattr(_ap, "analyze_risk", None)
+
+    __all__ = ["AIProcessor", "process_transaction", "analyze_risk"]
+except Exception:  # pragma: no cover - optional module
+    __all__ = []

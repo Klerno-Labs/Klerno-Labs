@@ -178,10 +178,12 @@ def signup_page(request: Request):
         "url_path_for": request.app.url_path_for,
         "app_name": "Klerno Labs",
         "current_year": 2025,
+        # Pass environment so templates can toggle demo/test UI safely
+        "app_env": S.app_env,
+        # Only show demo credentials on dev environments
+        "show_demo_credentials": S.app_env == "dev",
     }
-    return templates.TemplateResponse(
-        "signup_enhanced.html", context
-    )
+    return templates.TemplateResponse("signup_enhanced.html", context)
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -197,10 +199,10 @@ def login_page(request: Request, error: str | None = None):
         "app_name": "Klerno Labs",
         "current_year": 2025,
         "error": error,
+        "app_env": S.app_env,
+        "show_demo_credentials": S.app_env == "dev",
     }
-    return templates.TemplateResponse(
-        "login_enhanced.html", context
-    )
+    return templates.TemplateResponse("login_enhanced.html", context)
 
 
 # API Routes
@@ -252,6 +254,9 @@ def signup_api(payload: SignupReq, res: Response):
         recovery_codes=recovery_codes,
         has_hardware_key=False,
     )
+    if not user:
+        # Defensive: ensure create_user returned a user dict-like object
+        raise HTTPException(status_code=500, detail="User creation failed")
     token = issue_jwt(user["id"], user["email"], user["role"])
     _set_session_cookie(res, token)
 
@@ -274,7 +279,8 @@ def mfa_setup(user=Depends(require_user)):
         raise HTTPException(status_code=400, detail="No MFA secret found")
 
     secret = mfa.decrypt_seed(user_data["totp_secret"])
-    qr_uri = mfa.get_totp_uri(user["email"], secret)
+    # security_modules.mfa exposes generate_qr_code_uri(secret, email)
+    qr_uri = mfa.generate_qr_code_uri(secret, user["email"])
 
     return MFASetupResponse(
         secret=secret,
@@ -432,6 +438,8 @@ def signup_form(
                 {
                     "request": request,
                     "error": "Email already registered. Sign in.",
+                    "app_env": S.app_env,
+                    "show_demo_credentials": S.app_env == "dev",
                 },
             )
         # Parse wallet addresses if provided
@@ -445,13 +453,23 @@ def signup_form(
         if not is_valid:
             return templates.TemplateResponse(
                 "signup_enhanced.html",
-                {"request": request, "error": "; ".join(errors)},
+                {
+                    "request": request,
+                    "error": "; ".join(errors),
+                    "app_env": S.app_env,
+                    "show_demo_credentials": S.app_env == "dev",
+                },
             )
         if policy.config.check_breaches and policy.check_breached(password):
             signup_breach_msg = "Password in breach DB; choose another."
             return templates.TemplateResponse(
                 "signup_enhanced.html",
-                {"request": request, "error": signup_breach_msg},
+                {
+                    "request": request,
+                    "error": signup_breach_msg,
+                    "app_env": S.app_env,
+                    "show_demo_credentials": S.app_env == "dev",
+                },
             )
     # bootstrap: first user or ENV admin becomes admin and active
         role = "viewer"
@@ -478,6 +496,9 @@ def signup_form(
             recovery_codes=recovery_codes,
             has_hardware_key=False,
         )
+        # Defensive: ensure user was created successfully
+        if not user:
+            raise HTTPException(status_code=500, detail="User creation failed")
         # Set session and redirect to dashboard
         token = issue_jwt(user["id"], user["email"], user["role"])
         response = RedirectResponse(url="/dashboard", status_code=302)
@@ -487,7 +508,12 @@ def signup_form(
         # Keep error message concise for templates and logs
         return templates.TemplateResponse(
             "signup_enhanced.html",
-            {"request": request, "error": "Signup failed"},
+            {
+                "request": request,
+                "error": "Signup failed",
+                "app_env": S.app_env,
+                "show_demo_credentials": S.app_env == "dev",
+            },
         )
 
 
@@ -517,6 +543,9 @@ def login_api(payload: LoginReq, res: Response):
         if not mfa.verify_totp(payload.totp_code, secret):
             raise HTTPException(status_code=401, detail="Invalid TOTP code")
 
+    if not user:
+        # Shouldn't happen due to earlier check, but keep defensive
+        raise HTTPException(status_code=500, detail="Unexpected server error")
     token = issue_jwt(user["id"], user["email"], user["role"])
     _set_session_cookie(res, token)
 
@@ -561,7 +590,12 @@ def login_form(
         if not user or not password_valid:
             return templates.TemplateResponse(
                 "login_enhanced.html",
-                {"request": request, "error": "Invalid email or password"},
+                {
+                    "request": request,
+                    "error": "Invalid email or password",
+                    "app_env": S.app_env,
+                    "show_demo_credentials": S.app_env == "dev",
+                },
             )
 
         # Check if MFA is enabled for user
@@ -573,13 +607,20 @@ def login_form(
                         "request": request,
                         "error": "TOTP code required",
                         "show_mfa": True,
+                        "app_env": S.app_env,
+                        "show_demo_credentials": S.app_env == "dev",
                     },
                 )
 
             if not user.get("totp_secret"):
                 return templates.TemplateResponse(
                     "login_enhanced.html",
-                    {"request": request, "error": "MFA configuration error"},
+                    {
+                        "request": request,
+                        "error": "MFA configuration error",
+                        "app_env": S.app_env,
+                        "show_demo_credentials": S.app_env == "dev",
+                    },
                 )
 
             secret = mfa.decrypt_seed(user["totp_secret"])
@@ -590,10 +631,14 @@ def login_form(
                         "request": request,
                         "error": "Invalid TOTP code",
                         "show_mfa": True,
+                        "app_env": S.app_env,
+                        "show_demo_credentials": S.app_env == "dev",
                     },
                 )
 
     # Set session and either redirect (browser) or return JSON for API clients
+        if not user:
+            raise HTTPException(status_code=500, detail="Unexpected server error")
         token = issue_jwt(user["id"], user["email"], user["role"])
 
         content_type = request.headers.get("content-type", "")
@@ -639,6 +684,8 @@ def login_form(
                 "url_path_for": request.app.url_path_for,
                 "app_name": "Klerno Labs",
                 "current_year": 2025,
+                "app_env": S.app_env,
+                "show_demo_credentials": S.app_env == "dev",
             },
         )
 

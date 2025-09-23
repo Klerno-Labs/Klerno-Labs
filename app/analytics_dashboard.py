@@ -68,13 +68,12 @@ websocket_manager = WebSocketManager()
 async def analytics_dashboard(request: Request, user=Depends(current_user)):
     """Main analytics dashboard page"""
     return templates.TemplateResponse(
-        request,
-        "analytics/dashboard.html",
-        {
-            "request": request,
-            "user": user,
-            "title": "Analytics Dashboard - Klerno Labs",
-        },
+            "analytics/dashboard.html",
+            {
+                "request": request,
+                "user": user,
+                "title": "Analytics Dashboard - Klerno Labs",
+            },
     )
 
 

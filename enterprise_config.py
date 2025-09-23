@@ -4,6 +4,7 @@ Controls enterprise features for TOP 0.1% application status
 """
 
 import os
+import secrets
 from dataclasses import dataclass
 from typing import Any
 
@@ -89,6 +90,17 @@ class EnterpriseConfig:
         # Security
         config.encryption_key = os.getenv("ENCRYPTION_KEY")
         config.jwt_secret = os.getenv("JWT_SECRET", "your-secret-key-here")
+
+        # Development-friendly fallbacks: when not running in production,
+        # provide temporary secrets so the app can start locally without
+        # requiring secret provisioning. These values are intentionally
+        # ephemeral and should NOT be used in production.
+        if config.environment != "production":
+            if not config.encryption_key:
+                # generate a short random key for local dev
+                config.encryption_key = f"dev-{secrets.token_hex(16)}"
+            if not config.jwt_secret or config.jwt_secret == "your-secret-key-here":
+                config.jwt_secret = f"dev-jwt-{secrets.token_hex(16)}"
 
         return config
 

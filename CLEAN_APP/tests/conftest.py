@@ -18,9 +18,11 @@ try:
     import app.legacy_helpers as _legacy
 
     if hasattr(_legacy, "create_access_token") and not hasattr(builtins, "create_access_token"):
-        builtins.create_access_token = _legacy.create_access_token
+        # Use setattr and a typed ignore to avoid static type complaints about
+        # adding attributes to the builtins module during test collection.
+        setattr(builtins, "create_access_token", _legacy.create_access_token)  # type: ignore[attr-defined]
     if hasattr(_legacy, "verify_token") and not hasattr(builtins, "verify_token"):
-        builtins.verify_token = _legacy.verify_token
+        setattr(builtins, "verify_token", _legacy.verify_token)  # type: ignore[attr-defined]
 except Exception:
     # best-effort; tests that require these names will fail later if legacy helpers cannot import
     pass
@@ -37,6 +39,8 @@ except Exception:
 @pytest.fixture(scope="session")
 def workspace_root():
     return ROOT
+
+
 """
 Advanced Testing Configuration
 Comprehensive pytest setup with coverage, fixtures, and test utilities
@@ -143,28 +147,26 @@ def test_client(test_db):
         yield client
 
 
+async def _async_client_impl(test_db):
+    """Unified async client implementation used as a fixture.
+
+    Registered below using either pytest-asyncio or pytest's fixture wrapper to
+    avoid duplicate function names which static analyzers warn about.
+    """
+    os.environ["DATABASE_URL"] = f"sqlite:///{test_db}"
+
+    from app.main import app
+
+    # Use ASGITransport for compatibility with newer httpx versions
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:  # type: ignore[arg-type]
+        yield client
+
+
+# Register the implementation as a fixture named `async_client`.
 if pytest_asyncio:
-    @pytest_asyncio.fixture
-    async def async_client(test_db):
-        """Create an async test client (pytest-asyncio mode)."""
-        os.environ["DATABASE_URL"] = f"sqlite:///{test_db}"
-
-        from app.main import app
-
-        # Use ASGITransport for compatibility with newer httpx versions
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            yield client
+    async_client = pytest_asyncio.fixture(_async_client_impl)
 else:
-    @pytest.fixture
-    async def async_client(test_db):
-        """Fallback async client fixture when pytest-asyncio not installed."""
-        os.environ["DATABASE_URL"] = f"sqlite:///{test_db}"
-
-        from app.main import app
-
-        # Use ASGITransport for compatibility with newer httpx versions
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            yield client
+    async_client = pytest.fixture(_async_client_impl)
 
 
 @pytest.fixture
@@ -291,7 +293,10 @@ class DatabaseTestUtils:
         transaction_id = cursor.lastrowid
         conn.commit()
         conn.close()
-        return transaction_id
+        # Ensure we return an int (sqlite may expose lastrowid as Optional)
+        if transaction_id is None:
+            raise RuntimeError("Failed to create transaction; lastrowid is None")
+        return int(transaction_id)
 
 
 class APITestUtils:

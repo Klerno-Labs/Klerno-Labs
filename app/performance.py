@@ -11,7 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any
+from typing import Any, cast
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -242,10 +242,10 @@ def performance_cache(ttl: int = 60, key_func: Callable | None = None):
 
         # Return appropriate wrapper based on whether function is async
         if asyncio.iscoroutinefunction(func):
-            async_wrapper.cache = cache
+            cast(Any, async_wrapper).cache = cache
             return async_wrapper
         else:
-            sync_wrapper.cache = cache
+            cast(Any, sync_wrapper).cache = cache
             return sync_wrapper
 
     return decorator

@@ -10,15 +10,30 @@ import time
 from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Sequence
 
 CACHE_TTL = 300  # 5 minutes default TTL
-
-from typing import Any, Optional
 
 # Simple in-memory cache for frequently accessed data
 # Add explicit type annotations to satisfy static checkers
 _cache: dict[str, Any] = {}
 _cache_expiry: dict[str, float] = {}
+
+
+def _safe_idx(seq: Sequence[Any] | Any, idx: int) -> Any:
+    """Safely get index from a sequence-like object.
+
+    Many DB cursors return sqlite3.Row or sequences; static checkers can't
+    always infer lengths. Use this helper to avoid IndexError/static
+    complaints while keeping runtime semantics identical.
+    """
+    try:
+        if seq is None:
+            return None
+        # Works for lists/tuples and sqlite3.Row (supports index access)
+        return seq[idx] if isinstance(seq, Sequence) and len(seq) > idx else seq[idx]
+    except Exception:
+        return None
 
 
 # Default TTL
@@ -111,7 +126,9 @@ def _sqlite_conn() -> sqlite3.Connection:
 
 def _postgres_conn():
     # RealDictCursor returns dict rows (keyed by column name)
-    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)  # type: ignore[name - defined]
+    return psycopg2.connect(
+        DATABASE_URL, cursor_factory=RealDictCursor
+    )  # type: ignore[name - defined]
 
 
 def _conn():
@@ -185,30 +202,18 @@ def init_db() -> None:
         );"""
         )
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_from_addr "
-            "ON txs (from_addr);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_from_addr " "ON txs (from_addr);"
         )
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_to_addr " "ON txs (to_addr);")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_to_addr "
-            "ON txs (to_addr);"
-        )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp "
-            "ON txs (timestamp);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp " "ON txs (timestamp);"
         )
         # Additional indexes for admin analytics performance
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score "
-            "ON txs (risk_score);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score " "ON txs (risk_score);"
         )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_category "
-            "ON txs (category);"
-        )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_amount "
-            "ON txs (amount);"
-        )
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_category " "ON txs (category);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_amount " "ON txs (amount);")
         cur.execute(
             "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc "
             "ON txs (timestamp DESC);"
@@ -235,30 +240,18 @@ def init_db() -> None:
         );"""
         )
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_from_addr "
-            "ON txs (from_addr);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_from_addr " "ON txs (from_addr);"
         )
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_to_addr " "ON txs (to_addr);")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_to_addr "
-            "ON txs (to_addr);"
-        )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp "
-            "ON txs (timestamp);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp " "ON txs (timestamp);"
         )
         # Additional indexes for admin analytics performance
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score "
-            "ON txs (risk_score);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score " "ON txs (risk_score);"
         )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_category "
-            "ON txs (category);"
-        )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_amount "
-            "ON txs (amount);"
-        )
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_category " "ON txs (category);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_amount " "ON txs (amount);")
         cur.execute(
             "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc "
             "ON txs (timestamp DESC);"
@@ -292,25 +285,17 @@ def init_db() -> None:
         );"""
         )
         # Indexes for user queries
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_users_email " "ON users (email);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_users_role " "ON users (role);")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_email "
-            "ON users (email);"
-        )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_role "
-            "ON users (role);"
-        )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_created_at "
-            "ON users (created_at);"
+            "CREATE INDEX IF NOT EXISTS idx_users_created_at " "ON users (created_at);"
         )
         cur.execute(
             "CREATE INDEX IF NOT EXISTS idx_users_oauth_provider "
             "ON users (oauth_provider);"
         )
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id "
-            "ON users (oauth_id);"
+            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id " "ON users (oauth_id);"
         )
     else:
         # users table (SQLite): subscription_active uses 0 / 1
@@ -341,14 +326,10 @@ def init_db() -> None:
         # on older SQLite
         with contextlib.suppress(sqlite3.OperationalError):
             cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_users_email "
-                "ON users (email);"
+                "CREATE INDEX IF NOT EXISTS idx_users_email " "ON users (email);"
             )
         with contextlib.suppress(sqlite3.OperationalError):
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_users_role "
-                "ON users (role);"
-            )
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_users_role " "ON users (role);")
         with contextlib.suppress(sqlite3.OperationalError):
             cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_users_created_at "
@@ -361,29 +342,19 @@ def init_db() -> None:
             cur.execute(
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_provider TEXT;"
             )
-            cur.execute(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_id TEXT;"
-            )
-            cur.execute(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT;"
-            )
-            cur.execute(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;"
-            )
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_id TEXT;")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT;")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;")
             cur.execute(
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet_addresses TEXT "
                 "DEFAULT '[]';"
             )
-            cur.execute(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;"
-            )
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;")
             cur.execute(
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN "
                 "NOT NULL DEFAULT FALSE;"
             )
-            cur.execute(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_type TEXT;"
-            )
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_type TEXT;")
             cur.execute(
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS recovery_codes TEXT "
                 "DEFAULT '[]';"
@@ -416,8 +387,7 @@ def init_db() -> None:
         )
     with contextlib.suppress(sqlite3.OperationalError):
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id "
-            "ON users (oauth_id);"
+            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id " "ON users (oauth_id);"
         )
 
     # ---- USER_SETTINGS TABLE (normalized columns) ----
@@ -451,7 +421,6 @@ def init_db() -> None:
 
     con.commit()
     con.close()
-
 
     # --- Row helpers --------------------------------------------------------------
 
@@ -558,14 +527,17 @@ def _row_to_user(row) -> dict[str, Any] | None:
 def save_tagged(t: dict[str, Any]) -> None:
     con = _conn()
     cur = con.cursor()
-    p = _ph()
+    # SQL placeholder for current backend (inline {_ph()} is used)
     cur.execute(
         f"""
       INSERT INTO txs (
         tx_id, timestamp, chain, from_addr, to_addr, amount, symbol, direction,
             memo, fee, category, risk_score, risk_flags, notes
       )
-      VALUES ({p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p},{p})
+        VALUES (
+            {_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},
+            {_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()}
+        )
     """,
         (
             t["tx_id"],
@@ -602,7 +574,7 @@ def get_by_id(tx_id: int) -> dict[str, Any] | None:
     """
     con = _conn()
     cur = con.cursor()
-    p = _ph()
+    # placeholder not needed; using inline {_ph()} in query
     try:
         if USING_POSTGRES:
             cur.execute("SELECT * FROM txs WHERE id = %s", (tx_id,))
@@ -622,16 +594,16 @@ def get_by_id(tx_id: int) -> dict[str, Any] | None:
 def list_by_wallet(wallet: str, limit: int = 100) -> list[dict[str, Any]]:
     con = _conn()
     cur = con.cursor()
-    p = _ph()
+    # placeholder not needed; using inline {_ph()} in query
     cur.execute(
         f"""
       SELECT
         tx_id, timestamp, chain, from_addr, to_addr, amount, symbol, direction,
             memo, fee, category, risk_score, risk_flags, notes
       FROM txs
-      WHERE from_addr={p} OR to_addr={p}
+    WHERE from_addr={_ph()} OR to_addr={_ph()}
       ORDER BY id DESC
-      LIMIT {p}
+    LIMIT {_ph()}
     """,
         (wallet, wallet, limit),
     )
@@ -643,16 +615,16 @@ def list_by_wallet(wallet: str, limit: int = 100) -> list[dict[str, Any]]:
 def list_alerts(threshold: float = 0.75, limit: int = 100) -> list[dict[str, Any]]:
     con = _conn()
     cur = con.cursor()
-    p = _ph()
+    # placeholder not needed; using inline {_ph()} in query
     cur.execute(
         f"""
       SELECT
         tx_id, timestamp, chain, from_addr, to_addr, amount, symbol, direction,
             memo, fee, category, risk_score, risk_flags, notes
       FROM txs
-      WHERE risk_score >= {p}
+    WHERE risk_score >= {_ph()}
       ORDER BY id DESC
-      LIMIT {p}
+    LIMIT {_ph()}
     """,
         (threshold, limit),
     )
@@ -670,7 +642,7 @@ def list_all(limit: int = 1000) -> list[dict[str, Any]]:
 
     con = _conn()
     cur = con.cursor()
-    p = _ph()
+    # placeholder not needed; using inline {_ph()} in query
     cur.execute(
         f"""
       SELECT
@@ -678,7 +650,7 @@ def list_all(limit: int = 1000) -> list[dict[str, Any]]:
             memo, fee, category, risk_score, risk_flags, notes
       FROM txs
       ORDER BY id DESC
-      LIMIT {p}
+    LIMIT {_ph()}
     """,
         (limit,),
     )
@@ -714,14 +686,14 @@ def get_user_by_email(email: str) -> dict[str, Any] | None:
 
     con = _conn()
     cur = con.cursor()
-    p = _ph()
+    # placeholder not needed; using inline {_ph()} in query
     try:
         cur.execute(
             f"""
             SELECT id, email, password_hash, role, subscription_active, created_at,
                    oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
                        totp_secret, mfa_enabled, mfa_type, recovery_codes, has_hardware_key
-            FROM users WHERE email={p}
+            FROM users WHERE email={_ph()}
         """,
             (email,),
         )
@@ -749,12 +721,20 @@ def get_user_by_email(email: str) -> dict[str, Any] | None:
                     }
                 else:
                     # sqlite3.Row supports index access
-                    hashed = row[2]
-                    is_active = bool(row[3]) if len(row) > 3 else False
-                    is_admin = bool(row[4]) if len(row) > 4 else False
+                    hashed = _safe_idx(row, 2)
+                    is_active = (
+                        bool(_safe_idx(row, 3))
+                        if _safe_idx(row, 3) is not None
+                        else False
+                    )
+                    is_admin = (
+                        bool(_safe_idx(row, 4))
+                        if _safe_idx(row, 4) is not None
+                        else False
+                    )
                     row = {
-                        "id": row[0],
-                        "email": row[1],
+                        "id": _safe_idx(row, 0),
+                        "email": _safe_idx(row, 1),
                         "password_hash": hashed,
                         "role": "admin" if is_admin else "viewer",
                         "subscription_active": is_active,
@@ -778,14 +758,13 @@ def get_user_by_id(uid: int) -> dict[str, Any] | None:
 
     con = _conn()
     cur = con.cursor()
-    p = _ph()
     try:
         cur.execute(
             f"""
         SELECT id, email, password_hash, role, subscription_active, created_at,
                oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
                    totp_secret, mfa_enabled, mfa_type, recovery_codes, has_hardware_key
-        FROM users WHERE id={p}
+    FROM users WHERE id={_ph()}
     """,
             (uid,),
         )
@@ -812,12 +791,16 @@ def get_user_by_id(uid: int) -> dict[str, Any] | None:
                     }
                 else:
                     # sqlite3.Row or sequence
-                    hashed = r[2] if len(r) > 2 else None
-                    is_admin = bool(r[3]) if len(r) > 3 else False
-                    is_active = bool(r[4]) if len(r) > 4 else False
+                    hashed = _safe_idx(r, 2)
+                    is_admin = (
+                        bool(_safe_idx(r, 3)) if _safe_idx(r, 3) is not None else False
+                    )
+                    is_active = (
+                        bool(_safe_idx(r, 4)) if _safe_idx(r, 4) is not None else False
+                    )
                     row = {
-                        "id": r[0],
-                        "email": r[1],
+                        "id": _safe_idx(r, 0),
+                        "email": _safe_idx(r, 1),
                         "password_hash": hashed,
                         "role": "admin" if is_admin else "viewer",
                         "subscription_active": is_active,
@@ -848,13 +831,12 @@ def create_user(
     mfa_type: str | None = None,
     recovery_codes: list | None = None,
     has_hardware_key: bool = False,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     """
     Create a new user with support for both traditional email / password and OAuth authentication.
     """
     con = _conn()
     cur = con.cursor()
-    p = _ph()
 
     # Convert wallet_addresses and recovery_codes to JSON string
     wallet_addresses_json = json.dumps(wallet_addresses or [])
@@ -869,7 +851,10 @@ def create_user(
                     oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
                     totp_secret, mfa_enabled, mfa_type, recovery_codes, has_hardware_key
             )
-            VALUES ({p},{p},{p},{p}, NOW(), {p},{p},{p},{p},{p},{p},{p},{p},{p},{p})
+            VALUES (
+                {_ph()},{_ph()},{_ph()},{_ph()}, NOW(),
+                {_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()}
+            )
             RETURNING id
             """,
             (
@@ -889,7 +874,14 @@ def create_user(
                 has_hardware_key,
             ),
         )
-        new_id = cur.fetchone()["id"]
+        _f = cur.fetchone()
+        # Normalize returned shape: psycopg2 may return a dict-like row, sqlite returns a sequence
+        if _f is None:
+            new_id = None
+        elif isinstance(_f, dict):
+            new_id = _f.get("id")
+        else:
+            new_id = _safe_idx(_f, 0)
     else:
         # Attempt normal insert into canonical columns
         try:
@@ -900,7 +892,10 @@ def create_user(
                     oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
                     totp_secret, mfa_enabled, mfa_type, recovery_codes, has_hardware_key
             )
-            VALUES ({p},{p},{p},{p}, datetime('now'), {p},{p},{p},{p},{p},{p},{p},{p},{p},{p})
+            VALUES (
+                {_ph()},{_ph()},{_ph()},{_ph()}, datetime('now'),
+                {_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()}
+            )
             """,
                 (
                     email,
@@ -922,14 +917,20 @@ def create_user(
             new_id = cur.lastrowid
         except sqlite3.OperationalError as e:
             # Fallback for legacy/test DBs that have older column names
-            if "no column named password_hash" in str(e).lower() or "has no column named password_hash" in str(e).lower():
+            lower_e = str(e).lower()
+            if (
+                "no column named password_hash" in lower_e
+                or "has no column named password_hash" in lower_e
+            ):
                 try:
                     # Legacy schema uses hashed_password, is_admin, is_active
                     cur.execute(
                         f"""
                     INSERT INTO users (
                         email, hashed_password, is_admin, is_active, created_at
-                    ) VALUES ({p},{p},{p},{p}, datetime('now'))
+                                        ) VALUES (
+                                            {_ph()},{_ph()},{_ph()},{_ph()}, datetime('now')
+                                        )
                     """,
                         (
                             email,
@@ -950,17 +951,20 @@ def create_user(
     # Invalidate user caches
     _clear_cache_pattern("user_by_email")
 
-    return get_user_by_id(int(new_id))
+    try:
+        return get_user_by_id(int(new_id)) if new_id is not None else None
+    except Exception:
+        return None
 
 
 def set_subscription_active(email: str, active: bool) -> None:
     con = _conn()
     cur = con.cursor()
-    p = _ph()
     # For Postgres, store True / False; for SQLite, store 1 / 0
     value = True if USING_POSTGRES else (1 if active else 0)
     cur.execute(
-        f"UPDATE users SET subscription_active={p} WHERE email={p}", (value, email)
+        f"UPDATE users SET subscription_active={_ph()} WHERE email={_ph()}",
+        (value, email),
     )
     con.commit()
     con.close()
@@ -969,10 +973,40 @@ def set_subscription_active(email: str, active: bool) -> None:
 def set_role(email: str, role: str) -> None:
     con = _conn()
     cur = con.cursor()
-    p = _ph()
-    cur.execute(f"UPDATE users SET role={p} WHERE email={p}", (role, email))
+    cur.execute(f"UPDATE users SET role={_ph()} WHERE email={_ph()}", (role, email))
     con.commit()
     con.close()
+
+
+def update_user_subscription(user_id: int | str, active: bool = True) -> bool:
+    """Activate or deactivate a user's subscription by id.
+
+    Returns True on success, False on failure. This function is a small
+    compatibility helper used by the paywall flow and tests.
+    """
+    try:
+        con = _conn()
+        cur = con.cursor()
+        uid = int(user_id) if not isinstance(user_id, int) else user_id
+        if USING_POSTGRES:
+            cur.execute(
+                "UPDATE users SET subscription_active = %s WHERE id = %s",
+                (bool(active), uid),
+            )
+        else:
+            cur.execute(
+                "UPDATE users SET subscription_active = ? WHERE id = ?",
+                (1 if active else 0, uid),
+            )
+        con.commit()
+        con.close()
+        _clear_cache_pattern(f"user_by_id:{uid}")
+        _clear_cache_pattern("user_by_email")
+        return True
+    except Exception:
+        with contextlib.suppress(Exception):
+            con.close()
+        return False
 
 
 # --- User Settings API (normalized columns) ----------------------------------
@@ -986,12 +1020,11 @@ def get_settings_for_user(user_id: int) -> dict[str, Any]:
     try:
         con = _conn()
         cur = con.cursor()
-        p = _ph()
         cur.execute(
             f"""
           SELECT x_api_key, risk_threshold, time_range_days, ui_prefs
           FROM user_settings
-          WHERE user_id={p}
+          WHERE user_id={_ph()}
         """,
             (user_id,),
         )
@@ -1072,7 +1105,6 @@ def save_settings_for_user(user_id: int, patch: dict[str, Any]) -> dict[str, Any
 
     con = _conn()
     cur = con.cursor()
-    p = _ph()
     if USING_POSTGRES:
         cur.execute(
             f"""
@@ -1085,7 +1117,9 @@ def save_settings_for_user(user_id: int, patch: dict[str, Any]) -> dict[str, Any
                             created_at,
                             updated_at
                     )
-                    VALUES ({p},{p},{p},{p},{p}, NOW(), NOW())
+                    VALUES (
+                        {_ph()},{_ph()},{_ph()},{_ph()},{_ph()}, NOW(), NOW()
+                    )
                     ON CONFLICT (user_id) DO UPDATE SET
                         x_api_key=EXCLUDED.x_api_key,
                             risk_threshold=EXCLUDED.risk_threshold,
@@ -1101,7 +1135,9 @@ def save_settings_for_user(user_id: int, patch: dict[str, Any]) -> dict[str, Any
           INSERT INTO user_settings (
             user_id, x_api_key, risk_threshold, time_range_days, ui_prefs, created_at, updated_at
           )
-          VALUES ({p},{p},{p},{p},{p}, datetime('now'), datetime('now'))
+                    VALUES (
+                        {_ph()},{_ph()},{_ph()},{_ph()},{_ph()}, datetime('now'), datetime('now')
+                    )
           ON CONFLICT(user_id) DO UPDATE SET
             x_api_key=excluded.x_api_key,
                 risk_threshold=excluded.risk_threshold,
@@ -1141,12 +1177,11 @@ def get_user_by_oauth(oauth_provider: str, oauth_id: str) -> dict[str, Any] | No
 
     con = _conn()
     cur = con.cursor()
-    p = _ph()
     cur.execute(
         f"""
         SELECT id, email, password_hash, role, subscription_active, created_at,
                oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses
-        FROM users WHERE oauth_provider={p} AND oauth_id={p}
+    FROM users WHERE oauth_provider={_ph()} AND oauth_id={_ph()}
     """,
         (oauth_provider, oauth_id),
     )
@@ -1164,10 +1199,9 @@ def update_user_wallet_addresses(
     """Update a user's wallet addresses."""
     con = _conn()
     cur = con.cursor()
-    p = _ph()
     wallet_addresses_json = json.dumps(wallet_addresses)
     cur.execute(
-        f"UPDATE users SET wallet_addresses={p} WHERE id={p}",
+        f"UPDATE users SET wallet_addresses={_ph()} WHERE id={_ph()}",
         (wallet_addresses_json, user_id),
     )
     con.commit()
@@ -1180,7 +1214,7 @@ def update_user_wallet_addresses(
 
 
 def add_wallet_address(
-    user_id: int, address: str, chain: str, label: str = None
+    user_id: int, address: str, chain: str, label: str | None = None
 ) -> None:
     """Add a wallet address to a user's profile."""
     user = get_user_by_id(user_id)
@@ -1208,52 +1242,51 @@ def add_wallet_address(
 
 def update_user_mfa(
     user_id: int,
-    mfa_enabled: bool = None,
-    mfa_type: str = None,
-    totp_secret: str = None,
-    recovery_codes: list = None,
-    has_hardware_key: bool = None,
+    mfa_enabled: bool | None = None,
+    mfa_type: str | None = None,
+    totp_secret: str | None = None,
+    recovery_codes: list | None = None,
+    has_hardware_key: bool | None = None,
 ) -> None:
     """Update MFA settings for a user."""
     con = _conn()
     cur = con.cursor()
-    p = _ph()
 
     # Build dynamic update query
-    updates = []
-    values = []
+    updates: list[str] = []
+    values: list[Any] = []
 
     if mfa_enabled is not None:
         if USING_POSTGRES:
-            updates.append(f"mfa_enabled={p}")
+            updates.append(f"mfa_enabled={_ph()}")
             values.append(mfa_enabled)
         else:
-            updates.append(f"mfa_enabled={p}")
+            updates.append(f"mfa_enabled={_ph()}")
             values.append(1 if mfa_enabled else 0)
 
     if mfa_type is not None:
-        updates.append(f"mfa_type={p}")
+        updates.append(f"mfa_type={_ph()}")
         values.append(mfa_type)
 
     if totp_secret is not None:
-        updates.append(f"totp_secret={p}")
+        updates.append(f"totp_secret={_ph()}")
         values.append(totp_secret)
 
     if recovery_codes is not None:
-        updates.append(f"recovery_codes={p}")
+        updates.append(f"recovery_codes={_ph()}")
         values.append(json.dumps(recovery_codes))
 
     if has_hardware_key is not None:
         if USING_POSTGRES:
-            updates.append(f"has_hardware_key={p}")
+            updates.append(f"has_hardware_key={_ph()}")
             values.append(has_hardware_key)
         else:
-            updates.append(f"has_hardware_key={p}")
+            updates.append(f"has_hardware_key={_ph()}")
             values.append(1 if has_hardware_key else 0)
 
     if updates:
         values.append(user_id)
-        query = f"UPDATE users SET {', '.join(updates)} WHERE id={p}"
+        query = f"UPDATE users SET {', '.join(updates)} WHERE id={_ph()}"
         cur.execute(query, values)
         con.commit()
 
@@ -1268,10 +1301,10 @@ def update_user_password(user_id: int, password_hash: str) -> None:
     """Update user's password hash."""
     con = _conn()
     cur = con.cursor()
-    p = _ph()
 
     cur.execute(
-        f"UPDATE users SET password_hash={p} WHERE id={p}", (password_hash, user_id)
+        f"UPDATE users SET password_hash={_ph()} WHERE id={_ph()}",
+        (password_hash, user_id),
     )
     con.commit()
     con.close()
@@ -1298,27 +1331,26 @@ def remove_wallet_address(user_id: int, address: str, chain: str) -> None:
 
 
 def update_user_profile(
-    user_id: int, display_name: str = None, avatar_url: str = None
+    user_id: int, display_name: str | None = None, avatar_url: str | None = None
 ) -> None:
     """Update a user's profile information."""
     con = _conn()
     cur = con.cursor()
-    p = _ph()
 
-    updates = []
-    params = []
+    updates: list[str] = []
+    params: list[Any] = []
 
     if display_name is not None:
-        updates.append(f"display_name={p}")
+        updates.append(f"display_name={_ph()}")
         params.append(display_name)
 
     if avatar_url is not None:
-        updates.append(f"avatar_url={p}")
+        updates.append(f"avatar_url={_ph()}")
         params.append(avatar_url)
 
     if updates:
         params.append(user_id)
-        sql = f"UPDATE users SET {', '.join(updates)} WHERE id={p}"
+        sql = f"UPDATE users SET {', '.join(updates)} WHERE id={_ph()}"
         cur.execute(sql, params)
         con.commit()
 

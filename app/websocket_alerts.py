@@ -1,8 +1,4 @@
 
-
-
-
-
 """Compatibility shim for removed websocket_alerts module.
 
 This module provided enterprise-only WebSocket alerting. To avoid

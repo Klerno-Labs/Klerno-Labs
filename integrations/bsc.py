@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from datetime import datetime
 from typing import Any
@@ -6,9 +8,9 @@ import requests
 
 try:
     # Prefer app.models when available (package installed under app/)
-    from app.models import Transaction
+    from app.models import Transaction  # type: ignore[no-redef]
 except Exception:
-    from ..models import Transaction
+    from ..models import Transaction  # type: ignore[no-redef]
 
 BSC_API = "https://publicapi.dev/bscscan-api/api"
 BSC_KEY = os.getenv("BSC_API_KEY", "").strip()
@@ -25,7 +27,7 @@ def _ts(sec: str | int) -> str:
 
 def fetch_account_tx(address: str, limit: int = 10) -> list[dict[str, Any]]:
     """Uses bscscan 'txlist' equivalent via publicapi.dev route."""
-    params = {
+    params: dict[str, Any] = {
         "module": "account",
         "action": "txlist",
         "address": address,
@@ -44,10 +46,8 @@ def fetch_account_tx(address: str, limit: int = 10) -> list[dict[str, Any]]:
     return data.get("result") or []
 
 
-def bsc_json_to_transactions(
-    address: str, payload: list[dict[str, Any]]
-) -> list[Transaction]:
-    out: list[Transaction] = []
+def bsc_json_to_transactions(address: str, payload: list[dict[str, Any]]):
+    out = []
     addr = (address or "").lower()
     for it in payload:
         try:

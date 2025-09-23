@@ -10,7 +10,7 @@ import sqlite3
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, Optional
 
 import psutil
 
@@ -133,9 +133,9 @@ class SystemMonitor:
         self.db_path = db_path
         self.start_time = time.time()
         self.request_count = 0
-        self.response_times = []
+        self.response_times: list[float] = []
         self.error_count = 0
-        self.active_sessions = set()
+        self.active_sessions: set[Any] = set()
         self.failed_logins = 0
 
         # Avoid side-effects during import/normal construction. Table
@@ -220,7 +220,7 @@ class SystemMonitor:
         except Exception as e:
             logger.error("Error initializing monitoring tables: %s", e)
 
-    def get_system_metrics(self) -> SystemMetrics:
+    def get_system_metrics(self) -> Optional[SystemMetrics]:
         """Get current system performance metrics."""
         try:
             # CPU usage
@@ -238,8 +238,13 @@ class SystemMonitor:
 
             # Network stats
             network = psutil.net_io_counters()
-            network_bytes_sent = network.bytes_sent
-            network_bytes_recv = network.bytes_recv
+            # psutil may return a namedtuple or None; guard attribute access
+            network_bytes_sent = (
+                getattr(network, "bytes_sent", 0) if network is not None else 0
+            )
+            network_bytes_recv = (
+                getattr(network, "bytes_recv", 0) if network is not None else 0
+            )
 
             # Connection count
             active_connections = len(psutil.net_connections())
@@ -247,9 +252,13 @@ class SystemMonitor:
             # Uptime
             uptime_seconds = int(time.time() - self.start_time)
 
+            cpu_val = (
+                float(cpu_percent) if isinstance(cpu_percent, (int, float)) else 0.0
+            )
+
             return SystemMetrics(
                 timestamp=datetime.now(UTC),
-                cpu_percent=cpu_percent,
+                cpu_percent=cpu_val,
                 memory_percent=memory_percent,
                 memory_available_gb=memory_available_gb,
                 disk_usage_percent=disk_usage_percent,
@@ -263,7 +272,7 @@ class SystemMonitor:
             logger.error("Error getting system metrics: %s", e)
             return None
 
-    def get_application_metrics(self) -> ApplicationMetrics:
+    def get_application_metrics(self) -> Optional[ApplicationMetrics]:
         """Get current application metrics."""
         try:
             # Count total users
@@ -305,7 +314,7 @@ class SystemMonitor:
             logger.error("Error getting application metrics: %s", e)
             return None
 
-    def get_security_metrics(self) -> SecurityMetrics:
+    def get_security_metrics(self) -> Optional[SecurityMetrics]:
         """Get current security metrics."""
         try:
             # Count recent failed logins

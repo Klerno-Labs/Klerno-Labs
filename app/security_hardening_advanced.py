@@ -171,7 +171,7 @@ class AdvancedSecurityHardening:
         conn.commit()
         conn.close()
 
-        logger.info("✅ Security database initialized")
+    logger.info("[OK] Security database initialized")
 
     def _get_or_create_encryption_key(self) -> bytes:
         """Get or create encryption key for sensitive data."""
@@ -222,8 +222,10 @@ class AdvancedSecurityHardening:
 
             conn.close()
 
+            loaded_count = len(self.threat_intel)
+            blocked_count = len(self.blocked_ips)
             logger.info(
-                f"✅ Loaded {len(self.threat_intel)} threat indicators and {len(self.blocked_ips)} blocked IPs"
+                f"[OK] Loaded {loaded_count} threat indicators and {blocked_count} blocked IPs"
             )
 
         except Exception as e:
@@ -288,7 +290,9 @@ class AdvancedSecurityHardening:
         except Exception as e:
             logger.error(f"Error blocking IP {ip_address}: {e}")
 
-    def check_rate_limit(self, ip_address: str, max_requests: Optional[int] = None) -> bool:
+    def check_rate_limit(
+        self, ip_address: str, max_requests: Optional[int] = None
+    ) -> bool:
         """Check if IP is within rate limits."""
         max_requests = max_requests or self.max_requests_per_minute
         now = time.time()
@@ -322,7 +326,7 @@ class AdvancedSecurityHardening:
 
     def detect_suspicious_patterns(self, request_data: dict[str, Any]) -> list[str]:
         """Detect suspicious patterns in request data."""
-        suspicious_findings = []
+        suspicious_findings: list[str] = []
 
         # Check URL path
         path = request_data.get("path", "")
@@ -377,7 +381,7 @@ class AdvancedSecurityHardening:
 
     def analyze_user_agent(self, user_agent: str) -> dict[str, Any]:
         """Analyze user agent for suspicious characteristics."""
-        analysis = {"suspicious": False, "reasons": [], "risk_score": 0}
+        analysis: dict[str, Any] = {"suspicious": False, "reasons": [], "risk_score": 0}
 
         if not user_agent or user_agent.strip() == "":
             analysis["suspicious"] = True
@@ -425,11 +429,12 @@ class AdvancedSecurityHardening:
         # In production, integrate with a real geolocation service
 
         # Placeholder logic - in production, use actual geolocation API
-        risk_analysis = {
+        reasons: list[str] = []
+        risk_analysis: dict[str, Any] = {
             "country": "Unknown",
             "high_risk": False,
             "risk_score": 0,
-            "reasons": [],
+            "reasons": reasons,
         }
 
         # Check if IP is in threat intelligence
@@ -450,7 +455,7 @@ class AdvancedSecurityHardening:
         source_ip: str,
         user_agent: str = "",
         endpoint: str = "",
-        details: dict[str, Any] = None,
+        details: Optional[dict[str, Any]] = None,
         blocked: bool = False,
     ) -> None:
         """Log a security event."""
@@ -503,7 +508,7 @@ class AdvancedSecurityHardening:
     def log_failed_auth_attempt(
         self,
         ip_address: str,
-        username: str = None,
+        username: Optional[str] = None,
         endpoint: str = "",
         user_agent: str = "",
     ) -> bool:
@@ -572,7 +577,7 @@ class AdvancedSecurityHardening:
         user_agent = request_data.get("user_agent", "")
         path = request_data.get("path", "")
 
-        analysis = {
+        analysis: dict[str, Any] = {
             "blocked": False,
             "risk_score": 0,
             "findings": [],
@@ -659,7 +664,7 @@ class AdvancedSecurityHardening:
                 (since.isoformat(),),
             )
 
-            events_summary = {}
+            events_summary: dict[str, dict[str, int]] = {}
             for row in cursor.fetchall():
                 event_type = row[0]
                 if event_type not in events_summary:
@@ -679,7 +684,7 @@ class AdvancedSecurityHardening:
                 (since.isoformat(),),
             )
 
-            top_blocked_ips = [
+            top_blocked_ips: list[dict[str, int]] = [
                 {"ip": row[0], "events": row[1]} for row in cursor.fetchall()
             ]
 

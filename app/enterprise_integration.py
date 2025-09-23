@@ -798,10 +798,10 @@ class EnterpriseIntegrationOrchestrator:
                 logger.info(
                     f"Overall quality score: {quality_metrics.overall_score:.2f}%"
                 )
-                logger.info("✅ ISO20022 compliant")
-                logger.info("✅ Top 0.01% quality standards")
-                logger.info("✅ Maximum security protection")
-                logger.info("✅ Enterprise - grade reliability")
+                logger.info("[OK] ISO20022 compliant")
+                logger.info("[OK] Top 0.01% quality standards")
+                logger.info("[OK] Maximum security protection")
+                logger.info("[OK] Enterprise - grade reliability")
             else:
                 logger.warning(
                     "❌ Final verification FAILED. Review results and address issues."

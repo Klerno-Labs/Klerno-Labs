@@ -175,9 +175,16 @@ class MetricsCollector:
         self.record_metric(metric)
 
     def record_timer(
-        self, name: str, duration_ms: float, tags: Optional[dict[str, str]] = None
+        self,
+        name: Optional[str],
+        duration_ms: float,
+        tags: Optional[dict[str, str]] = None,
     ) -> None:
         """Record a timer metric."""
+        if not name:
+            # If no metric name provided, skip recording to avoid invalid keys
+            return
+
         metric = Metric(
             name=name,
             value=duration_ms,
@@ -287,7 +294,7 @@ class AlertManager:
         description: str,
         level: AlertLevel,
         source: str,
-        metadata: dict[str, Any] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Alert:
         """Create and fire an alert."""
         alert = Alert(
@@ -467,7 +474,7 @@ class SystemMonitor:
     def __init__(self, metrics_collector: MetricsCollector):
         self.metrics = metrics_collector
         self.monitoring = False
-        self.monitor_thread = None
+        self.monitor_thread: Optional[threading.Thread] = None
         self.logger = logging.getLogger(__name__)
 
     def start_monitoring(self, interval_seconds: int = 30) -> None:
@@ -555,7 +562,9 @@ class SystemMonitor:
 
 @contextlib.contextmanager
 def timer_context(
-    metrics_collector: MetricsCollector, metric_name: str, tags: dict[str, str] = None
+    metrics_collector: MetricsCollector,
+    metric_name: str | None,
+    tags: dict[str, str] | None = None,
 ):
     """Context manager for timing operations."""
     start_time = time.time()
@@ -566,7 +575,7 @@ def timer_context(
         metrics_collector.record_timer(metric_name, duration_ms, tags)
 
 
-def time_function(metric_name: str = None, tags: dict[str, str] = None):
+def time_function(metric_name: str | None = None, tags: dict[str, str] | None = None):
     """Decorator for timing function execution."""
 
     def decorator(func):
@@ -580,7 +589,9 @@ def time_function(metric_name: str = None, tags: dict[str, str] = None):
             finally:
                 duration_ms = (time.time() - start_time) * 1000
                 if hasattr(func, "_metrics_collector"):
-                    func._metrics_collector.record_timer(name, duration_ms, tags)
+                    # ensure name is a str for the recorder
+                    _name: str = name
+                    func._metrics_collector.record_timer(_name, duration_ms, tags or {})
 
         return wrapper
 

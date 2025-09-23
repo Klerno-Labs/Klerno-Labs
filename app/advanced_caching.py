@@ -20,7 +20,7 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, cache_rules: dict | None = None):
         super().__init__(app)
         self.cache_rules = cache_rules or self._default_cache_rules()
-        self.etag_cache = {}  # Simple in-memory ETag cache
+        self.etag_cache: dict[str, str] = {}  # Simple in-memory ETag cache
 
     def _default_cache_rules(self) -> dict:
         """Default caching rules for different content types"""

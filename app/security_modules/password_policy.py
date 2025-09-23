@@ -20,7 +20,7 @@ try:
 except ImportError:
     ARGON2_AVAILABLE = False
 
-    class PasswordHasher:
+    class _FallbackPasswordHasher:
         def __init__(self, *args, **kwargs):
             pass
 
@@ -32,11 +32,16 @@ except ImportError:
         def verify(self, hash_val, password):
             return hash_val == self.hash(password)
 
-    class VerifyMismatchError(Exception):
+    class _VerifyMismatchError(Exception):
         pass
 
-    class HashingError(Exception):
+    class _HashingError(Exception):
         pass
+
+    # Expose fallback names under the original public names to keep rest of code unchanged
+    PasswordHasher = _FallbackPasswordHasher
+    VerifyMismatchError = _VerifyMismatchError
+    HashingError = _HashingError
 
 
 logger = logging.getLogger(__name__)
@@ -70,7 +75,10 @@ class PasswordSecurityPolicy:
         # registration deterministic and offline-friendly.
         import os
 
-        if os.getenv("APP_ENV") == "test" or os.getenv("PYTEST_CURRENT_TEST") is not None:
+        if (
+            os.getenv("APP_ENV") == "test"
+            or os.getenv("PYTEST_CURRENT_TEST") is not None
+        ):
             self.config.check_breaches = False
         self.ph = PasswordHasher(
             time_cost=3,  # Number of iterations
@@ -147,7 +155,11 @@ class PasswordSecurityPolicy:
             import os
             import sys
 
-            if os.getenv("APP_ENV") == "test" or os.getenv("PYTEST_CURRENT_TEST") is not None or "pytest" in sys.modules:
+            if (
+                os.getenv("APP_ENV") == "test"
+                or os.getenv("PYTEST_CURRENT_TEST") is not None
+                or "pytest" in sys.modules
+            ):
                 return False
             # Create SHA - 1 hash
             sha1_hash = hashlib.sha1(password.encode()).hexdigest().upper()
@@ -162,7 +174,8 @@ class PasswordSecurityPolicy:
             # if prefix contains unexpected characters, avoid network call
             if not re.fullmatch(r"[0-9A-F]{5}", safe_prefix):
                 logger.warning(
-                    "Invalid pwned-prefix '%s' after sanitization; skipping breach check", prefix
+                    "Invalid pwned-prefix '%s' after sanitization; skipping breach check",
+                    prefix,
                 )
                 return False
 

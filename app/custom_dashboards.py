@@ -263,8 +263,8 @@ class DashboardManager:
         config: dict[str, Any],
         position: dict[str, int],
         data_source: str,
-    refresh_interval: int = 30,
-    filters: Optional[dict[str, Any]] = None,
+        refresh_interval: int = 30,
+        filters: Optional[dict[str, Any]] = None,
     ) -> DashboardWidget:
         """Add widget to dashboard."""
         widget_id = str(uuid.uuid4())
@@ -286,7 +286,8 @@ class DashboardManager:
         cursor.execute(
             """
             INSERT INTO dashboard_widgets
-            (id, dashboard_id, type, title, config, position, data_source, refresh_interval, filters)
+            (id, dashboard_id, type, title, config, position,
+             data_source, refresh_interval, filters)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
@@ -529,7 +530,7 @@ def create_dashboard(user_id: str, name: str, description: str = "") -> Dashboar
     return dashboard_manager.create_dashboard(user_id, name, description)
 
 
-def get_dashboard(dashboard_id: str, user_id: str = None) -> Dashboard | None:
+def get_dashboard(dashboard_id: str, user_id: Optional[str] = None) -> Dashboard | None:
     """Get specific dashboard."""
     return dashboard_manager.get_dashboard(dashboard_id, user_id)
 

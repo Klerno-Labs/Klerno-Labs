@@ -45,7 +45,7 @@
       "description": "Real-time monitoring and risk assessment for cryptocurrency transactions"
     },
     {
-      "@type": "Service", 
+      "@type": "Service",
       "name": "XRPL Security Monitoring",
       "description": "Specialized security monitoring for XRP Ledger transactions"
     },
@@ -65,6 +65,7 @@
 </script>
 
 <link rel="stylesheet" href="/static/css/design-system.css">
+<link rel="preload" as="image" href="/static/images/hero-bg.jpg">
 <style>
   /* Landing Page Specific Styles */
   .hero-section {
@@ -388,6 +389,7 @@
 {% endblock %}
 
 {% block content %}
+<a class="skip-link" href="#main-content">Skip to content</a>
 <!-- Hero Section -->
 <section class="hero-section">
   <div class="hero-particles">
@@ -397,7 +399,7 @@
     <div class="particle"></div>
   </div>
 
-  <div class="hero-content animate-fade-in">
+  <div id="main-content" class="hero-content animate-fade-in">
     <h1 class="hero-title">
       Elite Blockchain
       <br>Security Platform
@@ -409,13 +411,15 @@
     </p>
 
     <div class="hero-cta">
-      <a href="/signup" class="btn-elite btn-elite-primary" style="font-size: 1.125rem; padding: 1rem 2rem;">
+      <a href="/signup" aria-label="Start free trial" class="btn-elite btn-elite-primary"
+        style="font-size: 1.125rem; padding: 1rem 2rem;">
         Start Free Trial
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M5 12h14M12 5l7 7-7 7" />
         </svg>
       </a>
-      <a href="#demo" class="btn-elite btn-elite-secondary" style="font-size: 1.125rem; padding: 1rem 2rem;">
+      <a href="#demo" aria-label="Watch demo" class="btn-elite btn-elite-secondary"
+        style="font-size: 1.125rem; padding: 1rem 2rem;">
         Watch Demo
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polygon points="5,3 19,12 5,21" />

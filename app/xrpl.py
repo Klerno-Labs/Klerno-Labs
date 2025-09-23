@@ -1,4 +1,7 @@
 
+import inspect
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 
 from integrations import xrp as xrp_integ
@@ -31,8 +34,9 @@ async def get_balance(account: str) -> dict[str, float]:
 
     # In tests, patched client.get_account_info may be an AsyncMock. Await
     # if the returned object is awaitable.
-    info = client.get_account_info(account)
-    if hasattr(info, "__await__"):
+    info: Any = client.get_account_info(account)
+    # If the integration returns an awaitable (AsyncMock or coroutine), await it.
+    if inspect.isawaitable(info):
         info = await info
 
     bal = 0.0

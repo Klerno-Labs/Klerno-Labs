@@ -67,9 +67,8 @@ class AdvancedAnalytics:
         high_risk_count = int((recent_df["risk_score"] >= rt["medium"]).sum())
         medium_risk_count = int(
             (
-                (recent_df["risk_score"] >= rt["low"]) & (
-                    recent_df["risk_score"] < rt["medium"]
-                )
+                (recent_df["risk_score"] >= rt["low"])
+                & (recent_df["risk_score"] < rt["medium"])
             ).sum()
         )
         low_risk_count = int((recent_df["risk_score"] < rt["low"]).sum())
@@ -240,7 +239,7 @@ class AdvancedAnalytics:
             }
 
         # Create address interaction matrix
-        connections = {}
+        connections: dict[Any, set[Any]] = {}
         for _, row in df.iterrows():
             from_addr = row.get("from_addr")
             to_addr = row.get("to_addr")
@@ -372,8 +371,7 @@ class InsightsEngine:
                     "title": "Transaction Anomalies Detected",
                     "description": f"{anomaly:.1%} transactions anomalous.",
                     "action": (
-                        "Investigate unusual transaction amounts "
-                        "and patterns."
+                        "Investigate unusual transaction amounts " "and patterns."
                     ),
                     "priority": "high",
                 }

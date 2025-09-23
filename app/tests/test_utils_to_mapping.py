@@ -26,6 +26,7 @@ def test_to_mapping_with_none_and_non_mapping():
     assert to_mapping(None) == {}
     # object without keys
 
+    # nested simple class to emulate non-mapping object
     class Foo:
         pass
 
@@ -36,6 +37,7 @@ def test_to_mapping_with_mapping_view_like():
     d = {"k": 1}
     mv = d.keys()  # mapping view
     # emulate an object that returns this view from keys()
+
     class KObj:
 
         def keys(self):
