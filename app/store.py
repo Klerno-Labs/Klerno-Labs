@@ -7,10 +7,10 @@ import json
 import os
 import sqlite3
 import time
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 CACHE_TTL = 300  # 5 minutes default TTL
 
@@ -180,10 +180,10 @@ def wait_for_row(
             cur.execute(select_sql, params)
             rows = cur.fetchall()
             # Close only sqlite connections created here; psycopg2 will be handled by driver
-            try:
+            from contextlib import suppress
+
+            with suppress(Exception):
                 con.close()
-            except Exception:
-                pass
             if rows:
                 return rows
         except Exception:

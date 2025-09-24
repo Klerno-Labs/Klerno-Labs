@@ -104,7 +104,7 @@ class BatchProcessor:
 
     async def add_item(self, item: Any) -> Any:
         """Add item to batch for processing"""
-        future = asyncio.Future()
+        future: asyncio.Future = asyncio.Future()
         self.pending_items.append((item, future))
 
         # Check if we should process immediately

@@ -1,6 +1,16 @@
+import asyncio
 import os
+import sqlite3
 import sys
+import tempfile
+from datetime import datetime
 from pathlib import Path
+from typing import Any
+from unittest.mock import AsyncMock, Mock
+
+import pytest
+from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
 
 # Ensure the workspace root (two levels up from this tests folder) is on sys.path
 # so tests that import `app` (which lives at the workspace root) can find it.
@@ -10,17 +20,6 @@ if ROOT not in sys.path:
 
 # Legacy builtins injection removed: tests should import token helpers
 # explicitly from `app.auth` or `app.security_session`.
-
-import asyncio
-import sqlite3
-import tempfile
-from datetime import datetime
-from typing import Any
-from unittest.mock import AsyncMock, Mock
-
-import pytest
-from fastapi.testclient import TestClient
-from httpx import ASGITransport, AsyncClient
 
 # Optional: expose a simple fixture for tests that need the app path
 

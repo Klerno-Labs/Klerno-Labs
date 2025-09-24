@@ -335,7 +335,7 @@ class DatabaseService:
 
     def __init__(self, database_path: str):
         self.pool = AsyncConnectionPool(database_path)
-        self.query_cache = {}
+        self.query_cache: dict[str, tuple[dict[str, Any] | None, float]] = {}
         self.cache_ttl = 300  # 5 minutes
 
     async def start(self):

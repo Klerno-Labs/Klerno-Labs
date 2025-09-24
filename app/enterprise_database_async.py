@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -71,10 +71,10 @@ class DatabaseConnectionPool:
         self.recycle_time = recycle_time
 
         # Connection management
-        self._pool: "queue.Queue[Tuple[sqlite3.Connection, float]]" = queue.Queue(
+        self._pool: "queue.Queue[tuple[sqlite3.Connection, float]]" = queue.Queue(
             maxsize=pool_size
         )
-        self._overflow: List[sqlite3.Connection] = []
+        self._overflow: list[sqlite3.Connection] = []
         self._checked_out: "weakref.WeakSet[sqlite3.Connection]" = weakref.WeakSet()
         self._stats: ConnectionStats = ConnectionStats()
         self._lock: threading.RLock = threading.RLock()
@@ -136,7 +136,7 @@ class DatabaseConnectionPool:
         except Exception as e:
             logger.error(f"[DB-POOL] Failed to create connection: {e}")
             self._stats.failed_connections += 1
-            raise RuntimeError(f"Failed to create DB connection: {e}")
+            raise RuntimeError(f"Failed to create DB connection: {e}") from e
 
     def get_connection(self) -> sqlite3.Connection | None:
         """Get a connection from the pool"""
@@ -306,12 +306,12 @@ class AsyncTaskProcessor:
         self.batch_size = batch_size
 
         # Task management
-        self._task_queue: "queue.PriorityQueue[Tuple[int, float, AsyncTask]]" = (
+        self._task_queue: "queue.PriorityQueue[tuple[int, float, AsyncTask]]" = (
             queue.PriorityQueue(maxsize=queue_size)
         )
-        self._scheduled_tasks: List[AsyncTask] = []
-        self._completed_tasks: List[Tuple[AsyncTask, Any]] = []
-        self._failed_tasks: List[Tuple[AsyncTask, Exception]] = []
+        self._scheduled_tasks: list[AsyncTask] = []
+        self._completed_tasks: list[tuple[AsyncTask, Any]] = []
+        self._failed_tasks: list[tuple[AsyncTask, Exception]] = []
 
         # Threading
         self._executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=max_workers)
@@ -323,7 +323,7 @@ class AsyncTaskProcessor:
         )
 
         # Statistics
-        self._stats: Dict[str, Any] = {
+        self._stats: dict[str, Any] = {
             "total_tasks": 0,
             "completed_tasks": 0,
             "failed_tasks": 0,
@@ -508,7 +508,9 @@ class AsyncTaskProcessor:
             self._stats["queued_tasks"] = self._task_queue.qsize()
             return self._stats.copy()
 
-    def get_failed_tasks(self) -> list[tuple]:
+    from collections.abc import Sequence
+
+    def get_failed_tasks(self) -> Sequence[tuple[object, Exception]]:
         """Get list of failed tasks"""
         with self._lock:
             return self._failed_tasks.copy()

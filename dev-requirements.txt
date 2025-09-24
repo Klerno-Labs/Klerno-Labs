@@ -7,7 +7,6 @@ PyJWT==2.10.1
 
 # Dev tooling
 mypy==1.6.0
-ruff>=0.14.0
+ruff==0.13.1
 flake8==6.0.0
 pytest>=8.2,<9
-pytest-asyncio==1.2.0
