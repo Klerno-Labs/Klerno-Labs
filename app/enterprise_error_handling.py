@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .resilience_system import circuit_breaker
 
@@ -337,7 +337,7 @@ class EnterpriseErrorHandler:
         error: Exception,
         service: str,
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-        context: Optional[dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> ErrorEvent:
         """Handle and record error event"""
 
@@ -537,7 +537,7 @@ def handle_errors(service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM):
 
 
 def with_circuit_breaker(
-    breaker_name: str, config: Optional[CircuitBreakerConfig] = None
+    breaker_name: str, config: CircuitBreakerConfig | None = None
 ):
     """Decorator for circuit breaker protection"""
 

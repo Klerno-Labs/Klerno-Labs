@@ -9,10 +9,13 @@ import sqlite3
 import threading
 import time
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Mapping, Sequence
+from typing import TYPE_CHECKING, Any
+
+from app.constants import CACHE_TTL
 
 
 def _ensure_numpy() -> None:
@@ -98,7 +101,7 @@ class EnterpriseAnalytics:
 
         # Configuration
         self.event_retention_days = 90
-        self.cache_ttl_seconds = 300
+        self.cache_ttl_seconds = CACHE_TTL
 
         # Threading
         self._lock = threading.RLock()

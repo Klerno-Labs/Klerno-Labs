@@ -19,7 +19,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Any, DefaultDict, Deque, Optional
+from typing import Any
 
 import psutil
 
@@ -125,9 +125,9 @@ class MetricsCollector:
     """Collects and stores metrics."""
 
     def __init__(self, max_samples: int = 10000):
-        self.metrics: Deque[Metric] = deque(maxlen=max_samples)
+        self.metrics: deque[Metric] = deque(maxlen=max_samples)
         # aggregates maps metric_key -> aggregated stats dict
-        self.aggregates: DefaultDict[str, dict[str, Any]] = defaultdict(dict)
+        self.aggregates: defaultdict[str, dict[str, Any]] = defaultdict(dict)
         self.lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
 
@@ -144,7 +144,7 @@ class MetricsCollector:
                 )
 
     def increment_counter(
-        self, name: str, value: int = 1, tags: Optional[dict[str, str]] = None
+        self, name: str, value: int = 1, tags: dict[str, str] | None = None
     ) -> None:
         """Increment a counter metric."""
         metric = Metric(
@@ -160,8 +160,8 @@ class MetricsCollector:
         self,
         name: str,
         value: int | float,
-        tags: Optional[dict[str, str]] = None,
-        unit: Optional[str] = None,
+        tags: dict[str, str] | None = None,
+        unit: str | None = None,
     ) -> None:
         """Set a gauge metric."""
         metric = Metric(
@@ -176,9 +176,9 @@ class MetricsCollector:
 
     def record_timer(
         self,
-        name: Optional[str],
+        name: str | None,
         duration_ms: float,
-        tags: Optional[dict[str, str]] = None,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Record a timer metric."""
         if not name:
@@ -196,7 +196,7 @@ class MetricsCollector:
         self.record_metric(metric)
 
     def record_histogram(
-        self, name: str, value: int | float, tags: Optional[dict[str, str]] = None
+        self, name: str, value: int | float, tags: dict[str, str] | None = None
     ) -> None:
         """Record a histogram metric."""
         metric = Metric(
@@ -474,7 +474,7 @@ class SystemMonitor:
     def __init__(self, metrics_collector: MetricsCollector):
         self.metrics = metrics_collector
         self.monitoring = False
-        self.monitor_thread: Optional[threading.Thread] = None
+        self.monitor_thread: threading.Thread | None = None
         self.logger = logging.getLogger(__name__)
 
     def start_monitoring(self, interval_seconds: int = 30) -> None:

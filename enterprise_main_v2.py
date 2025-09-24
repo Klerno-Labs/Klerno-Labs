@@ -14,11 +14,27 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from starlette.middleware.sessions import SessionMiddleware
 
-from app import admin, auth, store
+try:
+    from starlette.middleware.sessions import SessionMiddleware
+
+    _has_session_middleware = True
+except Exception:  # itsdangerous may be missing in minimal envs
+    SessionMiddleware = None
+    _has_session_middleware = False
+
+try:
+    from app import admin, auth, store
+except Exception:
+    # In minimal preview/test environments optional app submodules may
+    # fail to import due to missing dependencies (jwt, itsdangerous, etc.).
+    # Defer to shim registration later.
+    admin = None
+    auth = None
+    store = None
 
 # Import clean app components
 from app.settings import settings
@@ -180,9 +196,15 @@ async def lifespan(app: FastAPI):
     # process starts. This helps in environments where output is suppressed.
     print("[DIAG] enterprise_main_v2: lifespan start")
 
-    # Initialize clean app database
-    store.init_db()
-    logger.info("Clean app database initialized")
+    # Initialize clean app database if the store module is available
+    if store is not None and getattr(store, "init_db", None) is not None:
+        try:
+            store.init_db()
+            logger.info("Clean app database initialized")
+        except Exception as e:
+            logger.warning(f"store.init_db() failed: {e}")
+    else:
+        logger.warning("store module not available; skipping DB initialization")
 
     # Initialize enterprise features
     initialize_enterprise_features()
@@ -213,11 +235,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add session middleware
-app.add_middleware(SessionMiddleware, secret_key=settings.jwt_secret)
+# Add session middleware if available
+if _has_session_middleware and SessionMiddleware is not None:
+    app.add_middleware(SessionMiddleware, secret_key=settings.jwt_secret)
+else:
+    logger.warning(
+        "SessionMiddleware unavailable; skipping session middleware registration"
+    )
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Some templates and older front-end paths request assets at root-level
+# paths like `/css/...`, `/js/...`, `/images/...` and `/vendor/...`.
+# Provide lightweight mounts to the appropriate subfolders so both
+# `/static/...` and the shorter paths resolve.
+app.mount("/css", StaticFiles(directory="static/css"), name="css")
+app.mount("/js", StaticFiles(directory="static/js"), name="js")
+app.mount("/images", StaticFiles(directory="static/images"), name="images")
+app.mount("/vendor", StaticFiles(directory="static/vendor"), name="vendor")
 
 
 # Simple monitoring middleware
@@ -336,9 +372,97 @@ async def landing_page(request: Request):
     return templates.TemplateResponse("landing.html", context)
 
 
-# Include auth routes
-app.include_router(auth.router, prefix="/auth", tags=["authentication"])
-app.include_router(admin.router, prefix="/admin", tags=["admin"])
+# Aliases for legacy template paths: some templates link to `/signup` and
+# `/login` (without the `/auth` prefix). Provide top-level aliases that
+# delegate to the `app.auth` handlers so both paths work.
+
+
+@app.get("/signup", response_class=HTMLResponse)
+async def signup_alias(request: Request):
+    if auth is not None and getattr(auth, "signup_page", None) is not None:
+        return auth.signup_page(request)
+
+    templates.env.globals["url_path_for"] = request.app.url_path_for
+    return templates.TemplateResponse(
+        "signup_enhanced.html", {"request": request, "app_env": "dev"}
+    )
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_alias(request: Request):
+    if auth is not None and getattr(auth, "login_page", None) is not None:
+        return auth.login_page(request)
+
+    templates.env.globals["url_path_for"] = request.app.url_path_for
+    return templates.TemplateResponse(
+        "login_enhanced.html", {"request": request, "error": None, "app_env": "dev"}
+    )
+
+
+# Provide a top-level offline.html route that some service workers expect
+@app.get("/offline.html")
+async def offline_page():
+    # Serve the static offline page if present
+    offline_path = Path("static/offline.html")
+    if offline_path.exists():
+        from fastapi.responses import FileResponse
+
+        return FileResponse(str(offline_path), media_type="text/html")
+    raise HTTPException(status_code=404, detail="offline.html not found")
+
+
+# Include auth + admin routes. Routers already define their own prefixes
+# (e.g. `auth.router` uses prefix="/auth"). If a module failed to import
+# (e.g. optional dependency missing) register a lightweight shim router
+# so the app remains usable in preview mode.
+from fastapi import APIRouter
+
+
+def _register_auth_router():
+    if auth is not None and getattr(auth, "router", None) is not None:
+        app.include_router(auth.router)
+        return
+
+    logger.warning("auth module not available - registering shim auth routes")
+    shim = APIRouter(prefix="/auth", tags=["auth"])
+
+    @shim.get("/signup", response_class=HTMLResponse)
+    def _shim_signup(request: Request):
+        templates.env.globals["url_path_for"] = request.app.url_path_for
+        return templates.TemplateResponse(
+            "signup_enhanced.html", {"request": request, "app_env": "dev"}
+        )
+
+    @shim.get("/login", response_class=HTMLResponse)
+    def _shim_login(request: Request, error: str | None = None):
+        templates.env.globals["url_path_for"] = request.app.url_path_for
+        return templates.TemplateResponse(
+            "login_enhanced.html",
+            {"request": request, "error": error, "app_env": "dev"},
+        )
+
+    app.include_router(shim)
+
+
+def _register_admin_router():
+    if admin is not None and getattr(admin, "router", None) is not None:
+        app.include_router(admin.router)
+        return
+
+    logger.warning("admin module not available - registering shim admin routes")
+    shim = APIRouter(prefix="/admin", tags=["admin"])
+
+    @shim.get("/", response_class=HTMLResponse)
+    def _shim_admin_home(request: Request):
+        return templates.TemplateResponse(
+            "admin.html", {"request": request, "title": "Admin"}
+        )
+
+    app.include_router(shim)
+
+
+_register_auth_router()
+_register_admin_router()
 
 
 if __name__ == "__main__":

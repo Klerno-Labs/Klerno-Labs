@@ -853,18 +853,18 @@ def update_security_policy(config: SecurityPolicyConfig, admin=Depends(require_a
     # runtime these operate directly on the existing config object.
     cfg = getattr(policy, "config", None)
     if cfg is not None:
-        setattr(cfg, "min_length", config.min_length)
-        setattr(cfg, "max_length", config.max_length)
-        setattr(cfg, "require_uppercase", config.require_uppercase)
-        setattr(cfg, "require_lowercase", config.require_lowercase)
-        setattr(cfg, "require_digits", config.require_digits)
-        setattr(cfg, "require_symbols", config.require_symbols)
-        setattr(cfg, "check_breaches", config.check_breaches)
+        cfg.min_length = config.min_length
+        cfg.max_length = config.max_length
+        cfg.require_uppercase = config.require_uppercase
+        cfg.require_lowercase = config.require_lowercase
+        cfg.require_digits = config.require_digits
+        cfg.require_symbols = config.require_symbols
+        cfg.check_breaches = config.check_breaches
 
         # Handle blacklist
         if not config.blacklist_enabled:
             # Clear blacklist set
-            setattr(cfg, "common_passwords", set())
+            cfg.common_passwords = set()
         elif len(getattr(cfg, "common_passwords", [])) == 0:
             # Reload default blacklist if it was cleared
             if hasattr(cfg, "_load_common_passwords"):

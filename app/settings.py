@@ -3,7 +3,7 @@
 import os
 import sys
 from functools import lru_cache
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 from pydantic import BaseModel
 
@@ -72,7 +72,7 @@ def get_settings() -> Settings:
     # Build a current-environment-backed settings instance so changes to
     # os.environ earlier in test collection are respected (avoids class-level
     # default evaluation at import time).
-    s: Dict[str, Any] = {
+    s: dict[str, Any] = {
         "database_url": os.getenv("DATABASE_URL", "sqlite:///./data/klerno.db"),
         "redis_url": os.getenv("REDIS_URL", "redis://localhost:6379"),
         "jwt_secret": os.getenv("JWT_SECRET", "your-secret-key-change-in-production"),
@@ -101,7 +101,7 @@ def get_settings() -> Settings:
     }
 
     # pydantic expects correctly typed kwargs; cast for mypy compatibility
-    return Settings(**cast(Dict[str, Any], s))
+    return Settings(**cast(dict[str, Any], s))
 
 
 settings: Settings = get_settings()

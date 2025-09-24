@@ -16,12 +16,12 @@ import threading
 import time
 import traceback
 from collections import defaultdict, deque
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from functools import wraps
-from typing import Any, Awaitable, DefaultDict, Optional, TypeVar
+from typing import Any, TypeVar
 
 # weakref not used
 
@@ -80,7 +80,7 @@ class RetryPolicy:
     max_delay: float = 60.0
     exponential_base: float = 2.0
     jitter: bool = True
-    retry_on_exceptions: Optional[list[type]] = None
+    retry_on_exceptions: list[type] | None = None
 
 
 @dataclass
@@ -102,7 +102,7 @@ class CircuitBreaker:
         self.state = CircuitState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time: Optional[float] = None
+        self.last_failure_time: float | None = None
         self.request_count = 0
         self.success_request_count = 0
         self.lock = threading.RLock()
@@ -955,7 +955,7 @@ class ResilienceOrchestrator:
             recent_errors: list[ErrorEvent] = list(self.error_events)[
                 -50:
             ]  # Last 50 errors
-            error_counts: DefaultDict[str, int] = defaultdict(int)
+            error_counts: defaultdict[str, int] = defaultdict(int)
             for error in recent_errors:
                 error_counts[str(error.severity.value)] += 1
 
@@ -1048,7 +1048,7 @@ resilience_orchestrator = ResilienceOrchestrator()
 # Convenience decorators and functions
 
 
-def circuit_breaker(name: str, config: Optional[CircuitBreakerConfig] = None):
+def circuit_breaker(name: str, config: CircuitBreakerConfig | None = None):
     """Circuit breaker decorator."""
     if config is None:
         config = CircuitBreakerConfig()
@@ -1072,7 +1072,7 @@ def circuit_breaker(name: str, config: Optional[CircuitBreakerConfig] = None):
     return decorator
 
 
-def retry_on_failure(policy: Optional[RetryPolicy] = None):
+def retry_on_failure(policy: RetryPolicy | None = None):
     """Retry decorator."""
     if policy is None:
         policy = RetryPolicy()
@@ -1081,7 +1081,7 @@ def retry_on_failure(policy: Optional[RetryPolicy] = None):
 
 
 async def handle_service_error(
-    error: Exception, service_name: str, context: Optional[dict[str, Any]] = None
+    error: Exception, service_name: str, context: dict[str, Any] | None = None
 ) -> None:
     """Handle service error with full resilience features."""
     await resilience_orchestrator.handle_error(error, service_name, context or {})

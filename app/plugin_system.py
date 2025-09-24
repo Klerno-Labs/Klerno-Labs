@@ -173,7 +173,7 @@ class PluginManager:
             if loader is None or not hasattr(loader, "exec_module"):
                 raise ImportError("Plugin spec does not have a usable loader")
 
-            exec_fn = getattr(loader, "exec_module")
+            exec_fn = loader.exec_module
             if not callable(exec_fn):
                 raise ImportError("Plugin loader.exec_module is not callable")
 

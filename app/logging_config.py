@@ -6,7 +6,7 @@ Provides consistent, structured logging throughout the application.
 import logging
 import sys
 from datetime import UTC, datetime
-from typing import Any, Optional
+from typing import Any
 
 import structlog
 from pythonjsonlogger.json import JsonFormatter
@@ -129,8 +129,8 @@ def log_request_response(
     url: str,
     status_code: int,
     duration: float,
-    request_id: Optional[str] = None,
-    user_id: Optional[str] = None,
+    request_id: str | None = None,
+    user_id: str | None = None,
     **kwargs,
 ) -> None:
     """Log HTTP request / response details."""
@@ -162,9 +162,9 @@ def log_request_response(
 
 def log_security_event(
     event_type: str,
-    user_id: Optional[str] = None,
-    ip_address: Optional[str] = None,
-    details: Optional[dict[str, Any]] = None,
+    user_id: str | None = None,
+    ip_address: str | None = None,
+    details: dict[str, Any] | None = None,
     **kwargs,
 ) -> None:
     """Log security - related events."""
@@ -204,10 +204,10 @@ def log_security_event(
 
 def log_business_event(
     event_type: str,
-    entity_type: Optional[str] = None,
-    entity_id: Optional[str] = None,
-    user_id: Optional[str] = None,
-    details: Optional[dict[str, Any]] = None,
+    entity_type: str | None = None,
+    entity_id: str | None = None,
+    user_id: str | None = None,
+    details: dict[str, Any] | None = None,
     **kwargs,
 ) -> None:
     """Log business logic events."""
@@ -244,7 +244,7 @@ def log_performance_metric(
     operation: str,
     duration: float,
     success: bool = True,
-    details: Optional[dict[str, Any]] = None,
+    details: dict[str, Any] | None = None,
     **kwargs,
 ) -> None:
     """Log performance metrics."""

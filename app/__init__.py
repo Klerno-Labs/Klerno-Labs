@@ -6,15 +6,16 @@ via the top-level ``app`` package (some tests patch those import paths).
 """
 
 import types
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any, Optional
 
 # Provide a minimal module object so `integrations` is always a module-like
 # object (avoids assigning None to a variable that later holds ModuleType).
 integrations: Any = types.ModuleType("integrations")
 auth: Any = None
-create_access_token: Optional[Callable[..., str]] = None
-verify_token: Optional[Callable[..., dict[Any, Any]]] = None
-ACCESS_TOKEN_EXPIRE_MINUTES: Optional[int] = None
+create_access_token: Callable[..., str] | None = None
+verify_token: Callable[..., dict[Any, Any]] | None = None
+ACCESS_TOKEN_EXPIRE_MINUTES: int | None = None
 try:
     from . import integrations as integrations  # type: ignore
 except Exception:
@@ -52,8 +53,8 @@ except Exception:
                     return []
 
                 for m in (submod, app_sub):
-                    setattr(m, "get_xrpl_client", _stub_get_xrpl_client)
-                    setattr(m, "fetch_account_tx", _stub_fetch_account_tx)
+                    m.get_xrpl_client = _stub_get_xrpl_client
+                    m.fetch_account_tx = _stub_fetch_account_tx
 
             setattr(integrations, _sub, submod)
             setattr(integrations, _sub, submod)
@@ -156,10 +157,10 @@ try:
 
     if create_access_token is not None and not hasattr(builtins, "create_access_token"):
         if not hasattr(builtins, "create_access_token"):
-            setattr(builtins, "create_access_token", create_access_token)
+            builtins.create_access_token = create_access_token
     if verify_token is not None and not hasattr(builtins, "verify_token"):
         if not hasattr(builtins, "verify_token"):
-            setattr(builtins, "verify_token", verify_token)
+            builtins.verify_token = verify_token
 except Exception:
     # ignore failures when running in restricted environments
     pass
@@ -194,7 +195,7 @@ try:
     if real_xrp is not None:
         try:
             # Ensure both top-level and app-level references point to the real module
-            setattr(integrations, "xrp", real_xrp)
+            integrations.xrp = real_xrp
             _sys.modules["integrations.xrp"] = real_xrp
             _sys.modules["app.integrations.xrp"] = real_xrp
         except Exception:

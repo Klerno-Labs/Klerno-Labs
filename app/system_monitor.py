@@ -10,7 +10,7 @@ import sqlite3
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 import psutil
 
@@ -220,7 +220,7 @@ class SystemMonitor:
         except Exception as e:
             logger.error("Error initializing monitoring tables: %s", e)
 
-    def get_system_metrics(self) -> Optional[SystemMetrics]:
+    def get_system_metrics(self) -> SystemMetrics | None:
         """Get current system performance metrics."""
         try:
             # CPU usage
@@ -272,7 +272,7 @@ class SystemMonitor:
             logger.error("Error getting system metrics: %s", e)
             return None
 
-    def get_application_metrics(self) -> Optional[ApplicationMetrics]:
+    def get_application_metrics(self) -> ApplicationMetrics | None:
         """Get current application metrics."""
         try:
             # Count total users
@@ -314,7 +314,7 @@ class SystemMonitor:
             logger.error("Error getting application metrics: %s", e)
             return None
 
-    def get_security_metrics(self) -> Optional[SecurityMetrics]:
+    def get_security_metrics(self) -> SecurityMetrics | None:
         """Get current security metrics."""
         try:
             # Count recent failed logins

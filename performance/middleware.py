@@ -7,12 +7,11 @@ import asyncio
 import time
 from collections.abc import Callable
 
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
-
 from app.monitoring.logging import get_logger
 from app.monitoring.metrics import metrics
 from app.performance.caching import cache
+from fastapi import Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = get_logger("performance")
 

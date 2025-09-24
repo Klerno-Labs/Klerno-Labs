@@ -10,10 +10,11 @@ import os
 import shutil
 import subprocess
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, cast
 
 import yaml
 
@@ -79,7 +80,7 @@ class CICDPipeline:
         self.backups_path.mkdir(parents=True, exist_ok=True)
 
         # Pipeline state
-        self.current_build: Optional[BuildArtifact] = None
+        self.current_build: BuildArtifact | None = None
         self.deployment_history: list[dict] = []
         self.rollback_points: list[dict] = []
 
@@ -223,8 +224,8 @@ class CICDPipeline:
     def run_pipeline(
         self,
         target_branch: str = "main",
-        skip_stages: Optional[List[str]] = None,
-        environment_overrides: Optional[Dict[str, str]] = None,
+        skip_stages: list[str] | None = None,
+        environment_overrides: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """Run the complete CI/CD pipeline"""
 
@@ -250,7 +251,7 @@ class CICDPipeline:
         try:
             # Run each stage
             pipeline_stages = cast(
-                List[Dict[str, Any]], self.config.get("pipeline_stages", [])
+                list[dict[str, Any]], self.config.get("pipeline_stages", [])
             )
             for stage_config in pipeline_stages:
                 stage_name = stage_config["name"]
@@ -316,7 +317,7 @@ class CICDPipeline:
     def _run_stage(
         self,
         stage_config: dict[str, Any],
-        environment_overrides: Optional[Dict[str, str]] = None,
+        environment_overrides: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """Run a single pipeline stage"""
         stage_name = stage_config["name"]
@@ -437,11 +438,11 @@ class CICDPipeline:
             "passed": coverage_actual >= coverage_threshold,
         }
 
-        cast(List[Dict[str, Any]], gate_results["checks"]).append(coverage_check)
+        cast(list[dict[str, Any]], gate_results["checks"]).append(coverage_check)
 
         if not coverage_check["passed"]:
             gate_results["passed"] = False
-            cast(List[str], gate_results["failures"]).append(
+            cast(list[str], gate_results["failures"]).append(
                 f"Code coverage {coverage_actual}% below threshold {coverage_threshold}%"
             )
 
@@ -461,11 +462,11 @@ class CICDPipeline:
             ),
         }
 
-        cast(List[Dict[str, Any]], gate_results["checks"]).append(security_check)
+        cast(list[dict[str, Any]], gate_results["checks"]).append(security_check)
 
         if not security_check["passed"]:
             gate_results["passed"] = False
-            cast(List[str], gate_results["failures"]).append(
+            cast(list[str], gate_results["failures"]).append(
                 "Security issues exceed thresholds"
             )
 
@@ -694,7 +695,7 @@ class CICDPipeline:
             for item in deploy_steps_raw:
                 name = cast(str, item[0])
                 func = cast(Callable[..., Any], item[1])
-                args_tuple: Tuple[Any, ...] = tuple(item[2:])
+                args_tuple: tuple[Any, ...] = tuple(item[2:])
 
                 step_result = self._run_deployment_step(name, func, *args_tuple)
                 deployment_result["steps"].append(step_result)

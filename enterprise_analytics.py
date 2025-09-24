@@ -12,7 +12,9 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
+
+from app.constants import CACHE_TTL
 
 
 def _ensure_numpy() -> None:
@@ -98,7 +100,7 @@ class EnterpriseAnalytics:
 
         # Configuration
         self.event_retention_days = 90
-        self.cache_ttl_seconds = 300
+        self.cache_ttl_seconds = CACHE_TTL
 
         # Threading
         self._lock = threading.RLock()
@@ -229,8 +231,8 @@ class EnterpriseAnalytics:
         event_type: str,
         user_id: str | None = None,
         session_id: str | None = None,
-        properties: Optional[dict[str, Any]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        properties: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """Track an analytics event"""
 
@@ -430,8 +432,8 @@ class EnterpriseAnalytics:
     def calculate_metric(
         self,
         metric_id: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
     ) -> dict[str, Any]:
         """Calculate a business metric"""
 
@@ -676,7 +678,7 @@ class EnterpriseAnalytics:
             logger.error(f"[ANALYTICS] Failed to store metric value: {e}")
 
     def generate_report(
-        self, report_id: str, parameters: Optional[dict[str, Any]] = None
+        self, report_id: str, parameters: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Generate a report"""
 
@@ -756,7 +758,7 @@ class EnterpriseAnalytics:
         duration: float,
         status: str,
         result_data: dict,
-        error: Optional[str] = None,
+        error: str | None = None,
     ):
         """Store report execution record"""
         try:

@@ -13,7 +13,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Deque, Optional
+from typing import Any
 
 from cryptography.fernet import Fernet
 
@@ -53,7 +53,7 @@ class AdvancedSecurityHardening:
     def __init__(self, db_path: str = "./data/security.db"):
         self.db_path = db_path
         # rate_limits stores timestamps (floats) per IP
-        self.rate_limits: dict[str, Deque[float]] = defaultdict(deque)
+        self.rate_limits: dict[str, deque[float]] = defaultdict(deque)
         self.blocked_ips: set[str] = set()
         self.threat_intel: dict[str, ThreatIntelligence] = {}
         self.security_events: list[SecurityEvent] = []
@@ -255,7 +255,7 @@ class AdvancedSecurityHardening:
         return ip_address in self.blocked_ips
 
     def block_ip(
-        self, ip_address: str, reason: str, duration: Optional[timedelta] = None
+        self, ip_address: str, reason: str, duration: timedelta | None = None
     ) -> None:
         """Block an IP address."""
         self.blocked_ips.add(ip_address)
@@ -291,7 +291,7 @@ class AdvancedSecurityHardening:
             logger.error(f"Error blocking IP {ip_address}: {e}")
 
     def check_rate_limit(
-        self, ip_address: str, max_requests: Optional[int] = None
+        self, ip_address: str, max_requests: int | None = None
     ) -> bool:
         """Check if IP is within rate limits."""
         max_requests = max_requests or self.max_requests_per_minute
@@ -455,7 +455,7 @@ class AdvancedSecurityHardening:
         source_ip: str,
         user_agent: str = "",
         endpoint: str = "",
-        details: Optional[dict[str, Any]] = None,
+        details: dict[str, Any] | None = None,
         blocked: bool = False,
     ) -> None:
         """Log a security event."""
@@ -508,7 +508,7 @@ class AdvancedSecurityHardening:
     def log_failed_auth_attempt(
         self,
         ip_address: str,
-        username: Optional[str] = None,
+        username: str | None = None,
         endpoint: str = "",
         user_agent: str = "",
     ) -> bool:

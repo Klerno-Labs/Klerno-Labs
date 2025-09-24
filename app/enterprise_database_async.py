@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -71,11 +71,11 @@ class DatabaseConnectionPool:
         self.recycle_time = recycle_time
 
         # Connection management
-        self._pool: "queue.Queue[tuple[sqlite3.Connection, float]]" = queue.Queue(
+        self._pool: queue.Queue[tuple[sqlite3.Connection, float]] = queue.Queue(
             maxsize=pool_size
         )
         self._overflow: list[sqlite3.Connection] = []
-        self._checked_out: "weakref.WeakSet[sqlite3.Connection]" = weakref.WeakSet()
+        self._checked_out: weakref.WeakSet[sqlite3.Connection] = weakref.WeakSet()
         self._stats: ConnectionStats = ConnectionStats()
         self._lock: threading.RLock = threading.RLock()
 
@@ -306,7 +306,7 @@ class AsyncTaskProcessor:
         self.batch_size = batch_size
 
         # Task management
-        self._task_queue: "queue.PriorityQueue[tuple[int, float, AsyncTask]]" = (
+        self._task_queue: queue.PriorityQueue[tuple[int, float, AsyncTask]] = (
             queue.PriorityQueue(maxsize=queue_size)
         )
         self._scheduled_tasks: list[AsyncTask] = []
@@ -341,7 +341,7 @@ class AsyncTaskProcessor:
 
         logger.info(f"[ASYNC] Task processor started with {max_workers} workers")
 
-    def submit_task(self, task: AsyncTask) -> Optional[str]:
+    def submit_task(self, task: AsyncTask) -> str | None:
         """Submit a task for async processing"""
         try:
             with self._lock:
@@ -363,7 +363,7 @@ class AsyncTaskProcessor:
             logger.error(f"[ASYNC] Error submitting task: {e}")
             return None
 
-    def schedule_task(self, task: AsyncTask, delay_seconds: int = 0) -> Optional[str]:
+    def schedule_task(self, task: AsyncTask, delay_seconds: int = 0) -> str | None:
         """Schedule a task for future execution"""
         try:
             with self._lock:
@@ -473,7 +473,7 @@ class AsyncTaskProcessor:
             raise
 
     def _handle_task_completion(
-        self, task: AsyncTask, result: Any, error: Optional[Exception]
+        self, task: AsyncTask, result: Any, error: Exception | None
     ):
         """Handle task completion"""
         with self._lock:
@@ -582,7 +582,7 @@ class AsyncDatabaseManager:
 
     def submit_background_task(
         self, task_func: Callable, *args, **kwargs
-    ) -> Optional[str]:
+    ) -> str | None:
         """Submit a background database task"""
         task = AsyncTask(
             task_id=f"db_task_{int(time.time() * 1000)}",
@@ -631,7 +631,7 @@ class AsyncDatabaseManager:
 
 
 # Global instances
-database_manager: Optional[AsyncDatabaseManager] = None
+database_manager: AsyncDatabaseManager | None = None
 
 
 def get_database_manager() -> AsyncDatabaseManager:

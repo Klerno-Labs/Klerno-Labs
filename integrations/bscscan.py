@@ -104,9 +104,8 @@ def bscscan_json_to_transactions(
     acct = (account or "").lower().strip()
     items = []
     # keys are tuples of (category, hash, optional index/trace)
-    from typing import Any, Tuple
 
-    seen: set[Tuple[str, Any, Any]] = set()
+    seen: set[tuple[str, Any, Any]] = set()
 
     # ---- Normal (native BNB sends)
     for it in payload.get("normal", []):

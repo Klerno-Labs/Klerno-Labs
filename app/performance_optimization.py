@@ -1225,13 +1225,13 @@ class PerformanceOptimizer:
             # Optimize connection timeouts (defensive)
             if getattr(self.db_pool, "connection_timeout", None) is not None:
                 try:
-                    current_timeout = float(getattr(self.db_pool, "connection_timeout"))
+                    current_timeout = float(self.db_pool.connection_timeout)
                 except Exception:
                     current_timeout = None
 
                 if current_timeout is not None and current_timeout > 30:
                     try:
-                        setattr(self.db_pool, "connection_timeout", 30)
+                        self.db_pool.connection_timeout = 30
                         optimizations.append(
                             "Optimized connection timeout to 30 seconds"
                         )
@@ -1241,7 +1241,7 @@ class PerformanceOptimizer:
             # Add connection health checks (defensive)
             if getattr(self.db_pool, "enable_health_checks", None) is not None:
                 try:
-                    setattr(self.db_pool, "enable_health_checks", True)
+                    self.db_pool.enable_health_checks = True
                     optimizations.append("Enabled connection health checks")
                 except Exception:
                     logger.debug("Could not set enable_health_checks on db_pool")

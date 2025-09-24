@@ -22,9 +22,9 @@ try:
     ):
         # Use setattr and a typed ignore to avoid static type complaints about
         # adding attributes to the builtins module during test collection.
-        setattr(builtins, "create_access_token", _legacy.create_access_token)  # type: ignore[attr-defined]
+        builtins.create_access_token = _legacy.create_access_token  # type: ignore[attr-defined]
     if hasattr(_legacy, "verify_token") and not hasattr(builtins, "verify_token"):
-        setattr(builtins, "verify_token", _legacy.verify_token)  # type: ignore[attr-defined]
+        builtins.verify_token = _legacy.verify_token  # type: ignore[attr-defined]
 except Exception:
     # best-effort; tests that require these names will fail later if legacy helpers cannot import
     pass

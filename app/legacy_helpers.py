@@ -17,7 +17,7 @@ the original behavior tests rely on.
 
 import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import jwt
@@ -67,7 +67,7 @@ def create_access_token(data: dict | Any, *a, **kw) -> str:
             except Exception:
                 minutes = 60
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         exp = now + timedelta(minutes=int(minutes))
         # Use integer timestamps which PyJWT reliably encodes
         token_payload = {

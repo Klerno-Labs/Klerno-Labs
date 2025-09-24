@@ -9,7 +9,7 @@ import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, DefaultDict
+from typing import Any
 
 import psutil
 from fastapi import Request
@@ -248,7 +248,7 @@ class UserAnalytics:
 
     def _get_popular_flows(self) -> list[dict[str, Any]]:
         """Get most popular user flows"""
-        flow_counts: DefaultDict[str, int] = defaultdict(int)
+        flow_counts: defaultdict[str, int] = defaultdict(int)
 
         for flow in self.user_flows.values():
             if len(flow) >= 2:

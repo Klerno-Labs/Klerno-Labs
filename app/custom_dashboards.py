@@ -11,7 +11,7 @@ import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from .subscriptions import get_db_connection
 
@@ -51,7 +51,7 @@ class DashboardWidget:
     position: dict[str, int]  # x, y, width, height
     data_source: str
     refresh_interval: int = 30  # seconds
-    filters: Optional[dict[str, Any]] = None
+    filters: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert widget to dictionary."""
@@ -69,8 +69,8 @@ class Dashboard:
     layout: dict[str, Any]
     widgets: list[DashboardWidget]
     is_public: bool = False
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert dashboard to dictionary."""
@@ -135,7 +135,7 @@ class DashboardManager:
         user_id: str,
         name: str,
         description: str = "",
-        layout: Optional[dict[str, Any]] = None,
+        layout: dict[str, Any] | None = None,
     ) -> Dashboard:
         """Create a new dashboard for user."""
         dashboard_id = str(uuid.uuid4())
@@ -218,7 +218,7 @@ class DashboardManager:
         return dashboards
 
     def get_dashboard(
-        self, dashboard_id: str, user_id: Optional[str] = None
+        self, dashboard_id: str, user_id: str | None = None
     ) -> Dashboard | None:
         """Get specific dashboard by ID."""
         conn = get_db_connection()
@@ -266,7 +266,7 @@ class DashboardManager:
         position: dict[str, int],
         data_source: str,
         refresh_interval: int = 30,
-        filters: Optional[dict[str, Any]] = None,
+        filters: dict[str, Any] | None = None,
     ) -> DashboardWidget:
         """Add widget to dashboard."""
         widget_id = str(uuid.uuid4())
@@ -532,7 +532,7 @@ def create_dashboard(user_id: str, name: str, description: str = "") -> Dashboar
     return dashboard_manager.create_dashboard(user_id, name, description)
 
 
-def get_dashboard(dashboard_id: str, user_id: Optional[str] = None) -> Dashboard | None:
+def get_dashboard(dashboard_id: str, user_id: str | None = None) -> Dashboard | None:
     """Get specific dashboard."""
     return dashboard_manager.get_dashboard(dashboard_id, user_id)
 

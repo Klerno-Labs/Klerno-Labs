@@ -332,7 +332,7 @@ def request_password_reset(payload: PasswordResetRequest):
     tokens = getattr(store, "_reset_tokens", None)
     if tokens is None:
         tokens = {}
-        setattr(store, "_reset_tokens", tokens)
+        store._reset_tokens = tokens
 
     tokens[reset_token] = {
         "user_id": user["id"],

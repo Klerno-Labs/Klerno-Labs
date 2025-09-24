@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-CACHE_TTL = 300  # 5 minutes default TTL
+from app.constants import CACHE_TTL
 
 # Simple in-memory cache for frequently accessed data
 # Add explicit type annotations to satisfy static checkers
@@ -34,11 +34,6 @@ def _safe_idx(seq: Sequence[Any] | Any, idx: int) -> Any:
         return seq[idx] if isinstance(seq, Sequence) and len(seq) > idx else seq[idx]
     except Exception:
         return None
-
-
-# Default TTL
-# (moved the existing constant down to keep minimal context changes)
-CACHE_TTL = 300  # 5 minutes default TTL
 
 
 def _get_cache_key(*args) -> str:
@@ -92,16 +87,31 @@ except Exception:
     with contextlib.suppress(Exception):
         _ = None
 
-# psycopg2 might not be installed locally; handle gracefully
+# Support either psycopg (psycopg3) or psycopg2 if available.
+PSYCOPG_AVAILABLE = False
+PSYCOPG_LIBRARY = None
+psycopg = None
+RealDictCursor = None
 try:
-    import psycopg2  # type: ignore[import - not - found]
-    from psycopg2.extras import RealDictCursor  # type: ignore[import - not - found]
+    import psycopg as psycopg3  # type: ignore
 
-    PSYCOPG2_AVAILABLE = True
+    psycopg = psycopg3
+    PSYCOPG_AVAILABLE = True
+    PSYCOPG_LIBRARY = "psycopg"
 except Exception:
-    PSYCOPG2_AVAILABLE = False
+    try:
+        import psycopg2 as psycopg2_mod  # type: ignore
+        from psycopg2.extras import RealDictCursor as RealDictCursor  # type: ignore
 
-USING_POSTGRES = bool(DATABASE_URL) and PSYCOPG2_AVAILABLE
+        psycopg = psycopg2_mod
+        PSYCOPG_AVAILABLE = True
+        PSYCOPG_LIBRARY = "psycopg2"
+    except Exception:  # pragma: no cover - optional dependency
+        psycopg = None  # type: ignore[assignment]
+        RealDictCursor = None  # type: ignore[assignment]
+        PSYCOPG_AVAILABLE = False
+
+USING_POSTGRES = bool(DATABASE_URL) and PSYCOPG_AVAILABLE
 
 
 # --- Connection factories -----------------------------------------------------
@@ -140,11 +150,45 @@ def _sqlite_conn() -> sqlite3.Connection:
     return con
 
 
-def _postgres_conn():
-    # RealDictCursor returns dict rows (keyed by column name)
-    return psycopg2.connect(
-        DATABASE_URL, cursor_factory=RealDictCursor
-    )  # type: ignore[name - defined]
+def _postgres_conn(retries: int | None = None, backoff: float | None = None):
+    """
+    Create a Postgres connection with a small retry/backoff policy.
+
+    This attempts to support both `psycopg` (psycopg3) and `psycopg2`.
+    Retries and backoff can be controlled with env vars `DB_CONNECT_RETRIES`
+    and `DB_CONNECT_BACKOFF` (seconds).
+    """
+    if retries is None:
+        try:
+            retries = int(os.getenv("DB_CONNECT_RETRIES", "3"))
+        except Exception:
+            retries = 3
+    if backoff is None:
+        try:
+            backoff = float(os.getenv("DB_CONNECT_BACKOFF", "0.1"))
+        except Exception:
+            backoff = 0.1
+
+    last_exc = None
+    for attempt in range(max(1, retries)):
+        try:
+            if PSYCOPG_LIBRARY == "psycopg":
+                # psycopg3: connect with the URL directly
+                return psycopg.connect(DATABASE_URL)
+            # psycopg2
+            return psycopg.connect(DATABASE_URL, cursor_factory=RealDictCursor)  # type: ignore[arg-type]
+        except Exception as e:
+            last_exc = e
+            # exponential backoff
+            try:
+                time.sleep(backoff * (2**attempt))
+            except Exception:
+                with contextlib.suppress(Exception):
+                    _ = None
+    # If we get here, raise the last exception to surface connection issues
+    if last_exc is not None:
+        raise last_exc
+    raise RuntimeError("failed to create postgres connection")
 
 
 def _conn():

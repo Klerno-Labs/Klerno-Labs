@@ -6,8 +6,9 @@ Comprehensive health checks and metrics for horizontal scaling
 
 import asyncio
 import time
+from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, Mapping, cast
+from typing import Any, cast
 
 import psutil
 

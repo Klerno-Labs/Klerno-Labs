@@ -5,7 +5,7 @@ from __future__ import annotations
 db = None
 # Utility for test compatibility
 
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 
 def is_subscription_active(user_id: str) -> bool:
@@ -16,7 +16,7 @@ def is_subscription_active(user_id: str) -> bool:
         sub is not None
         and getattr(sub, "active", False)
         and getattr(sub, "expires_at", None)
-        and sub.expires_at > datetime.now(timezone.utc)
+        and sub.expires_at > datetime.now(UTC)
     )
 
 
@@ -34,7 +34,7 @@ Manages user subscriptions, tier pricing, and access control.
 import sqlite3
 from enum import Enum
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 from fastapi import Depends, HTTPException, status
 from pydantic import BaseModel
@@ -219,7 +219,7 @@ def get_db_connection():
 # import typing helpers at module top; duplicate removed
 
 
-def get_tier_details(tier_id: Union[str, SubscriptionTier]) -> TierDetails:
+def get_tier_details(tier_id: str | SubscriptionTier) -> TierDetails:
     """Get details for a subscription tier."""
     # Coerce incoming identifier to a SubscriptionTier when possible so we
     # can index DEFAULT_TIERS (which uses SubscriptionTier enum keys).

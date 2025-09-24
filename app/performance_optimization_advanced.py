@@ -18,7 +18,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, DefaultDict, Deque
+from typing import Any
 
 import psutil
 
@@ -89,7 +89,7 @@ class AdvancedCache:
         self.max_size_bytes = max_size_mb * 1024 * 1024
         self.compression_threshold = compression_threshold
         self.cache: dict[str, CacheEntry] = {}
-        self.access_order: Deque[str] = deque()  # LRU tracking
+        self.access_order: deque[str] = deque()  # LRU tracking
         self.current_size_bytes = 0
         self.hit_count = 0
         self.miss_count = 0
@@ -97,8 +97,8 @@ class AdvancedCache:
         self._lock = threading.RLock()
 
         # Performance tracking
-        self.get_times: Deque[float] = deque(maxlen=1000)
-        self.set_times: Deque[float] = deque(maxlen=1000)
+        self.get_times: deque[float] = deque(maxlen=1000)
+        self.set_times: deque[float] = deque(maxlen=1000)
 
     def _serialize_value(self, value: Any) -> bytes:
         """Serialize and optionally compress value."""
@@ -275,12 +275,12 @@ class PerformanceProfiler:
     def __init__(self, db_path: str = "./data/performance.db"):
         self.db_path = db_path
         self.metrics: list[PerformanceMetric] = []
-        self.operation_times: DefaultDict[str, Deque[float]] = defaultdict(
+        self.operation_times: defaultdict[str, deque[float]] = defaultdict(
             lambda: deque(maxlen=1000)
         )
         self.slow_query_threshold_ms = 1000
-        self.memory_samples: Deque[float] = deque(maxlen=100)
-        self.cpu_samples: Deque[float] = deque(maxlen=100)
+        self.memory_samples: deque[float] = deque(maxlen=100)
+        self.cpu_samples: deque[float] = deque(maxlen=100)
 
         # Initialize database
         self._init_performance_database()

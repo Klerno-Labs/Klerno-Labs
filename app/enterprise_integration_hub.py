@@ -659,7 +659,7 @@ class EnterpriseIntegrationHub:
                 # Run sync shutdown in executor to avoid blocking
                 loop = asyncio.get_event_loop()
                 await loop.run_in_executor(
-                    None, getattr(self.database_manager, "shutdown")
+                    None, self.database_manager.shutdown
                 )
 
             logger.info("[ENTERPRISE] [OK] Database manager shutdown")
