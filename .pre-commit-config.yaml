@@ -1,0 +1,8 @@
+- repo: local
+  hooks:
+    - id: check-top-level-imports
+      name: Check top-level heavy imports
+      entry: python scripts/check_top_level_imports.py
+      language: system
+      files:
+        - "^.*\\.py$"

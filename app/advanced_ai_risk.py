@@ -12,8 +12,16 @@ from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
-from sklearn.ensemble import IsolationForest, RandomForestClassifier
-from sklearn.preprocessing import StandardScaler
+
+try:
+    # Avoid importing sklearn at module-import time; import inside initializer
+    IsolationForest = None
+    RandomForestClassifier = None
+    StandardScaler = None
+except Exception:
+    IsolationForest = None
+    RandomForestClassifier = None
+    StandardScaler = None
 
 logger = logging.getLogger(__name__)
 
@@ -48,19 +56,29 @@ class AdvancedAIRiskEngine:
     """AI - powered advanced risk scoring engine."""
 
     def __init__(self):
-        self.isolation_forest = IsolationForest(contamination=0.1, random_state=42)
-        self.risk_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
-        self.scaler = StandardScaler()
+        self.isolation_forest = None
+        self.risk_classifier = None
+        self.scaler = None
         self.is_trained = False
         self._initialize_models()
 
     def _initialize_models(self):
         """Initialize AI models with synthetic training data."""
+        # Import sklearn here to avoid heavy import at module import-time
+        try:
+            from sklearn.ensemble import IsolationForest, RandomForestClassifier
+            from sklearn.preprocessing import StandardScaler
+        except Exception as e:
+            raise RuntimeError("sklearn is required to initialize AI models") from e
         # Generate synthetic training data for demonstration
         # In production, this would use real historical data
         X_train, y_train = self._generate_training_data()
 
-        # Train models
+        # Create and train models
+        self.scaler = StandardScaler()
+        self.isolation_forest = IsolationForest(contamination=0.1, random_state=42)
+        self.risk_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
+
         X_scaled = self.scaler.fit_transform(X_train)
         self.isolation_forest.fit(X_scaled)
         self.risk_classifier.fit(X_scaled, y_train)
@@ -127,20 +145,31 @@ class AdvancedAIRiskEngine:
     ) -> AdvancedRiskScore:
         """Perform advanced AI risk analysis on a transaction."""
 
-        if not self.is_trained:
-            raise RuntimeError("AI models not trained")
+        if (
+            not self.is_trained
+            or self.scaler is None
+            or self.isolation_forest is None
+            or self.risk_classifier is None
+        ):
+            raise RuntimeError("AI models not trained or not initialized")
 
         # Extract features from transaction
         features = self._extract_features(transaction_data, user_history or [])
 
         # Scale features
+        if self.scaler is None:
+            raise RuntimeError("Scaler not initialized")
         features_scaled = self.scaler.transform([features])
 
         # Get anomaly score
+        if self.isolation_forest is None:
+            raise RuntimeError("Isolation forest not initialized")
         anomaly_score = self.isolation_forest.decision_function(features_scaled)[0]
         is_anomaly = self.isolation_forest.predict(features_scaled)[0] == -1
 
         # Get risk classification
+        if self.risk_classifier is None:
+            raise RuntimeError("Risk classifier not initialized")
         risk_proba = self.risk_classifier.predict_proba(features_scaled)[0]
         self.risk_classifier.predict(features_scaled)[0]
 
