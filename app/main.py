@@ -355,7 +355,7 @@ with contextlib.suppress(Exception):
             if isinstance(payload, dict) and hasattr(_auth_mod, "SignupReq"):
                 signup_payload = _auth_mod.SignupReq(**payload)
         except Exception as exc:  # invalid payload
-            raise HTTPException(status_code=422, detail=str(exc)) from None
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
         response = res or Response()
         return _auth_mod.signup_api(signup_payload, response)
@@ -373,7 +373,7 @@ with contextlib.suppress(Exception):
             if isinstance(payload, dict) and hasattr(_auth_mod, "LoginReq"):
                 login_payload = _auth_mod.LoginReq(**payload)
         except Exception as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from None
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
         response = res or Response()
         return _auth_mod.login_api(login_payload, response)
@@ -505,16 +505,19 @@ try:
                 raise HTTPException(status_code=501, detail="Login not implemented")
 
             # Normalize legacy field names
-            if isinstance(payload_dict, dict):
-                if "username" in payload_dict and "email" not in payload_dict:
-                    payload_dict["email"] = payload_dict.pop("username")
+            if (
+                isinstance(payload_dict, dict)
+                and "username" in payload_dict
+                and "email" not in payload_dict
+            ):
+                payload_dict["email"] = payload_dict.pop("username")
 
             payload = payload_dict
             if isinstance(payload_dict, dict) and hasattr(_auth_mod, "LoginReq"):
                 try:
                     payload = _auth_mod.LoginReq(**payload_dict)
                 except Exception as exc:
-                    raise HTTPException(status_code=422, detail=str(exc)) from None
+                    raise HTTPException(status_code=422, detail=str(exc)) from exc
 
             # Provide a Response object so the underlying handler can set cookies
             from fastapi import Response
