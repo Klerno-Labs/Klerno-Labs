@@ -139,8 +139,15 @@ except Exception:
                 self.create_access_token = _legacy.create_access_token
                 self.verify_token = _legacy.verify_token
             else:
-                self.create_access_token = lambda *a, **k: ""
-                self.verify_token = lambda t: {"sub": "test@example.com"}
+
+                def _create_access_token_stub(*_args, **_kwargs) -> str:
+                    return ""
+
+                def _verify_token_stub(_t: str) -> dict[str, str]:
+                    return {"sub": "test@example.com"}
+
+                self.create_access_token = _create_access_token_stub
+                self.verify_token = _verify_token_stub
 
     auth = _AuthShim()
     create_access_token = auth.create_access_token
@@ -156,11 +163,9 @@ try:
     import builtins
 
     if create_access_token is not None and not hasattr(builtins, "create_access_token"):
-        if not hasattr(builtins, "create_access_token"):
-            builtins.create_access_token = create_access_token
+        builtins.create_access_token = create_access_token
     if verify_token is not None and not hasattr(builtins, "verify_token"):
-        if not hasattr(builtins, "verify_token"):
-            builtins.verify_token = verify_token
+        builtins.verify_token = verify_token
 except Exception:
     # ignore failures when running in restricted environments
     pass

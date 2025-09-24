@@ -152,9 +152,12 @@ class EnterpriseConfig:
         if self.enterprise_mode and not self.encryption_key:
             issues.append("Encryption key required for enterprise mode")
 
-        if self.features.financial_compliance and self.environment == "production":
-            if not self.monitoring_db:
-                issues.append("Monitoring database required for financial compliance")
+        if (
+            self.features.financial_compliance
+            and self.environment == "production"
+            and not self.monitoring_db
+        ):
+            issues.append("Monitoring database required for financial compliance")
 
         if self.features.security_hardening and not self.jwt_secret:
             issues.append("JWT secret required for security hardening")

@@ -57,6 +57,8 @@ exclude = [
 "app/enterprise_monitoring.py" = ["E402"]
 "app/subscriptions.py" = ["E402"]
 "enterprise_main_v2.py" = ["E402"]
+"app/analytics.py" = ["E402"]
+"app/compliance.py" = ["E402"]
 
 [tool.pytest.ini_options]
 testpaths = ["app/tests", "tests"]

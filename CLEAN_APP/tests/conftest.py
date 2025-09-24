@@ -1,9 +1,10 @@
 import os
 import sys
+from pathlib import Path
 
 # Ensure the workspace root (two levels up from this tests folder) is on sys.path
 # so tests that import `app` (which lives at the workspace root) can find it.
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+ROOT = str(Path(__file__).parent.parent.resolve())
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
@@ -123,17 +124,18 @@ def test_db():
     import time
 
     gc.collect()
+    db_path_obj = Path(db_path)
     for _ in range(5):
         try:
-            os.unlink(db_path)
+            db_path_obj.unlink()
             break
         except PermissionError:
             # File may be locked on Windows; wait and retry
             time.sleep(0.2)
     else:
-        # Last attempt: try removing via os.remove (same effect) and ignore errors
+        # Last attempt: try removing via os.unlink and ignore errors
         try:
-            os.remove(db_path)
+            db_path_obj.unlink()
         except Exception:
             pass
 

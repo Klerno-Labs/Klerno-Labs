@@ -621,9 +621,11 @@ class ISO20022Validator:
         }
 
         country_code = iban[:2]
-        if country_code in country_lengths:
-            if len(iban) != country_lengths[country_code]:
-                return False
+        if (
+            country_code in country_lengths
+            and len(iban) != country_lengths[country_code]
+        ):
+            return False
 
         # Checksum validation
         rearranged = iban[4:] + iban[:4]
@@ -674,15 +676,21 @@ class ISO20022Validator:
             errors.append("MISSING_FIELD: Creditor name required")
 
         # Validate account formats (simplified - could be IBAN or other formats)
-        if instruction.debtor_account and len(instruction.debtor_account) > 4:
-            if not self.validate_iban(instruction.debtor_account):
-                # Could be other account format, add more validation as needed
-                pass
+        if (
+            instruction.debtor_account
+            and len(instruction.debtor_account) > 4
+            and not self.validate_iban(instruction.debtor_account)
+        ):
+            # Could be other account format, add more validation as needed
+            pass
 
-        if instruction.creditor_account and len(instruction.creditor_account) > 4:
-            if not self.validate_iban(instruction.creditor_account):
-                # Could be other account format, add more validation as needed
-                pass
+        if (
+            instruction.creditor_account
+            and len(instruction.creditor_account) > 4
+            and not self.validate_iban(instruction.creditor_account)
+        ):
+            # Could be other account format, add more validation as needed
+            pass
 
         return errors
 

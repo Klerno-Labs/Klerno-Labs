@@ -32,11 +32,10 @@ def scan_file(path: Path) -> list[str]:
                     name = n.name.split(".")[0]
                     if name in HEAVY:
                         errors.append(f"{path}: top-level import {name}")
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    name = node.module.split(".")[0]
-                    if name in HEAVY:
-                        errors.append(f"{path}: top-level from import {name}")
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                name = node.module.split(".")[0]
+                if name in HEAVY:
+                    errors.append(f"{path}: top-level from import {name}")
     return errors
 
 

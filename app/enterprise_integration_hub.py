@@ -302,8 +302,14 @@ class EnterpriseIntegrationHub:
                         error_stats = error_stats_fn()
                     else:
                         # Fallback to summary
+                        def _default_error_summary(hours: int = 1) -> dict:
+                            # Small named helper to avoid unused-lambda ARG005 lint
+                            return {}
+
                         error_stats = getattr(
-                            self.error_handler, "get_error_summary", lambda hours=1: {}
+                            self.error_handler,
+                            "get_error_summary",
+                            _default_error_summary,
                         )()
                     if not isinstance(error_stats, dict):
                         error_stats = {}
@@ -390,8 +396,12 @@ class EnterpriseIntegrationHub:
                 if callable(stats_fn):
                     stats = stats_fn()
                 else:
+
+                    def _default_error_summary(hours: int = 1) -> dict:
+                        return {}
+
                     stats = getattr(
-                        self.error_handler, "get_error_summary", lambda hours=1: {}
+                        self.error_handler, "get_error_summary", _default_error_summary
                     )()
                 if not isinstance(stats, dict):
                     stats = {}

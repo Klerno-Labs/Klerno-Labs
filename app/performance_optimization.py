@@ -309,12 +309,14 @@ class AdvancedCache(Generic[T]):
     def _set_local(self, key: str, value: Any, ttl: int | None = None) -> None:
         """Set value in local cache."""
         # Evict if at capacity
-        if len(self.local_cache) >= self.config.max_size:
-            if self.config.strategy == CacheStrategy.LRU:
-                # Remove least recently used
-                oldest_key = next(iter(self.local_cache))
-                del self.local_cache[oldest_key]
-                self.stats["evictions"] += 1
+        if (
+            len(self.local_cache) >= self.config.max_size
+            and self.config.strategy == CacheStrategy.LRU
+        ):
+            # Remove least recently used
+            oldest_key = next(iter(self.local_cache))
+            del self.local_cache[oldest_key]
+            self.stats["evictions"] += 1
 
         expiry = None
         if ttl:
@@ -502,21 +504,20 @@ class DatabasePool:
         start_time = time.time()
 
         try:
-            async with self.acquire() as connection:
-                async with connection.transaction():
-                    results = []
-                    for query, args in queries:
-                        result = await connection.fetch(query, *args)
-                        results.append([dict(record) for record in result])
+            async with self.acquire() as connection, connection.transaction():
+                results = []
+                for query, args in queries:
+                    result = await connection.fetch(query, *args)
+                    results.append([dict(record) for record in result])
 
                     # Track performance
                     query_time = (time.time() - start_time) * 1000  # ms
                     self.query_times.append(query_time)
 
-                    async with self.lock:
-                        self.stats["queries_executed"] += len(queries)
+                async with self.lock:
+                    self.stats["queries_executed"] += len(queries)
 
-                    return results
+                return results
 
         except Exception as e:
             async with self.lock:

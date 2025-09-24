@@ -392,10 +392,8 @@ try:
         # Read incoming JSON payload
         try:
             payload_dict = await request.json()
-        except Exception:
-            raise HTTPException(
-                status_code=422, detail="Invalid JSON payload"
-            ) from None
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail="Invalid JSON payload") from exc
 
         if not hasattr(_auth_mod, "signup_api"):
             raise HTTPException(status_code=501, detail="Register not implemented")

@@ -227,16 +227,17 @@ class BehavioralAnalyzer:
                 )
 
         # Check for privilege escalation attempts
-        if current_activity.get("type") == "admin_access":
-            if user_id not in profile.get("admin_users", set()):
-                anomalies.append(
-                    {
-                        "type": "privilege_escalation",
-                        "severity": "critical",
-                        "description": "Unauthorized admin access attempt",
-                        "confidence": 0.9,
-                    }
-                )
+        if current_activity.get(
+            "type"
+        ) == "admin_access" and user_id not in profile.get("admin_users", set()):
+            anomalies.append(
+                {
+                    "type": "privilege_escalation",
+                    "severity": "critical",
+                    "description": "Unauthorized admin access attempt",
+                    "confidence": 0.9,
+                }
+            )
 
         return anomalies
 

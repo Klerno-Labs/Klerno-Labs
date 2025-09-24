@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -38,8 +39,8 @@ SENDGRID_KEY = os.getenv("SENDGRID_API_KEY", "").strip()
 ALERT_FROM = os.getenv("ALERT_EMAIL_FROM", "").strip()
 DEFAULT_TO = os.getenv("ALERT_EMAIL_TO", "").strip()
 
-BASE_DIR = os.path.dirname(__file__)
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+BASE_DIR = Path(__file__).parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -124,13 +125,7 @@ def admin_stats(user=Depends(require_admin)):
     total = len(rows)
     threshold = float(os.getenv("RISK_THRESHOLD", "0.75") or 0.75)
     alerts = [r for r in rows if _row_score(r) >= threshold]
-    if total:
-        avg_risk = round(
-            sum(_row_score(r) for r in rows) / total,
-            3,
-        )
-    else:
-        avg_risk = 0.0
+    avg_risk = round(sum(_row_score(r) for r in rows) / total, 3) if total else 0.0
 
     # Enhanced analytics
     cats: dict[str, int] = {}
@@ -258,7 +253,7 @@ def admin_realtime_analytics(user=Depends(require_admin)):
                 if mapped:
                     recent_transactions.append(mapped)
                 else:
-                    mapped_row = {i: v for i, v in enumerate(row)}
+                    mapped_row = dict(enumerate(row))
                     recent_transactions.append(mapped_row)
             except Exception:
                 recent_transactions.append({})
@@ -458,8 +453,8 @@ class SeedDemoPayload(BaseModel):
 def admin_seed_demo(
     payload: SeedDemoPayload = Body(default=None), user=Depends(require_admin)
 ):
-    data_path = os.path.join(BASE_DIR, "..", "data", "sample_transactions.csv")
-    if not os.path.exists(data_path):
+    data_path = (BASE_DIR / ".." / "data" / "sample_transactions.csv").resolve()
+    if not data_path.exists():
         raise HTTPException(status_code=404, detail="sample_transactions.csv not found")
 
     # Explicitly annotate DataFrame to help type checkers understand pandas types
@@ -865,10 +860,11 @@ def update_security_policy(config: SecurityPolicyConfig, admin=Depends(require_a
         if not config.blacklist_enabled:
             # Clear blacklist set
             cfg.common_passwords = set()
-        elif len(getattr(cfg, "common_passwords", [])) == 0:
+        elif len(getattr(cfg, "common_passwords", [])) == 0 and hasattr(
+            cfg, "_load_common_passwords"
+        ):
             # Reload default blacklist if it was cleared
-            if hasattr(cfg, "_load_common_passwords"):
-                cfg._load_common_passwords()
+            cfg._load_common_passwords()
 
     # Short local copies to keep line lengths below the linter limit.
     min_len = getattr(cfg, "min_length", config.min_length)

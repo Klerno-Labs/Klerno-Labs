@@ -221,10 +221,7 @@ def signup_api(payload: SignupReq, res: Response):
     if not is_valid:
         raise HTTPException(status_code=400, detail="; ".join(errors))
     check_breaches = getattr(policy.config, "check_breaches", False)
-    if check_breaches:
-        breached = policy.check_breached(payload.password)
-    else:
-        breached = False
+    breached = policy.check_breached(payload.password) if check_breaches else False
     if breached:
         breach_msg = "Password found in breach DB; choose another."
         raise HTTPException(status_code=400, detail=breach_msg)

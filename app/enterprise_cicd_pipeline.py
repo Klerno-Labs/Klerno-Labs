@@ -199,17 +199,14 @@ class CICDPipeline:
 
         try:
             if Path(self.config_path).exists():
-                with open(self.config_path) as f:
+                with Path(self.config_path).open() as f:
                     raw_config = yaml.safe_load(f)
-                    if isinstance(raw_config, dict):
-                        config = {k: v for k, v in raw_config.items()}  # type: dict[str, Any]
-                    else:
-                        config = {}
+                    config = dict(raw_config) if isinstance(raw_config, dict) else {}
                     # Merge with defaults
                     default_config.update(config)
             else:
                 # Create default config file
-                with open(self.config_path, "w") as f:
+                with Path(self.config_path).open("w") as f:
                     yaml.dump(default_config, f, default_flow_style=False)
                 logger.info(f"[CICD] Created default configuration: {self.config_path}")
 
@@ -363,9 +360,9 @@ class CICDPipeline:
                     stage_result["output"] += f"Command: {command}\n{stdout}\n"
 
                     if process.returncode != 0:
-                        stage_result["error"] += (
-                            f"Command failed: {command}\n{stderr}\n"
-                        )
+                        stage_result[
+                            "error"
+                        ] += f"Command failed: {command}\n{stderr}\n"
                         raise subprocess.CalledProcessError(
                             process.returncode, command, stderr
                         )
@@ -499,7 +496,7 @@ class CICDPipeline:
             # Look for bandit security report
             security_report_path = self.artifacts_path / "security_report.json"
             if security_report_path.exists():
-                with open(security_report_path) as f:
+                with security_report_path.open() as f:
                     report = json.load(f)
 
                 for result in report.get("results", []):
@@ -562,7 +559,7 @@ class CICDPipeline:
     def _calculate_checksum(self, file_path: Path) -> str:
         """Calculate SHA256 checksum of file"""
         sha256_hash = hashlib.sha256()
-        with open(file_path, "rb") as f:
+        with Path(file_path).open("rb") as f:
             for byte_block in iter(lambda: f.read(4096), b""):
                 sha256_hash.update(byte_block)
         return sha256_hash.hexdigest()
@@ -582,7 +579,7 @@ class CICDPipeline:
         """Save pipeline results to file"""
         try:
             results_file = self.logs_path / f"pipeline_{results['pipeline_id']}.json"
-            with open(results_file, "w") as f:
+            with results_file.open("w") as f:
                 json.dump(results, f, indent=2, default=str)
 
             logger.info(f"[CICD] Pipeline results saved: {results_file}")

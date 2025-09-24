@@ -625,22 +625,22 @@ class ComplianceReportingEngine:
     ) -> str:
         """Create report file in specified format."""
 
-        import os
+        from pathlib import Path
 
         # Create reports directory if it doesn't exist
-        reports_dir = "data / compliance_reports"
-        os.makedirs(reports_dir, exist_ok=True)
+        reports_dir = Path("data") / "compliance_reports"
+        reports_dir.mkdir(parents=True, exist_ok=True)
 
         filename = f"{report.id}_{report.report_type.value}.{output_format.value}"
-        file_path = os.path.join(reports_dir, filename)
+        file_path = reports_dir / filename
 
         if output_format == ReportFormat.JSON:
-            with open(file_path, "w") as f:
+            with file_path.open("w") as f:
                 json.dump(data, f, indent=2, default=str)
 
         elif output_format == ReportFormat.CSV:
             # Convert to CSV format
-            with open(file_path, "w", newline="") as f:
+            with file_path.open("w", newline="") as f:
                 if "transactions" in data:
                     first = data["transactions"][0]
                     first_map = to_mapping(first)
@@ -652,24 +652,24 @@ class ComplianceReportingEngine:
         # For PDF and Excel, you would implement proper generation
         # For now, create a placeholder JSON file
         else:
-            with open(file_path, "w") as f:
+            with file_path.open("w") as f:
                 json.dump(data, f, indent=2, default=str)
 
-        return file_path
+        return str(file_path)
 
     def _create_monitoring_csv(
         self, report: ComplianceReport, data: list[dict[str, Any]]
     ) -> str:
         """Create CSV file for monitoring report."""
-        import os
+        from pathlib import Path
 
-        reports_dir = "data / compliance_reports"
-        os.makedirs(reports_dir, exist_ok=True)
+        reports_dir = Path("data") / "compliance_reports"
+        reports_dir.mkdir(parents=True, exist_ok=True)
 
         filename = f"{report.id}_monitoring.csv"
-        file_path = os.path.join(reports_dir, filename)
+        file_path = reports_dir / filename
 
-        with open(file_path, "w", newline="") as f:
+        with file_path.open("w", newline="") as f:
             if data:
                 first = data[0]
                 first_map = to_mapping(first)
@@ -678,22 +678,22 @@ class ComplianceReportingEngine:
                 writer.writeheader()
                 writer.writerows(data)
 
-        return file_path
+        return str(file_path)
 
     def _create_sar_report(self, report: ComplianceReport, data: dict[str, Any]) -> str:
         """Create SAR report file."""
-        import os
+        from pathlib import Path
 
-        reports_dir = "data / compliance_reports"
-        os.makedirs(reports_dir, exist_ok=True)
+        reports_dir = Path("data") / "compliance_reports"
+        reports_dir.mkdir(parents=True, exist_ok=True)
 
         filename = f"{report.id}_sar.json"
-        file_path = os.path.join(reports_dir, filename)
+        file_path = reports_dir / filename
 
-        with open(file_path, "w") as f:
+        with file_path.open("w") as f:
             json.dump(data, f, indent=2, default=str)
 
-        return file_path
+        return str(file_path)
 
 
 # Global compliance reporting engine
