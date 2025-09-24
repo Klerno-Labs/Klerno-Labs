@@ -682,6 +682,7 @@ class EnterpriseAnalytics:
                     query = query.replace(f"${key}", str(value))
 
             # Execute query
+            _ensure_pandas()
             df = pd.read_sql_query(query, conn)
             conn.close()
 

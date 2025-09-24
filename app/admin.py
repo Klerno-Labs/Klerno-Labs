@@ -207,6 +207,7 @@ def admin_stats(user=Depends(require_admin)):
     con.close()
 
     backend = "postgres" if getattr(store, "USING_POSTGRES", False) else "sqlite"
+    _ensure_pandas()
     result = {
         "backend": backend,
         "db_path": getattr(store, "DB_PATH", "data / klerno.db"),
@@ -263,6 +264,7 @@ def admin_realtime_analytics(user=Depends(require_admin)):
                 recent_transactions.append({})
 
     # Get system metrics (if psutil is available)
+    _ensure_pandas()
     system_metrics = {
         "memory_usage": 0,
         "cpu_usage": 0,
@@ -302,6 +304,7 @@ def admin_realtime_analytics(user=Depends(require_admin)):
 
     con.close()
 
+    _ensure_pandas()
     return {
         "recent_transactions": recent_transactions,
         "system_metrics": system_metrics,
