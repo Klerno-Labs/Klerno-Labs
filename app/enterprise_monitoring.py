@@ -579,7 +579,6 @@ def time_function(metric_name: str | None = None, tags: dict[str, str] | None = 
     """Decorator for timing function execution."""
 
     def decorator(func):
-
         def wrapper(*args, **kwargs):
             name = metric_name or f"function.{func.__name__}.duration"
             start_time = time.time()

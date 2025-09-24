@@ -174,8 +174,11 @@ def _postgres_conn(retries: int | None = None, backoff: float | None = None):
         try:
             if PSYCOPG_LIBRARY == "psycopg":
                 # psycopg3: connect with the URL directly
+                assert psycopg is not None
                 return psycopg.connect(DATABASE_URL)
             # psycopg2
+            assert psycopg is not None
+            assert RealDictCursor is not None
             return psycopg.connect(DATABASE_URL, cursor_factory=RealDictCursor)  # type: ignore[arg-type]
         except Exception as e:
             last_exc = e
@@ -296,22 +299,17 @@ def init_db() -> None:
                 notes TEXT
         );"""
         )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_from_addr " "ON txs (from_addr);"
-        )
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_to_addr " "ON txs (to_addr);")
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp " "ON txs (timestamp);"
-        )
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_from_addr ON txs (from_addr);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_to_addr ON txs (to_addr);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_timestamp ON txs (timestamp);")
         # Additional indexes for admin analytics performance
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score " "ON txs (risk_score);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score ON txs (risk_score);"
         )
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_category " "ON txs (category);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_amount " "ON txs (amount);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_category ON txs (category);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_amount ON txs (amount);")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc "
-            "ON txs (timestamp DESC);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc ON txs (timestamp DESC);"
         )
     else:
         cur.execute(
@@ -334,22 +332,17 @@ def init_db() -> None:
                 notes TEXT
         );"""
         )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_from_addr " "ON txs (from_addr);"
-        )
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_to_addr " "ON txs (to_addr);")
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp " "ON txs (timestamp);"
-        )
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_from_addr ON txs (from_addr);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_to_addr ON txs (to_addr);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_timestamp ON txs (timestamp);")
         # Additional indexes for admin analytics performance
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score " "ON txs (risk_score);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score ON txs (risk_score);"
         )
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_category " "ON txs (category);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_amount " "ON txs (amount);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_category ON txs (category);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_amount ON txs (amount);")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc "
-            "ON txs (timestamp DESC);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc ON txs (timestamp DESC);"
         )
 
     # ---- USERS TABLE ----
@@ -380,17 +373,17 @@ def init_db() -> None:
         );"""
         )
         # Indexes for user queries
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_users_email " "ON users (email);")
-        cur.execute("CREATE INDEX IF NOT EXISTS idx_users_role " "ON users (role);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users (role);")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_created_at " "ON users (created_at);"
+            "CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at);"
         )
         cur.execute(
             "CREATE INDEX IF NOT EXISTS idx_users_oauth_provider "
             "ON users (oauth_provider);"
         )
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id " "ON users (oauth_id);"
+            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id ON users (oauth_id);"
         )
     else:
         # users table (SQLite): subscription_active uses 0 / 1
@@ -420,15 +413,12 @@ def init_db() -> None:
         # Use contextlib.suppress to ignore index creation errors
         # on older SQLite
         with contextlib.suppress(sqlite3.OperationalError):
-            cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_users_email " "ON users (email);"
-            )
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);")
         with contextlib.suppress(sqlite3.OperationalError):
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_users_role " "ON users (role);")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users (role);")
         with contextlib.suppress(sqlite3.OperationalError):
             cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_users_created_at "
-                "ON users (created_at);"
+                "CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at);"
             )
 
     # Add columns to existing users table if they don't exist (migration)
@@ -482,7 +472,7 @@ def init_db() -> None:
         )
     with contextlib.suppress(sqlite3.OperationalError):
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id " "ON users (oauth_id);"
+            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id ON users (oauth_id);"
         )
 
     # ---- USER_SETTINGS TABLE (normalized columns) ----

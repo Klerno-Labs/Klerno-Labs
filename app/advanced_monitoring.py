@@ -254,7 +254,7 @@ class UserAnalytics:
             if len(flow) >= 2:
                 # Track 2-page flows
                 for i in range(len(flow) - 1):
-                    flow_pattern = f"{flow[i]} -> {flow[i+1]}"
+                    flow_pattern = f"{flow[i]} -> {flow[i + 1]}"
                     flow_counts[flow_pattern] += 1
 
         return [

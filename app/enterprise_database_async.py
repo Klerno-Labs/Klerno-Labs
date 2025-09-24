@@ -63,7 +63,6 @@ class DatabaseConnectionPool:
         timeout: int = 30,
         recycle_time: int = 3600,
     ):
-
         self.database_path = database_path
         self.pool_size = pool_size
         self.max_overflow = max_overflow
@@ -300,7 +299,6 @@ class AsyncTaskProcessor:
     def __init__(
         self, max_workers: int = 10, queue_size: int = 1000, batch_size: int = 50
     ):
-
         self.max_workers = max_workers
         self.queue_size = queue_size
         self.batch_size = batch_size

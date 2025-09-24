@@ -249,9 +249,9 @@ class QueryOptimizer:
         """Create performance indexes"""
         indexes = [
             # User indexes
-            ("CREATE INDEX IF NOT EXISTS idx_users_email " "ON users(email)"),
-            ("CREATE INDEX IF NOT EXISTS idx_users_active " "ON users(is_active)"),
-            ("CREATE INDEX IF NOT EXISTS idx_users_created " "ON users(created_at)"),
+            ("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)"),
+            ("CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active)"),
+            ("CREATE INDEX IF NOT EXISTS idx_users_created ON users(created_at)"),
             # Transaction indexes
             (
                 "CREATE INDEX IF NOT EXISTS idx_transactions_user_id "
@@ -501,14 +501,13 @@ def with_db_stats(func):
             result = await func(*args, **kwargs)
             execution_time = time.time() - start_time
             logger.info(
-                f"DB operation {func.__name__} completed in " f"{execution_time:.3f}s"
+                f"DB operation {func.__name__} completed in {execution_time:.3f}s"
             )
             return result
         except Exception as e:
             execution_time = time.time() - start_time
             logger.error(
-                f"DB operation {func.__name__} failed after "
-                f"{execution_time:.3f}s: {e}"
+                f"DB operation {func.__name__} failed after {execution_time:.3f}s: {e}"
             )
             raise
 

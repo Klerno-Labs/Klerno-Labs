@@ -493,17 +493,15 @@ if __name__ == "__main__":
         )
     except Exception as e:
         # Best-effort: write exception to log file
-        try:
-            logger.exception("Failed to start uvicorn: %s", e)
-            with open(LOG_FILE, "a", encoding="utf-8") as fh:
-                fh.write("\n=== STARTUP EXCEPTION ===\n")
-                import traceback
+        logger.exception("Failed to start uvicorn: %s", e)
+        import traceback
 
+        try:
+            with LOG_FILE.open("a", encoding="utf-8") as fh:
+                fh.write("\n=== STARTUP EXCEPTION ===\n")
                 fh.write(traceback.format_exc())
                 fh.write("\n=== END STARTUP EXCEPTION ===\n")
         except Exception:
             # If logging to file fails, print to stdout as a last resort
             print("Failed to write startup exception to log file")
-            import traceback
-
             traceback.print_exc()

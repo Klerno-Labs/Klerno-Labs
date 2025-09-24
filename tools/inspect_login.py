@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 import contextlib
 import os
 import sqlite3
@@ -20,8 +21,8 @@ CREATE TABLE users (
     is_active BOOLEAN DEFAULT 1,
     is_admin BOOLEAN DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
-"""
+    )
+    """
 )
 conn.commit()
 conn.close()

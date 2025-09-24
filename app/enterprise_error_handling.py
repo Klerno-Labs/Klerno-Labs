@@ -536,9 +536,7 @@ def handle_errors(service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM):
     return decorator
 
 
-def with_circuit_breaker(
-    breaker_name: str, config: CircuitBreakerConfig | None = None
-):
+def with_circuit_breaker(breaker_name: str, config: CircuitBreakerConfig | None = None):
     """Decorator for circuit breaker protection"""
 
     def decorator(func: Callable) -> Callable:
@@ -585,12 +583,14 @@ def retry_on_failure(max_retries: int = 3, delay: float = 1.0, backoff: float = 
                         logger.error(f"[RETRY] All {max_retries + 1} attempts failed")
                         if last_exception is not None:
                             raise last_exception
-                        raise RuntimeError("Retry attempts exhausted")
+                        raise RuntimeError(
+                            "Retry attempts exhausted"
+                        ) from last_exception
 
             # Fallback in case loop exits unexpectedly
             if last_exception is not None:
                 raise last_exception
-            raise RuntimeError("Retry attempts exhausted")
+            raise RuntimeError("Retry attempts exhausted") from last_exception
 
         return wrapper
 

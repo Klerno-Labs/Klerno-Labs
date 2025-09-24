@@ -6,6 +6,7 @@ TOTP - based authentication with encrypted storage and recovery codes
 Supports TOTP, WebAuthn, and hardware key enforcement for admins.
 """
 
+import contextlib
 import logging
 import os
 
@@ -52,12 +53,9 @@ except ImportError:
                 self._content = b"FAKEPNG"
 
             def save(self, fp, format: str = "PNG"):
-                try:
+                with contextlib.suppress(Exception):
                     # Write a tiny placeholder PNG-like bytes to the buffer
                     fp.write(self._content)
-                except Exception:
-                    # Best-effort: some callers may pass file paths or buffers
-                    pass
 
         class QRCode:
             def __init__(self, *args, **kwargs):

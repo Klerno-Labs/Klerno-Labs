@@ -2,6 +2,7 @@
 """
 Enhanced security middleware for TLS enforcement and security headers.
 """
+
 from __future__ import annotations
 
 import os

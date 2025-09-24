@@ -416,9 +416,7 @@ class InsightsEngine:
                     "type": "warning",
                     "title": "Transaction Anomalies Detected",
                     "description": f"{anomaly:.1%} transactions anomalous.",
-                    "action": (
-                        "Investigate unusual transaction amounts " "and patterns."
-                    ),
+                    "action": ("Investigate unusual transaction amounts and patterns."),
                     "priority": "high",
                 }
             )

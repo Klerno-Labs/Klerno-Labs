@@ -1,7 +1,18 @@
+"""
+Small helper to exercise concurrency against the FastAPI app.
+
+This file intentionally performs environment and sys.path setup before
+importing `app` so it triggers ruff E402. Add `# ruff: noqa: E402` to
+silence that specific lint in this helper.
+"""
+
+# ruff: noqa: E402
 import asyncio
 import os
 import sqlite3
+import sys
 import tempfile
+from pathlib import Path
 
 from httpx import ASGITransport, AsyncClient
 
@@ -20,8 +31,8 @@ conn.execute(
         is_admin BOOLEAN DEFAULT 0,
         subscription_status TEXT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-"""
+    );
+    """
 )
 conn.execute(
     """
@@ -33,8 +44,8 @@ conn.execute(
         status TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (id)
-    )
-"""
+    );
+    """
 )
 conn.execute(
     """
@@ -45,8 +56,8 @@ conn.execute(
         confidence REAL NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (transaction_id) REFERENCES transactions (id)
-    )
-"""
+    );
+    """
 )
 conn.commit()
 conn.close()
@@ -54,9 +65,6 @@ conn.close()
 os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
 
 # Ensure workspace root is on sys.path so `app` imports resolve
-import sys
-from pathlib import Path
-
 ROOT = str(Path(__file__).resolve().parents[1])
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
@@ -82,8 +90,6 @@ async def run_test(concurrent=20):
                 txid = data.get("id") if isinstance(data, dict) else None
                 # Verify directly on disk that the transaction exists
                 try:
-                    import sqlite3
-
                     check_con = sqlite3.connect(db_path, timeout=5.0)
                     cur = check_con.cursor()
                     cur.execute(

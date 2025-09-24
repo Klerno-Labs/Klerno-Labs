@@ -145,9 +145,9 @@ class CommunityManager:
         self.knowledge_articles: dict[int, KnowledgeArticle] = {}
         self.tutorials: dict[int, Tutorial] = {}
         self.user_contributions: dict[int, UserContribution] = {}
-        self.votes: dict[str, dict[int, VoteType]] = (
-            {}
-        )  # user_id -> {post_id: vote_type}
+        self.votes: dict[
+            str, dict[int, VoteType]
+        ] = {}  # user_id -> {post_id: vote_type}
 
         # Initialize with sample content
         self._initialize_sample_content()

@@ -7,7 +7,6 @@ Provides enterprise - grade features including white - label solution, SLA guara
 
 from __future__ import annotations
 
-import os
 import uuid
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
@@ -461,16 +460,18 @@ class EnterpriseManager:
         model_id = str(uuid.uuid4())
 
         # Save training data and model files
-        models_dir = f"data / custom_models/{user_id}"
-        os.makedirs(models_dir, exist_ok=True)
+        from pathlib import Path
 
-        training_data_path = os.path.join(models_dir, f"{model_id}_training.pkl")
-        model_file_path = os.path.join(models_dir, f"{model_id}_model.pkl")
+        models_dir = Path("data") / "custom_models" / user_id
+        models_dir.mkdir(parents=True, exist_ok=True)
 
-        with open(training_data_path, "wb") as f:
+        training_data_path = models_dir / f"{model_id}_training.pkl"
+        model_file_path = models_dir / f"{model_id}_model.pkl"
+
+        with training_data_path.open("wb") as f:
             f.write(training_data)
 
-        with open(model_file_path, "wb") as f:
+        with model_file_path.open("wb") as f:
             f.write(model_data)
 
         # Create model record
@@ -480,8 +481,8 @@ class EnterpriseManager:
             name=name,
             description=description,
             model_type=model_type,
-            training_data_path=training_data_path,
-            model_file_path=model_file_path,
+            training_data_path=str(training_data_path),
+            model_file_path=str(model_file_path),
             accuracy=0.95,  # Mock accuracy - would be calculated during training
             last_trained=now,
             version="1.0.0",
@@ -505,8 +506,8 @@ class EnterpriseManager:
                 name,
                 description,
                 model_type,
-                training_data_path,
-                model_file_path,
+                str(training_data_path),
+                str(model_file_path),
                 model.accuracy,
                 now.isoformat(),
                 model.version,

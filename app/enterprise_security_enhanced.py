@@ -12,6 +12,7 @@ Comprehensive security hardening including:
 
 from __future__ import annotations
 
+import contextlib
 import ipaddress
 import logging
 import os
@@ -175,10 +176,8 @@ class AntiTheftProtection:
                         curr_val = int(str(cast(Any, current)))
                     except Exception:
                         # Unknown type from Redis client; increment and allow
-                        try:
+                        with contextlib.suppress(Exception):
                             redis_client.incr(key)
-                        except Exception:
-                            pass
                         return True
 
                 if curr_val >= limit:

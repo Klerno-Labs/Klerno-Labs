@@ -220,8 +220,8 @@ class Transaction:
         # at the model level (some unit tests expect a ValueError).
         try:
             self.amount = Decimal(str(amount))
-        except Exception:
-            raise ValueError("invalid amount")
+        except Exception as e:
+            raise ValueError("invalid amount") from e
 
         # Decide whether negative amounts are acceptable. Tests expect that
         # negative values are allowed for the default/native currency (XRP)

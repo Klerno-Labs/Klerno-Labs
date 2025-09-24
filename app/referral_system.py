@@ -153,7 +153,7 @@ class ReferralManager:
             },
             "email": {
                 "subject": (
-                    "Check out Klerno Labs - Game - changing crypto compliance " "tool"
+                    "Check out Klerno Labs - Game - changing crypto compliance tool"
                 ),
                 "body": self._generate_email_template(referral_link),
             },

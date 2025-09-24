@@ -34,3 +34,4 @@ import enterprise_main_v2 as _enterprise
 
 # Expose the FastAPI app object for uvicorn: preview_server:app
 app = _enterprise.app
+# ruff: noqa: E402

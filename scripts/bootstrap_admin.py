@@ -31,7 +31,7 @@ try:
     from app.security_session import hash_pw
 except Exception as e:
     print("Failed to import project modules:", e)
-    raise SystemExit(1)
+    raise SystemExit(1) from e
 
 
 def main():
@@ -71,7 +71,7 @@ def main():
         print("You can now start the app and sign in with these credentials.")
     except Exception as e:
         print("Failed to create admin user:", e)
-        raise SystemExit(2)
+        raise SystemExit(2) from e
 
 
 if __name__ == "__main__":

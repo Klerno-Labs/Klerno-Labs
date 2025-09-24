@@ -137,8 +137,10 @@ def create_transaction(payload: dict[str, Any] = Body(...), user=Depends(current
                 "currency": currency,
                 "status": status,
             }
-        except Exception:
-            raise HTTPException(status_code=500, detail="Failed to save transaction")
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail="Failed to save transaction"
+            ) from e
     finally:
         with contextlib.suppress(Exception):
             if con is not None:

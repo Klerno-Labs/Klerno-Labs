@@ -202,9 +202,7 @@ class CICDPipeline:
                 with open(self.config_path) as f:
                     raw_config = yaml.safe_load(f)
                     if isinstance(raw_config, dict):
-                        config = {
-                            k: v for k, v in raw_config.items()
-                        }  # type: dict[str, Any]
+                        config = {k: v for k, v in raw_config.items()}  # type: dict[str, Any]
                     else:
                         config = {}
                     # Merge with defaults
@@ -365,9 +363,9 @@ class CICDPipeline:
                     stage_result["output"] += f"Command: {command}\n{stdout}\n"
 
                     if process.returncode != 0:
-                        stage_result[
-                            "error"
-                        ] += f"Command failed: {command}\n{stderr}\n"
+                        stage_result["error"] += (
+                            f"Command failed: {command}\n{stderr}\n"
+                        )
                         raise subprocess.CalledProcessError(
                             process.returncode, command, stderr
                         )

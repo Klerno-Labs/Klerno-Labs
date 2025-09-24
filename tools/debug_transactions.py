@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 import os
 import sqlite3
 import sys
@@ -27,8 +28,8 @@ cur.execute(
         is_admin BOOLEAN DEFAULT 0,
         subscription_status TEXT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-"""
+    );
+    """
 )
 cur.execute(
     """
@@ -40,8 +41,8 @@ cur.execute(
         status TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (id)
-    )
-"""
+    );
+    """
 )
 cur.execute(
     """
@@ -52,8 +53,8 @@ cur.execute(
         confidence REAL NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (transaction_id) REFERENCES transactions (id)
-    )
-"""
+    );
+    """
 )
 conn.commit()
 conn.close()

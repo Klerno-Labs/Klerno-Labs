@@ -4,7 +4,6 @@ from app.compliance import AddressBook, tag_categories, tag_category
 
 
 class T:
-
     def __init__(self, **kw):
         self.memo = kw.get("memo", "")
         self.fee = kw.get("fee", Decimal("0"))

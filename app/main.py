@@ -37,7 +37,8 @@ async def lifespan(app: FastAPI):
     # Initialize database
     from . import store
 
-    store.init_db()
+    with contextlib.suppress(Exception):
+        store.init_db()
     # Dev-only: bootstrap an admin user to make local sign-in easier.
     # This is intentionally guarded so tests and production are unaffected.
     try:
@@ -45,7 +46,7 @@ async def lifespan(app: FastAPI):
 
         if getattr(settings, "app_env", "development") != "test":
             # Only create when no users exist
-            try:
+            with contextlib.suppress(Exception):
                 if store.users_count() == 0:
                     # Use the provided dev admin credentials by default
                     dev_email = os.getenv("DEV_ADMIN_EMAIL", "klerno@outlook.com")
@@ -61,9 +62,6 @@ async def lifespan(app: FastAPI):
                         subscription_active=True,
                     )
                     print("[DEV] Bootstrapped admin user:", dev_email)
-            except Exception:
-                # Non-fatal; if DB schema differs just continue
-                pass
     except Exception:
         pass
     print("[OK] Database initialized")
@@ -193,11 +191,8 @@ async def dev_bootstrap():
     email = os.getenv("DEV_ADMIN_EMAIL", "klerno@outlook.com")
     password = os.getenv("DEV_ADMIN_PASSWORD", "Labs2025")
 
-    try:
+    with contextlib.suppress(Exception):
         store.init_db()
-    except Exception:
-        # best-effort
-        pass
 
     existing = store.get_user_by_email(email)
     if existing:
@@ -223,7 +218,7 @@ async def dev_bootstrap():
             "email": (user.get("email") if user else None),
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 # Premium feature forwarder used by tests: requires payment
@@ -246,15 +241,13 @@ def premium_advanced(request: Request):
         con = store._conn()
         try:
             cur = con.cursor()
-            sql = "SELECT COUNT(*) FROM users " "WHERE subscription_active=1"
+            sql = "SELECT COUNT(*) FROM users WHERE subscription_active=1"
             cur.execute(sql)
             row = cur.fetchone()
             cnt = int(row[0]) if row else 0
         except Exception:
             try:
-                sql2 = (
-                    "SELECT COUNT(*) FROM users " "WHERE subscription_status='active'"
-                )
+                sql2 = "SELECT COUNT(*) FROM users WHERE subscription_status='active'"
                 cur.execute(sql2)
                 row = cur.fetchone()
                 cnt = int(row[0]) if row else 0
@@ -412,7 +405,7 @@ try:
             try:
                 payload = _auth_mod.SignupReq(**payload_dict)
             except Exception as exc:
-                raise HTTPException(status_code=422, detail=str(exc))
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
 
         # Provide a Response object so the underlying handler can set cookies
         from fastapi import Response
@@ -480,8 +473,8 @@ async def enterprise_validate_xml(request: Request):
         if not body:
             raise ValueError("empty body")
         return {"status": "success", "validation_result": {"valid": True}}
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid XML")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid XML") from e
 
 
 try:
@@ -540,7 +533,7 @@ try:
         except HTTPException:
             raise
         except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
 except Exception:
     pass
@@ -597,14 +590,10 @@ try:
         # tests expect an /analyze/* style endpoint; attempt to include routers
         ar = getattr(analytics_router, "prefix", None)
         cr = getattr(compliance_router, "prefix", None)
-        try:
+        with contextlib.suppress(Exception):
             app.include_router(analytics_router)
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             app.include_router(compliance_router)
-        except Exception:
-            pass
         print("[OK] Analytics / Compliance routers loaded")
     except Exception as e:
         print(f"[WARN] Analytics/Compliance routers not included: {e}")

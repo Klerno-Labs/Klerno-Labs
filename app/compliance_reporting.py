@@ -182,16 +182,16 @@ class ComplianceReportingEngine:
         report_id = str(uuid.uuid4())
 
         date_range_str = (
-            f"{start_date.strftime('%Y-%m-%d')} to " f"{end_date.strftime('%Y-%m-%d')}"
+            f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
         )
 
         report = ComplianceReport(
             id=report_id,
             user_id=user_id,
             report_type=ReportType.AML_SUMMARY,
-            title=(f"AML Compliance Report - " f"{date_range_str}"),
+            title=(f"AML Compliance Report - {date_range_str}"),
             description=(
-                "Anti - Money Laundering compliance summary and " "risk assessment"
+                "Anti - Money Laundering compliance summary and risk assessment"
             ),
             date_range={
                 "start_date": _to_iso(start_date),
@@ -236,15 +236,15 @@ class ComplianceReportingEngine:
         report_id = str(uuid.uuid4())
 
         date_range_str = (
-            f"{start_date.strftime('%Y-%m-%d')} to " f"{end_date.strftime('%Y-%m-%d')}"
+            f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
         )
 
         report = ComplianceReport(
             id=report_id,
             user_id=user_id,
             report_type=ReportType.TRANSACTION_MONITORING,
-            title=(f"Transaction Monitoring Report - " f"{date_range_str}"),
-            description=("Comprehensive transaction monitoring and " "risk analysis"),
+            title=(f"Transaction Monitoring Report - {date_range_str}"),
+            description=("Comprehensive transaction monitoring and risk analysis"),
             date_range={
                 "start_date": _to_iso(start_date),
                 "end_date": _to_iso(end_date),
@@ -283,17 +283,15 @@ class ComplianceReportingEngine:
         report_id = str(uuid.uuid4())
 
         date_range_str = (
-            f"{start_date.strftime('%Y-%m-%d')} to " f"{end_date.strftime('%Y-%m-%d')}"
+            f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
         )
 
         report = ComplianceReport(
             id=report_id,
             user_id=user_id,
             report_type=ReportType.SUSPICIOUS_ACTIVITY,
-            title=(f"Suspicious Activity Report - " f"{date_range_str}"),
-            description=(
-                "Detailed analysis of suspicious transactions " "and patterns"
-            ),
+            title=(f"Suspicious Activity Report - {date_range_str}"),
+            description=("Detailed analysis of suspicious transactions and patterns"),
             date_range={
                 "start_date": _to_iso(start_date),
                 "end_date": _to_iso(end_date),
@@ -633,9 +631,7 @@ class ComplianceReportingEngine:
         reports_dir = "data / compliance_reports"
         os.makedirs(reports_dir, exist_ok=True)
 
-        filename = (
-            f"{report.id}_" f"{report.report_type.value}." f"{output_format.value}"
-        )
+        filename = f"{report.id}_{report.report_type.value}.{output_format.value}"
         file_path = os.path.join(reports_dir, filename)
 
         if output_format == ReportFormat.JSON:

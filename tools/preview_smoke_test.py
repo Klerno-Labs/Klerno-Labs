@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, ".")
 
 m = importlib.import_module("enterprise_main_v2")
-app = getattr(m, "app")
+app = m.app
 client = TestClient(app)
 
 paths = [

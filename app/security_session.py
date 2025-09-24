@@ -33,6 +33,7 @@ if not SECRET_KEY or len(SECRET_KEY) < 32 or SECRET_KEY == "CHANGE_ME_32+_chars"
         warnings.warn(
             "JWT_SECRET is not set or is too short - using a test fallback.",
             RuntimeWarning,
+            stacklevel=2,
         )
     except Exception:
         pass

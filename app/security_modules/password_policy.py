@@ -203,7 +203,7 @@ class PasswordSecurityPolicy:
             return self.ph.hash(password)
         except HashingError as e:
             logger.error(f"Password hashing failed: {e}")
-            raise ValueError("Password hashing failed")
+            raise ValueError("Password hashing failed") from e
 
     def verify(self, password: str, hash_str: str) -> bool:
         """Verify password against Argon2id hash"""

@@ -1281,7 +1281,7 @@ class PerformanceOptimizer:
                         host, port = target.split(":", 1)
                         default_backends.append(
                             {
-                                "id": f"backend_{i+1}",
+                                "id": f"backend_{i + 1}",
                                 "host": host.strip(),
                                 "port": int(port.strip()),
                                 "weight": 1.0,
@@ -1301,7 +1301,7 @@ class PerformanceOptimizer:
                         host, port = target.split(":", 1)
                         default_backends.append(
                             {
-                                "id": f"backend_{i+1}",
+                                "id": f"backend_{i + 1}",
                                 "host": host.strip(),
                                 "port": int(port.strip()),
                                 "weight": 1.0,

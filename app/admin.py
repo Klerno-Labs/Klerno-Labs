@@ -88,7 +88,7 @@ def _send_email(subject: str, text: str, to_email: str | None = None) -> dict[st
     """Lightweight SendGrid helper used only in admin routes."""
     recipient = (to_email or DEFAULT_TO).strip()
     if not (SENDGRID_KEY and ALERT_FROM and recipient):
-        reason = "missing SENDGRID_API_KEY / ALERT_EMAIL_FROM / " "ALERT_EMAIL_TO"
+        reason = "missing SENDGRID_API_KEY / ALERT_EMAIL_FROM / ALERT_EMAIL_TO"
         return {"sent": False, "reason": reason}
     try:
         from sendgrid import SendGridAPIClient
@@ -671,7 +671,7 @@ def update_fund_config(config: FundDistributionConfig, user=Depends(require_admi
     total_percentage = sum(w.percentage for w in config.wallets if w.active)
     if abs(total_percentage - 100.0) > 0.01:
         detail_msg = (
-            "Active wallet percentages must sum to 100%, got " f"{total_percentage}%"
+            f"Active wallet percentages must sum to 100%, got {total_percentage}%"
         )
         raise HTTPException(status_code=400, detail=detail_msg)
 

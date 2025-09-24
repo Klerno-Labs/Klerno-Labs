@@ -695,7 +695,7 @@ class ISO20022Parser:
         try:
             root = ET.fromstring(xml_content)
         except ET.ParseError as e:
-            raise ValueError(f"Invalid XML format: {e}") from None
+            raise ValueError(f"Invalid XML format: {e}") from e
 
         # Determine message type from xmlns or child
         xmlns = root.get("xmlns", "")
@@ -770,7 +770,7 @@ class ISO20022Parser:
             return result
 
         except ET.ParseError as e:
-            raise ValueError(f"Invalid XML format: {e}")
+            raise ValueError(f"Invalid XML format: {e}") from e
 
     def _get_text(
         self,
@@ -912,7 +912,7 @@ class ISO20022Parser:
 
             return result
         except ET.ParseError as e:
-            raise ValueError(f"Invalid XML format: {e}")
+            raise ValueError(f"Invalid XML format: {e}") from e
 
     def parse_camt053(self, xml_content: str) -> dict[str, Any]:
         """Parse camt.053 BankToCustomerStatement."""
@@ -1082,7 +1082,7 @@ class ISO20022Parser:
 
             return result
         except ET.ParseError as e:
-            raise ValueError(f"Invalid XML format: {e}")
+            raise ValueError(f"Invalid XML format: {e}") from e
 
 
 # Global instances
@@ -1168,7 +1168,7 @@ class ISO20022Manager:
                 # For other message types, use a generic builder
                 return self.message_builder.build_pain001_message(payment_data)
         except Exception as e:
-            raise ValueError(f"Failed to create payment instruction: {str(e)}")
+            raise ValueError(f"Failed to create payment instruction: {str(e)}") from e
 
     def _dict_to_instruction(self, data: dict[str, Any]) -> ISO20022PaymentInstruction:
         """Convert a loose dict into ISO20022PaymentInstruction instance."""

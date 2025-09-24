@@ -3,10 +3,16 @@ Run mypy on `app` and summarize error counts by file.
 Saves full mypy output to tools/mypy_full.txt and prints top 20 files with counts and sample errors.
 """
 
+"""
+Run mypy on `app` and summarize error counts by file.
+Saves full mypy output to tools/mypy_full.txt and prints top 20 files with counts and sample errors.
+"""
+
 import re
 import subprocess
 import sys
 from collections import defaultdict
+from pathlib import Path
 
 
 def run_mypy():
@@ -14,7 +20,8 @@ def run_mypy():
     print("Running:", " ".join(cmd))
     p = subprocess.run(cmd, capture_output=True, text=True)
     out = p.stdout + p.stderr
-    with open("tools/mypy_full.txt", "w", encoding="utf-8") as f:
+    path = Path("tools/mypy_full.txt")
+    with path.open("w", encoding="utf-8") as f:
         f.write(out)
     return out, p.returncode
 

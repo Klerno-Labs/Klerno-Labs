@@ -35,7 +35,7 @@ class _NoopWebsocketManager:
         recommendations: list[str],
     ):
         logger.debug(
-            "websocket_alerts.send_risk_alert (noop) user=%s score=%s " "level=%s",
+            "websocket_alerts.send_risk_alert (noop) user=%s score=%s level=%s",
             user_id,
             risk_score,
             risk_level,
@@ -82,7 +82,7 @@ class _NoopWebsocketManager:
         data: dict[str, Any] | None = None,
     ):
         logger.debug(
-            "websocket_alerts.broadcast_system_alert (noop) " "title=%s severity=%s",
+            "websocket_alerts.broadcast_system_alert (noop) title=%s severity=%s",
             title,
             severity,
         )

@@ -49,10 +49,10 @@ def _ensure_auth_shim() -> None:
 
     pkg = sys.modules.get("app")
     if pkg is not None:
-        try:
+        import contextlib
+
+        with contextlib.suppress(Exception):
             pkg.auth = mod
-        except Exception:
-            pass
 
 
 # Ensure shim exists before importing enterprise_main_v2

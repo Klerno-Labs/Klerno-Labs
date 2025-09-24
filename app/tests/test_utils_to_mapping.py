@@ -39,7 +39,6 @@ def test_to_mapping_with_mapping_view_like():
     # emulate an object that returns this view from keys()
 
     class KObj:
-
         def keys(self):
             return mv
 
