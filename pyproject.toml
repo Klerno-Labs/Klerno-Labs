@@ -43,7 +43,9 @@ exclude = [
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*" = ["S101", "ARG", "SIM"]
+"tests/*" = ["S101", "ARG", "SIM", "E402"]
+"CLEAN_APP/tests/*" = ["S101", "ARG", "SIM", "E402"]
+"tools/*" = ["E402"]
 
 [tool.pytest.ini_options]
 testpaths = ["app/tests", "tests"]
