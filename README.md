@@ -64,7 +64,7 @@ python -m pip install -r dev-requirements.txt
 
 ### CI status
 
-![CI - tests](https://github.com/auricrypt-ux/custowell-copilot/actions/workflows/pytest.yml/badge.svg)
+![CI - tests](https://github.com/auricrypt-ux/custowell-copilot/actions/workflows/ci.yml/badge.svg)
 
 ## 👤 First Time Setup
 
@@ -171,3 +171,22 @@ Troubleshooting:
 
 - If the server exits immediately, inspect the terminal that started uvicorn for startup logs. Common causes: missing python packages, or a locked port; install requirements and retry.
 - If templates fail to render, ensure the working directory is the project root so the `templates/` folder is on the app path.
+
+## CI and Contributing
+
+This repository includes a CI workflow that runs import-safety checks, `mypy`, and `pytest` on pull requests to `main`.
+
+To create a PR from your branch:
+
+```powershell
+git push origin cleanup/tests-ci
+gh pr create --title "ci: fix pandas import-time circulars; add CI and import-safety test" --body-file PULL_REQUEST_DRAFT.md --base main
+```
+
+To set up `pre-commit` locally and run the import-safety check before commits:
+
+```powershell
+python -m pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
