@@ -12,10 +12,21 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Mapping, Sequence
 
 import numpy as np
-import pandas as pd
+
+if TYPE_CHECKING:
+    import pandas as pd  # pragma: no cover
+
+
+def _ensure_pandas() -> None:
+    if "pd" in globals():
+        return
+    import pandas as pd  # type: ignore
+
+    globals()["pd"] = pd
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

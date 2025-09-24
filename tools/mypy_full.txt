@@ -25,7 +25,7 @@ app\enterprise_monitoring.py:593: note: By default the bodies of untyped functio
 app\comprehensive_testing.py:59: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
 app\comprehensive_testing.py:60: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
 app\comprehensive_testing.py:61: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
-app\enterprise_error_handling.py:568: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+app\enterprise_error_handling.py:569: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
 app\performance_optimization.py:550: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
 app\performance_optimization.py:552: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
 app\performance_optimization.py:553: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
@@ -63,5 +63,5 @@ app\advanced_monitoring.py:176: note: By default the bodies of untyped functions
 app\advanced_monitoring.py:272: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
 app\advanced_monitoring.py:273: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
 app\analytics_dashboard.py:31: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
-app\admin.py:120: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+app\admin.py:136: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
 Success: no issues found in 90 source files

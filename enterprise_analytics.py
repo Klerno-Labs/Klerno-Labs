@@ -12,10 +12,21 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
-import pandas as pd
+
+if TYPE_CHECKING:
+    import pandas as pd  # pragma: no cover
+
+
+def _ensure_pandas() -> None:
+    if "pd" in globals():
+        return
+    import pandas as pd  # type: ignore
+
+    globals()["pd"] = pd
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -207,8 +218,8 @@ class EnterpriseAnalytics:
         event_type: str,
         user_id: str | None = None,
         session_id: str | None = None,
-        properties: dict[str, Any] = None,
-        metadata: dict[str, Any] = None,
+        properties: Optional[dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> str:
         """Track an analytics event"""
 
@@ -406,7 +417,10 @@ class EnterpriseAnalytics:
         )
 
     def calculate_metric(
-        self, metric_id: str, start_time: datetime = None, end_time: datetime = None
+        self,
+        metric_id: str,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
     ) -> dict[str, Any]:
         """Calculate a business metric"""
 
@@ -650,7 +664,7 @@ class EnterpriseAnalytics:
             logger.error(f"[ANALYTICS] Failed to store metric value: {e}")
 
     def generate_report(
-        self, report_id: str, parameters: dict[str, Any] = None
+        self, report_id: str, parameters: Optional[dict[str, Any]] = None
     ) -> dict[str, Any]:
         """Generate a report"""
 
@@ -671,6 +685,7 @@ class EnterpriseAnalytics:
                     query = query.replace(f"${key}", str(value))
 
             # Execute query
+            _ensure_pandas()
             df = pd.read_sql_query(query, conn)
             conn.close()
 
@@ -728,7 +743,7 @@ class EnterpriseAnalytics:
         duration: float,
         status: str,
         result_data: dict,
-        error: str = None,
+        error: Optional[str] = None,
     ):
         """Store report execution record"""
         try:

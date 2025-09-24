@@ -3,14 +3,36 @@ Advanced Analytics Module for Klerno Labs
 Provides enhanced analytics, insights, and dashboard functionality
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-import pandas as pd
 
 from . import store
+
+
+def _ensure_pandas() -> None:
+    """Import pandas into module globals on first use.
+
+    This defers heavy import-time work and avoids circular-import issues
+    that can occur during test collection when import order is sensitive.
+    """
+    if "pd" in globals():
+        return
+    try:
+        import pandas as pd  # type: ignore
+
+        globals()["pd"] = pd
+    except Exception:
+        # Re-raise so callers get a clear failure when pandas is missing
+        raise
+
+
+if TYPE_CHECKING:
+    import pandas as pd  # pragma: no cover
 
 
 @dataclass
@@ -44,9 +66,12 @@ class AdvancedAnalytics:
         cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=days)
         rows = store.list_all(limit=50000)
 
+        # If there are no rows, return empty metrics without importing pandas
         if not rows:
             return self._empty_metrics()
 
+        # Import pandas only when data is present and a DataFrame is required
+        _ensure_pandas()
         df = pd.DataFrame(rows)
         df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
         # Use a direct function reference to keep the line short
@@ -91,6 +116,7 @@ class AdvancedAnalytics:
 
     def _get_risk_score(self, row: pd.Series) -> float:
         """Extract risk score from row with fallback"""
+        _ensure_pandas()
         try:
             score = row.get("risk_score", row.get("score", 0))
             if pd.isna(score):
@@ -101,6 +127,7 @@ class AdvancedAnalytics:
 
     def _count_unique_addresses(self, df: pd.DataFrame) -> int:
         """Count unique addresses in the dataset"""
+        _ensure_pandas()
         addresses = set()
         for _, row in df.iterrows():
             if row.get("from_addr"):
@@ -113,6 +140,7 @@ class AdvancedAnalytics:
         self, df: pd.DataFrame, limit: int = 10
     ) -> list[dict[str, Any]]:
         """Get top risk addresses with their metrics"""
+        _ensure_pandas()
         address_metrics = {}
 
         for _, row in df.iterrows():
@@ -153,6 +181,7 @@ class AdvancedAnalytics:
 
     def _calculate_risk_trend(self, df: pd.DataFrame) -> list[dict[str, Any]]:
         """Calculate risk trend over time"""
+        _ensure_pandas()
         if df.empty:
             return []
 
@@ -188,6 +217,7 @@ class AdvancedAnalytics:
 
     def _get_category_distribution(self, df: pd.DataFrame) -> dict[str, int]:
         """Get distribution of transaction categories"""
+        _ensure_pandas()
         if "category" not in df.columns:
             return {"unknown": len(df)}
 
@@ -195,6 +225,7 @@ class AdvancedAnalytics:
 
     def _get_hourly_activity(self, df: pd.DataFrame) -> list[dict[str, Any]]:
         """Analyze transaction activity by hour of day"""
+        _ensure_pandas()
         if df.empty:
             return []
 
@@ -231,6 +262,7 @@ class AdvancedAnalytics:
 
     def _analyze_network_patterns(self, df: pd.DataFrame) -> dict[str, Any]:
         """Analyze network patterns and connections"""
+        _ensure_pandas()
         if df.empty:
             return {
                 "total_connections": 0,
@@ -272,6 +304,7 @@ class AdvancedAnalytics:
 
     def _calculate_anomaly_score(self, df: pd.DataFrame) -> float:
         """Calculate overall anomaly score for the dataset"""
+        _ensure_pandas()
         if df.empty or len(df) < 2:
             return 0.0
 

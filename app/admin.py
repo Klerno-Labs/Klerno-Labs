@@ -2,9 +2,24 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import pandas as pd
+if TYPE_CHECKING:
+    import pandas as pd  # pragma: no cover
+
+
+def _ensure_pandas() -> None:
+    """Import pandas lazily to avoid circular import during test collection."""
+    if "pd" in globals():
+        return
+    try:
+        import pandas as pd  # type: ignore
+
+        globals()["pd"] = pd
+    except Exception:
+        raise
+
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -43,6 +58,7 @@ def require_admin(user=Depends(require_user)):
 
 def _row_score(r: dict[str, Any]) -> float:
     """NaN - safe getter for risk score."""
+    _ensure_pandas()
     try:
         val = r.get("score")
         if val is None or (isinstance(val, float) and pd.isna(val)):

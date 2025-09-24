@@ -1,11 +1,22 @@
 from io import StringIO
+from typing import TYPE_CHECKING
 
-import pandas as pd
+if TYPE_CHECKING:
+    import pandas as pd  # pragma: no cover
 
 from .models import ReportSummary, TaggedTransaction
 
 
+def _ensure_pandas() -> None:
+    if "pd" in globals():
+        return
+    import pandas as pd  # type: ignore
+
+    globals()["pd"] = pd
+
+
 def to_dataframe(txs: list[TaggedTransaction]) -> pd.DataFrame:
+    _ensure_pandas()
     return pd.DataFrame([t.model_dump() for t in txs])
 
 
