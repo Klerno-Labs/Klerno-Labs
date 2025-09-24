@@ -47,6 +47,17 @@ exclude = [
 "CLEAN_APP/tests/*" = ["S101", "ARG", "SIM", "E402"]
 "tools/*" = ["E402"]
 
+# Temporary: some app modules intentionally perform runtime checks/imports
+# to avoid heavy import-time side effects during test collection. These
+# per-file ignores reduce CI noise while we triage platform-specific
+# failures. They will be removed once CI is stabilized.
+"app/admin.py" = ["E402"]
+"app/advanced_security.py" = ["E402"]
+"app/advanced_security_hardening.py" = ["E402"]
+"app/enterprise_monitoring.py" = ["E402"]
+"app/subscriptions.py" = ["E402"]
+"enterprise_main_v2.py" = ["E402"]
+
 [tool.pytest.ini_options]
 testpaths = ["app/tests", "tests"]
 python_files = ["test_*.py", "*_test.py"]
