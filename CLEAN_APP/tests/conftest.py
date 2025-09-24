@@ -160,7 +160,10 @@ async def _async_client_impl(test_db):
     from app.main import app
 
     # Use ASGITransport for compatibility with newer httpx versions
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:  # type: ignore[arg-type]
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:  # type: ignore[arg-type]
         yield client
 
 

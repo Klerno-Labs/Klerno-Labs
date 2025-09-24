@@ -24,10 +24,13 @@ from httpx import ASGITransport, AsyncClient
 
 # Optional: expose a simple fixture for tests that need the app path
 
+pytest_asyncio: Any = None
 try:
-    import pytest_asyncio
+    import pytest_asyncio as _pytest_asyncio
+
+    pytest_asyncio = _pytest_asyncio
 except Exception:
-    pytest_asyncio = None
+    pass
 
 
 @pytest.fixture(scope="session")
@@ -139,7 +142,10 @@ async def _async_client_impl(test_db):
 
     # Use ASGITransport for compatibility with newer httpx versions
     # httpx typing can be strict about ASGI apps; ignore here for test harness
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:  # type: ignore[arg-type]
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:  # type: ignore[arg-type]
         yield client
 
 

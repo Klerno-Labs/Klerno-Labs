@@ -18,7 +18,7 @@ from collections import defaultdict, deque
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Any, DefaultDict
+from typing import Any
 
 from cryptography.fernet import Fernet
 

@@ -9,9 +9,22 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
+if TYPE_CHECKING:
+    import numpy as np  # pragma: no cover
+
+
+def _ensure_numpy() -> None:
+    if "np" in globals():
+        return
+    try:
+        import numpy as np  # type: ignore
+
+        globals()["np"] = np
+    except Exception:
+        raise
+
 
 try:
     # Avoid importing sklearn at module-import time; import inside initializer
@@ -86,8 +99,9 @@ class AdvancedAIRiskEngine:
 
         logger.info("Advanced AI risk models initialized and trained")
 
-    def _generate_training_data(self) -> tuple[np.ndarray, np.ndarray]:
+    def _generate_training_data(self) -> tuple:
         """Generate synthetic training data."""
+        _ensure_numpy()
         np.random.seed(42)
         n_samples = 10000
 
@@ -145,6 +159,8 @@ class AdvancedAIRiskEngine:
     ) -> AdvancedRiskScore:
         """Perform advanced AI risk analysis on a transaction."""
 
+        _ensure_numpy()
+
         if (
             not self.is_trained
             or self.scaler is None
@@ -171,7 +187,6 @@ class AdvancedAIRiskEngine:
         if self.risk_classifier is None:
             raise RuntimeError("Risk classifier not initialized")
         risk_proba = self.risk_classifier.predict_proba(features_scaled)[0]
-        self.risk_classifier.predict(features_scaled)[0]
 
         # Calculate overall risk score
         overall_score = self._calculate_overall_score(
@@ -442,15 +457,23 @@ class AdvancedAIRiskEngine:
         return min(1.0, deviation)
 
 
-# Global instance
-advanced_ai_engine = AdvancedAIRiskEngine()
+_advanced_ai_engine: AdvancedAIRiskEngine | None = None
+
+
+def _get_advanced_ai_engine() -> AdvancedAIRiskEngine:
+    """Lazily create the AdvancedAIRiskEngine on first use."""
+    global _advanced_ai_engine
+    if _advanced_ai_engine is None:
+        _advanced_ai_engine = AdvancedAIRiskEngine()
+    return _advanced_ai_engine
 
 
 def get_advanced_risk_score(
-    transaction_data: dict[str, Any], user_history: list[dict[str, Any]] = None
+    transaction_data: dict[str, Any], user_history: list[dict[str, Any]] | None = None
 ) -> AdvancedRiskScore:
     """Get advanced AI risk score for a transaction."""
-    return advanced_ai_engine.analyze_transaction(transaction_data, user_history)
+    engine = _get_advanced_ai_engine()
+    return engine.analyze_transaction(transaction_data, user_history)
 
 
 def is_professional_feature_available(user_tier: str) -> bool:

@@ -251,7 +251,8 @@ async def add_security_headers(request: Request, call_next):
         response.headers["Permissions-Policy"] = "geolocation=()"
         # A reasonably strict CSP for the local app; adjust for external assets in production
         response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+            "default-src 'self'; img-src 'self' data:; "
+            "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
         )
     except Exception:
         # Do not let header setting break the response

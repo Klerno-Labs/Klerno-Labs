@@ -14,7 +14,8 @@ if env_file.exists():
     try:
         import dotenv
 
-        dotenv.load_dotenv(env_file, override=True)  # Override existing env vars
+        # Do not override existing environment variables set by tests
+        dotenv.load_dotenv(env_file, override=False)
     except Exception:
         # deliberately ignore import/load failures; non-fatal in tests
         pass

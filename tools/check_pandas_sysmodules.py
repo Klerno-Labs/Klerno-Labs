@@ -25,7 +25,7 @@ try:
     pandas = importlib.import_module("pandas")
     print("Imported pandas from:", getattr(pandas, "__file__", None))
     print("pandas.__package__:", getattr(pandas, "__package__", None))
-except Exception as e:
+except Exception:
     import traceback
 
     print("Import failed:")

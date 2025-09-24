@@ -9,7 +9,17 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-import numpy as np
+
+def _ensure_numpy() -> None:
+    if "np" in globals():
+        return
+    try:
+        import numpy as np  # type: ignore
+
+        globals()["np"] = np
+    except Exception:
+        raise
+
 
 from . import store
 
@@ -32,6 +42,7 @@ def _ensure_pandas() -> None:
 
 
 if TYPE_CHECKING:
+    import numpy as np  # pragma: no cover
     import pandas as pd  # pragma: no cover
 
 
@@ -141,6 +152,7 @@ class AdvancedAnalytics:
     ) -> list[dict[str, Any]]:
         """Get top risk addresses with their metrics"""
         _ensure_pandas()
+        _ensure_numpy()
         address_metrics = {}
 
         for _, row in df.iterrows():
@@ -305,6 +317,7 @@ class AdvancedAnalytics:
     def _calculate_anomaly_score(self, df: pd.DataFrame) -> float:
         """Calculate overall anomaly score for the dataset"""
         _ensure_pandas()
+        _ensure_numpy()
         if df.empty or len(df) < 2:
             return 0.0
 

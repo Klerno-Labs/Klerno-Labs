@@ -117,10 +117,26 @@ def _sqlite_conn() -> sqlite3.Connection:
     else:
         db_path = DB_PATH
 
+    # (no debug prints) ensure we don't leave unused imports behind
+
     data_dir = Path(db_path).resolve().parent
     data_dir.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(db_path, check_same_thread=False)
+    # use a small timeout so concurrent writers don't immediately fail
+    con = sqlite3.connect(db_path, check_same_thread=False, timeout=5.0)
     con.row_factory = sqlite3.Row  # return dict - like rows to unify handling
+    # Improve concurrency/performance for test and multi-request workloads:
+    # - WAL reduces write lock contention allowing readers during writes
+    # - synchronous=NORMAL gives good durability with better write throughput
+    # - temp_store=MEMORY keeps temporary tables in memory
+    try:
+        with contextlib.suppress(Exception):
+            con.execute("PRAGMA journal_mode=WAL;")
+            con.execute("PRAGMA synchronous=NORMAL;")
+            con.execute("PRAGMA temp_store=MEMORY;")
+    except Exception:
+        # Best-effort: don't fail connection creation if pragmas are unsupported
+        with contextlib.suppress(Exception):
+            _ = None
     return con
 
 
@@ -143,6 +159,41 @@ def _conn():
 def _ph() -> str:
     """Return the correct SQL placeholder for the active backend."""
     return "%s" if USING_POSTGRES else "?"
+
+
+def wait_for_row(
+    select_sql: str, params: tuple = (), timeout: float = 1.0, poll: float = 0.05
+) -> list[Any]:
+    """Wait for a row to become visible in the database.
+
+    This helper repeatedly executes `select_sql` with `params` until at least
+    one row is returned or `timeout` seconds elapse. It is useful to mitigate
+    read-after-write visibility on some platforms or under heavy lock contention.
+
+    Returns the fetched rows (possibly empty if timeout elapsed).
+    """
+    start = time.time()
+    while True:
+        try:
+            con = _conn()
+            cur = con.cursor()
+            cur.execute(select_sql, params)
+            rows = cur.fetchall()
+            # Close only sqlite connections created here; psycopg2 will be handled by driver
+            try:
+                con.close()
+            except Exception:
+                pass
+            if rows:
+                return rows
+        except Exception:
+            # Swallow and retry until timeout
+            with contextlib.suppress(Exception):
+                _ = None
+
+        if time.time() - start >= timeout:
+            return []
+        time.sleep(poll)
 
 
 # --- Schema management --------------------------------------------------------
@@ -524,7 +575,7 @@ def _row_to_user(row) -> dict[str, Any] | None:
 # --- Transactions API ---------------------------------------------------------
 
 
-def save_tagged(t: dict[str, Any]) -> None:
+def save_tagged(t: dict[str, Any]) -> int:
     con = _conn()
     cur = con.cursor()
     # SQL placeholder for current backend (inline {_ph()} is used)
@@ -557,12 +608,14 @@ def save_tagged(t: dict[str, Any]) -> None:
         ),
     )
     con.commit()
+    new_id = cur.lastrowid
     con.close()
 
     # Invalidate transaction - related caches
     _clear_cache_pattern("list_all")
     _clear_cache_pattern("list_by_wallet")
     _clear_cache_pattern("list_alerts")
+    return int(new_id or 0)
 
 
 def get_by_id(tx_id: int) -> dict[str, Any] | None:
@@ -661,6 +714,29 @@ def list_all(limit: int = 1000) -> list[dict[str, Any]]:
     # Cache the result
     _set_cache(cache_key, result, ttl=60)
     return result
+
+
+def legacy_transactions_exists() -> bool:
+    """Check whether a legacy `transactions` table exists in the active DB.
+
+    Uses the centralized connection factory so callers share the same view of
+    the database (important for tests which set `DATABASE_URL` at runtime).
+    """
+    con = None
+    try:
+        con = _conn()
+        cur = con.cursor()
+        try:
+            cur.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='transactions'"
+            )
+            return cur.fetchone() is not None
+        except Exception:
+            return False
+    finally:
+        with contextlib.suppress(Exception):
+            if con is not None:
+                con.close()
 
 
 # --- Users API ----------------------------------------------------------------

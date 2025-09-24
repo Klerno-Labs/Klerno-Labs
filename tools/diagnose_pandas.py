@@ -21,7 +21,7 @@ try:
 
     print("pandas module file:", getattr(pandas, "__file__", repr(pandas)))
     print("pandas package path:", getattr(pandas, "__path__", None))
-except Exception as e:
+except Exception:
     print("Import failed:")
     traceback.print_exc()
 

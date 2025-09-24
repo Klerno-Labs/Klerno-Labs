@@ -14,9 +14,20 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping, Sequence
 
-import numpy as np
+
+def _ensure_numpy() -> None:
+    if "np" in globals():
+        return
+    try:
+        import numpy as np  # type: ignore
+
+        globals()["np"] = np
+    except Exception:
+        raise
+
 
 if TYPE_CHECKING:
+    import numpy as np  # pragma: no cover
     import pandas as pd  # pragma: no cover
 
 
@@ -539,6 +550,7 @@ class EnterpriseAnalytics:
     def api_response_time_p95(self, start_time: datetime, end_time: datetime) -> float:
         """Calculate 95th percentile API response time"""
         try:
+            _ensure_numpy()
             conn = sqlite3.connect(self.database_path)
             cursor = conn.cursor()
 
