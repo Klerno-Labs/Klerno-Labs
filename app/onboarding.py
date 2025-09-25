@@ -91,28 +91,40 @@ class OnboardingManager:
                 GuideStep(
                     id="welcome",
                     title="Welcome to Klerno Labs!",
-                    content="Welcome to the world's most advanced AML risk intelligence platform. Let's get you set up in just a few steps.",
+                    content=(
+                        "Welcome to the world's most advanced AML risk intelligence "
+                        "platform. Let's get you set up in just a few steps."
+                    ),
                     target_element=".navbar - brand",
                     position="bottom",
                 ),
                 GuideStep(
                     id="dashboard_overview",
                     title="Your Analytics Dashboard",
-                    content="This is your main dashboard where you'll see real - time transaction analytics, risk scores, and alerts.",
+                    content=(
+                        "This is your main dashboard where you'll see real - time "
+                        "transaction analytics, risk scores, and alerts."
+                    ),
                     target_element=".metrics - overview",
                     position="bottom",
                 ),
                 GuideStep(
                     id="quick_actions",
                     title="Quick Actions",
-                    content="Use these buttons to analyze sample data, fetch XRPL transactions, or export your results.",
+                    content=(
+                        "Use these buttons to analyze sample data, fetch XRPL "
+                        "transactions, or export your results."
+                    ),
                     target_element=".quick - actions",
                     position="top",
                 ),
                 GuideStep(
                     id="load_sample",
                     title="Try Sample Data",
-                    content="Click 'Load demo data' to see how Klerno Labs analyzes transactions and identifies risks.",
+                    content=(
+                        "Click 'Load demo data' to see how Klerno Labs analyzes "
+                        "transactions and identifies risks."
+                    ),
                     target_element="button:contains('Load demo data')",
                     position="top",
                     action_required=True,
@@ -121,7 +133,10 @@ class OnboardingManager:
                 GuideStep(
                     id="view_results",
                     title="Review the Results",
-                    content="Great! Now you can see how transactions are categorized and scored for risk. High - risk transactions appear in red.",
+                    content=(
+                        "Great! Now you can see how transactions are categorized "
+                        "and scored for risk. High - risk transactions appear in red."
+                    ),
                     target_element=".recent - transactions",
                     position="top",
                 ),
@@ -138,7 +153,10 @@ class OnboardingManager:
                 GuideStep(
                     id="api_importance",
                     title="Why API Keys Matter",
-                    content="API keys allow you to programmatically access Klerno Labs functionality and integrate with your existing systems.",
+                    content=(
+                        "API keys allow you to programmatically access Klerno Labs "
+                        "functionality and integrate with your existing systems."
+                    ),
                     target_element=".nav - link[href*='admin']",
                     position="bottom",
                 ),
@@ -165,21 +183,30 @@ class OnboardingManager:
                 GuideStep(
                     id="explore_tab",
                     title="Explore Transactions",
-                    content="Use the Explore tab to search and filter transactions with advanced criteria.",
+                    content=(
+                        "Use the Explore tab to search and filter transactions with "
+                        "advanced criteria."
+                    ),
                     target_element="tab[name='Explore']",
                     position="bottom",
                 ),
                 GuideStep(
                     id="alerts_system",
                     title="Smart Alerts",
-                    content="The Alerts tab shows high - risk transactions that need your attention, complete with AI explanations.",
+                    content=(
+                        "The Alerts tab shows high - risk transactions that need your "
+                        "attention, complete with AI explanations."
+                    ),
                     target_element="tab[name='Alerts']",
                     position="bottom",
                 ),
                 GuideStep(
                     id="profile_reports",
                     title="Compliance Reports",
-                    content="Generate compliance reports and export data in formats suitable for regulatory filing.",
+                    content=(
+                        "Generate compliance reports and export data in formats "
+                        "suitable for regulatory filing."
+                    ),
                     target_element="tab[name='Profile']",
                     position="bottom",
                 ),

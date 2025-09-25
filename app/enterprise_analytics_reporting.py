@@ -9,13 +9,38 @@ import sqlite3
 import threading
 import time
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
-import pandas as pd
+from app.constants import CACHE_TTL
+
+
+def _ensure_numpy() -> None:
+    if "np" in globals():
+        return
+    try:
+        import numpy as np  # type: ignore
+
+        globals()["np"] = np
+    except Exception:
+        raise
+
+
+if TYPE_CHECKING:
+    import numpy as np  # pragma: no cover
+    import pandas as pd  # pragma: no cover
+
+
+def _ensure_pandas() -> None:
+    if "pd" in globals():
+        return
+    import pandas as pd  # type: ignore
+
+    globals()["pd"] = pd
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -76,7 +101,7 @@ class EnterpriseAnalytics:
 
         # Configuration
         self.event_retention_days = 90
-        self.cache_ttl_seconds = 300
+        self.cache_ttl_seconds = CACHE_TTL
 
         # Threading
         self._lock = threading.RLock()
@@ -528,6 +553,7 @@ class EnterpriseAnalytics:
     def api_response_time_p95(self, start_time: datetime, end_time: datetime) -> float:
         """Calculate 95th percentile API response time"""
         try:
+            _ensure_numpy()
             conn = sqlite3.connect(self.database_path)
             cursor = conn.cursor()
 
@@ -650,7 +676,7 @@ class EnterpriseAnalytics:
             logger.error(f"[ANALYTICS] Failed to store metric value: {e}")
 
     def generate_report(
-        self, report_id: str, parameters: dict[str, Any] = None
+        self, report_id: str, parameters: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Generate a report"""
 
@@ -671,16 +697,26 @@ class EnterpriseAnalytics:
                     query = query.replace(f"${key}", str(value))
 
             # Execute query
+            _ensure_pandas()
             df = pd.read_sql_query(query, conn)
             conn.close()
 
             # Format result based on output format
+            result_data: Sequence[Mapping[str, Any]] | str
             if report_config.output_format == "json":
-                result_data = df.to_dict(orient="records")
+                from typing import cast
+
+                result_data = cast(
+                    Sequence[Mapping[str, Any]], df.to_dict(orient="records")
+                )
             elif report_config.output_format == "csv":
                 result_data = df.to_csv(index=False)
             else:
-                result_data = df.to_dict(orient="records")
+                from typing import cast
+
+                result_data = cast(
+                    Sequence[Mapping[str, Any]], df.to_dict(orient="records")
+                )
 
             execution_time = (datetime.now() - start_time).total_seconds()
 
@@ -728,8 +764,8 @@ class EnterpriseAnalytics:
         duration: float,
         status: str,
         result_data: dict,
-        error: str = None,
-    ):
+        error: str | None = None,
+    ) -> None:
         """Store report execution record"""
         try:
             conn = sqlite3.connect(self.database_path)

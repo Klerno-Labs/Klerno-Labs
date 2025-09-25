@@ -1,7 +1,7 @@
 # app / paywall_hooks.py
 import importlib
 import os
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, HTTPException, Request
 
@@ -16,7 +16,7 @@ def _stripe() -> Any | None:
     warnings if stripe isn't installed yet.
     """
     try:
-        stripe_sdk = importlib.import_module("stripe")
+        stripe_sdk = cast(Any, importlib.import_module("stripe"))
         stripe_sdk.api_key = (os.getenv("STRIPE_SECRET_KEY", "") or "").strip()
         return stripe_sdk
     except Exception:
@@ -63,7 +63,7 @@ async def stripe_webhook(request: Request):
     try:
         event = stripe_sdk.Webhook.construct_event(payload, sig_header, secret)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     if event.get("type") in (
         "checkout.session.completed",

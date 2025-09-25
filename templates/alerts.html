@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card mb-4">
+  <div class="card-body">
+    <h1 class="h4 mb-3">{{ title or "Alerts" }}</h1>
+
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>From → To</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Risk Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr class="fade-in" style="animation-delay: {{ loop.index * 50 }}ms">
+            <td>{{ (r.timestamp or '')[:19].replace('T',' ') }}</td>
+            <td>{{ (r.from_addr or '')[:6] }}… → {{ (r.to_addr or '')[:6] }}…</td>
+            <td>{{ '%.2f'|format(r.amount or 0) }} {{ r.symbol or '' }}</td>
+            <td><span class="badge k-badge">{{ r.category or 'unknown' }}</span></td>
+            <td>
+              {% set score = r.risk_score or r.score or 0 %}
+              {% if score >= 0.75 %}
+              <span class="risk-score risk-high">{{ (score * 100)|int }}</span>
+              {% elif score >= 0.5 %}
+              <span class="risk-score risk-medium">{{ (score * 100)|int }}</span>
+              {% else %}
+              <span class="risk-score risk-low">{{ (score * 100)|int }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="text-muted">No alerts found matching the criteria.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h2 class="h5 mb-3">About Alerts</h2>
+    <p>
+      Alerts are generated when transactions exceed the risk threshold (currently set at
+      <strong>{{ '%.0f'|format(threshold * 100) }}%</strong>). Risk scores are calculated based on multiple
+      factors including transaction patterns, amounts, and network behavior.
+    </p>
+    <p>
+      <a href="/dashboard" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      </a>
+    </p>
+  </div>
+</div>
+{% endblock %}

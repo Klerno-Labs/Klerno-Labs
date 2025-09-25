@@ -5,10 +5,10 @@ Fixes ResourceWarning: unclosed database connections by providing proper connect
 
 import contextlib
 import logging
-import os
 import sqlite3
 import threading
 from collections.abc import Generator
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -23,8 +23,9 @@ class DatabaseConnectionManager:
     def __init__(self, db_path: str | None = None):
         if db_path is None:
             # Default to Klerno database path
-            db_path = os.path.join(os.path.dirname(__file__), "..", "data", "klerno.db")
-        self.db_path = os.path.abspath(db_path)
+            db_path = str(Path(__file__).parent.parent / "data" / "klerno.db")
+        # Normalize to absolute resolved path string for sqlite
+        self.db_path = str(Path(db_path).resolve())
         self._local = threading.local()
 
     @contextlib.contextmanager

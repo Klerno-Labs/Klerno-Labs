@@ -2,6 +2,7 @@
 """
 Enhanced security middleware for TLS enforcement and security headers.
 """
+
 from __future__ import annotations
 
 import os
@@ -17,7 +18,7 @@ class TLSEnforcementMiddleware(BaseHTTPMiddleware):
     Enforces HTTPS in production environments by redirecting HTTP to HTTPS.
     """
 
-    def __init__(self, app, enforce_tls: bool = None):
+    def __init__(self, app, enforce_tls: bool | None = None):
         super().__init__(app)
         # Default to enforcing TLS in production
         if enforce_tls is None:

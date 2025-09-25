@@ -24,7 +24,7 @@ import time
 from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from dotenv import find_dotenv, load_dotenv
 from fastapi import Header, HTTPException, Request, Response, status
@@ -46,17 +46,29 @@ _DATA_DIR.mkdir(parents=True, exist_ok=True)
 _KEY_FILE = _DATA_DIR / "api_key.secret"
 _META_FILE = _DATA_DIR / "api_key.meta"
 
-# Security configuration
+# Security configuration (build in steps for clearer typing)
+_rate_limit_requests = int(os.getenv("RATE_LIMIT_REQUESTS", "100"))
+_rate_limit_window = int(os.getenv("RATE_LIMIT_WINDOW", "60"))
+_max_request_size = int(os.getenv("MAX_REQUEST_SIZE", "10485760"))  # 10MB
+
+# Compute blocked and trusted IPs in a type-safe way
+_blocked_ips_raw = os.getenv("BLOCKED_IPS")
+if _blocked_ips_raw:
+    _blocked_ips_set: set[str] = set(_blocked_ips_raw.split(","))
+else:
+    _blocked_ips_set = set()
+
+_trusted_ips_raw = os.getenv("TRUSTED_IPS", "127.0.0.1,::1") or ""
+_trusted_ips_set: set[str] = (
+    set(_trusted_ips_raw.split(",")) if _trusted_ips_raw else set()
+)
+
 SECURITY_CONFIG = {
-    "rate_limit_requests": int(os.getenv("RATE_LIMIT_REQUESTS", "100")),
-    "rate_limit_window": int(os.getenv("RATE_LIMIT_WINDOW", "60")),
-    "max_request_size": int(os.getenv("MAX_REQUEST_SIZE", "10485760")),  # 10MB
-    "blocked_ips": (
-        set(os.getenv("BLOCKED_IPS", "").split(","))
-        if os.getenv("BLOCKED_IPS")
-        else set()
-    ),
-    "trusted_ips": set(os.getenv("TRUSTED_IPS", "127.0.0.1,::1").split(",")),
+    "rate_limit_requests": _rate_limit_requests,
+    "rate_limit_window": _rate_limit_window,
+    "max_request_size": _max_request_size,
+    "blocked_ips": _blocked_ips_set,
+    "trusted_ips": _trusted_ips_set,
     "require_secure_headers": os.getenv("REQUIRE_SECURE_HEADERS", "true").lower()
     == "true",
 }
@@ -64,7 +76,7 @@ SECURITY_CONFIG = {
 # In-memory security storage (fallback if Redis unavailable)
 _rate_limits: dict[str, list[float]] = defaultdict(list)
 _security_events: list[dict[str, Any]] = []
-_blocked_ips: set[str] = SECURITY_CONFIG["blocked_ips"].copy()
+_blocked_ips: set[str] = cast(set[str], SECURITY_CONFIG.get("blocked_ips", set()))
 _suspicious_activity: dict[str, int] = defaultdict(int)
 
 
@@ -387,7 +399,10 @@ class UnifiedSecurityMiddleware(BaseHTTPMiddleware):
             "X-Content-Type-Options": "nosniff",
             "X-XSS-Protection": "1; mode=block",
             "Referrer-Policy": "strict-origin-when-cross-origin",
-            "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
+            "Content-Security-Policy": (
+                "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+                "style-src 'self' 'unsafe-inline'"
+            ),
             "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
             "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
             "X-Permitted-Cross-Domain-Policies": "none",
@@ -407,7 +422,7 @@ class AuditLogger:
 
     def log_event(self, event: AuditEvent):
         """Log an audit event."""
-        {
+        entry = {
             "event_type": event.event_type,
             "outcome": event.outcome,
             "details": event.details,
@@ -415,8 +430,9 @@ class AuditLogger:
             "timestamp": event.timestamp.isoformat(),
         }
 
-        # Log to system logger
+        # Log to system logger (string summary + structured debug)
         self.logger.info(f"{event.event_type} - {event.outcome}")
+        self.logger.debug(entry)
 
         # Log detailed info for debugging
         if event.details:

@@ -9,11 +9,32 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
-from sklearn.ensemble import IsolationForest, RandomForestClassifier
-from sklearn.preprocessing import StandardScaler
+if TYPE_CHECKING:
+    import numpy as np  # pragma: no cover
+
+
+def _ensure_numpy() -> None:
+    if "np" in globals():
+        return
+    try:
+        import numpy as np  # type: ignore
+
+        globals()["np"] = np
+    except Exception:
+        raise
+
+
+try:
+    # Avoid importing sklearn at module-import time; import inside initializer
+    IsolationForest = None
+    RandomForestClassifier = None
+    StandardScaler = None
+except Exception:
+    IsolationForest = None
+    RandomForestClassifier = None
+    StandardScaler = None
 
 logger = logging.getLogger(__name__)
 
@@ -48,19 +69,29 @@ class AdvancedAIRiskEngine:
     """AI - powered advanced risk scoring engine."""
 
     def __init__(self):
-        self.isolation_forest = IsolationForest(contamination=0.1, random_state=42)
-        self.risk_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
-        self.scaler = StandardScaler()
+        self.isolation_forest = None
+        self.risk_classifier = None
+        self.scaler = None
         self.is_trained = False
         self._initialize_models()
 
     def _initialize_models(self):
         """Initialize AI models with synthetic training data."""
+        # Import sklearn here to avoid heavy import at module import-time
+        try:
+            from sklearn.ensemble import IsolationForest, RandomForestClassifier
+            from sklearn.preprocessing import StandardScaler
+        except Exception as e:
+            raise RuntimeError("sklearn is required to initialize AI models") from e
         # Generate synthetic training data for demonstration
         # In production, this would use real historical data
         X_train, y_train = self._generate_training_data()
 
-        # Train models
+        # Create and train models
+        self.scaler = StandardScaler()
+        self.isolation_forest = IsolationForest(contamination=0.1, random_state=42)
+        self.risk_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
+
         X_scaled = self.scaler.fit_transform(X_train)
         self.isolation_forest.fit(X_scaled)
         self.risk_classifier.fit(X_scaled, y_train)
@@ -68,8 +99,9 @@ class AdvancedAIRiskEngine:
 
         logger.info("Advanced AI risk models initialized and trained")
 
-    def _generate_training_data(self) -> tuple[np.ndarray, np.ndarray]:
+    def _generate_training_data(self) -> tuple:
         """Generate synthetic training data."""
+        _ensure_numpy()
         np.random.seed(42)
         n_samples = 10000
 
@@ -123,26 +155,38 @@ class AdvancedAIRiskEngine:
     def analyze_transaction(
         self,
         transaction_data: dict[str, Any],
-        user_history: list[dict[str, Any]] = None,
+        user_history: list[dict[str, Any]] | None = None,
     ) -> AdvancedRiskScore:
         """Perform advanced AI risk analysis on a transaction."""
 
-        if not self.is_trained:
-            raise RuntimeError("AI models not trained")
+        _ensure_numpy()
+
+        if (
+            not self.is_trained
+            or self.scaler is None
+            or self.isolation_forest is None
+            or self.risk_classifier is None
+        ):
+            raise RuntimeError("AI models not trained or not initialized")
 
         # Extract features from transaction
         features = self._extract_features(transaction_data, user_history or [])
 
         # Scale features
+        if self.scaler is None:
+            raise RuntimeError("Scaler not initialized")
         features_scaled = self.scaler.transform([features])
 
         # Get anomaly score
+        if self.isolation_forest is None:
+            raise RuntimeError("Isolation forest not initialized")
         anomaly_score = self.isolation_forest.decision_function(features_scaled)[0]
         is_anomaly = self.isolation_forest.predict(features_scaled)[0] == -1
 
         # Get risk classification
+        if self.risk_classifier is None:
+            raise RuntimeError("Risk classifier not initialized")
         risk_proba = self.risk_classifier.predict_proba(features_scaled)[0]
-        self.risk_classifier.predict(features_scaled)[0]
 
         # Calculate overall risk score
         overall_score = self._calculate_overall_score(
@@ -154,7 +198,7 @@ class AdvancedAIRiskEngine:
 
         # Extract detailed risk factors
         risk_factors = self._analyze_risk_factors(
-            features, transaction_data, user_history
+            features, transaction_data, user_history or []
         )
 
         # Generate AI insights and recommendations
@@ -274,10 +318,10 @@ class AdvancedAIRiskEngine:
         self,
         features: list[float],
         transaction: dict[str, Any],
-        history: list[dict[str, Any]],
+        history: list[dict[str, Any]] | None,
     ) -> RiskFactors:
         """Analyze individual risk factors."""
-
+        history = history or []
         return RiskFactors(
             transaction_frequency=min(1.0, features[1] / 50),  # Normalize to 0 - 1
             amount_anomaly=min(1.0, (np.exp(features[0]) - 1) / 50000),  # Normalize
@@ -331,7 +375,7 @@ class AdvancedAIRiskEngine:
         # Advanced ML insights
         if anomaly_score < -0.5:
             insights.append(
-                "📊 Machine learning models flag this as highly unusual transaction"
+                "[ALERT] Machine learning models flag this as highly unusual transaction"
             )
 
         return insights
@@ -343,7 +387,9 @@ class AdvancedAIRiskEngine:
         recommendations = []
 
         if risk_level in ["HIGH", "CRITICAL"]:
-            recommendations.append("🛡️ Consider requiring additional verification")
+            recommendations.append(
+                "[ACTION] Consider requiring additional verification"
+            )
             recommendations.append("👀 Manual review recommended")
 
         if factors.transaction_frequency > 0.6:
@@ -411,15 +457,23 @@ class AdvancedAIRiskEngine:
         return min(1.0, deviation)
 
 
-# Global instance
-advanced_ai_engine = AdvancedAIRiskEngine()
+_advanced_ai_engine: AdvancedAIRiskEngine | None = None
+
+
+def _get_advanced_ai_engine() -> AdvancedAIRiskEngine:
+    """Lazily create the AdvancedAIRiskEngine on first use."""
+    global _advanced_ai_engine
+    if _advanced_ai_engine is None:
+        _advanced_ai_engine = AdvancedAIRiskEngine()
+    return _advanced_ai_engine
 
 
 def get_advanced_risk_score(
-    transaction_data: dict[str, Any], user_history: list[dict[str, Any]] = None
+    transaction_data: dict[str, Any], user_history: list[dict[str, Any]] | None = None
 ) -> AdvancedRiskScore:
     """Get advanced AI risk score for a transaction."""
-    return advanced_ai_engine.analyze_transaction(transaction_data, user_history)
+    engine = _get_advanced_ai_engine()
+    return engine.analyze_transaction(transaction_data, user_history)
 
 
 def is_professional_feature_available(user_tier: str) -> bool:

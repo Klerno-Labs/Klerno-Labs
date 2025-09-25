@@ -68,7 +68,7 @@ def issue_csrf_cookie(resp: Response) -> str:
         "csrf_token",
         token,
         secure=True,
-        samesite="Strict",
+        samesite="strict",
         httponly=False,
         path="/",
         max_age=60 * 60 * 8,
