@@ -1,5 +1,26 @@
 from fastapi.testclient import TestClient
 
+from app.main import app
+
+
+def test_root_returns_html():
+    client = TestClient(app)
+    resp = client.get("/")
+    assert resp.status_code == 200
+    # landing page should contain a title or header
+    assert "Klerno" in resp.text or "Landing" in resp.text or "Welcome" in resp.text
+
+
+def test_health_ok():
+    client = TestClient(app)
+    resp = client.get("/health")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data.get("status") == "ok"
+
+
+from fastapi.testclient import TestClient
+
 import app.main as main_mod
 from app import store
 from app.security_session import hash_pw
