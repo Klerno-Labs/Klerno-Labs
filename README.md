@@ -190,6 +190,8 @@ Two helper files were added to make running locally easier:
 - `.env.example` — copy to `.env` or read and set the listed environment variables. It lists `X_API_KEY`, `JWT_SECRET`, `DATABASE_URL`, and optional integration keys (OpenAI, SendGrid, Stripe, BSC).
 - `start-local.ps1` — convenience script for Windows PowerShell that sets session-only environment variables and starts the app using the project's `.venv-py311` virtualenv. Run it from the repo root: `./start-local.ps1`.
 
+If port 8000 is already in use, `scripts/start_local.ps1` will try 8000 and then fall back to ports 8001..8100 automatically and start the app using `.venv-py311\Scripts\python.exe` when available.
+
 Also included: `data/api_key.secret.example` as an example file the app will read for the API key if env vars are not present.
 
 
