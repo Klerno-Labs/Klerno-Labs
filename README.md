@@ -183,6 +183,16 @@ git push origin cleanup/tests-ci
 gh pr create --title "ci: fix pandas import-time circulars; add CI and import-safety test" --body-file PULL_REQUEST_DRAFT.md --base main
 ```
 
+## Local development helper files
+
+Two helper files were added to make running locally easier:
+
+- `.env.example` — copy to `.env` or read and set the listed environment variables. It lists `X_API_KEY`, `JWT_SECRET`, `DATABASE_URL`, and optional integration keys (OpenAI, SendGrid, Stripe, BSC).
+- `start-local.ps1` — convenience script for Windows PowerShell that sets session-only environment variables and starts the app using the project's `.venv-py311` virtualenv. Run it from the repo root: `./start-local.ps1`.
+
+Also included: `data/api_key.secret.example` as an example file the app will read for the API key if env vars are not present.
+
+
 To set up `pre-commit` locally and run the import-safety check before commits:
 
 ```powershell
