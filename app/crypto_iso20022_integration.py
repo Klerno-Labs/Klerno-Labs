@@ -62,11 +62,13 @@ class CryptoISO20022Manager:
 
     def __init__(self):
         self.iso_manager = ISO20022Manager()
-        self.crypto_configs = self._initialize_crypto_configs()
+        self.crypto_configs: dict[SupportedCryptos, CryptoNetworkConfig] = (
+            self._initialize_crypto_configs()
+        )
 
-    def _initialize_crypto_configs(self) -> dict[str, CryptoNetworkConfig]:
+    def _initialize_crypto_configs(self) -> dict[SupportedCryptos, CryptoNetworkConfig]:
         """Initialize configuration for all supported cryptocurrencies."""
-        configs = {}
+        configs: dict[SupportedCryptos, CryptoNetworkConfig] = {}
 
         # Bitcoin
         configs[SupportedCryptos.BTC] = CryptoNetworkConfig(
@@ -195,7 +197,9 @@ class CryptoISO20022Manager:
 
         return configs
 
-    def _add_remaining_crypto_configs(self, configs: dict[str, CryptoNetworkConfig]):
+    def _add_remaining_crypto_configs(
+        self, configs: dict[SupportedCryptos, CryptoNetworkConfig]
+    ) -> None:
         """Add configurations for remaining cryptocurrencies."""
 
         # Cardano (ADA)
@@ -236,7 +240,7 @@ class CryptoISO20022Manager:
             maximum_amount=1000000000.0,
         )
 
-        # Continue for all other cryptos...
+    # Continue for all other cryptos...
 
     def validate_crypto_compliance(self, crypto: SupportedCryptos) -> dict[str, Any]:
         """Validate ISO20022 compliance for a specific cryptocurrency."""

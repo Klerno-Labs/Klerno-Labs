@@ -51,7 +51,7 @@ class DashboardWidget:
     position: dict[str, int]  # x, y, width, height
     data_source: str
     refresh_interval: int = 30  # seconds
-    filters: dict[str, Any] = None
+    filters: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert widget to dictionary."""
@@ -69,8 +69,8 @@ class Dashboard:
     layout: dict[str, Any]
     widgets: list[DashboardWidget]
     is_public: bool = False
-    created_at: datetime = None
-    updated_at: datetime = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert dashboard to dictionary."""
@@ -135,7 +135,7 @@ class DashboardManager:
         user_id: str,
         name: str,
         description: str = "",
-        layout: dict[str, Any] = None,
+        layout: dict[str, Any] | None = None,
     ) -> Dashboard:
         """Create a new dashboard for user."""
         dashboard_id = str(uuid.uuid4())
@@ -217,7 +217,9 @@ class DashboardManager:
         conn.close()
         return dashboards
 
-    def get_dashboard(self, dashboard_id: str, user_id: str = None) -> Dashboard | None:
+    def get_dashboard(
+        self, dashboard_id: str, user_id: str | None = None
+    ) -> Dashboard | None:
         """Get specific dashboard by ID."""
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -264,7 +266,7 @@ class DashboardManager:
         position: dict[str, int],
         data_source: str,
         refresh_interval: int = 30,
-        filters: dict[str, Any] = None,
+        filters: dict[str, Any] | None = None,
     ) -> DashboardWidget:
         """Add widget to dashboard."""
         widget_id = str(uuid.uuid4())
@@ -286,7 +288,8 @@ class DashboardManager:
         cursor.execute(
             """
             INSERT INTO dashboard_widgets
-            (id, dashboard_id, type, title, config, position, data_source, refresh_interval, filters)
+            (id, dashboard_id, type, title, config, position,
+             data_source, refresh_interval, filters)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
@@ -529,7 +532,7 @@ def create_dashboard(user_id: str, name: str, description: str = "") -> Dashboar
     return dashboard_manager.create_dashboard(user_id, name, description)
 
 
-def get_dashboard(dashboard_id: str, user_id: str = None) -> Dashboard | None:
+def get_dashboard(dashboard_id: str, user_id: str | None = None) -> Dashboard | None:
     """Get specific dashboard."""
     return dashboard_manager.get_dashboard(dashboard_id, user_id)
 

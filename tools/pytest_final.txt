@@ -1,0 +1,10 @@
+.................s...................................................... [ 52%]
+................................................................         [100%]
+============================== warnings summary ===============================
+tests/test_smoke.py::test_smoke_login
+  c:\Users\Somli\OneDrive\Desktop\Klerno Labs\.venv-py311\Lib\site-packages\starlette\testclient.py:430: DeprecationWarning: The `allow_redirects` argument is deprecated. Use `follow_redirects` instead.
+    warnings.warn(message, DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+135 passed, 1 skipped, 1 warning in 18.51s
+

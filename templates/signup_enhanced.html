@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Klerno Labs{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --text-white: #ffffff;
+    --text-gray: #6b7280;
+    --input-bg: rgba(255, 255, 255, 0.05);
+    --input-border: rgba(255, 255, 255, 0.15);
+    --input-focus: rgba(255, 255, 255, 0.25);
+    --google-blue: #4285f4;
+    --microsoft-blue: #0078d4;
+    --success-green: #10b981;
+    --warning-yellow: #f59e0b;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--primary-gradient);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .auth-container {
+    width: 100%;
+    max-width: 480px;
+    position: relative;
+  }
+
+  .auth-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 3rem;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+    animation: slideUp 0.6s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .logo-section {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    margin-bottom: 1rem;
+    background: white;
+    display: inline-block;
+    padding: 8px;
+  }
+
+  .auth-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--text-white);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.025em;
+  }
+
+  .auth-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem;
+    font-weight: 400;
+  }
+
+  /* OAuth Buttons */
+  .oauth-section {
+    margin-bottom: 2rem;
+  }
+
+  .oauth-btn {
+    width: 100%;
+    padding: 1rem;
+    background: white;
+    border: none;
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: #374151;
+    margin-bottom: 0.75rem;
+  }
+
+  .oauth-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
+  }
+
+  .oauth-btn:active {
+    transform: translateY(0);
+  }
+
+  .oauth-btn.google {
+    background: var(--google-blue);
+    color: white;
+  }
+
+  .oauth-btn.microsoft {
+    background: var(--microsoft-blue);
+    color: white;
+  }
+
+  .oauth-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Divider */
+  .divider {
+    position: relative;
+    text-align: center;
+    margin: 2rem 0;
+  }
+
+  .divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--glass-border);
+  }
+
+  .divider-text {
+    background: var(--glass-bg);
+    padding: 0 1rem;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.7);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Form Styles */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-white);
+    margin-bottom: 0.5rem;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 1rem;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 16px;
+    color: var(--text-white);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+  }
+
+  .form-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--input-focus);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+  }
+
+  /* Wallet Address Section */
+  .wallet-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .wallet-section h3 {
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .wallet-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--warning-yellow);
+  }
+
+  .wallet-addresses {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .wallet-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .wallet-input {
+    flex: 1;
+    padding: 0.75rem;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 12px;
+    color: var(--text-white);
+    font-size: 0.875rem;
+    font-family: 'Monaco', 'Menlo', monospace;
+  }
+
+  .add-wallet-btn {
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .add-wallet-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .remove-wallet-btn {
+    padding: 0.5rem;
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    color: #fecaca;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.3s ease;
+  }
+
+  .remove-wallet-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+  }
+
+  .wallet-help {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 0.5rem;
+    line-height: 1.4;
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 1rem;
+    background: white;
+    color: #667eea;
+    border: none;
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .auth-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--glass-border);
+  }
+
+  .auth-link {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: color 0.3s ease;
+  }
+
+  .auth-link:hover {
+    color: white;
+  }
+
+  .error-message {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fecaca;
+    padding: 1rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(10px);
+  }
+
+  @media (max-width: 480px) {
+    .auth-card {
+      padding: 2rem 1.5rem;
+    }
+
+    .auth-title {
+      font-size: 1.5rem;
+    }
+
+    .wallet-input-group {
+      flex-direction: column;
+    }
+
+    .wallet-input {
+      font-size: 0.75rem;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<a class="skip-link" href="#signup-card">Skip to sign up</a>
+<div id="signup-card" class="auth-container">
+  <div class="auth-card">
+    <div class="logo-section">
+      <img src="/static/klerno-logo.png" alt="Klerno Labs" class="logo">
+      <h1 class="auth-title">Join Klerno Labs</h1>
+      <p class="auth-subtitle">Start analyzing blockchain transactions today</p>
+    </div>
+
+    {% if error %}
+    <div class="error-message">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- OAuth Sign Up Options -->
+    <div class="oauth-section" role="region" aria-label="OAuth sign up options">
+      <a href="/auth/oauth/google" aria-label="Sign up with Google" class="oauth-btn google">
+        <svg class="oauth-icon" viewBox="0 0 24 24">
+          <path fill="currentColor"
+            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+          <path fill="currentColor"
+            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+          <path fill="currentColor"
+            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+          <path fill="currentColor"
+            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+        </svg>
+        Sign up with Google
+      </a>
+
+      <a href="/auth/oauth/microsoft" aria-label="Sign up with Microsoft" class="oauth-btn microsoft">
+        <svg class="oauth-icon" viewBox="0 0 24 24">
+          <path fill="currentColor"
+            d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z" />
+        </svg>
+        Sign up with Microsoft
+      </a>
+    </div>
+
+    <div class="divider">
+      <span class="divider-text">or create account with email</span>
+    </div>
+
+    <!-- Traditional Signup Form -->
+    <form method="post" action="/auth/signup" id="signupForm">
+      <div class="form-group">
+        <label for="email" class="form-label">Email Address</label>
+        <input type="email" id="email" name="email" class="form-input" placeholder="you@company.com" required
+          autocomplete="email">
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" id="password" name="password" class="form-input" placeholder="Create a strong password"
+          required autocomplete="new-password" minlength="8">
+      </div>
+
+      <!-- Wallet Address Section -->
+      <div class="wallet-section">
+        <h3>
+          <svg class="wallet-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+            <path fill-rule="evenodd"
+              d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
+              clip-rule="evenodd" />
+          </svg>
+          Wallet Addresses (Optional)
+        </h3>
+        <div class="wallet-addresses" id="walletAddresses">
+          <div class="wallet-input-group">
+            <input type="text" name="wallet_addresses[]" class="wallet-input form-input"
+              placeholder="Enter blockchain wallet address (Bitcoin, Ethereum, etc.)">
+            <button type="button" class="add-wallet-btn" onclick="addWalletInput()">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path
+                  d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="wallet-help">
+          Add your wallet addresses to automatically monitor and analyze transactions. Supports Bitcoin, Ethereum, XRP,
+          and other major blockchains.
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary" aria-label="Create account">
+        Create Account
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p>
+        Already have an account?
+        <a href="/login" class="auth-link">Sign in here</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  let walletCount = 1;
+
+  function addWalletInput() {
+    if (walletCount >= 5) {
+      alert('Maximum 5 wallet addresses allowed');
+      return;
+    }
+
+    walletCount++;
+    const container = document.getElementById('walletAddresses');
+    const inputGroup = document.createElement('div');
+    inputGroup.className = 'wallet-input-group';
+    inputGroup.innerHTML = `
+    <input
+      type="text"
+      name="wallet_addresses[]"
+      class="wallet-input form-input"
+      placeholder="Enter another wallet address"
+    >
+    <button type="button" class="remove-wallet-btn" onclick="removeWalletInput(this)">
+      Remove
+    </button>
+  `;
+    container.appendChild(inputGroup);
+  }
+
+  function removeWalletInput(btn) {
+    btn.parentElement.remove();
+    walletCount--;
+  }
+
+  // Add loading states to OAuth buttons
+  document.querySelectorAll('.oauth-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      this.style.opacity = '0.7';
+      this.innerHTML = this.innerHTML.replace(/Sign up with/, 'Connecting to');
+    });
+  });
+
+  // Handle form submission
+  document.getElementById('signupForm').addEventListener('submit', function (e) {
+    const btn = this.querySelector('.btn-primary');
+    btn.disabled = true;
+    btn.innerHTML = 'Creating Account...';
+
+    // Collect wallet addresses
+    const walletInputs = this.querySelectorAll('input[name="wallet_addresses[]"]');
+    const walletAddresses = Array.from(walletInputs)
+      .map(input => input.value.trim())
+      .filter(addr => addr.length > 0);
+
+    // Add wallet addresses as JSON to form
+    if (walletAddresses.length > 0) {
+      const hiddenInput = document.createElement('input');
+      hiddenInput.type = 'hidden';
+      hiddenInput.name = 'wallet_addresses_json';
+      hiddenInput.value = JSON.stringify(walletAddresses);
+      this.appendChild(hiddenInput);
+    }
+  });
+
+  // Validate wallet addresses on input
+  document.addEventListener('input', function (e) {
+    if (e.target.name === 'wallet_addresses[]') {
+      const value = e.target.value.trim();
+      if (value && value.length < 20) {
+        e.target.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+      } else {
+        e.target.style.borderColor = '';
+      }
+    }
+  });
+</script>
+{% endblock %}

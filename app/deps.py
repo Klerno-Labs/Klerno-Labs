@@ -5,7 +5,24 @@ from . import store
 from .security_session import decode_jwt
 from .settings import get_settings
 
-S = get_settings()
+
+# Lazy settings proxy so importing this module doesn't eagerly initialize
+# the app settings at import time.
+class _LazySettings:
+    def __init__(self, factory):
+        self._factory = factory
+        self._obj = None
+
+    def _ensure(self):
+        if self._obj is None:
+            self._obj = self._factory()
+
+    def __getattr__(self, name):
+        self._ensure()
+        return getattr(self._obj, name)
+
+
+S = _LazySettings(get_settings)
 
 
 def _lookup_user_by_sub(sub: str) -> dict | None:
@@ -65,7 +82,14 @@ def require_user(user: dict | None = Depends(current_user)) -> dict:
     return user
 
 
-def require_paid_or_admin(user: dict = Depends(require_user)) -> dict:
+def require_paid_or_admin(user: dict | None = Depends(current_user)) -> dict:
+    # If no user (anonymous), treat as payment required to match tests' expectations
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail="Subscription required",
+        )
+
     # Admin check
     if user.get("role") == "admin":
         return user
@@ -78,15 +102,20 @@ def require_paid_or_admin(user: dict = Depends(require_user)) -> dict:
     from .subscriptions import get_user_subscription
 
     subscription = get_user_subscription(user["id"])
-    if subscription and subscription.is_active:
-        # Add subscription info to user dict
-        user["xrpl_subscription"] = {
-            "tier": subscription.tier.value,
-            "expires_at": (
-                subscription.expires_at.isoformat() if subscription.expires_at else None
-            ),
-        }
-        return user
+    if subscription:
+        # Subscription model uses attribute 'active' in this codebase
+        is_active = getattr(subscription, "active", None)
+        if is_active:
+            # Add subscription info to user dict
+            user["xrpl_subscription"] = {
+                "tier": subscription.tier.value,
+                "expires_at": (
+                    subscription.expires_at.isoformat()
+                    if subscription.expires_at
+                    else None
+                ),
+            }
+            return user
 
     raise HTTPException(
         status_code=status.HTTP_402_PAYMENT_REQUIRED,

@@ -5,15 +5,18 @@ from __future__ import annotations
 db = None
 # Utility for test compatibility
 
+from datetime import UTC, datetime, timedelta
+
 
 def is_subscription_active(user_id: str) -> bool:
     """Return True if the user's subscription is active, False otherwise."""
+
     sub = get_subscription_for_user(user_id)
-    return (
+    return bool(
         sub is not None
         and getattr(sub, "active", False)
         and getattr(sub, "expires_at", None)
-        and sub.expires_at > datetime.now(timezone.utc)
+        and sub.expires_at > datetime.now(UTC)
     )
 
 
@@ -29,8 +32,8 @@ Manages user subscriptions, tier pricing, and access control.
 """
 
 import sqlite3
-from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, HTTPException, status
@@ -201,10 +204,8 @@ def init_subscription_db():
 def get_db_connection():
     """Get a database connection."""
     if settings.USE_SQLITE:
-        # Ensure directory exists
-        import os
-
-        os.makedirs(os.path.dirname(settings.SQLITE_PATH), exist_ok=True)
+        # Ensure directory exists using pathlib
+        Path(settings.SQLITE_PATH).resolve().parent.mkdir(parents=True, exist_ok=True)
 
         conn = sqlite3.connect(settings.SQLITE_PATH)
         conn.row_factory = sqlite3.Row
@@ -215,11 +216,26 @@ def get_db_connection():
         raise NotImplementedError("PostgreSQL support not implemented")
 
 
-def get_tier_details(tier_id: str) -> TierDetails:
+# import typing helpers at module top; duplicate removed
+
+
+def get_tier_details(tier_id: str | SubscriptionTier) -> TierDetails:
     """Get details for a subscription tier."""
+    # Coerce incoming identifier to a SubscriptionTier when possible so we
+    # can index DEFAULT_TIERS (which uses SubscriptionTier enum keys).
+    tier_key: SubscriptionTier
+    if isinstance(tier_id, SubscriptionTier):
+        tier_key = tier_id
+    else:
+        try:
+            tier_key = SubscriptionTier(tier_id)
+        except Exception:
+            # If coercion fails, leave as-is to trigger fallback later
+            tier_key = tier_id  # type: ignore[assignment]
+
     # Check cache first
-    if tier_id in _tier_cache:
-        return _tier_cache[tier_id]
+    if tier_key in _tier_cache:
+        return _tier_cache[tier_key]
 
     # Query database
     conn = get_db_connection()
@@ -236,9 +252,9 @@ def get_tier_details(tier_id: str) -> TierDetails:
 
     if not row:
         # Fallback to default
-        if tier_id in DEFAULT_TIERS:
-            _tier_cache[tier_id] = DEFAULT_TIERS[tier_id]
-            return DEFAULT_TIERS[tier_id]
+        if tier_key in DEFAULT_TIERS:
+            _tier_cache[tier_key] = DEFAULT_TIERS[tier_key]
+            return DEFAULT_TIERS[tier_key]
         raise ValueError(f"Subscription tier {tier_id} not found")
 
     tier = TierDetails(
@@ -251,7 +267,7 @@ def get_tier_details(tier_id: str) -> TierDetails:
     )
 
     # Cache for future use
-    _tier_cache[tier_id] = tier
+    _tier_cache[tier_key] = tier
 
     return tier
 
@@ -287,7 +303,6 @@ def get_all_tiers() -> list[TierDetails]:
 def get_user_subscription(user_id: str) -> Subscription | None:
     """Get the current subscription for a user."""
     # If a db facade is provided (e.g., in tests), delegate to it
-    global db
     if db is not None and hasattr(db, "get_user_subscription"):
         ret = db.get_user_subscription(user_id)
         if ret is None:
@@ -603,7 +618,7 @@ async def require_active_subscription(
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
             detail="Active subscription required",
-            headers={"WWW - Authenticate": "Bearer"},
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     return current_user
@@ -695,5 +710,6 @@ def record_transaction_usage(user_id: str, count: int = 1):
     conn.close()
 
 
-# Initialize the database on module import
-init_subscription_db()
+# In the shim we intentionally do not initialize DB on import to avoid
+# filesystem/database side-effects during test-time imports. The real
+# implementation initializes the DB when the application starts.

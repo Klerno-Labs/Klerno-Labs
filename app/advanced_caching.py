@@ -5,9 +5,9 @@ Implements HTTP caching headers, static asset optimization, and browser cache co
 
 import hashlib
 import mimetypes
-import os
 import time
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import Request, Response
 from fastapi.staticfiles import StaticFiles
@@ -20,7 +20,7 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, cache_rules: dict | None = None):
         super().__init__(app)
         self.cache_rules = cache_rules or self._default_cache_rules()
-        self.etag_cache = {}  # Simple in-memory ETag cache
+        self.etag_cache: dict[str, str] = {}  # Simple in-memory ETag cache
 
     def _default_cache_rules(self) -> dict:
         """Default caching rules for different content types"""
@@ -71,9 +71,9 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
         # Try to get file modification time for static files
         if path.startswith("/static/"):
             try:
-                file_path = f"app{path}"
-                if os.path.exists(file_path):
-                    mtime = os.path.getmtime(file_path)
+                file_path = Path("app") / path.lstrip("/")
+                if file_path.exists():
+                    mtime = file_path.stat().st_mtime
                     return f'"{content_hash}-{int(mtime)}"'
             except Exception as e:
                 logging.warning(f"ETag mtime lookup failed: {e}")
@@ -169,9 +169,9 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
             # Add Last-Modified for static files
             if path.startswith("/static/"):
                 try:
-                    file_path = f"app{path}"
-                    if os.path.exists(file_path):
-                        mtime = os.path.getmtime(file_path)
+                    file_path = Path("app") / path.lstrip("/")
+                    if file_path.exists():
+                        mtime = file_path.stat().st_mtime
                         last_modified = datetime.fromtimestamp(mtime).strftime(
                             "%a, %d %b %Y %H:%M:%S GMT"
                         )
@@ -188,7 +188,7 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
                                     return Response(status_code=304)
                             except ValueError:
                                 pass
-                except:
+                except Exception:
                     pass
 
             # Add security headers
@@ -228,7 +228,7 @@ class OptimizedStaticFiles(StaticFiles):
         headers["content-type"] = content_type
 
         # Cache headers for different file types
-        file_ext = os.path.splitext(path)[1].lower()
+        file_ext = Path(path).suffix.lower()
 
         if file_ext in [".css", ".js"]:
             # Long cache for CSS/JS with immutable

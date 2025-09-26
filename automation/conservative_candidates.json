@@ -1,0 +1,62 @@
+[
+  {
+    "score": 0,
+    "module": "xrpl_payments_mock",
+    "note": ""
+  },
+  {
+    "score": 0,
+    "module": "xrpl_payments",
+    "note": ""
+  },
+  {
+    "score": 0,
+    "module": "xrpl",
+    "note": ""
+  },
+  {
+    "score": 0,
+    "module": "worker",
+    "note": ""
+  },
+  {
+    "score": 0,
+    "module": "websocket_alerts",
+    "note": ""
+  },
+  {
+    "score": 0,
+    "module": "utils",
+    "note": ""
+  },
+  {
+    "score": 0,
+    "module": "transactions",
+    "note": ""
+  },
+  {
+    "score": 0,
+    "module": "tasks",
+    "note": ""
+  },
+  {
+    "score": 0,
+    "module": "system_monitor",
+    "note": ""
+  },
+  {
+    "score": 0,
+    "module": "subscriptions",
+    "note": ""
+  },
+  {
+    "score": 0,
+    "module": "store",
+    "note": ""
+  },
+  {
+    "score": 0,
+    "module": "shared_constants",
+    "note": ""
+  }
+]

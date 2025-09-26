@@ -8,7 +8,7 @@ from collections.abc import Callable
 
 import structlog
 from fastapi import Request, Response
-from prometheus_client import Counter, Histogram, generate_latest
+from prometheus_client import Counter, Gauge, Histogram, generate_latest
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import PlainTextResponse
 
@@ -28,7 +28,7 @@ REQUEST_DURATION = Histogram(
     ["method", "endpoint", "status_code"],
 )
 
-ACTIVE_REQUESTS = Counter("http_requests_active", "Active HTTP requests")
+ACTIVE_REQUESTS = Gauge("http_requests_active", "Active HTTP requests")
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
@@ -206,7 +206,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, requests_per_minute: int = 60):
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
-        self.requests = {}  # ip -> list of timestamps
+        self.requests: dict[str, list[float]] = {}  # ip -> list of timestamps
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         # Skip rate limiting for health checks
@@ -255,7 +255,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         """Remove requests older than 1 minute."""
         cutoff_time = current_time - 60  # 1 minute ago
 
-        for ip in list(self.requests.keys()):
+        for ip in list(self.requests):
             self.requests[ip] = [
                 timestamp for timestamp in self.requests[ip] if timestamp > cutoff_time
             ]

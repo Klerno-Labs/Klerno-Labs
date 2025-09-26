@@ -16,6 +16,37 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
+def _to_iso(timestamp: Any) -> str:
+    """Safely convert timestamp-like values to ISO string.
+
+    Accepts datetime, str, epoch numbers, or objects with `isoformat`.
+    Falls back to current UTC time string when conversion fails or timestamp is None.
+    """
+    if timestamp is None:
+        return datetime.now(UTC).isoformat()
+
+    if isinstance(timestamp, str):
+        return timestamp
+
+    try:
+        iso = getattr(timestamp, "isoformat", None)
+        if callable(iso):
+            return str(iso())
+    except Exception:
+        pass
+
+    if isinstance(timestamp, (int, float)):
+        try:
+            return datetime.fromtimestamp(timestamp, UTC).isoformat()
+        except Exception:
+            pass
+
+    try:
+        return str(timestamp)
+    except Exception:
+        return datetime.now(UTC).isoformat()
+
+
 class SupportedChain(str, Enum):
     """Supported blockchain networks."""
 
@@ -40,7 +71,7 @@ class ChainInfo:
     explorer_url: str
     api_endpoint: str
     confirmations_required: int
-    average_block_time: int  # seconds
+    average_block_time: float  # seconds (allow fractional block times like Solana)
     transaction_fee_unit: str
     supports_smart_contracts: bool
     native_token: str
@@ -56,7 +87,7 @@ class ChainTransaction:
     to_address: str
     amount: float
     fee: float
-    timestamp: datetime
+    timestamp: datetime | str
     block_number: int | None = None
     confirmations: int = 0
     status: str = "pending"  # pending, confirmed, failed
@@ -66,7 +97,8 @@ class ChainTransaction:
     def to_dict(self) -> dict[str, Any]:
         """Convert transaction to dictionary."""
         result = asdict(self)
-        result["timestamp"] = self.timestamp.isoformat()
+        # timestamp may be a datetime, string, or epoch number - normalize safely
+        result["timestamp"] = _to_iso(self.timestamp)
         return result
 
 
@@ -277,7 +309,13 @@ class MultiChainEngine:
 
                 # Filter by date range
                 cutoff_date = datetime.now(UTC) - timedelta(days=days)
-                recent_txs = [tx for tx in txs if tx.timestamp >= cutoff_date]
+                # Only compare timestamps that are actual datetimes
+                recent_txs = [
+                    tx
+                    for tx in txs
+                    if isinstance(tx.timestamp, datetime)
+                    and tx.timestamp >= cutoff_date
+                ]
 
                 chain_txs.extend(recent_txs)
                 unique_addresses.add(address)
@@ -415,7 +453,7 @@ class MultiChainEngine:
         frequency_risk = min(1.0, avg_daily_txs / 100)  # Normalize to 0 - 1
 
         # Cross - chain movement detection
-        cross_chain_movements = 0
+        cross_chain_movements = 0.0
         # This would analyze transaction patterns to detect funds moving between chains
         # For now, mock calculation
         cross_chain_movements = len(transactions) * 0.1  # 10% assumed cross - chain
