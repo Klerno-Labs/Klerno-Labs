@@ -9,12 +9,16 @@ import socket
 import sys
 from pathlib import Path
 
-# Dev-friendly defaults (only set if not already present)
-os.environ.setdefault("APP_ENV", "development")
-os.environ.setdefault("X_API_KEY", "dev-local-api-key")
-os.environ.setdefault("API_KEY", "dev-local-api-key")
-os.environ.setdefault("JWT_SECRET", "dev-secret-change-me")
-os.environ.setdefault("DATABASE_URL", "sqlite:///./data/klerno.db")
+# Only apply dev-friendly defaults when not running tests. Tests often
+# rely on specific env var absence/values and should control APP_ENV
+# themselves. If APP_ENV=="test" we avoid mutating the environment.
+if os.getenv("APP_ENV", "") != "test":
+    # Dev-friendly defaults (only set if not already present)
+    os.environ.setdefault("APP_ENV", "development")
+    os.environ.setdefault("X_API_KEY", "dev-local-api-key")
+    os.environ.setdefault("API_KEY", "dev-local-api-key")
+    os.environ.setdefault("JWT_SECRET", "dev-secret-change-me")
+    os.environ.setdefault("DATABASE_URL", "sqlite:///./data/klerno.db")
 
 
 # Ensure data dir exists

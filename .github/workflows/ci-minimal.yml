@@ -1,4 +1,4 @@
-name: CI Minimal
+name: CI Minimal (legacy - folded into core-ci.yml)
 
 on:
   push:

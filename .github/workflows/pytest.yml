@@ -1,4 +1,4 @@
-name: Run tests
+name: Run tests (legacy - folded into core-ci.yml)
 
 on:
   push:

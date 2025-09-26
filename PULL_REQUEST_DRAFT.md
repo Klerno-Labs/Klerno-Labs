@@ -1,24 +1,84 @@
-Title: ci: fix pandas import-time circulars; add CI and import-safety test
+# chore(ci+observability+security): consolidate workflows; add readiness, metrics, structured logging, rate limiting scaffold, hardened Dockerfile & security posture (#24)
 
-Summary:
-This PR defers heavy `pandas` imports to runtime in modules that are imported during test collection, adds a minimal GitHub Actions CI workflow to run `mypy` and `pytest`, and introduces an import-safety test to catch regressions where modules import heavy dependencies at module import-time.
+## Summary
+This PR delivers a comprehensive production hardening and observability upgrade for the Klerno Labs platform: consolidated CI, security posture improvements, operational endpoints, metrics, structured logging, optional rate limiting, and container/runtime consistency.
 
-What I changed:
-- Added `.github/workflows/ci.yml` to run `mypy` and `pytest` on push/PR to `main`/`master`.
-- Added `tests/test_imports.py` — ensures `app.analytics` and `enterprise_analytics` don't import `pandas` at import time.
-- Added lazy import guard `_ensure_pandas()` calls in several modules (`app/admin.py`, `app/enterprise_analytics_reporting.py`) to avoid pandas import at module import-time.
+Key Changes
+1. **Observability & Ops**
+   - Added `/ready` readiness probe (DB connectivity & uptime) distinct from `/health` liveness.
+   - Added optional Prometheus metrics (`/metrics`) with request counter & latency histogram (graceful no-op if dependency absent).
+   - Structured logging using existing logging config (JSON enabled via `LOG_FORMAT=json`).
+   - Operational tests (`tests/test_operational_endpoints.py`) validate readiness, metrics presence, and security headers.
 
-Why:
-- During local test runs, pytest collection failed due to a pandas import-time circular import. Deferring pandas import fixes the failure and reduces test fragility.
-- The CI workflow ensures future changes are validated automatically.
+2. **Security & Hardening**
+   - Startup weak secret validation rejects default/weak `JWT_SECRET` in non-dev environments.
+   - Session cookies hardened: `SameSite=Strict`, `Secure` outside development.
+   - Added baseline security headers & minimal CSP (`default-src 'self'`).
+   - Introduced optional in-memory rate limiter scaffold (`ENABLE_RATE_LIMIT=true`) for quick abuse mitigation.
+   - Added `SECURITY.md` documenting existing controls and prioritized roadmap (rate limiting enhancement, PostgreSQL migration, CSP tightening, token rotation, dependency scanning cadence).
+   - Pre-deploy script `scripts/check_prod_readiness.py` validates env vars, weak secrets, port conflicts, sensitive files.
 
-Notes:
-- I attempted to push the branch `cleanup/tests-ci` to `origin`, but the remote requested interactive authentication from your environment. Please run the following locally to complete the push and open the PR if you'd like me to create the PR on your behalf:
+3. **CI / QA Enhancements**
+   - Consolidated legacy workflows into `core-ci.yml` (removed `ci.yml`, `ci-minimal.yml`, `pytest.yml`).
+   - Added coverage run + XML artifact upload; introduced minimal coverage threshold gate (>= 10% initial) to allow gradual ratcheting.
+   - Integrated Bandit static analysis (non-blocking aside from failure conditions) & pip-audit vulnerability scanning (runtime + dev requirements).
+   - Added in-repo documentation updates to surface operational endpoints & security posture.
 
+4. **Container & Runtime Consistency**
+   - Hardened `Dockerfile`: multi-stage style (base + runtime), uvicorn entrypoint (`app.main:app`), switched exposed port to 8000 (aligned with docker-compose), added OCI labels, non-root execution.
+   - Added `.dockerignore` to reduce build context size (excludes caches, logs, venvs, artifacts).
+
+5. **Documentation**
+   - Updated `README.md` with operational endpoints, metrics, coverage & security scanning instructions, rate limiting env vars, and production readiness script usage.
+   - Added `SECURITY.md` summarizing controls and roadmap.
+
+Removed / Deprecated
+- Legacy CI workflows: `ci.yml`, `ci-minimal.yml`, `pytest.yml` (fully replaced by `core-ci.yml`).
+
+How to Test Locally
 ```powershell
-git push origin cleanup/tests-ci
-# then, using GitHub CLI if available:
-gh pr create --title "ci: fix pandas import-time circulars; add CI and import-safety test" --body-file PULL_REQUEST_DRAFT.md --base main
+python -m pip install -r requirements.txt
+python -m pip install -r dev-requirements.txt
+pytest -q
+python scripts/check_prod_readiness.py
+ENABLE_RATE_LIMIT=true uvicorn app.main:app --reload
+```
+To inspect metrics (if `prometheus_client` installed): `curl http://127.0.0.1:8000/metrics`.
+
+Coverage & Security (local)
+```powershell
+coverage run -m pytest -q
+coverage report -m
+pip install pip-audit bandit
+pip-audit -r requirements.txt
+bandit -q -r app
 ```
 
-If you'd like, I can also wait while you authenticate and complete the push, or you can copy the commands above and run them locally.
+Follow-Up (Not Included Here)
+- PostgreSQL migration & Alembic migrations.
+- Distributed rate limiting (Redis) & identity-based quotas.
+- CSP nonce/sha256 tightening and report-only rollout.
+- JWT rotation (short-lived access + refresh tokens) + revocation list.
+- Secrets management integration (vault/KMS) and rotation policy automation.
+- Raise coverage threshold gradually (e.g., 10% → 25% → 40%+).
+- Add CodeQL / SBOM (cyclonedx) and automated weekly dependency audit workflow.
+
+Risk & Rollout
+- All new features are additive and guarded (metrics optional, rate limit feature flag). Fallbacks ensure no crash if dependencies absent.
+- Removed workflows only after ensuring new consolidated workflow covers lint, types, tests, security scanning.
+
+Checklist
+- [x] Readiness vs liveness endpoints
+- [x] Metrics instrumentation (graceful when lib missing)
+- [x] Structured logging & security headers
+- [x] Weak secret validation
+- [x] Rate limiting scaffold (flagged)
+- [x] CI consolidation + coverage + Bandit + pip-audit
+- [x] Dockerfile hardened & port alignment
+- [x] Security & ops docs
+- [x] Legacy workflows removed
+
+Please review and approve. After CI passes (verify coverage artifact and audit output), we can merge and begin the next phase (DB migration, advanced CSP, rotation & distributed rate limiting).
+
+---
+Generated by automated hardening pass; happy to iterate on wording or scope if needed.

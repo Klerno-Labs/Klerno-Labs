@@ -384,7 +384,7 @@ async def signup_alias(request: Request):
 
     templates.env.globals["url_path_for"] = request.app.url_path_for
     return templates.TemplateResponse(
-        "signup_enhanced.html", {"request": request, "app_env": "dev"}
+        "signup.html", {"request": request, "app_env": "dev"}
     )
 
 
@@ -395,7 +395,7 @@ async def login_alias(request: Request):
 
     templates.env.globals["url_path_for"] = request.app.url_path_for
     return templates.TemplateResponse(
-        "login_enhanced.html", {"request": request, "error": None, "app_env": "dev"}
+        "login.html", {"request": request, "error": None, "app_env": "dev"}
     )
 
 
@@ -430,14 +430,14 @@ def _register_auth_router():
     def _shim_signup(request: Request):
         templates.env.globals["url_path_for"] = request.app.url_path_for
         return templates.TemplateResponse(
-            "signup_enhanced.html", {"request": request, "app_env": "dev"}
+            "signup.html", {"request": request, "app_env": "dev"}
         )
 
     @shim.get("/login", response_class=HTMLResponse)
     def _shim_login(request: Request, error: str | None = None):
         templates.env.globals["url_path_for"] = request.app.url_path_for
         return templates.TemplateResponse(
-            "login_enhanced.html",
+            "login.html",
             {"request": request, "error": error, "app_env": "dev"},
         )
 

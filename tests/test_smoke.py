@@ -19,7 +19,15 @@ def test_health_ok():
     assert data.get("status") == "ok"
 
 
-from fastapi.testclient import TestClient
+def test_status_endpoint():
+    client = TestClient(app)
+    resp = client.get("/status")
+    assert resp.status_code == 200
+    data = resp.json()
+    # Minimal sanity checks
+    assert data.get("status") in {"running", "ok"}
+    assert isinstance(data.get("version"), str) and data["version"].strip() != ""
+
 
 import app.main as main_mod
 from app import store
@@ -57,7 +65,8 @@ def test_smoke_login(tmp_path, monkeypatch):
     r = client.post(
         "/auth/login",
         data={"email": email, "password": password},
-        allow_redirects=False,
+        # Using follow_redirects=False keeps the same behavior under new Starlette
+        follow_redirects=False,
     )
     assert r.status_code in (200, 302)
 

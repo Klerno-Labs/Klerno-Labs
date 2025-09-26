@@ -1,8 +1,35 @@
-- repo: local
-  hooks:
-    - id: check-top-level-imports
-      name: Check top-level heavy imports
-      entry: python scripts/check_top_level_imports.py
-      language: system
-      files:
-        - "^.*\\.py$"
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3.11
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.6.5
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        additional_dependencies: ["pydantic"]
+        args: ["--ignore-missing-imports", "app", "tests"]
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.9
+    hooks:
+      - id: bandit
+        args: ["-q", "-r", "app"]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: local
+    hooks:
+      - id: check-top-level-imports
+        name: Check top-level heavy imports
+        entry: python scripts/check_top_level_imports.py
+        language: system
+        files: ^.*\\.py$

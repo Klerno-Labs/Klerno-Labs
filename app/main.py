@@ -9,14 +9,17 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-# Import settings
+from .logging_config import configure_logging, get_logger
 from .settings import settings
+
+configure_logging()
+logger = get_logger("app.main")
 
 # expose a short alias for suppress at module level so later code can
 # use _suppress
@@ -33,24 +36,43 @@ templates = Jinja2Templates(directory="templates")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    print("Starting Klerno Labs Enterprise Platform...")
-    # Initialize database
+    logger.info(
+        "startup.begin", event="startup", msg="Starting Klerno Labs Enterprise Platform"
+    )
     from . import store
 
+    # Secret / config validation for non-development environments
+    env_eff = getattr(
+        settings, "environment", getattr(settings, "app_env", "development")
+    ).lower()
+    if env_eff not in {"dev", "development", "local", "test"}:
+        weak_secrets = {
+            "your-secret-key-change-in-production",
+            "changeme",
+            "secret",
+            "dev",
+        }
+        if settings.jwt_secret in weak_secrets:
+            logger.error(
+                "startup.secret_validation_failed",
+                reason="weak_jwt_secret",
+                environment=env_eff,
+            )
+            raise RuntimeError(
+                "Insecure JWT_SECRET configured for non-development environment"
+            )
+        if os.getenv("DEV_ADMIN_PASSWORD") in weak_secrets:
+            logger.warning(
+                "startup.weak_dev_admin_password", action="change recommended"
+            )
     with contextlib.suppress(Exception):
         store.init_db()
-    # Dev-only: bootstrap an admin user to make local sign-in easier.
-    # This is intentionally guarded so tests and production are unaffected.
+    # Dev bootstrap (skipped in test env)
     try:
-        from .settings import settings
-
         if getattr(settings, "app_env", "development") != "test":
-            # Only create when no users exist
             with contextlib.suppress(Exception):
                 if store.users_count() == 0:
-                    # Use the provided dev admin credentials by default
                     dev_email = os.getenv("DEV_ADMIN_EMAIL", "klerno@outlook.com")
-                    # Use a weak test password for local development only
                     dev_pw = os.getenv("DEV_ADMIN_PASSWORD", "Labs2025")
                     from .security_session import hash_pw
 
@@ -61,13 +83,12 @@ async def lifespan(app: FastAPI):
                         role="admin",
                         subscription_active=True,
                     )
-                    print("[DEV] Bootstrapped admin user:", dev_email)
+                    logger.info("dev.bootstrap_admin", email=dev_email)
     except Exception:
-        pass
-    print("[OK] Database initialized")
+        logger.debug("dev.bootstrap_failed", exc_info=True)
+    logger.info("startup.db_initialized")
     yield
-    # Shutdown
-    print("Shutting down Klerno Labs Enterprise Platform...")
+    logger.info("shutdown.begin", event="shutdown")
 
 
 # Create FastAPI application
@@ -78,31 +99,61 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add middleware
-app.add_middleware(SessionMiddleware, secret_key=settings.jwt_secret)
+# Add session middleware with hardened defaults (strict same-site; secure outside dev)
+_env = getattr(settings, "environment", getattr(settings, "app_env", "development"))
+_is_dev = str(_env).lower() in {"dev", "development", "local"}
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.jwt_secret,
+    same_site="strict",
+    https_only=not _is_dev,
+)
+
+# Optional metrics setup after app creation
+try:  # pragma: no cover
+    from .metrics import setup_metrics
+
+    setup_metrics(app)
+except Exception:
+    logger.debug("metrics.setup_skipped", reason="import_or_init_failed")
+
+# Optional rate limiting
+try:  # pragma: no cover
+    # Prefer Redis-backed limiter if REDIS_URL set
+    if os.getenv("REDIS_URL"):
+        from .rate_limit_redis import add_redis_rate_limiter
+
+        add_redis_rate_limiter(app)
+    else:
+        from .rate_limit import add_rate_limiter
+
+        add_rate_limiter(app)
+except Exception:
+    logger.debug("rate_limit.setup_skipped", reason="import_or_init_failed")
 
 
-# Simple middleware to add security headers and a request id
+from .csp import add_csp_middleware, csp_enabled
+
+# CSP nonce middleware (report-only by default)
+with contextlib.suppress(Exception):
+    add_csp_middleware(app)
+
+
 @app.middleware("http")
-async def add_security_headers(request, call_next):
+async def add_security_headers(request, call_next):  # type: ignore
     from uuid import uuid4
 
     response = await call_next(request)
-    # Request ID
-    rid = str(uuid4())
-    response.headers["X-Request-ID"] = rid
-
-    # Security headers
+    response.headers.setdefault("X-Request-ID", str(uuid4()))
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("X-XSS-Protection", "1; mode=block")
     response.headers.setdefault(
         "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
     )
-    # Use short variables to keep line lengths under typical linters' limits
-    _csp_policy = "default-src 'self'"
-    response.headers.setdefault("Content-Security-Policy", _csp_policy)
-
+    # Provide a minimal baseline CSP only when nonce system disabled so we don't conflict.
+    if not csp_enabled():
+        response.headers.setdefault("Content-Security-Policy", "default-src 'self'")
     return response
 
 
@@ -113,35 +164,18 @@ with _suppress(Exception):
 
 
 # Basic models
-class HealthResponse(BaseModel):
+class HealthResponse(BaseModel):  # kept for backward compatibility imports in tests
     status: str
     timestamp: str
     uptime_seconds: float
 
 
-class StatusResponse(BaseModel):
-    status: str
-    version: str
-    environment: str
-
-
 # Routes
-@app.get("/health")
-async def health_check() -> HealthResponse:
-    """Health check endpoint."""
-    uptime = (datetime.now(UTC) - START_TIME).total_seconds()
-    return HealthResponse(
-        status="ok",
-        timestamp=datetime.now(UTC).isoformat(),
-        uptime_seconds=uptime,
-    )
+"""Operational endpoints moved to routers.operational.
 
-
-# Backwards-compatible alias expected by some tests/tools
-@app.get("/healthz")
-async def healthz_check() -> HealthResponse:
-    """Compatibility route: alias to /health."""
-    return await health_check()
+The legacy HealthResponse class is retained here for any imports in existing tests;
+actual routes are now provided by app.routers.operational.
+"""
 
 
 @app.get("/dashboard")
@@ -156,69 +190,15 @@ async def landing_page(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
 
-@app.get("/status")
-async def status() -> StatusResponse:
-    """Status endpoint."""
-    return StatusResponse(
-        status="running",
-        version="1.0.0",
-        environment=settings.environment,
-    )
+from .routers import operational  # import after app creation to avoid circulars
+
+with contextlib.suppress(Exception):
+    app.include_router(operational.router)
+    logger.info("router.operational.included")
 
 
 # Serve a favicon to avoid 404 noise for browsers and bots
-@app.get("/favicon.ico")
-async def favicon():
-    # Use an existing static asset as a favicon (PNG). Keeping the path relative
-    # to project root so the static files are used as-is. This is intentionally
-    # simple and non-blocking.
-    return FileResponse("static/klerno-logo.png", media_type="image/png")
-
-    # Development helper: create a bootstrap admin user on demand.
-    # This endpoint is intentionally excluded from OpenAPI
-    # (include_in_schema=False)
-    # and will refuse to run in 'production' environments.
-
-
-@app.post("/dev/bootstrap", include_in_schema=False)
-async def dev_bootstrap():
-    from . import store
-
-    # refuse in production
-    if getattr(settings, "environment", "development") == "production":
-        raise HTTPException(status_code=404, detail="Not available")
-
-    email = os.getenv("DEV_ADMIN_EMAIL", "klerno@outlook.com")
-    password = os.getenv("DEV_ADMIN_PASSWORD", "Labs2025")
-
-    with contextlib.suppress(Exception):
-        store.init_db()
-
-    existing = store.get_user_by_email(email)
-    if existing:
-        return {
-            "ok": True,
-            "message": f"admin exists: {existing.get('email')}",
-        }
-
-    try:
-        from .security_session import hash_pw
-
-        pw_hash = hash_pw(password)
-        user = store.create_user(
-            email=email,
-            password_hash=pw_hash,
-            role="admin",
-            subscription_active=True,
-        )
-        # user may be None on failure; guard attribute access
-        return {
-            "ok": True,
-            "created": True,
-            "email": (user.get("email") if user else None),
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+# favicon & dev bootstrap now provided by operational router
 
 
 # Premium feature forwarder used by tests: requires payment

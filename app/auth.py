@@ -8,6 +8,12 @@ from pydantic import BaseModel, EmailStr
 
 from . import security_session, store
 from .deps import require_user
+from .refresh_tokens import (
+    issue_refresh,
+    revoke_refresh,
+    rotate_refresh,
+    validate_refresh,
+)
 from .security_modules import mfa
 from .security_modules.password_policy import policy
 from .security_session import ACCESS_TOKEN_EXPIRE_MINUTES, issue_jwt
@@ -117,6 +123,13 @@ class AuthResponse(BaseModel):
     user: UserOut
 
 
+class TokenAuthResponse(AuthResponse):
+    access_token: str
+    expires_in: int
+    token_type: str
+    refresh_token: str
+
+
 # ---------- Helpers ----------
 
 
@@ -205,7 +218,7 @@ def login_page(request: Request, error: str | None = None):
 
 
 # API Routes
-@router.post("/signup/api", response_model=AuthResponse, status_code=201)
+@router.post("/signup/api", response_model=TokenAuthResponse, status_code=201)
 def signup_api(payload: SignupReq, res: Response):
     """API endpoint for programmatic signup."""
     # policy imported at module scope; avoid re-importing here
@@ -253,11 +266,20 @@ def signup_api(payload: SignupReq, res: Response):
     if not user:
         # Defensive: ensure create_user returned a user dict-like object
         raise HTTPException(status_code=500, detail="User creation failed")
-    token = issue_jwt(user["id"], user["email"], user["role"])
+    token = issue_jwt(user["id"], user["email"], user["role"], minutes=15)
+    refresh = issue_refresh(
+        user["id"],
+        user["email"],
+        user["role"],
+    )
     _set_session_cookie(res, token)
 
     return {
         "ok": True,
+        "access_token": token,
+        "expires_in": 15 * 60,
+        "token_type": "bearer",
+        "refresh_token": refresh,
         "user": {
             "id": user["id"],
             "email": user["email"],
@@ -329,7 +351,8 @@ def request_password_reset(payload: PasswordResetRequest):
     tokens = getattr(store, "_reset_tokens", None)
     if tokens is None:
         tokens = {}
-        store._reset_tokens = tokens
+        # Dynamic attribute for ephemeral password reset tokens (test helper)
+        setattr(store, "_reset_tokens", tokens)  # type: ignore[attr-defined]
 
     tokens[reset_token] = {
         "user_id": user["id"],
@@ -539,19 +562,54 @@ def login_api(payload: LoginReq, res: Response):
     if not user:
         # Shouldn't happen due to earlier check, but keep defensive
         raise HTTPException(status_code=500, detail="Unexpected server error")
-    token = issue_jwt(user["id"], user["email"], user["role"])
+    token = issue_jwt(user["id"], user["email"], user["role"], minutes=15)
+    refresh = issue_refresh(user["id"], user["email"], user["role"])
     _set_session_cookie(res, token)
 
     return {
         "ok": True,
         "access_token": token,
         "token_type": "bearer",
+        "refresh_token": refresh,
         "user": {
             "email": user["email"],
             "role": user["role"],
             "subscription_active": user["subscription_active"],
         },
     }
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+class RefreshResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+@router.post("/token/refresh", response_model=RefreshResponse)
+def refresh_token(payload: RefreshRequest):  # noqa: D401
+    rec = validate_refresh(payload.refresh_token)
+    if not rec:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    # rotate (single use)
+    new_refresh = rotate_refresh(
+        payload.refresh_token, rec.user_id, rec.email, rec.role
+    )
+    access = issue_jwt(rec.user_id, rec.email, rec.role, minutes=15)
+    return RefreshResponse(access_token=access, refresh_token=new_refresh)
+
+
+class RevokeRequest(BaseModel):
+    refresh_token: str
+
+
+@router.post("/token/revoke", status_code=204)
+def revoke_token(payload: RevokeRequest):  # noqa: D401
+    revoke_refresh(payload.refresh_token)
+    return Response(status_code=204)
 
 
 @router.post("/login")

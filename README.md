@@ -64,7 +64,33 @@ python -m pip install -r dev-requirements.txt
 
 ### CI status
 
-![CI - tests](https://github.com/auricrypt-ux/custowell-copilot/actions/workflows/ci.yml/badge.svg)
+![Core CI](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/core-ci.yml/badge.svg)
+
+
+## 🔑 JWT Rotation & Refresh Tokens
+
+Klerno Labs uses short-lived access tokens (default 15 minutes) and long-lived refresh tokens (default 7 days) for authentication. Refresh tokens are single-use and are rotated on each refresh. Revoked/used tokens are tracked until expiry.
+
+- **Access token lifetime**: Configurable via `ACCESS_TOKEN_EXPIRE_MINUTES` (default: 15)
+- **Refresh token lifetime**: Configurable via `REFRESH_TOKEN_EXPIRE_DAYS` (default: 7)
+- **Redis support**: If `USE_REDIS_REFRESH=true` and `REDIS_URL` is set, refresh tokens are stored in Redis for distributed deployments; otherwise, in-memory fallback is used.
+- **Endpoints**:
+   - `/auth/token/refresh`: Exchange a valid refresh token for a new access+refresh token pair (rotates refresh token)
+   - `/auth/token/revoke`: Revoke a refresh token (logout)
+
+**Environment variables:**
+
+```
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=7
+USE_REDIS_REFRESH=true
+REDIS_URL=redis://localhost:6379
+```
+
+**Security notes:**
+- Refresh tokens are single-use; reusing an old token after rotation will fail.
+- If Redis is unavailable, the system falls back to in-memory storage (ephemeral, not suitable for multi-instance production).
+- Access tokens should be sent as Bearer tokens; refresh tokens are returned in API responses and should be stored securely by the client.
 
 ## 👤 First Time Setup
 
@@ -112,6 +138,8 @@ CLEAN_APP/
 - **Session Management**: FastAPI session middleware
 - **Role-Based Access**: Admin/User role separation
 - **Input Validation**: Pydantic models for API validation
+- **Hardened Cookies**: `SameSite=Strict` and secure flag automatically enabled outside development
+- **Secret Validation**: Startup guard rejects weak or default JWT secrets in non-development environments
 
 ## 🔄 Migration from Original Project
 
@@ -176,12 +204,18 @@ Troubleshooting:
 
 This repository includes a CI workflow that runs import-safety checks, `mypy`, and `pytest` on pull requests to `main`.
 
-To create a PR from your branch:
+To create a PR from a feature branch (example using the current hardening work):
 
 ```powershell
-git push origin cleanup/tests-ci
-gh pr create --title "ci: fix pandas import-time circulars; add CI and import-safety test" --body-file PULL_REQUEST_DRAFT.md --base main
+# Create a descriptive branch
+git checkout -b chore/ci-observability-hardening
+
+# Push and open PR (requires GitHub CLI)
+git push -u origin chore/ci-observability-hardening
+gh pr create --title "chore(ci+observability+security): consolidate workflows; add readiness & metrics" --body-file PULL_REQUEST_DRAFT.md --base main
 ```
+
+The unified `core-ci.yml` replaces the prior fragmented `ci.yml`, `ci-minimal.yml`, and `pytest.yml` workflows (now removed). Use one branch per logical change set to keep reviews focused.
 
 ## Local development helper files
 
@@ -194,6 +228,61 @@ If port 8000 is already in use, `scripts/start_local.ps1` will try 8000 and then
 
 Also included: `data/api_key.secret.example` as an example file the app will read for the API key if env vars are not present.
 
+### Operational endpoints
+
+The application now exposes several operational/observability endpoints:
+
+- `GET /health` or `/healthz` – Basic liveness (always returns 200 if process is running)
+- `GET /status` – Returns JSON with `{"status": "running", "version": <app_version>}`
+- `GET /ready` – Readiness probe that verifies datastore connectivity and returns uptime seconds. Returns 503 if the database layer is not ready.
+- `GET /metrics` – Prometheus metrics (request count & latency histogram) if `prometheus_client` is installed. Omitted silently if the library is not present.
+
+Logging is structured and can emit JSON when `LOG_FORMAT=json` is set in the environment. This improves ingestion into log aggregation systems.
+
+### Optional Rate Limiting
+
+An in-memory token bucket limiter can be enabled for quick protection:
+
+Environment variables:
+- `ENABLE_RATE_LIMIT=true` – Activate limiter.
+- `RATE_LIMIT_CAPACITY` (default 60) – Burst size.
+- `RATE_LIMIT_PER_MINUTE` (default 120) – Sustained rate.
+
+This scaffold is per-process only; for real production use a distributed backend (e.g. Redis + `starlette-limiter`).
+
+### CSP Nonce (Report-Only Rollout)
+
+You can enable a per-request CSP nonce to harden script/style execution:
+
+Environment variables:
+
+- `CSP_NONCE_ENABLED=true` – Turn on nonce generation and injection.
+- `CSP_REPORT_ONLY=true` (default) – Emit `Content-Security-Policy-Report-Only` instead of enforcing.
+- `CSP_BASE_POLICY="default-src 'self'"` – Base policy; nonce rules for `script-src` & `style-src` are appended automatically.
+
+Violation reports (browsers that support reporting) can be POSTed to `/csp/report`; they are currently logged (structured) for analysis. Once the policy is tuned in report-only mode you can set `CSP_REPORT_ONLY=false` to enforce.
+
+### Coverage & Security Scans
+
+Core CI now generates a `coverage.xml` artifact and runs a vulnerability scan using `pip-audit` (non-blocking). To run locally:
+
+```powershell
+python -m pip install coverage pip-audit
+coverage run -m pytest -q
+coverage report -m
+pip-audit -r requirements.txt
+```
+
+### Production Readiness Script
+
+Before deploying, execute:
+
+```powershell
+python scripts/check_prod_readiness.py
+```
+
+It validates presence of required environment variables, weak secrets, port usage, and highlights recommended improvements (e.g. moving off SQLite). Exit code 1 indicates a hard failure.
+
 
 To set up `pre-commit` locally and run the import-safety check before commits:
 
@@ -202,3 +291,37 @@ python -m pip install pre-commit
 pre-commit install
 pre-commit run --all-files
 ```
+
+### PostgreSQL (Optional) & Migrations
+
+The application now supports running on PostgreSQL. A `db` service was added to
+`docker-compose.yml` along with an Alembic migration scaffold.
+
+Quick start with Docker Compose (app + Postgres + Redis):
+
+```powershell
+docker compose up --build
+```
+
+By default the compose file sets:
+
+- `DATABASE_URL=postgresql+psycopg://klerno:klerno@db:5432/klerno`
+- `DB_CONNECT_RETRIES=10` with exponential backoff for startup races
+
+To generate / apply migrations locally:
+
+```powershell
+python -m pip install alembic psycopg[binary]
+# Create a new revision (example)
+alembic revision -m "add new table" --autogenerate
+# Apply migrations
+alembic upgrade head
+```
+
+Initial revision `0001_initial_core_tables` creates minimal `users` and
+`transactions` tables. The legacy `store.py` still auto-manages columns for
+SQLite / compatibility; over time these should migrate into explicit Alembic
+revisions. When `DATABASE_URL` points to Postgres and `psycopg` is available the
+runtime automatically uses Postgres connections.
+
+Fallback: If Postgres is unavailable the app will continue to work with SQLite.
