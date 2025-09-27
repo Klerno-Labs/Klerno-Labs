@@ -10,13 +10,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import sqlite3
 import sys
 import threading
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any, cast
 
 import coverage
@@ -183,7 +183,7 @@ class TestRunner:
                     "-v",
                     "--tb=short",
                     "--json - report",
-                    f"--json - report - file=test_report_{os.path.basename(test_file)}.json",
+                    f"--json - report - file=test_report_{Path(test_file).name}.json",
                 ]
 
                 if suite.timeout_seconds:

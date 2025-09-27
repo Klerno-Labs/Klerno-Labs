@@ -369,7 +369,10 @@ class CICDPipeline:
 
                 except subprocess.TimeoutExpired:
                     process.kill()
-                    raise Exception(f"Command timed out after {timeout}s: {command}")
+                    # Use a specific exception and avoid implicit exception chaining
+                    raise RuntimeError(
+                        f"Command timed out after {timeout}s: {command}"
+                    ) from None
 
             # Collect artifacts
             artifacts = stage_config.get("artifacts", [])

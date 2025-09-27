@@ -179,7 +179,7 @@ class AdvancedAnalytics:
                 metrics["max_risk"] = max(metrics["max_risk"], risk_score)
 
         # Calculate averages and sort by risk
-        for addr, metrics in address_metrics.items():
+        for _addr, metrics in address_metrics.items():
             if metrics["risk_scores"]:
                 metrics["avg_risk"] = np.mean(metrics["risk_scores"])
             del metrics["risk_scores"]  # Remove raw scores to save space

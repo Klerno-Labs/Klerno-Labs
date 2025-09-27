@@ -35,4 +35,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Use uvicorn with app.main:app (enterprise_main_v2 kept for legacy but not default)
 ENV HOST=0.0.0.0 PORT=8000
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run a fast readiness check at container start to fail fast on misconfiguration
+# The readiness script exits non-zero when critical checks fail. If it succeeds,
+# we exec uvicorn normally.
+CMD ["/bin/sh", "-c", "python scripts/check_prod_readiness.py || (echo 'Readiness check failed' && exit 1); exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"]

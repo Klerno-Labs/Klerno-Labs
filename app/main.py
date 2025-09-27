@@ -36,8 +36,9 @@ templates = Jinja2Templates(directory="templates")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    # Use 'msg' and 'stage' keys to avoid passing duplicate 'event' positional argument
     logger.info(
-        "startup.begin", event="startup", msg="Starting Klerno Labs Enterprise Platform"
+        "startup.begin", msg="Starting Klerno Labs Enterprise Platform", stage="startup"
     )
     from . import store
 
@@ -88,7 +89,7 @@ async def lifespan(app: FastAPI):
         logger.debug("dev.bootstrap_failed", exc_info=True)
     logger.info("startup.db_initialized")
     yield
-    logger.info("shutdown.begin", event="shutdown")
+    logger.info("shutdown.begin", stage="shutdown")
 
 
 # Create FastAPI application
@@ -132,7 +133,10 @@ except Exception:
     logger.debug("rate_limit.setup_skipped", reason="import_or_init_failed")
 
 
-from .csp import add_csp_middleware, csp_enabled
+from .csp import (  # noqa: E402  (delayed import by design)
+    add_csp_middleware,
+    csp_enabled,
+)
 
 # CSP nonce middleware (report-only by default)
 with contextlib.suppress(Exception):
@@ -190,11 +194,15 @@ async def landing_page(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
 
-from .routers import operational  # import after app creation to avoid circulars
+from .routers import (  # import after app creation to avoid circulars  # noqa: E402
+    operational,
+)
 
 with contextlib.suppress(Exception):
-    app.include_router(operational.router)
-    logger.info("router.operational.included")
+    router_obj = getattr(operational, "router", None)
+    if router_obj is not None:
+        app.include_router(router_obj)
+        logger.info("router.operational.included")
 
 
 # Serve a favicon to avoid 404 noise for browsers and bots
@@ -518,6 +526,46 @@ try:
 
 except Exception:
     pass
+
+# Backwards-compatible alias expected by some tests
+try:
+    _auth_mod = importlib.import_module("app.auth")
+    try:
+        # Ensure FastAPI Response is available for the forwarder implementation
+        from fastapi import Response
+
+        # Disable response model generation and avoid Pydantic-incompatible
+        # parameter annotations so FastAPI doesn't attempt to coerce the
+        # `Response | None` type into a Pydantic field (which causes
+        # registration to fail in some environments).
+        @app.post("/auth/login_api", response_model=None)
+        def _legacy_login_api_forward(payload: dict, res=None):
+            """Forwarder so older tests calling /auth/login_api still work.
+
+            It coerces incoming dict to the auth.LoginReq model when available and
+            provides a Response object so that auth.login_api can set cookies.
+            """
+            if not hasattr(_auth_mod, "login_api"):
+                raise HTTPException(
+                    status_code=404, detail="Login endpoint not available"
+                )
+
+            login_payload = payload
+            try:
+                if isinstance(payload, dict) and hasattr(_auth_mod, "LoginReq"):
+                    login_payload = _auth_mod.LoginReq(**payload)
+            except Exception as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+            response = res or Response()
+            return _auth_mod.login_api(login_payload, response)
+
+    except Exception as _e:
+        print(f"[WARN] auth.login_api forwarder failed to register: {_e}")
+except Exception as e:
+    print(
+        f"[WARN] importing app.auth failed while registering login_api forwarder: {e}"
+    )
 
 try:
     from . import admin

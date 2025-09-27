@@ -14,9 +14,9 @@ try:
     if hasattr(_auth, "create_access_token") and not hasattr(
         builtins, "create_access_token"
     ):
-        builtins.create_access_token = _auth.create_access_token
+        setattr(builtins, "create_access_token", _auth.create_access_token)  # type: ignore[attr-defined]
     if hasattr(_auth, "verify_token") and not hasattr(builtins, "verify_token"):
-        builtins.verify_token = _auth.verify_token
+        setattr(builtins, "verify_token", _auth.verify_token)  # type: ignore[attr-defined]
 except Exception:
     # Best-effort: tests will still fail later if auth cannot be imported.
     pass

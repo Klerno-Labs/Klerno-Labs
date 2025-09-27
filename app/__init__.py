@@ -5,9 +5,27 @@ external code can reliably access subpackages like ``app.integrations``
 via the top-level ``app`` package (some tests patch those import paths).
 """
 
+# Ensure structured logging is configured as early as possible so that
+# modules which call structlog.get_logger() at import-time will receive
+# the stdlib-backed logger instances our processors expect (avoids
+# PrintLogger-related AttributeError during test startup).
+try:
+    # Best-effort: configure logging but suppress any import-time errors so
+    # tests and other importers remain resilient.
+    import contextlib as _contextlib
+
+    from .logging_config import configure_logging
+
+    with _contextlib.suppress(Exception):
+        configure_logging()
+except Exception:
+    # If the logging config module cannot be imported (very early
+    # startup edge cases), skip and let callers configure logging later.
+    pass
+
 import types
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 # Provide a minimal module object so `integrations` is always a module-like
 # object (avoids assigning None to a variable that later holds ModuleType).
@@ -53,8 +71,9 @@ except Exception:
                     return []
 
                 for m in (submod, app_sub):
-                    m.get_xrpl_client = _stub_get_xrpl_client
-                    m.fetch_account_tx = _stub_fetch_account_tx
+                    # use setattr to keep static checkers happier about dynamic attrs
+                    setattr(m, "get_xrpl_client", _stub_get_xrpl_client)  # type: ignore[attr-defined]
+                    setattr(m, "fetch_account_tx", _stub_fetch_account_tx)  # type: ignore[attr-defined]
 
             setattr(integrations, _sub, submod)
             setattr(integrations, _sub, submod)
@@ -88,10 +107,10 @@ except Exception:
                     f"integrations.{_sub}"
                 )
                 if mod is not None:
-                    setattr(integrations, _sub, mod)
+                    setattr(integrations, _sub, mod)  # type: ignore[attr-defined]
                 else:
                     # ensure attribute exists even if module missing
-                    setattr(integrations, _sub, getattr(integrations, _sub, None))
+                    setattr(integrations, _sub, getattr(integrations, _sub, None))  # type: ignore[arg-type]
         except Exception:
             pass
 
@@ -163,9 +182,9 @@ try:
     import builtins
 
     if create_access_token is not None and not hasattr(builtins, "create_access_token"):
-        builtins.create_access_token = create_access_token
+        setattr(builtins, "create_access_token", create_access_token)  # type: ignore[attr-defined]
     if verify_token is not None and not hasattr(builtins, "verify_token"):
-        builtins.verify_token = verify_token
+        setattr(builtins, "verify_token", verify_token)  # type: ignore[attr-defined]
 except Exception:
     # ignore failures when running in restricted environments
     pass
@@ -178,7 +197,7 @@ if not isinstance(integrations, types.ModuleType):
 
     integrations = types.ModuleType("integrations")
     for _sub in ("xrp", "bsc", "bscscan"):
-        setattr(integrations, _sub, types.ModuleType(f"integrations.{_sub}"))
+        setattr(integrations, _sub, types.ModuleType(f"integrations.{_sub}"))  # type: ignore[attr-defined]
 
 # Reconcile with any real integrations package on disk: prefer the real
 # `integrations.xrp` module if it exists and register it so patchers find

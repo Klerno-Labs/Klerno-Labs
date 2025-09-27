@@ -127,6 +127,9 @@ class HealthChecker:
                 "redis://redis:6379/0", decode_responses=True
             )
 
+            # Ensure redis_client is not None for static analysis; runtime still handles exceptions
+            assert redis_client is not None
+
             # Test basic operations
             test_key = "health_check_test"
             redis_client.set(test_key, "test_value", ex=60)

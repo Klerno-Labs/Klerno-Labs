@@ -1,17 +1,18 @@
-import os
 import sys
+from pathlib import Path
 
 print("python:", sys.executable)
-print("cwd:", os.getcwd())
+print("cwd:", Path.cwd())
 print("\nsys.path[0]:", sys.path[0])
 print("\nTop-level repo files/folders that start with pandas:")
-for name in sorted(os.listdir(sys.path[0] or ".")):
+root = Path(sys.path[0] or ".")
+for name in sorted([p.name for p in root.iterdir() if p.exists()]):
     if name.lower().startswith("pandas"):
         print(" -", name)
 
 print("\nChecking sys.modules for entries starting with pandas:")
 found = False
-for k in sorted([k for k in sys.modules.keys() if k.startswith("pandas")]):
+for k in sorted([k for k in sys.modules if k.startswith("pandas")]):
     found = True
     mod = sys.modules[k]
     print(" -", k, "->", getattr(mod, "__file__", repr(mod)))

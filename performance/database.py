@@ -245,7 +245,7 @@ class QueryOptimizer:
     """Query optimization and analysis tools"""
 
     @staticmethod
-    def create_indexes(pool: AsyncConnectionPool):
+    def create_indexes(_pool: AsyncConnectionPool):
         """Create performance indexes"""
         indexes = [
             # User indexes

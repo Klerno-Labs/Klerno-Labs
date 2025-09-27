@@ -99,13 +99,23 @@ def configure_logging() -> None:
             structlog.dev.set_exc_info,
             structlog.processors.TimeStamper(fmt="iso"),
             (
-                structlog.dev.ConsoleRenderer()
-                if settings.app_env == "dev"
-                else structlog.processors.JSONRenderer()
+                # ConsoleRenderer returns an object that mypy may not infer as a Callable;
+                # use typing.cast to silence the list-item typing warning.
+                __import__("typing").cast(
+                    __import__("typing").Any,
+                    (
+                        structlog.dev.ConsoleRenderer()
+                        if settings.app_env == "dev"
+                        else structlog.processors.JSONRenderer()
+                    ),
+                )
             ),
         ],
         wrapper_class=structlog.make_filtering_bound_logger(log_level),
-        logger_factory=structlog.PrintLoggerFactory(),
+        # Use the stdlib LoggerFactory so processors (which expect a logging.Logger)
+        # can access attributes like .name without error. PrintLoggerFactory returns
+        # a lightweight PrintLogger that doesn't expose the full API needed.
+        logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
     )
 

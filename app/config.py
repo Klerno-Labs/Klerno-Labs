@@ -85,7 +85,7 @@ class Settings(BaseSettings):
     # Model configuration
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_file_encoding="utf - 8",
+        env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=True,
     )
@@ -132,4 +132,4 @@ class Settings(BaseSettings):
 
 
 # Create a global settings instance
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]

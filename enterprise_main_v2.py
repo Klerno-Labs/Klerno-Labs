@@ -12,18 +12,26 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
+# Import Any for runtime typing of session middleware variable
+from typing import Any
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+# Explicitly declare SessionMiddleware as a runtime variable so static
+# type-checkers don't treat the imported symbol as a type declaration.
+SessionMiddleware: Any = None
+_has_session_middleware = False
 try:
-    from starlette.middleware.sessions import SessionMiddleware
+    from starlette.middleware.sessions import SessionMiddleware as _SessionMiddleware
 
+    SessionMiddleware = _SessionMiddleware
     _has_session_middleware = True
 except Exception:  # itsdangerous may be missing in minimal envs
-    SessionMiddleware = None
+    # itsdangerous or starlette might be missing in minimal environments
     _has_session_middleware = False
 
 try:
@@ -32,9 +40,9 @@ except Exception:
     # In minimal preview/test environments optional app submodules may
     # fail to import due to missing dependencies (jwt, itsdangerous, etc.).
     # Defer to shim registration later.
-    admin = None
-    auth = None
-    store = None
+    admin = None  # type: ignore[assignment]
+    auth = None  # type: ignore[assignment]
+    store = None  # type: ignore[assignment]
 
 # Import clean app components
 from app.settings import settings
@@ -55,7 +63,11 @@ try:
     console_stream = io.TextIOWrapper(
         sys.stdout.buffer, encoding="utf-8", line_buffering=True
     )
-    ch = logging.StreamHandler(stream=console_stream)
+    # cast to TextIO for static checkers
+    from typing import TextIO as _TextIO
+    from typing import cast
+
+    ch = logging.StreamHandler(stream=cast(_TextIO, console_stream))
 except Exception:
     # Fallback to default stream handler
     ch = logging.StreamHandler()
@@ -497,10 +509,15 @@ if __name__ == "__main__":
         import traceback
 
         try:
-            with LOG_FILE.open("a", encoding="utf-8") as fh:
-                fh.write("\n=== STARTUP EXCEPTION ===\n")
-                fh.write(traceback.format_exc())
-                fh.write("\n=== END STARTUP EXCEPTION ===\n")
+            # Cast the opened file to TextIO for static analysis
+            from typing import TextIO as _TextIO
+            from typing import cast
+
+            with LOG_FILE.open("a", encoding="utf-8") as fh_file:
+                fh_t = cast(_TextIO, fh_file)
+                fh_t.write("\n=== STARTUP EXCEPTION ===\n")
+                fh_t.write(traceback.format_exc())
+                fh_t.write("\n=== END STARTUP EXCEPTION ===\n")
         except Exception:
             # If logging to file fails, print to stdout as a last resort
             print("Failed to write startup exception to log file")

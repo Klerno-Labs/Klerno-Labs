@@ -1,26 +1,20 @@
 import sys
 import traceback
+from pathlib import Path
 
 print("python:", sys.executable)
 print("version:", sys.version)
 print("cwd (sys.path[0]):", sys.path[0])
-import os
 
-# ruff: noqa: E402
-import sys
-import traceback
-
-print("python:", sys.executable)
-print("version:", sys.version)
-print("cwd (sys.path[0]):", sys.path[0])
 print("\nsys.path:")
 for p in sys.path:
     print(" -", p)
 
 print("\nLooking for local files named pandas* in repo root:")
-for name in os.listdir(sys.path[0] or "."):
-    if name.lower().startswith("pandas"):
-        print(" *", name)
+root = Path(sys.path[0] or ".")
+for p in root.iterdir():
+    if p.name.lower().startswith("pandas"):
+        print(" *", p.name)
 
 print("\nAttempting to import pandas...")
 try:
@@ -35,4 +29,3 @@ except Exception:
 print("\nCurrently loaded sys.modules entries for pandas namespace:")
 for k in sorted([k for k in sys.modules if k.startswith("pandas")]):
     print(" -", k, "->", getattr(sys.modules[k], "__file__", repr(sys.modules[k])))
-    print("\nAttempting to import pandas...")

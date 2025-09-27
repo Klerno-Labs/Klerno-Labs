@@ -160,6 +160,19 @@ From this clean foundation, you can:
 - Integrate with external APIs
 - Add real-time dashboard features
 
+## One-line deploy / run
+
+For a quick production-ish run (use real secrets in env):
+
+```powershell
+# build image
+docker build -t klerno-app .
+# run with env (example)
+docker run --rm -e APP_ENV=production -e JWT_SECRET='your-very-strong-secret' -p 8000:8000 klerno-app
+```
+
+For more detailed steps and rollback instructions, see `docs/DEPLOY_RUNBOOK.md`.
+
 ## 🆘 Support
 
 This clean application provides the same core functionality as the original project but with:

@@ -582,15 +582,14 @@ def retry_on_failure(max_retries: int = 3, delay: float = 1.0, backoff: float = 
                     else:
                         logger.error(f"[RETRY] All {max_retries + 1} attempts failed")
                         if last_exception is not None:
-                            raise last_exception
-                        raise RuntimeError(
-                            "Retry attempts exhausted"
-                        ) from last_exception
+                            # Re-raise the last exception without chaining to avoid confusing tracebacks
+                            raise last_exception from None
+                        raise RuntimeError("Retry attempts exhausted") from None
 
             # Fallback in case loop exits unexpectedly
             if last_exception is not None:
-                raise last_exception
-            raise RuntimeError("Retry attempts exhausted") from last_exception
+                raise last_exception from None
+            raise RuntimeError("Retry attempts exhausted") from None
 
         return wrapper
 

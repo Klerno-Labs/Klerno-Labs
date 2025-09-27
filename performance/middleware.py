@@ -7,11 +7,12 @@ import asyncio
 import time
 from collections.abc import Callable
 
+from fastapi import Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware
+
 from app.monitoring.logging import get_logger
 from app.monitoring.metrics import metrics
 from app.performance.caching import cache
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = get_logger("performance")
 
@@ -187,7 +188,7 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
 
         return False
 
-    async def _get_cached_response(self, request: Request) -> Response:
+    async def _get_cached_response(self, request: Request) -> Response | None:
         """Get cached response if available"""
         cache_key = self._get_cache_key(request)
         cached_data = await cache.get(cache_key)
@@ -202,13 +203,21 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
 
         return None
 
-    async def _cache_response(self, request: Request, response: Response):
+    async def _cache_response(self, request: Request, response: Response) -> None:
         """Cache response data"""
         try:
             # Read response content
             content = b""
-            async for chunk in response.body_iterator:
-                content += chunk
+            # starlette Response may not expose body_iterator in all response types; be defensive
+            body_iter = getattr(response, "body_iterator", None)
+            if body_iter is not None:
+                async for chunk in body_iter:
+                    content += chunk
+            else:
+                # Fallback: try reading .body if available (synchronous)
+                body = getattr(response, "body", None)
+                if body is not None:
+                    content = body
 
             # Prepare cache data
             cache_data = {
@@ -225,7 +234,13 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
             await cache.set(cache_key, cache_data, ttl)
 
             # Recreate response with content
-            response.body_iterator = iter([content])
+            from contextlib import suppress
+
+            with suppress(Exception):
+                # Some Response types don't expose body_iterator in type stubs; assign via setattr
+                # Use setattr so mypy/pyright don't flag attribute assignment on Response stubs.
+                # The explicit cast is not needed at runtime and keeps behavior unchanged.
+                setattr(response, "body_iterator", iter([content]))  # type: ignore[arg-type]
 
         except Exception as e:
             logger.error(f"Cache write error: {e}")

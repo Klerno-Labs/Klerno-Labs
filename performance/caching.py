@@ -25,7 +25,7 @@ class CacheEntry:
     timestamp: datetime
     ttl: int | None = None
     access_count: int = 0
-    last_accessed: datetime = None
+    last_accessed: datetime | None = None
 
     def __post_init__(self):
         if self.last_accessed is None:

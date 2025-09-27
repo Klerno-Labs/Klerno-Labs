@@ -52,10 +52,10 @@ def main() -> None:
         except Exception:
             return False
         finally:
-            try:
+            import contextlib as _contextlib
+
+            with _contextlib.suppress(Exception):
                 s.close()
-            except Exception:
-                pass
         return True
 
     if _is_port_open(host, port):
@@ -71,14 +71,12 @@ def main() -> None:
                 "No free ports found in 8001-8100. Either stop the process using the port or set LOCAL_PORT to a free port manually."
             )
             print(
-                "To inspect the owner on Windows: Get-NetTCPConnection -LocalPort {0} | Format-List *".format(
-                    port
-                )
+                f"To inspect the owner on Windows: Get-NetTCPConnection -LocalPort {port} | Format-List *"
             )
-            sys.exit(1)
         print(
             f"[run_local] will start on fallback port {fallback} instead; to force 8000 stop the owning process or set LOCAL_PORT."
         )
+        assert fallback is not None
         port = fallback
 
     # Import the FastAPI app object directly to avoid string-based import issues

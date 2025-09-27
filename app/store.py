@@ -4,6 +4,7 @@ Data store utilities with SQLite/Postgres backends and a small cache.
 
 import contextlib
 import json
+import logging
 import os
 import sqlite3
 import time
@@ -111,7 +112,18 @@ except Exception:
         RealDictCursor = None  # type: ignore[assignment]
         PSYCOPG_AVAILABLE = False
 
-USING_POSTGRES = bool(DATABASE_URL) and PSYCOPG_AVAILABLE
+# If DATABASE_URL points to a sqlite URL (common in tests/tools), prefer the
+# sqlite backend even if a psycopg library is available. This avoids psycopg
+# attempting to parse sqlite connection strings which results in confusing
+# errors when tools set DATABASE_URL to 'sqlite:///...'.
+USING_POSTGRES = (
+    bool(DATABASE_URL)
+    and PSYCOPG_AVAILABLE
+    and not (DATABASE_URL.startswith("sqlite://"))
+)
+
+logger = logging.getLogger(__name__)
+# Logging is configured centrally in app.logging_config.configure_logging()
 
 
 # --- Connection factories -----------------------------------------------------
@@ -788,6 +800,16 @@ def users_count() -> int:
 
 
 def get_user_by_email(email: str) -> dict[str, Any] | None:
+    # Debug: print runtime DB selection info when troubleshooting
+    # Emit debug-level diagnostic information; controlled by central logging level
+    with contextlib.suppress(Exception):
+        logger.debug(
+            "STORE_DEBUG: DATABASE_URL=%r, DB_PATH=%r, USING_POSTGRES=%s",
+            DATABASE_URL,
+            DB_PATH,
+            USING_POSTGRES,
+        )
+
     # Check cache first
     cache_key = _get_cache_key("user_by_email", email.lower())
     cached_result = _get_cached(cache_key, ttl=300)  # Cache for 5 minutes

@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from functools import wraps
-from typing import Any, Generic, TypeVar, Union
+from typing import Any, Generic, TypeVar
 
 import aiohttp
 import asyncpg
@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 # Type definitions
 T = TypeVar("T")
-CacheKey = Union[str, int, tuple]
+CacheKey = str | int | tuple
 
 
 class CacheStrategy(str, Enum):
@@ -232,7 +232,7 @@ class AdvancedCache(Generic[T]):
             key = ":".join(str(k) for k in key)
         return f"cache:{key}"
 
-    def get(self, key: CacheKey) -> T | None:
+    def get(self, key: CacheKey) -> Any | None:
         """Get value from cache."""
         cache_key = self._make_key(key)
         with self.lock:

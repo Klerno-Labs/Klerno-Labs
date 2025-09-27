@@ -1,5 +1,6 @@
 import contextlib
 import json
+import logging
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -21,6 +22,9 @@ from .settings import get_settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 templates = Jinja2Templates(directory="templates")
+
+logger = logging.getLogger(__name__)
+# Logging is configured centrally in app.logging_config.configure_logging()
 
 
 # Single source of truth for config (lazy)
@@ -352,7 +356,7 @@ def request_password_reset(payload: PasswordResetRequest):
     if tokens is None:
         tokens = {}
         # Dynamic attribute for ephemeral password reset tokens (test helper)
-        setattr(store, "_reset_tokens", tokens)  # type: ignore[attr-defined]
+        store._reset_tokens = tokens  # type: ignore[attr-defined]
 
     tokens[reset_token] = {
         "user_id": user["id"],
@@ -387,10 +391,8 @@ def confirm_password_reset(payload: PasswordResetConfirm):
 
     if time.time() > token_data["expires_at"]:
         # remove from the runtime token store
-        try:
+        with contextlib.suppress(Exception):
             del tokens[payload.token]
-        except Exception:
-            pass
         raise HTTPException(status_code=400, detail="Reset token expired")
 
     # Get user
@@ -430,10 +432,8 @@ def confirm_password_reset(payload: PasswordResetConfirm):
     store.update_user_password(user["id"], new_password_hash)
 
     # Invalidate reset token
-    try:
+    with contextlib.suppress(Exception):
         del tokens[payload.token]
-    except Exception:
-        pass
 
     return {"ok": True, "message": "Password reset successfully"}
 
@@ -540,6 +540,20 @@ def login_api(payload: LoginReq, res: Response):
 
     email = payload.email.lower().strip()
     user = store.get_user_by_email(email)
+
+    # Conditional debug output to help diagnose mismatched DB / hash issues.
+    try:
+        # Emit debug information; controlled by central logging configuration
+        ph = (user.get("password_hash") or "") if user else ""
+        logger.debug(
+            "AUTH_DEBUG: login_api email=%s user_found=%s pw_hash_prefix=%s",
+            email,
+            bool(user),
+            ph[:8],
+        )
+    except Exception:
+        # Never raise from instrumentation
+        pass
 
     pw_hash = user.get("password_hash", "") if user else ""
     if not user or not _verify_password(payload.password, pw_hash):
