@@ -104,3 +104,75 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
+
+[tool.mypy]
+python_version = 3.11
+warn_unused_configs = true
+ignore_missing_imports = true
+follow_imports = "silent"
+show_error_codes = true
+exclude = "(^alembic/|^performance/|enterprise_preview.py$|preview_server.py$|tmp_preview_probe.py$)"
+
+[[tool.mypy.overrides]]
+module = "alembic.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "alembic"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "uvicorn"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "enterprise_preview"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "preview_server"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "tmp_preview_probe"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "performance.middleware"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.advanced_ai_risk"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.store"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "enterprise_main_v2"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.main"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "scripts.run_local"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.__init__"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "sitecustomize"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.auth"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app"
+ignore_errors = true

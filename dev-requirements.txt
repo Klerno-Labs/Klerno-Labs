@@ -18,6 +18,8 @@ types-psutil
 types-redis
 types-PyJWT
 types-passlib
+types-sqlalchemy
+types-psycopg2
 
 # Test client compatibility pins
 httpx==0.24.1
