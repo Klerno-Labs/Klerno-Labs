@@ -1,0 +1,24 @@
+{
+    "name": "create-pr-script",
+    "version": "1.0.0",
+    "description": "Create PR script (TypeScript + Node) - annotated for Copilot in VS Code",
+    "main": "create_pr.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/create_pr.js",
+        "dev": "ts-node src/create_pr.ts",
+        "lint": "echo \"Add linter if desired\""
+    },
+    "dependencies": {
+        "@octokit/rest": "^19.0.0",
+        "dotenv": "^16.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.0.0"
+    },
+    "engines": {
+        "node": ">=18"
+    }
+}
