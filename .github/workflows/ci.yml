@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
 
       - name: Run mypy (type checks)
         run: python -m mypy --show-error-codes --pretty --check-untyped-defs app
@@ -65,8 +65,8 @@ jobs:
       - name: Install runtime deps
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
+          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
+          if [ -f dev-requirements.txt ]; then python -m pip install -r dev-requirements.txt; fi
 
       - name: Install dev tools
         run: |
@@ -85,5 +85,5 @@ jobs:
           python -m flake8 --max-line-length=120 || true
 
       - name: Run tests
-        run: pytest -q
+        run: python -m pytest -q
       # End legacy workflow

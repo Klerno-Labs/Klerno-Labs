@@ -37,8 +37,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
+          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
+          if [ -f dev-requirements.txt ]; then python -m pip install -r dev-requirements.txt; fi
           python -m pip install ruff mypy flake8 pytest
 
       - name: Startup diagnostic (routes & logging)
@@ -117,7 +117,7 @@ jobs:
         run: |
           mkdir -p .run || true
           python -m pip install fastapi[all] httpx > .run/preview-smoke.txt 2>&1 || true
-          python tools/preview_smoke_test.py >> .run/preview-smoke.txt 2>&1 || true
+          python -m pytest -q tools/preview_smoke_test.py >> .run/preview-smoke.txt 2>&1 || true
 
       - name: Upload smoke-test artifact
         if: always()
@@ -133,7 +133,7 @@ jobs:
       - name: Run pre-commit checks
         run: |
           python -m pip install --upgrade pip
-          pip install pre-commit
+          python -m pip install pre-commit
           pre-commit run --all-files || true
 
       - name: Type check (mypy)
@@ -144,7 +144,7 @@ jobs:
 
       - name: Unit tests
         run: |
-          pip install coverage
+          python -m pip install coverage
           coverage run -m pytest -q
           coverage xml -o coverage.xml
           coverage report -m || true

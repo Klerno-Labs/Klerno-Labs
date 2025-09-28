@@ -26,16 +26,16 @@ jobs:
       - name: Install runtime deps
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
 
       - name: Install test deps (if present)
         run: |
-          if [ -f dev-requirements.txt ]; then pip install -r dev-requirements.txt; fi
+          if [ -f dev-requirements.txt ]; then python -m pip install -r dev-requirements.txt; fi
 
       - name: Run smoke tests
         run: |
           echo "Running smoke tests (tests/test_smoke.py)"
-          pytest -q tests/test_smoke.py
+          python -m pytest -q tests/test_smoke.py
 
       - name: Report success
         if: success()
