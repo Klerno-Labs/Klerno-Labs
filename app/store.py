@@ -1489,6 +1489,42 @@ def update_user_password(user_id: int, password_hash: str) -> None:
     _clear_cache_pattern("user_by_email")
 
 
+# Simple in-memory rotated password storage (ephemeral).
+# For production use this should be a persistent table with TTL, but
+# an in-memory mapping suffices for test/dev environments and keeps the
+# behavior isolated and reversible.
+_rotated_passwords: dict[int, list[tuple[int, str]]] = {}
+
+
+def add_rotated_password(
+    user_id: int, password_hash: str, max_age_seconds: int = 30 * 24 * 3600
+) -> None:
+    """Record a previous password hash for a user with a timestamp.
+
+    The storage is ephemeral and pruned on insertion. `max_age_seconds`
+    controls how long old rotated hashes are kept (default 30 days).
+    """
+    import time
+
+    now = int(time.time())
+    lst = _rotated_passwords.get(user_id) or []
+    # Append latest at end
+    lst.append((now, password_hash))
+    # Prune entries older than max_age_seconds
+    cutoff = now - max_age_seconds
+    lst = [(ts, ph) for (ts, ph) in lst if ts >= cutoff]
+    _rotated_passwords[user_id] = lst
+
+
+def get_rotated_passwords(user_id: int) -> list[str]:
+    """Return a list of rotated password hashes (most recent last).
+
+    Returns an empty list if none recorded.
+    """
+    lst = _rotated_passwords.get(user_id) or []
+    return [ph for (_ts, ph) in lst]
+
+
 def remove_wallet_address(user_id: int, address: str, chain: str) -> None:
     """Remove a wallet address from a user's profile."""
     user = get_user_by_id(user_id)

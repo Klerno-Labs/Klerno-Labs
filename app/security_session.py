@@ -83,6 +83,46 @@ def verify_pw(password: str, hashed: str) -> bool:
     return _pwd.verify(pw_str, hashed)
 
 
+def verify_and_maybe_rehash(password: str, hashed: str) -> tuple[bool, str | None]:
+    """Verify a password and return (is_valid, new_hash_or_None).
+
+    If the password verifies but the stored hash uses an older scheme or
+    parameters, this function computes a fresh hash with the current
+    CryptContext and returns it so callers can persist the rotated hash.
+    The function is deliberately lightweight and does not perform any
+    persistence itself — callers should persist the returned hash when
+    present (for example, call `store.update_user_password`).
+    """
+    # Normalize/truncate like hash_pw so comparisons are consistent
+    if isinstance(password, str):
+        pw_bytes = password.encode("utf-8")
+    else:
+        pw_bytes = bytes(password)
+    pw_bytes = pw_bytes[:72]
+    pw_str = pw_bytes.decode("utf-8", errors="ignore")
+
+    try:
+        ok = _pwd.verify(pw_str, hashed)
+    except Exception:
+        return False, None
+
+    if not ok:
+        return False, None
+
+    # If the hash needs updating according to the CryptContext, return a
+    # fresh hash for callers to persist.
+    try:
+        if _pwd.needs_update(hashed):
+            new_hash = _pwd.hash(pw_str)
+            return True, new_hash
+    except Exception:
+        # On any error while checking/rehashing, just return that the
+        # password is valid and don't return a new hash.
+        return True, None
+
+    return True, None
+
+
 def issue_jwt(uid: int, email: str, role: str, minutes: int | None = None) -> str:
     """Create a JWT with both sub=email and uid (numeric user id).
 
@@ -101,7 +141,14 @@ def issue_jwt(uid: int, email: str, role: str, minutes: int | None = None) -> st
         "iat": now,
         "exp": now + timedelta(minutes=exp_minutes),
     }
-    return jwt.encode(payload, str(SECRET_KEY), algorithm=ALGO)
+    token = jwt.encode(payload, str(SECRET_KEY), algorithm=ALGO)
+    # Ensure str return for compatibility across PyJWT versions
+    if isinstance(token, bytes):
+        try:
+            return token.decode("utf-8")
+        except Exception:
+            return token.decode("latin-1")
+    return token
 
 
 def decode_jwt(token: str) -> dict:

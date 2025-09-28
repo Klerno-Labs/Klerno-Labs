@@ -442,9 +442,23 @@ def confirm_password_reset(payload: PasswordResetConfirm) -> dict[str, Any]:
         breach_msg = "Password appears in breach DB; choose another."
         raise HTTPException(status_code=400, detail=breach_msg)
 
-    # Update password
+    # Update password (record previous hash in rotated storage first)
     new_password_hash = policy.hash(payload.new_password)
-    store.update_user_password(user["id"], new_password_hash)
+    try:
+        try:
+            prev = user.get("password_hash") if user else None
+            if prev:
+                store.add_rotated_password(user["id"], prev)
+        except Exception:
+            logger.debug(
+                "Failed to record rotated password during reset for user %s",
+                user.get("id"),
+            )
+        store.update_user_password(user["id"], new_password_hash)
+    except Exception:
+        logger.exception(
+            "Failed to update password for user %s during reset", user.get("id")
+        )
 
     # Invalidate reset token
     with contextlib.suppress(Exception):
@@ -571,8 +585,33 @@ def login_api(payload: LoginReq, res: Response) -> dict[str, Any]:
         pass
 
     pw_hash = str(user.get("password_hash") or "") if user else ""
-    if not user or not _verify_password(payload.password, pw_hash):
+    if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # Verify password and optionally get a rotated hash to persist
+    from .security_session import verify_and_maybe_rehash
+
+    valid, new_hash = verify_and_maybe_rehash(payload.password, pw_hash)
+    if not valid:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # Persist rotated hash if present (lightweight, non-blocking)
+    if new_hash:
+        try:
+            # Record previous hash in rotated storage for auditing/rotation
+            try:
+                store.add_rotated_password(user["id"], pw_hash)
+            except Exception:
+                # Non-fatal if rotated storage fails
+                logger.debug(
+                    "Failed to record rotated password for user %s", user.get("id")
+                )
+            store.update_user_password(user["id"], new_hash)
+        except Exception:
+            # Don't fail login due to persistence issues; log and continue
+            logger.exception(
+                "Failed to persist rotated password hash for user %s", user.get("id")
+            )
 
     # Check if MFA is enabled for user
     if user.get("mfa_enabled", False):
@@ -664,11 +703,29 @@ def login_form(
         email = (email or "").lower().strip()
         user = store.get_user_by_email(email)
 
-        # Use bcrypt for password verification since our hashes are bcrypt
+        # Use unified verification which can also return an updated hash
         password_valid = False
         if user and user.get("password_hash"):
             pw_hash = user.get("password_hash") or ""
-            password_valid = _verify_password(password, pw_hash)
+            from .security_session import verify_and_maybe_rehash
+
+            valid, new_hash = verify_and_maybe_rehash(password, pw_hash)
+            password_valid = bool(valid)
+            if valid and new_hash:
+                try:
+                    try:
+                        store.add_rotated_password(user["id"], pw_hash)
+                    except Exception:
+                        logger.debug(
+                            "Failed to record rotated password for user %s",
+                            user.get("id"),
+                        )
+                    store.update_user_password(user["id"], new_hash)
+                except Exception:
+                    logger.exception(
+                        "Failed to persist rotated password hash for user %s",
+                        user.get("id"),
+                    )
 
         if not user or not password_valid:
             return templates.TemplateResponse(
