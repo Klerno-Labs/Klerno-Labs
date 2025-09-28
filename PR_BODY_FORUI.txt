@@ -1,0 +1,24 @@
+Title: chore/dev-dx — Developer DX, readiness checks, smoke tests, lint/type fixes
+
+Summary:
+This branch modernizes developer experience and hardens import-time behavior so CI fails fast on initialization problems. It adds readiness checks, local developer tools (DB seed, login probe, smoke runner), small static-analysis fixes, and documentation.
+
+Tests:
+- mypy: no blocking errors
+- pytest: 153 passed, 1 skipped
+
+Checklist:
+- Review readiness script and unit test for false positives/over-strict checks.
+- Confirm dev seeder/login probe are safe to run locally.
+- Verify smoke test wiring and webhook signing logic meets security expectations (CI secrets required).
+
+Follow-ups:
+- Run stricter mypy pass with --check-untyped-defs and triage findings (separate PR).
+- Consider refactoring dynamic shims and builtins injection to a single compatibility module.
+
+How to open (manual):
+1. Push branch (already pushed): git push origin chore/dev-dx
+2. Open GitHub, create a new Pull Request, set base to `main` and compare `chore/dev-dx`.
+3. Paste this text into the PR body and mark the PR as a Draft.
+
+If you want me to open the PR via API, provide a short-lived GitHub token with repo:status and repo permissions (do not paste tokens here in chat).

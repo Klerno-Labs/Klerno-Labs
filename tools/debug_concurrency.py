@@ -13,14 +13,17 @@ import sqlite3
 import sys
 import tempfile
 from pathlib import Path
+from typing import cast
 
 from httpx import ASGITransport, AsyncClient
+
+from app._typing_shims import ISyncConnection
 
 # Build a small temp DB like tests do
 with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
     db_path = f.name
 
-conn = sqlite3.connect(db_path)
+conn = cast(ISyncConnection, sqlite3.connect(db_path))
 conn.execute(
     """
     CREATE TABLE users (
@@ -90,7 +93,9 @@ async def run_test(concurrent=20):
                 txid = data.get("id") if isinstance(data, dict) else None
                 # Verify directly on disk that the transaction exists
                 try:
-                    check_con = sqlite3.connect(db_path, timeout=5.0)
+                    check_con = cast(
+                        ISyncConnection, sqlite3.connect(db_path, timeout=5.0)
+                    )
                     cur = check_con.cursor()
                     cur.execute(
                         "SELECT id, amount FROM transactions WHERE id=?", (txid,)

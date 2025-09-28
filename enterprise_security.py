@@ -9,7 +9,7 @@ Re-export a small, explicit API when `app.enterprise_security` is available.
 """
 
 try:
-    import app.enterprise_security as _es  # type: ignore
+    import app.enterprise_security as _es
 
     HardenedSecurity = getattr(_es, "HardenedSecurity", None)
     enable_hardening = getattr(_es, "enable_hardening", None)

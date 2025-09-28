@@ -24,7 +24,7 @@ def _shim_ping():
     return {"ok": True, "shim": True}
 
 
-setattr(mod, "router", router)  # type: ignore[attr-defined]
+setattr(mod, "router", router)
 
 # Register shim before importing the package that expects it
 sys.modules["app.auth"] = mod

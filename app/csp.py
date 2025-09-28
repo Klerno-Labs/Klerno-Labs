@@ -16,6 +16,7 @@ import base64
 import os
 import secrets
 from collections.abc import Callable
+from typing import Any
 
 from fastapi import Request
 
@@ -40,12 +41,12 @@ def base_policy() -> str:
     return os.getenv("CSP_BASE_POLICY", "default-src 'self'")
 
 
-def add_csp_middleware(app) -> None:
+def add_csp_middleware(app: Any) -> None:
     if not csp_enabled():
         return
 
     @app.middleware("http")
-    async def _add_csp(request: Request, call_next: Callable):  # type: ignore
+    async def _add_csp(request: Request, call_next: Callable[[Request], Any]) -> Any:
         nonce = generate_nonce()
         # Stash nonce on request state so templates / other middleware can use it
         setattr(request.state, NONCE_ATTRIBUTE, nonce)

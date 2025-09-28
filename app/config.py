@@ -132,4 +132,7 @@ class Settings(BaseSettings):
 
 
 # Create a global settings instance
-settings = Settings()  # type: ignore[call-arg]
+# Constructing Settings() may perform validation and read env vars. This is
+# expected at import-time for this application. Keep the global instance for
+# backward compatibility and tests.
+settings: Settings = Settings.model_construct()

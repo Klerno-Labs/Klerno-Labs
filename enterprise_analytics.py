@@ -12,8 +12,9 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
+from app._typing_shims import ISyncConnection
 from app.constants import CACHE_TTL
 
 
@@ -21,7 +22,8 @@ def _ensure_numpy() -> None:
     if "np" in globals():
         return
     try:
-        import numpy as np  # type: ignore
+        # runtime import; mypy may not have numpy stubs in this environment
+        import numpy as np  # type: ignore[import]
 
         globals()["np"] = np
     except Exception:
@@ -29,14 +31,25 @@ def _ensure_numpy() -> None:
 
 
 if TYPE_CHECKING:
-    import numpy as np  # pragma: no cover
-    import pandas as pd  # pragma: no cover
+    # Avoid importing heavy third-party packages during static analysis.
+    np: Any
+    pd: Any
+else:
+    # runtime: try to import pandas but fall back to a typed None/Any so mypy
+    # doesn't complain in environments without pandas installed.
+    try:
+        import pandas as pd  # type: ignore[import]
+    except Exception:
+        pd: Any = None  # type: ignore[assignment]
+    # ensure numpy name exists at module level for runtime lazy-loading helper
+    np = None
 
 
 def _ensure_pandas() -> None:
     if "pd" in globals():
         return
-    import pandas as pd  # type: ignore
+    # runtime import; add mypy ignore for environments without pandas stubs
+    import pandas as pd  # type: ignore[import]
 
     globals()["pd"] = pd
 
@@ -131,7 +144,7 @@ class EnterpriseAnalytics:
         try:
             Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
 
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             # Analytics events table
@@ -258,7 +271,7 @@ class EnterpriseAnalytics:
     def _store_event(self, event: AnalyticsEvent):
         """Store event in database"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -280,7 +293,6 @@ class EnterpriseAnalytics:
 
             conn.commit()
             conn.close()
-
         except Exception as e:
             logger.error(f"[ANALYTICS] Failed to store event: {e}")
 
@@ -507,7 +519,7 @@ class EnterpriseAnalytics:
     def count_unique_users_24h(self, start_time: datetime, end_time: datetime) -> int:
         """Calculate daily active users"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -531,7 +543,7 @@ class EnterpriseAnalytics:
     def avg_session_duration(self, start_time: datetime, end_time: datetime) -> float:
         """Calculate average session duration"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -556,7 +568,7 @@ class EnterpriseAnalytics:
         """Calculate 95th percentile API response time"""
         try:
             _ensure_numpy()
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -586,7 +598,7 @@ class EnterpriseAnalytics:
     ) -> float:
         """Calculate conversion rate"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             # Count visitors
@@ -629,7 +641,7 @@ class EnterpriseAnalytics:
     ) -> float:
         """Calculate generic metric from stored values"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -655,7 +667,7 @@ class EnterpriseAnalytics:
     def _store_metric_value(self, metric_id: str, value: float):
         """Store calculated metric value"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -673,7 +685,6 @@ class EnterpriseAnalytics:
 
             conn.commit()
             conn.close()
-
         except Exception as e:
             logger.error(f"[ANALYTICS] Failed to store metric value: {e}")
 
@@ -690,7 +701,7 @@ class EnterpriseAnalytics:
 
         try:
             # Execute report query
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
 
             # Substitute parameters in query
             query = report_config.query_template
@@ -762,7 +773,7 @@ class EnterpriseAnalytics:
     ):
         """Store report execution record"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -789,15 +800,14 @@ class EnterpriseAnalytics:
 
     def get_analytics_dashboard(self) -> dict[str, Any]:
         """Get comprehensive analytics dashboard data"""
-
         # Calculate key metrics
-        key_metrics = {}
-        for metric_id in [
+        key_metrics: dict[str, Any] = {}
+        for metric_id in (
             "daily_active_users",
             "session_duration_avg",
             "api_response_time_p95",
             "conversion_rate",
-        ]:
+        ):
             if metric_id in self.metrics:
                 try:
                     metric_result = self.calculate_metric(metric_id)
@@ -835,7 +845,7 @@ class EnterpriseAnalytics:
     def _get_recent_events_summary(self) -> dict[str, Any]:
         """Get summary of recent events"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -870,7 +880,7 @@ class EnterpriseAnalytics:
     def _get_user_activity_trends(self) -> dict[str, Any]:
         """Get user activity trends"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -905,7 +915,7 @@ class EnterpriseAnalytics:
     def _get_top_events(self) -> list[dict[str, Any]]:
         """Get top events by frequency"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -944,7 +954,7 @@ class EnterpriseAnalytics:
     def _get_performance_trends(self) -> dict[str, Any]:
         """Get performance trends"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -978,7 +988,7 @@ class EnterpriseAnalytics:
     def _count_events_today(self) -> int:
         """Count total events today"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -1001,7 +1011,7 @@ class EnterpriseAnalytics:
     def _count_active_users_today(self) -> int:
         """Count active users today"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -1051,7 +1061,7 @@ class EnterpriseAnalytics:
                 # Clean old events
                 cutoff_time = datetime.now() - timedelta(days=self.event_retention_days)
 
-                conn = sqlite3.connect(self.database_path)
+                conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
                 cursor = conn.cursor()
 
                 cursor.execute(

@@ -11,8 +11,9 @@ import time
 from collections.abc import Iterable, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, NotRequired, TypedDict
+from typing import Any, NotRequired, TypedDict, cast
 
+from app._typing_shims import ISyncConnection
 from app.constants import CACHE_TTL
 
 # Simple in-memory cache for frequently accessed data
@@ -130,7 +131,7 @@ logger = logging.getLogger(__name__)
 # --- Connection factories -----------------------------------------------------
 
 
-def _sqlite_conn() -> sqlite3.Connection:
+def _sqlite_conn() -> ISyncConnection:
     # honor DB_PATH and ensure directory exists
     # Allow DATABASE_URL to override DB path at runtime. Tests may set this.
     runtime_db = os.getenv("DATABASE_URL") or ""
@@ -145,7 +146,9 @@ def _sqlite_conn() -> sqlite3.Connection:
     data_dir = Path(db_path).resolve().parent
     data_dir.mkdir(parents=True, exist_ok=True)
     # use a small timeout so concurrent writers don't immediately fail
-    con = sqlite3.connect(db_path, check_same_thread=False, timeout=5.0)
+    con = cast(
+        ISyncConnection, sqlite3.connect(db_path, check_same_thread=False, timeout=5.0)
+    )
     con.row_factory = sqlite3.Row  # return dict - like rows to unify handling
     # Improve concurrency/performance for test and multi-request workloads:
     # - WAL reduces write lock contention allowing readers during writes
@@ -160,7 +163,8 @@ def _sqlite_conn() -> sqlite3.Connection:
         # Best-effort: don't fail connection creation if pragmas are unsupported
         with contextlib.suppress(Exception):
             _ = None
-    return con
+    # Cast runtime sqlite3.Connection to ISyncConnection for typing
+    return cast(ISyncConnection, con)
 
 
 def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> Any:
@@ -284,7 +288,7 @@ def init_db() -> None:
         # ensure directory
         data_dir = Path(db_path).resolve().parent
         data_dir.mkdir(parents=True, exist_ok=True)
-        con = sqlite3.connect(db_path, check_same_thread=False)
+        con = cast(ISyncConnection, sqlite3.connect(db_path, check_same_thread=False))
         con.row_factory = sqlite3.Row
     else:
         con = _conn()

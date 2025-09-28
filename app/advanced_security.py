@@ -99,7 +99,7 @@ class SecurityRule:
 class BehavioralAnalyzer:
     """Analyzes user behavior for anomaly detection."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.user_profiles: dict[str, dict] = {}
         self.session_data: dict[str, list] = defaultdict(list)
         self.anomaly_threshold = 0.7  # Anomaly score threshold
@@ -257,7 +257,7 @@ class BehavioralAnalyzer:
 class ThreatIntelligence:
     """Threat intelligence and reputation system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.malicious_ips: set[str] = set()
         self.suspicious_patterns: list[str] = []
         self.reputation_cache: dict[str, dict[str, Any]] = {}
@@ -460,7 +460,7 @@ class ThreatIntelligence:
 class AdvancedFirewall:
     """Advanced firewall with dynamic rules."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.blocked_ips: set[str] = set()
         self.rate_limits: dict[str, dict] = defaultdict(dict)
         self.dynamic_rules: list[SecurityRule] = []
@@ -526,7 +526,7 @@ class AdvancedFirewall:
 class CryptographicManager:
     """Advanced cryptographic operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.encryption_keys: dict[str, bytes] = {}
         self.signing_keys: dict[str, rsa.RSAPrivateKey] = {}
         self.session_keys: dict[str, bytes] = {}

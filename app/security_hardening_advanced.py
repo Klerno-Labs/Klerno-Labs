@@ -13,9 +13,11 @@ from collections import defaultdict, deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from cryptography.fernet import Fernet
+
+from app._typing_shims import ISyncConnection
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +85,7 @@ class AdvancedSecurityHardening:
         """Initialize security monitoring database."""
         Path(self.db_path).parent.mkdir(exist_ok=True, parents=True)
 
-        conn = sqlite3.connect(self.db_path)
+        conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
         cursor = conn.cursor()
 
         # Security events table
@@ -192,7 +194,7 @@ class AdvancedSecurityHardening:
     def _load_threat_intelligence(self) -> None:
         """Load threat intelligence from database."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             cursor.execute("SELECT * FROM threat_intelligence")
@@ -261,7 +263,7 @@ class AdvancedSecurityHardening:
         self.blocked_ips.add(ip_address)
 
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             blocked_at = datetime.now()
@@ -473,7 +475,7 @@ class AdvancedSecurityHardening:
         self.security_events.append(event)
 
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -526,7 +528,7 @@ class AdvancedSecurityHardening:
 
         # Log to database
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -647,7 +649,7 @@ class AdvancedSecurityHardening:
     def get_security_dashboard_data(self, hours: int = 24) -> dict[str, Any]:
         """Get security dashboard data."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             since = datetime.now() - timedelta(hours=hours)

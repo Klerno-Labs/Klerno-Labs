@@ -14,9 +14,12 @@ def _ensure_numpy() -> None:
     if "np" in globals():
         return
     try:
-        import numpy as np  # type: ignore
+        import importlib
 
+        np = importlib.import_module("numpy")
         globals()["np"] = np
+    except ImportError as e:
+        raise RuntimeError("numpy is required for analytics computations") from e
     except Exception:
         raise
 
@@ -33,17 +36,24 @@ def _ensure_pandas() -> None:
     if "pd" in globals():
         return
     try:
-        import pandas as pd  # type: ignore
+        import importlib
 
+        pd = importlib.import_module("pandas")
         globals()["pd"] = pd
+    except ImportError as e:
+        raise RuntimeError("pandas is required for analytics features") from e
     except Exception:
-        # Re-raise so callers get a clear failure when pandas is missing
         raise
 
 
 if TYPE_CHECKING:
-    import numpy as np  # pragma: no cover
-    import pandas as pd  # pragma: no cover
+    # Use Any for heavy optional dependencies so mypy doesn't require their
+    # presence in developer environments where installing them is undesirable.
+    np: Any  # type: ignore
+    pd: Any  # type: ignore
+else:
+    np = None
+    pd = None
 
 
 @dataclass
@@ -68,10 +78,10 @@ class AnalyticsMetrics:
 class AdvancedAnalytics:
     """Advanced analytics engine for transaction analysis"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.risk_thresholds = {"low": 0.33, "medium": 0.66, "high": 1.0}
 
-    def generate_comprehensive_metrics(self, days: int = 30):
+    def generate_comprehensive_metrics(self, days: int = 30) -> AnalyticsMetrics:
         """Generate comprehensive analytics metrics for the dashboard"""
         # Get data from the last N days
         cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=days)
@@ -125,7 +135,7 @@ class AdvancedAnalytics:
             anomaly_score=self._calculate_anomaly_score(recent_df),
         )
 
-    def _get_risk_score(self, row: pd.Series) -> float:
+    def _get_risk_score(self, row: Any) -> float:
         """Extract risk score from row with fallback"""
         _ensure_pandas()
         try:
@@ -136,7 +146,7 @@ class AdvancedAnalytics:
         except (ValueError, TypeError):
             return 0.0
 
-    def _count_unique_addresses(self, df: pd.DataFrame) -> int:
+    def _count_unique_addresses(self, df: Any) -> int:
         """Count unique addresses in the dataset"""
         _ensure_pandas()
         addresses = set()
@@ -147,9 +157,7 @@ class AdvancedAnalytics:
                 addresses.add(row["to_addr"])
         return len(addresses)
 
-    def _get_top_risk_addresses(
-        self, df: pd.DataFrame, limit: int = 10
-    ) -> list[dict[str, Any]]:
+    def _get_top_risk_addresses(self, df: Any, limit: int = 10) -> list[dict[str, Any]]:
         """Get top risk addresses with their metrics"""
         _ensure_pandas()
         _ensure_numpy()
@@ -191,7 +199,7 @@ class AdvancedAnalytics:
 
         return sorted_addresses[:limit]
 
-    def _calculate_risk_trend(self, df: pd.DataFrame) -> list[dict[str, Any]]:
+    def _calculate_risk_trend(self, df: Any) -> list[dict[str, Any]]:
         """Calculate risk trend over time"""
         _ensure_pandas()
         if df.empty:
@@ -227,7 +235,7 @@ class AdvancedAnalytics:
 
         return sorted(trend, key=lambda x: x["date"])
 
-    def _get_category_distribution(self, df: pd.DataFrame) -> dict[str, int]:
+    def _get_category_distribution(self, df: Any) -> dict[str, int]:
         """Get distribution of transaction categories"""
         _ensure_pandas()
         if "category" not in df.columns:
@@ -235,7 +243,7 @@ class AdvancedAnalytics:
 
         return df["category"].fillna("unknown").value_counts().to_dict()
 
-    def _get_hourly_activity(self, df: pd.DataFrame) -> list[dict[str, Any]]:
+    def _get_hourly_activity(self, df: Any) -> list[dict[str, Any]]:
         """Analyze transaction activity by hour of day"""
         _ensure_pandas()
         if df.empty:
@@ -272,7 +280,7 @@ class AdvancedAnalytics:
 
         return activity
 
-    def _analyze_network_patterns(self, df: pd.DataFrame) -> dict[str, Any]:
+    def _analyze_network_patterns(self, df: Any) -> dict[str, Any]:
         """Analyze network patterns and connections"""
         _ensure_pandas()
         if df.empty:
@@ -314,7 +322,7 @@ class AdvancedAnalytics:
             ),
         }
 
-    def _calculate_anomaly_score(self, df: pd.DataFrame) -> float:
+    def _calculate_anomaly_score(self, df: Any) -> float:
         """Calculate overall anomaly score for the dataset"""
         _ensure_pandas()
         _ensure_numpy()

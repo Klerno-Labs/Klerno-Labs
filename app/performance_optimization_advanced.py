@@ -18,9 +18,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import psutil
+
+from app._typing_shims import ISyncConnection
 
 logger = logging.getLogger(__name__)
 
@@ -292,7 +294,7 @@ class PerformanceProfiler:
         """Initialize performance monitoring database."""
         Path(self.db_path).parent.mkdir(exist_ok=True, parents=True)
 
-        conn = sqlite3.connect(self.db_path)
+        conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
         cursor = conn.cursor()
 
         # Performance metrics table
@@ -439,7 +441,7 @@ class PerformanceProfiler:
     def _log_system_metrics(self, metrics: dict[str, Any]) -> None:
         """Log system metrics to database."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -578,7 +580,7 @@ class PerformanceProfiler:
             return
 
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             for metric in self.metrics:
@@ -611,7 +613,7 @@ class PerformanceProfiler:
     def get_performance_summary(self, hours: int = 1) -> dict[str, Any]:
         """Get performance summary for the last N hours."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             since = datetime.now() - timedelta(hours=hours)

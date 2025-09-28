@@ -10,9 +10,21 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from functools import wraps
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import aiosqlite
+from app._typing_shims import IAsyncConnection
+
+# Reuse shared async DB protocols from app._typing_shims to centralize typing.
+# IAsyncCursor / IAsyncConnection cover the subset of methods used by the pool.
+
+
+if TYPE_CHECKING:
+    aiosqlite: Any
+else:
+    try:
+        import aiosqlite  # type: ignore[import]
+    except Exception:
+        aiosqlite = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
@@ -44,16 +56,18 @@ class AsyncConnectionPool:
         self.max_connections = max_connections
         self.max_idle_time = max_idle_time
         self.slow_query_threshold = slow_query_threshold
-
-        self.connections: list[aiosqlite.Connection] = []
-        self.idle_connections: list[tuple[aiosqlite.Connection, datetime]] = []
-        self.active_connections: list[aiosqlite.Connection] = []
+        # Use a Protocol for static checking while keeping runtime flexible
+        self.connections: list[IAsyncConnection] = []
+        self.idle_connections: list[tuple[IAsyncConnection, datetime]] = []
+        self.active_connections: list[IAsyncConnection] = []
 
         self.stats = ConnectionPoolStats()
         self._lock = asyncio.Lock()
 
-        # Start cleanup task
-        self._cleanup_task = None
+        # Background cleanup task handle (annotated in __init__ to keep 'self' in scope)
+        from asyncio import Task
+
+        self._cleanup_task: Task | None = None
 
     async def start(self):
         """Start the connection pool"""
@@ -87,8 +101,14 @@ class AsyncConnectionPool:
 
         logger.info("Connection pool stopped")
 
-    async def _create_connection(self) -> aiosqlite.Connection:
+    async def _create_connection(self) -> IAsyncConnection:
         """Create a new database connection with optimizations"""
+        # runtime import; may not be available in the type-check environment
+        try:
+            import aiosqlite  # type: ignore[import]
+        except Exception:
+            raise
+
         conn = await aiosqlite.connect(
             self.database_path, timeout=30.0, check_same_thread=False
         )

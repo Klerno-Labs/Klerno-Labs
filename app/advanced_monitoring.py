@@ -9,7 +9,7 @@ import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, Deque
 
 import psutil
 from fastapi import Request
@@ -49,10 +49,10 @@ class PerformanceTracker:
 
     def __init__(self):
         self.metrics: list[PerformanceMetric] = []
-        self.request_times = deque(maxlen=1000)  # Last 1000 requests
-        self.error_rates = defaultdict(int)
-        self.endpoint_stats = defaultdict(list)
-        self.system_metrics = {}
+        self.request_times: Deque[float] = deque(maxlen=1000)  # Last 1000 requests
+        self.error_rates: dict[str, int] = defaultdict(int)
+        self.endpoint_stats: dict[str, list[float]] = defaultdict(list)
+        self.system_metrics: dict[str, Any] = {}
 
     def record_metric(
         self,

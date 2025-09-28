@@ -12,9 +12,11 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import psutil
+
+from app._typing_shims import ISyncConnection
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +71,7 @@ class EnterpriseMonitor:
         """Initialize monitoring database."""
         Path(self.db_path).parent.mkdir(exist_ok=True, parents=True)
 
-        conn = sqlite3.connect(self.db_path)
+        conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
         cursor = conn.cursor()
 
         # Create metrics table
@@ -328,7 +330,7 @@ class EnterpriseMonitor:
             return
 
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             for metric in self.metrics_buffer:
@@ -359,7 +361,7 @@ class EnterpriseMonitor:
         triggered_alerts = []
 
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             for alert in self.alerts.values():
@@ -470,7 +472,7 @@ class EnterpriseMonitor:
     def get_dashboard_data(self, hours: int = 1) -> dict[str, Any]:
         """Get dashboard data for the last N hours."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             since = datetime.now() - timedelta(hours=hours)

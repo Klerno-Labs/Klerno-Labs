@@ -120,32 +120,31 @@ async def enforce_api_key(
 
     # 2) Session fallback for browser dashboard (valid JWT cookie).
     try:
-        # Lazy import to avoid circular imports at app startup.
-        from .deps import require_user  # type: ignore
+        # Dynamic import avoids circular-import issues and keeps static
+        # checkers happy without broad ignores.
+        import importlib
 
+        deps_mod = importlib.import_module("app.deps")
+        require_user = getattr(deps_mod, "require_user", None)
+        if require_user is None:
+            raise RuntimeError("require_user not available")
+
+        # Call the dependency; some implementations accept Request, others do not.
         try:
-            # Many implementations accept Request; if not, call without args.
-            # type: ignore is used because require_user has a dynamic signature
-            user = require_user(request)  # type: ignore
-            log_api_access(
-                str(request.url.path),
-                request.method,
-                str(user.get("id")),
-                False,
-                request,
-            )
+            user = require_user(request)
         except TypeError:
-            user = require_user()  # type: ignore
-            log_api_access(
-                str(request.url.path),
-                request.method,
-                str(user.get("id")),
-                False,
-                request,
-            )
+            user = require_user()
 
+        log_api_access(
+            str(request.url.path),
+            request.method,
+            str(user.get("id")),
+            False,
+            request,
+        )
         return True
     except Exception:
+        # Fall through to API key denial below
         pass
 
     # 3) Log unauthorized access attempt and deny

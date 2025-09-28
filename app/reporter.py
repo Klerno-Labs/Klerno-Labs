@@ -1,8 +1,11 @@
 from io import StringIO
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    import pandas as pd  # pragma: no cover
+    # Use Any so mypy doesn't require pandas to be installed in the dev env
+    pd: Any  # type: ignore
+else:
+    pd = None
 
 from .models import ReportSummary, TaggedTransaction
 
@@ -10,13 +13,22 @@ from .models import ReportSummary, TaggedTransaction
 def _ensure_pandas() -> None:
     if "pd" in globals():
         return
-    import pandas as pd  # type: ignore
+    try:
+        import importlib
 
-    globals()["pd"] = pd
+        pd = importlib.import_module("pandas")
+        globals()["pd"] = pd
+    except ImportError:
+        raise ImportError("pandas is required to convert transactions to DataFrame")
 
 
-def to_dataframe(txs: list[TaggedTransaction]) -> pd.DataFrame:
+def to_dataframe(txs: list[TaggedTransaction]) -> Any:
+    # Import locally to avoid requiring pandas at module import time.
     _ensure_pandas()
+    pd = globals().get("pd")
+    if pd is None:
+        raise ImportError("pandas is required to convert transactions to DataFrame")
+
     return pd.DataFrame([t.model_dump() for t in txs])
 
 

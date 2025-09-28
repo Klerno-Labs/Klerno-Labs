@@ -15,7 +15,7 @@ def is_top_level_import(node):
 
 
 def scan_file(path: Path) -> list[str]:
-    errors = []
+    errors: list[str] = []
     try:
         src = path.read_text(encoding="utf8")
     except Exception:

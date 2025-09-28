@@ -37,11 +37,11 @@ class PluginHook:
         self.description = description
         self.callbacks: list[Callable] = []
 
-    def register(self, callback: Callable):
+    def register(self, callback: Callable) -> None:
         """Register a callback for this hook"""
         self.callbacks.append(callback)
 
-    def execute(self, *args, **kwargs) -> list[Any]:
+    def execute(self, *args: Any, **kwargs: Any) -> list[Any]:
         """Execute all callbacks for this hook"""
         results = []
         for callback in self.callbacks:
@@ -56,7 +56,7 @@ class PluginHook:
 class BasePlugin(ABC):
     """Base class for all plugins"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.metadata: PluginMetadata | None = None
         self.hooks: dict[str, PluginHook] = {}
 
@@ -66,16 +66,18 @@ class BasePlugin(ABC):
         pass
 
     @abstractmethod
-    def initialize(self, app: FastAPI, plugin_manager: "PluginManager"):
+    def initialize(self, app: FastAPI, plugin_manager: "PluginManager") -> None:
         """Initialize the plugin"""
         pass
 
-    def register_hook(self, hook_name: str, callback: Callable):
+    def register_hook(self, hook_name: str, callback: Callable) -> None:
         """Register a callback for a specific hook"""
         if hook_name in self.hooks:
             self.hooks[hook_name].register(callback)
 
-    def add_api_route(self, app: FastAPI, path: str, endpoint: Callable, **kwargs):
+    def add_api_route(
+        self, app: FastAPI, path: str, endpoint: Callable, **kwargs: Any
+    ) -> None:
         """Helper to add API routes with plugin prefix"""
         if self.metadata is None:
             raise RuntimeError("Plugin metadata not set; cannot add API route")
@@ -87,7 +89,7 @@ class BasePlugin(ABC):
 class PluginManager:
     """Manages plugin lifecycle and hooks"""
 
-    def __init__(self, app: FastAPI):
+    def __init__(self, app: FastAPI) -> None:
         self.app = app
         self.plugins: dict[str, BasePlugin] = {}
         self.hooks: dict[str, PluginHook] = {}
@@ -96,7 +98,7 @@ class PluginManager:
         # Initialize core hooks
         self._initialize_core_hooks()
 
-    def _initialize_core_hooks(self):
+    def _initialize_core_hooks(self) -> None:
         """Initialize core system hooks"""
         self.hooks.update(
             {
@@ -147,7 +149,7 @@ class PluginManager:
             logger.error(f"Failed to register plugin {plugin_class.__name__}: {e}")
             return False
 
-    def load_plugins_from_directory(self, directory: str | Path):
+    def load_plugins_from_directory(self, directory: str | Path) -> None:
         """Load all plugins from a directory"""
         dir_path = Path(directory)
         if not dir_path.exists():
@@ -158,7 +160,7 @@ class PluginManager:
             if p.is_file() and p.suffix == ".py" and not p.name.startswith("_"):
                 self._load_plugin_file(str(p))
 
-    def _load_plugin_file(self, filepath: str):
+    def _load_plugin_file(self, filepath: str) -> None:
         """Load a plugin from a Python file"""
         try:
             spec = importlib_util.spec_from_file_location("plugin", filepath)
@@ -192,7 +194,7 @@ class PluginManager:
         except Exception as e:
             logger.error(f"Failed to load plugin from {filepath}: {e}")
 
-    def execute_hook(self, hook_name: str, *args, **kwargs) -> list[Any]:
+    def execute_hook(self, hook_name: str, *args: Any, **kwargs: Any) -> list[Any]:
         """Execute all callbacks for a hook"""
         if hook_name in self.hooks:
             return self.hooks[hook_name].execute(*args, **kwargs)
@@ -252,7 +254,7 @@ class PluginManager:
 
         return out
 
-    def set_plugin_data(self, plugin_name: str, key: str, value: Any):
+    def set_plugin_data(self, plugin_name: str, key: str, value: Any) -> None:
         """Store data for a plugin"""
         if plugin_name not in self.plugin_data:
             self.plugin_data[plugin_name] = {}
@@ -279,7 +281,7 @@ class SampleAnalyticsPlugin(BasePlugin):
             dependencies=[],
         )
 
-    def initialize(self, app: FastAPI, plugin_manager: PluginManager):
+    def initialize(self, app: FastAPI, plugin_manager: PluginManager) -> None:
         """Initialize the sample analytics plugin"""
         # Register hook callbacks
         plugin_manager.hooks["transaction_analyzed"].register(
@@ -309,7 +311,7 @@ class SampleAnalyticsPlugin(BasePlugin):
             "analysis_note": "Custom analytics applied",
         }
 
-    async def get_custom_analytics(self):
+    async def get_custom_analytics(self) -> dict[str, Any]:
         """Custom analytics endpoint"""
         return {
             "plugin": "SampleAnalytics",
@@ -334,7 +336,7 @@ class CompliancePlugin(BasePlugin):
             dependencies=[],
         )
 
-    def initialize(self, app: FastAPI, plugin_manager: PluginManager):
+    def initialize(self, app: FastAPI, plugin_manager: PluginManager) -> None:
         """Initialize the compliance plugin"""
         plugin_manager.hooks["alert_generated"].register(self.on_alert_generated)
         plugin_manager.hooks["report_generated"].register(self.on_report_generated)
@@ -375,7 +377,7 @@ class CompliancePlugin(BasePlugin):
 
         return flags
 
-    async def generate_compliance_report(self):
+    async def generate_compliance_report(self) -> dict[str, Any]:
         """Generate a compliance - focused report"""
         return {
             "plugin": "ComplianceReporting",

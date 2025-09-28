@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -18,7 +19,7 @@ class TLSEnforcementMiddleware(BaseHTTPMiddleware):
     Enforces HTTPS in production environments by redirecting HTTP to HTTPS.
     """
 
-    def __init__(self, app, enforce_tls: bool | None = None):
+    def __init__(self, app: Any, enforce_tls: bool | None = None) -> None:
         super().__init__(app)
         # Default to enforcing TLS in production
         if enforce_tls is None:
@@ -72,7 +73,7 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
     Enhanced security headers middleware with production - grade configurations.
     """
 
-    def __init__(self, app):
+    def __init__(self, app: Any) -> None:
         super().__init__(app)
         self.app_env = os.getenv("APP_ENV", "dev").lower()
         self.is_production = self.app_env in ("production", "prod")

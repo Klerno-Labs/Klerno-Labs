@@ -337,7 +337,11 @@ def async_retry(
                     await asyncio.sleep(current_delay)
                     current_delay *= backoff
 
-            raise last_exception
+            # Ensure we only raise an exception instance derived from BaseException
+            if last_exception is not None:
+                raise last_exception from None
+            # Fallback: raise a generic RuntimeError if somehow no exception is captured
+            raise RuntimeError("Operation failed with unknown exception")
 
         return wrapper
 

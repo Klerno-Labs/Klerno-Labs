@@ -7,6 +7,7 @@ import importlib
 import os
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from typing import Any, AsyncIterator, Awaitable, Callable
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -34,7 +35,7 @@ templates = Jinja2Templates(directory="templates")
 
 # Application lifespan
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Startup
     # Use 'msg' and 'stage' keys to avoid passing duplicate 'event' positional argument
     logger.info(
@@ -144,7 +145,9 @@ with contextlib.suppress(Exception):
 
 
 @app.middleware("http")
-async def add_security_headers(request, call_next):  # type: ignore
+async def add_security_headers(
+    request: Request, call_next: Callable[[Request], Awaitable[Any]]
+) -> Any:
     from uuid import uuid4
 
     response = await call_next(request)
@@ -183,13 +186,13 @@ actual routes are now provided by app.routers.operational.
 
 
 @app.get("/dashboard")
-async def dashboard_page(request: Request):
+async def dashboard_page(request: Request) -> Any:
     """User dashboard."""
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
 @app.get("/")
-async def landing_page(request: Request):
+async def landing_page(request: Request) -> Any:
     """Unified landing page."""
     return templates.TemplateResponse("landing.html", {"request": request})
 
@@ -211,7 +214,7 @@ with contextlib.suppress(Exception):
 
 # Premium feature forwarder used by tests: requires payment
 @app.get("/premium/advanced-analytics")
-def premium_advanced(request: Request):
+def premium_advanced(request: Request) -> Any:
     # Perform the paid-or-admin check manually to avoid Depends usage here
     from fastapi import HTTPException
 
@@ -258,7 +261,7 @@ def premium_advanced(request: Request):
 
 # Compatibility admin endpoints expected by older tests
 @app.get("/admin/users")
-def compat_admin_users():
+def compat_admin_users() -> Any:
     try:
         from .admin import _list_users
 
@@ -287,7 +290,7 @@ def compat_admin_users():
 
 
 @app.get("/admin/analytics/transactions")
-def compat_admin_analytics():
+def compat_admin_analytics() -> Any:
     # Simple analytics summary used by tests
     from . import store
 
@@ -299,7 +302,7 @@ def compat_admin_analytics():
 
 # Error handlers
 @app.exception_handler(404)
-async def not_found_handler(request: Request, exc: HTTPException):
+async def not_found_handler(request: Request, exc: HTTPException) -> JSONResponse:
     return JSONResponse(
         status_code=404,
         content={"error": "Not found", "path": str(request.url.path)},
@@ -307,7 +310,7 @@ async def not_found_handler(request: Request, exc: HTTPException):
 
 
 @app.exception_handler(500)
-async def internal_error_handler(request: Request, exc: HTTPException):
+async def internal_error_handler(request: Request, exc: HTTPException) -> JSONResponse:
     return JSONResponse(status_code=500, content={"error": "Internal server error"})
 
 
@@ -329,7 +332,7 @@ with contextlib.suppress(Exception):
     _auth_mod = importlib.import_module("app.auth")
 
     @app.post("/auth/register")
-    def _legacy_register(payload: dict, res: Response | None = None):
+    def _legacy_register(payload: dict, res: Response | None = None) -> Any:
         """Compatibility alias: accept a JSON dict from older tests and delegate
         to auth.signup_api using the Pydantic model and a Response object.
         """
@@ -349,7 +352,7 @@ with contextlib.suppress(Exception):
         return _auth_mod.signup_api(signup_payload, response)
 
     @app.post("/auth/login")
-    def _legacy_login(payload: dict | None = None, res: Response | None = None):
+    def _legacy_login(payload: dict | None = None, res: Response | None = None) -> Any:
         """Compatibility alias: accept JSON login payload and delegate to
         auth.login_api, coercing to the LoginReq model when available.
         """
@@ -376,7 +379,7 @@ try:
     _auth_mod = importlib.import_module("app.auth")
 
     @app.post("/auth/register")
-    async def _legacy_register_forward(request: Request):
+    async def _legacy_register_forward(request: Request) -> JSONResponse:
         # Read incoming JSON payload
         try:
             payload_dict = await request.json()
@@ -394,10 +397,10 @@ try:
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
 
         # Provide a Response object so the underlying handler can set cookies
-        from fastapi import Response
+        from fastapi import Response as FastAPIResponse
         from fastapi.responses import JSONResponse
 
-        res = Response()
+        res = FastAPIResponse()
         result = _auth_mod.signup_api(payload, res)
 
         # If the handler returned a dict (typical), wrap it in a JSONResponse
@@ -506,10 +509,10 @@ try:
                     raise HTTPException(status_code=422, detail=str(exc)) from exc
 
             # Provide a Response object so the underlying handler can set cookies
-            from fastapi import Response
+            from fastapi import Response as FastAPIResponse
             from fastapi.responses import JSONResponse
 
-            res = Response()
+            res = FastAPIResponse()
             result = _auth_mod.login_api(payload, res)
 
             body = result if isinstance(result, dict) else {}
@@ -708,7 +711,6 @@ if __name__ == "__main__":
     # directly. Some static analyzers in developer environments may not
     # resolve it; this narrow ignore keeps diagnostics quiet while leaving
     # runtime behavior unchanged.
-    # type: ignore[import]
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
@@ -716,14 +718,21 @@ if __name__ == "__main__":
 # Expose certain integration helpers at module-level so tests that patch
 # "app.main.fetch_account_tx" continue to work. We lazily import to avoid
 # pulling integration dependencies during test collection when not needed.
-try:
-    from ..integrations.xrp import fetch_account_tx as fetch_account_tx
-except Exception:
-    # keep name defined to avoid AttributeError when tests patch
+fetch_account_tx: Any = None  # type: ignore[assignment]
+for mod_path in ("integrations.xrp", "app.integrations.xrp"):
+    try:
+        mod = importlib.import_module(mod_path)
+        fetch_account_tx = getattr(mod, "fetch_account_tx")
+        break
+    except Exception:
+        fetch_account_tx = None
+
+if not fetch_account_tx:
+
     def fetch_account_tx(account: str, limit: int = 10) -> list[dict]:
         """Fallback stub used when the integrations package isn't available.
 
-        This matches the real function signature so type checkers won't
-        complain. The function always raises at runtime.
+        This matches the real function signature so runtime callers can import
+        the symbol even when the package is absent.
         """
         raise RuntimeError("integrations.xrp.fetch_account_tx not available")

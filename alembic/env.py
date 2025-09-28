@@ -41,8 +41,12 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    # Alembic's Config.get_section returns a mapping; cast to dict for static checkers
+    from typing import cast
+
+    section = cast(dict, config.get_section(config.config_ini_section))
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section),  # type: ignore[arg-type]
+        section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

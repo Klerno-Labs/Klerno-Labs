@@ -3,6 +3,9 @@ import sqlite3
 import sys
 import tempfile
 from pathlib import Path
+from typing import cast
+
+from app._typing_shims import ISyncConnection
 
 # Ensure repo root on sys.path
 ROOT = str(Path(__file__).resolve().parents[1])
@@ -12,7 +15,7 @@ if ROOT not in sys.path:
 with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
     db_path = tmp.name
 
-conn = sqlite3.connect(db_path)
+conn = cast(ISyncConnection, sqlite3.connect(db_path))
 conn.execute(
     """
 CREATE TABLE users (

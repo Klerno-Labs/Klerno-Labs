@@ -16,7 +16,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
+
+from app._typing_shims import ISyncConnection
 
 from .resilience_system import circuit_breaker
 
@@ -92,16 +94,16 @@ class EnterpriseCircuitBreaker:
             f"[CIRCUIT] Created circuit breaker '{name}' with threshold {config.failure_threshold}"
         )
 
-    def __call__(self, func: Callable) -> Callable:
+    def __call__(self, func: Callable) -> Callable[..., Any]:
         """Decorator for protecting functions with circuit breaker"""
 
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             return self.call(func, *args, **kwargs)
 
         return wrapper
 
-    def call(self, func: Callable, *args, **kwargs) -> Any:
+    def call(self, func: Callable, *args: Any, **kwargs: Any) -> Any:
         """Execute function with circuit breaker protection"""
         with self._lock:
             self.stats["total_calls"] += 1
@@ -141,7 +143,7 @@ class EnterpriseCircuitBreaker:
 
         return (time.time() - self.last_failure_time) >= self.config.recovery_timeout
 
-    def _record_success(self, execution_time: float):
+    def _record_success(self, execution_time: float) -> None:
         """Record successful execution"""
         # Ensure numeric types
         self.stats["successful_calls"] = int(self.stats.get("successful_calls", 0)) + 1
@@ -167,7 +169,7 @@ class EnterpriseCircuitBreaker:
         else:
             self.failure_count = 0
 
-    def _record_failure(self, exception: BaseException, execution_time: float):
+    def _record_failure(self, exception: BaseException, execution_time: float) -> None:
         """Record failed execution"""
         # Ensure numeric types and safe updates
         self.stats["failed_calls"] = int(self.stats.get("failed_calls", 0)) + 1
@@ -195,7 +197,7 @@ class EnterpriseCircuitBreaker:
             f"[CIRCUIT] {self.name} failure {self.failure_count}/{self.config.failure_threshold}: {exception}"
         )
 
-    def _open_circuit(self):
+    def _open_circuit(self) -> None:
         """Open the circuit"""
         self.state = CircuitBreakerState.OPEN
         self.stats["circuit_opened_count"] += 1
@@ -204,7 +206,7 @@ class EnterpriseCircuitBreaker:
             f"[CIRCUIT] {self.name} OPENED after {self.failure_count} failures"
         )
 
-    def _close_circuit(self):
+    def _close_circuit(self) -> None:
         """Close the circuit"""
         self.state = CircuitBreakerState.CLOSED
         self.failure_count = 0
@@ -236,7 +238,7 @@ class CircuitBreakerOpenError(Exception):
 class EnterpriseErrorHandler:
     """Comprehensive error handling system"""
 
-    def __init__(self, database_path: str = "./data/klerno.db"):
+    def __init__(self, database_path: str = "./data/klerno.db") -> None:
         self.database_path = database_path
         self.error_events: list[ErrorEvent] = []
         self.circuit_breakers: dict[str, EnterpriseCircuitBreaker] = {}
@@ -257,12 +259,12 @@ class EnterpriseErrorHandler:
         # Provide resilience decorator compatibility
         self.circuit_breaker = circuit_breaker
 
-    def _init_database(self):
+    def _init_database(self) -> None:
         """Initialize error tracking database"""
         try:
             Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
 
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             # Create error events table
@@ -322,12 +324,12 @@ class EnterpriseErrorHandler:
         """Get existing circuit breaker"""
         return self.circuit_breakers.get(name)
 
-    def register_error_handler(self, error_type: str, handler: Callable):
+    def register_error_handler(self, error_type: str, handler: Callable) -> None:
         """Register custom error handler"""
         self.error_handlers[error_type] = handler
         logger.info(f"[ERROR-HANDLER] Registered handler for {error_type}")
 
-    def register_auto_recovery(self, service: str, recovery_handler: Callable):
+    def register_auto_recovery(self, service: str, recovery_handler: Callable) -> None:
         """Register auto-recovery handler"""
         self.auto_recovery_handlers[service] = recovery_handler
         logger.info(f"[ERROR-HANDLER] Registered auto-recovery for {service}")
@@ -389,10 +391,10 @@ class EnterpriseErrorHandler:
 
         return error_event
 
-    def _store_error_event(self, event: ErrorEvent):
+    def _store_error_event(self, event: ErrorEvent) -> None:
         """Store error event in database"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -418,7 +420,7 @@ class EnterpriseErrorHandler:
         except Exception as e:
             logger.error(f"[ERROR-HANDLER] Failed to store error event: {e}")
 
-    def _monitor_errors(self):
+    def _monitor_errors(self) -> None:
         """Monitor errors and trigger alerts"""
         while True:
             try:
@@ -493,23 +495,23 @@ class EnterpriseErrorHandler:
                 ),
             }
 
-        # Compatibility alias expected by other modules
-        def get_error_statistics(self) -> dict[str, Any]:
-            """Alias for get_error_summary to match legacy API"""
-            # Provide a compact summary suitable for metrics
-            summary = self.get_error_summary(1)
-            return {
-                "total_errors": summary.get("total_errors", 0),
-                "error_rate": summary.get("total_errors", 0) / 1.0,
-                "circuit_breaker_state": {
-                    name: cb.get_stats() for name, cb in self.circuit_breakers.items()
-                },
-            }
+    # Compatibility alias expected by other modules
+    def get_error_statistics(self) -> dict[str, Any]:
+        """Alias for get_error_summary to match legacy API"""
+        # Provide a compact summary suitable for metrics
+        summary = self.get_error_summary(1)
+        return {
+            "total_errors": summary.get("total_errors", 0),
+            "error_rate": summary.get("total_errors", 0) / 1.0,
+            "circuit_breaker_state": {
+                name: cb.get_stats() for name, cb in self.circuit_breakers.items()
+            },
+        }
 
     @contextmanager
     def error_context(
         self, service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM
-    ):
+    ) -> Any:
         """Context manager for automatic error handling"""
         try:
             yield
@@ -519,12 +521,14 @@ class EnterpriseErrorHandler:
 
 
 # Decorators for error handling
-def handle_errors(service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM):
+def handle_errors(
+    service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for automatic error handling"""
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
             except Exception as e:
@@ -536,10 +540,12 @@ def handle_errors(service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM):
     return decorator
 
 
-def with_circuit_breaker(breaker_name: str, config: CircuitBreakerConfig | None = None):
+def with_circuit_breaker(
+    breaker_name: str, config: CircuitBreakerConfig | None = None
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for circuit breaker protection"""
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable) -> Callable[..., Any]:
         # Create circuit breaker if it doesn't exist
         if config is not None:
             breaker = error_handler.create_circuit_breaker(breaker_name, config)
@@ -558,12 +564,14 @@ def with_circuit_breaker(breaker_name: str, config: CircuitBreakerConfig | None 
     return decorator
 
 
-def retry_on_failure(max_retries: int = 3, delay: float = 1.0, backoff: float = 2.0):
+def retry_on_failure(
+    max_retries: int = 3, delay: float = 1.0, backoff: float = 2.0
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for automatic retry with exponential backoff"""
 
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             last_exception: Exception | None = None
             current_delay = delay
 
@@ -600,7 +608,7 @@ def retry_on_failure(max_retries: int = 3, delay: float = 1.0, backoff: float = 
 error_handler = EnterpriseErrorHandler()
 
 
-def initialize_error_handling():
+def initialize_error_handling() -> EnterpriseErrorHandler:
     """Initialize enterprise error handling"""
     try:
         # Create default circuit breakers
@@ -641,7 +649,7 @@ if __name__ == "__main__":
 
     # Test circuit breaker
     @with_circuit_breaker("test_service")
-    def unreliable_function(should_fail=False):
+    def unreliable_function(should_fail: bool = False) -> str:
         if should_fail:
             raise Exception("Test failure")
         return "Success"

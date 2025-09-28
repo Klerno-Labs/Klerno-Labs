@@ -24,7 +24,7 @@ import time
 from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Awaitable, Callable, cast
 
 from dotenv import find_dotenv, load_dotenv
 from fastapi import Header, HTTPException, Request, Response, status
@@ -125,13 +125,13 @@ class AuditEvent:
 class SecurityManager:
     """Unified security manager handling all security operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = security_logger
         self.config = SECURITY_CONFIG
 
     def log_security_event(
         self, event_type: str, details: dict[str, Any], ip: str | None = None
-    ):
+    ) -> None:
         """Log security events with standardized format."""
         event = {
             "timestamp": datetime.now(UTC).isoformat(),
@@ -155,7 +155,7 @@ class SecurityManager:
                     ip, f"Auto-blocked after {_suspicious_activity[ip]} security events"
                 )
 
-    def block_ip(self, ip: str, reason: str = "Security violation"):
+    def block_ip(self, ip: str, reason: str = "Security violation") -> None:
         """Block an IP address."""
         _blocked_ips.add(ip)
         self.log_security_event(
@@ -168,9 +168,12 @@ class SecurityManager:
 
     def is_rate_limited(self, identifier: str) -> bool:
         """Check and update rate limiting for an identifier."""
-        now = time.time()
-        window = self.config["rate_limit_window"]
-        max_requests = self.config["rate_limit_requests"]
+        now: float = time.time()
+        # SECURITY_CONFIG is constructed from ints above; narrow types here so
+        # mypy knows arithmetic and comparisons are valid.
+        # config values may be typed as object; cast to Any so int() overloads match
+        window: int = int(cast(Any, self.config.get("rate_limit_window", 60)))
+        max_requests: int = int(cast(Any, self.config.get("rate_limit_requests", 100)))
 
         # Clean old entries
         _rate_limits[identifier] = [
@@ -190,9 +193,9 @@ class SecurityManager:
     def validate_request_size(self, request: Request) -> bool:
         """Validate request size."""
         content_length = request.headers.get("content-length")
-        return not (
-            content_length and int(content_length) > self.config["max_request_size"]
-        )
+        # Ensure numeric comparison uses ints so mypy can validate types
+        max_req_size = int(cast(Any, self.config.get("max_request_size", 0)))
+        return not (content_length and int(content_length) > max_req_size)
 
     def detect_injection_attempts(self, data: str) -> bool:
         """Detect potential SQL injection or XSS attempts."""
@@ -284,12 +287,14 @@ class UnifiedSecurityMiddleware(BaseHTTPMiddleware):
     - Audit logging
     """
 
-    def __init__(self, app, config: dict[str, Any] | None = None):
+    def __init__(self, app: Any, config: dict[str, Any] | None = None) -> None:
         super().__init__(app)
         self.config = config or SECURITY_CONFIG
         self.security = security_manager
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Any]
+    ) -> Any:
         start_time = time.time()
 
         # Get client IP
@@ -392,7 +397,7 @@ class UnifiedSecurityMiddleware(BaseHTTPMiddleware):
         # Fallback to direct connection
         return str(request.client.host) if request.client else "unknown"
 
-    def _add_security_headers(self, response: Response):
+    def _add_security_headers(self, response: Response) -> None:
         """Add comprehensive security headers."""
         security_headers = {
             "X-Frame-Options": "DENY",
@@ -420,7 +425,7 @@ class AuditLogger:
         self.logger = logging.getLogger("klerno.audit")
         self.logger.setLevel(logging.INFO)
 
-    def log_event(self, event: AuditEvent):
+    def log_event(self, event: AuditEvent) -> None:
         """Log an audit event."""
         entry = {
             "event_type": event.event_type,
@@ -438,18 +443,20 @@ class AuditLogger:
         if event.details:
             self.logger.debug(f"Event details: {event.details}")
 
-    def log_auth_success(self, user: str, ip: str):
+    def log_auth_success(self, user: str, ip: str) -> None:
         """Log successful authentication."""
         self.logger.info(f"AUTH_SUCCESS: user={user} ip={ip}")
 
-    def log_auth_failure(self, user: str, ip: str, reason: str):
+    def log_auth_failure(self, user: str, ip: str, reason: str) -> None:
         """Log failed authentication."""
         self.logger.warning(f"AUTH_FAILURE: user={user} ip={ip} reason={reason}")
         security_manager.log_security_event(
             SecurityEventType.FAILED_LOGIN, {"user": user, "reason": reason}, ip
         )
 
-    def log_admin_action(self, user: str, action: str, target: str | None = None):
+    def log_admin_action(
+        self, user: str, action: str, target: str | None = None
+    ) -> None:
         """Log administrative actions."""
         self.logger.info(f"ADMIN_ACTION: user={user} action={action} target={target}")
         security_manager.log_security_event(
@@ -457,7 +464,7 @@ class AuditLogger:
             {"user": user, "action": action, "target": target},
         )
 
-    def log_data_access(self, user: str, resource: str, action: str):
+    def log_data_access(self, user: str, resource: str, action: str) -> None:
         """Log data access events."""
         self.logger.info(
             f"DATA_ACCESS: user={user} resource={resource} action={action}"

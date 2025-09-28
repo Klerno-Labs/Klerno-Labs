@@ -12,8 +12,15 @@ import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional, cast
 
+from ._typing_shims import (
+    IAnalytics,
+    ICICDPipeline,
+    IDatabaseManager,
+    IErrorHandler,
+    IHealthMonitor,
+)
 from .enterprise_analytics_reporting import get_analytics_system
 from .enterprise_cicd_pipeline import CICDPipeline
 
@@ -70,11 +77,11 @@ class EnterpriseIntegrationHub:
         self.is_running = False
 
         # Enterprise components
-        self.database_manager: Any | None = None
-        self.error_handler: Any | None = None
-        self.cicd_pipeline: Any | None = None
-        self.health_monitor: Any | None = None
-        self.analytics_system: Any | None = None
+        self.database_manager: Optional[IDatabaseManager] = None
+        self.error_handler: Optional[IErrorHandler] = None
+        self.cicd_pipeline: Optional[ICICDPipeline] = None
+        self.health_monitor: Optional[IHealthMonitor] = None
+        self.analytics_system: Optional[IAnalytics] = None
 
         # Background workers
         self._workers: list[threading.Thread] = []
@@ -98,7 +105,7 @@ class EnterpriseIntegrationHub:
             # Initialize database system
             if self.config.enable_database_pooling:
                 logger.info("[ENTERPRISE] Initializing database system...")
-                self.database_manager = get_database_manager()
+                self.database_manager = cast(IDatabaseManager, get_database_manager())
                 # Some managers may expose an initialize() method (sync or async)
                 init_fn = getattr(self.database_manager, "initialize", None)
                 if callable(init_fn):
@@ -115,7 +122,7 @@ class EnterpriseIntegrationHub:
             # Initialize error handling
             if self.config.enable_error_handling:
                 logger.info("[ENTERPRISE] Initializing error handling...")
-                self.error_handler = get_error_handler()
+                self.error_handler = cast(IErrorHandler, get_error_handler())
                 self._update_system_status(
                     "error_handling", "running", {"circuit_breaker_state": "CLOSED"}
                 )
@@ -125,7 +132,7 @@ class EnterpriseIntegrationHub:
             # Initialize CI/CD pipeline
             if self.config.enable_cicd_pipeline:
                 logger.info("[ENTERPRISE] Initializing CI/CD pipeline...")
-                self.cicd_pipeline = CICDPipeline()
+                self.cicd_pipeline = cast(ICICDPipeline, CICDPipeline())
                 self._update_system_status(
                     "cicd_pipeline", "running", {"pipeline_stages": 7}
                 )
@@ -135,7 +142,7 @@ class EnterpriseIntegrationHub:
             # Initialize health monitoring
             if self.config.enable_health_monitoring:
                 logger.info("[ENTERPRISE] Initializing health monitoring...")
-                self.health_monitor = get_health_monitor()
+                self.health_monitor = cast(IHealthMonitor, get_health_monitor())
                 self._update_system_status(
                     "health_monitoring", "running", {"checks_registered": 5}
                 )
@@ -145,7 +152,7 @@ class EnterpriseIntegrationHub:
             # Initialize analytics
             if self.config.enable_analytics:
                 logger.info("[ENTERPRISE] Initializing analytics system...")
-                self.analytics_system = get_analytics_system()
+                self.analytics_system = cast(IAnalytics, get_analytics_system())
                 self._update_system_status(
                     "analytics", "running", {"metrics_registered": 4}
                 )
@@ -184,7 +191,7 @@ class EnterpriseIntegrationHub:
 
     def _update_system_status(
         self, component: str, status: str, metrics: dict[str, Any] | None = None
-    ):
+    ) -> None:
         """Update system component status"""
         self.system_status[component] = SystemStatus(
             component_name=component,
@@ -193,7 +200,7 @@ class EnterpriseIntegrationHub:
             metrics=metrics or {},
         )
 
-    def _start_background_workers(self):
+    def _start_background_workers(self) -> None:
         """Start background monitoring workers"""
 
         # Health monitoring worker
@@ -225,7 +232,7 @@ class EnterpriseIntegrationHub:
 
         logger.info(f"[ENTERPRISE] Started {len(self._workers)} background workers")
 
-    def _health_monitoring_worker(self):
+    def _health_monitoring_worker(self) -> None:
         """Background worker for health monitoring"""
         while not self._shutdown_event.is_set():
             try:
@@ -265,7 +272,7 @@ class EnterpriseIntegrationHub:
                 logger.error(f"[ENTERPRISE] Health monitoring worker error: {e}")
                 time.sleep(self.config.health_check_interval)
 
-    def _performance_monitoring_worker(self):
+    def _performance_monitoring_worker(self) -> None:
         """Background worker for performance monitoring"""
         while not self._shutdown_event.is_set():
             try:
@@ -344,7 +351,7 @@ class EnterpriseIntegrationHub:
                 logger.error(f"[ENTERPRISE] Performance monitoring worker error: {e}")
                 time.sleep(self.config.analytics_update_interval)
 
-    def _integration_health_worker(self):
+    def _integration_health_worker(self) -> None:
         """Background worker for integration health checks"""
         while not self._shutdown_event.is_set():
             try:
@@ -430,7 +437,7 @@ class EnterpriseIntegrationHub:
             logger.error(f"[ENTERPRISE] Failed to check {component} health: {e}")
             return 0.0
 
-    def _trigger_alert(self, severity: str, message: str):
+    def _trigger_alert(self, severity: str, message: str) -> None:
         """Trigger system alert"""
         if not self.config.enable_alerts:
             return
@@ -533,7 +540,7 @@ class EnterpriseIntegrationHub:
                 @self.error_handler.circuit_breaker(
                     f"enterprise_operation_{operation_type}"
                 )
-                async def execute_with_protection():
+                async def execute_with_protection() -> Any:
                     return await self._execute_operation_internal(
                         operation_type, operation_data
                     )
@@ -636,7 +643,7 @@ class EnterpriseIntegrationHub:
         else:
             raise ValueError(f"Unknown operation type: {operation_type}")
 
-    async def shutdown(self):
+    async def shutdown(self) -> None:
         """Shutdown all enterprise systems"""
         logger.info("[ENTERPRISE] Starting enterprise shutdown...")
 
@@ -706,7 +713,7 @@ def get_enterprise_hub() -> EnterpriseIntegrationHub:
     return enterprise_hub
 
 
-async def initialize_enterprise():
+async def initialize_enterprise() -> EnterpriseIntegrationHub | None:
     """Initialize complete enterprise system"""
     try:
         hub = get_enterprise_hub()
@@ -724,10 +731,10 @@ async def initialize_enterprise():
         return None
 
 
-def setup_signal_handlers(hub: EnterpriseIntegrationHub):
+def setup_signal_handlers(hub: EnterpriseIntegrationHub) -> None:
     """Setup graceful shutdown signal handlers"""
 
-    def signal_handler(signum, frame):
+    def signal_handler(signum: int, frame: Any) -> None:
         logger.info(f"[ENTERPRISE] Received signal {signum}, initiating shutdown...")
         asyncio.create_task(hub.shutdown())
         sys.exit(0)
@@ -738,7 +745,7 @@ def setup_signal_handlers(hub: EnterpriseIntegrationHub):
 
 if __name__ == "__main__":
     # Run enterprise system
-    async def main():
+    async def main() -> None:
         hub = await initialize_enterprise()
 
         if hub:

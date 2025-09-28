@@ -12,8 +12,9 @@ import time
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from functools import wraps
+from typing import Any, Awaitable, Callable
 
-from fastapi import HTTPException, Request, status
+from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # Configure security logging
@@ -37,7 +38,7 @@ SECURITY_EVENTS = {
 class SecurityManager:
     """Central security management system"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.failed_attempts: dict[str, list[datetime]] = defaultdict(list)
         self.blocked_ips: set[str] = set()
         self.rate_limits: dict[str, list[datetime]] = defaultdict(list)
@@ -54,7 +55,7 @@ class SecurityManager:
 
     def log_security_event(
         self, event_type: str, details: dict, request: Request | None = None
-    ):
+    ) -> None:
         """Log security events for monitoring"""
         event_data = {
             "timestamp": datetime.now(UTC).isoformat(),
@@ -101,7 +102,7 @@ class SecurityManager:
 
         return len(self.failed_attempts[identifier]) >= max_attempts
 
-    def record_failed_attempt(self, identifier: str):
+    def record_failed_attempt(self, identifier: str) -> None:
         """Record a failed authentication attempt"""
         self.failed_attempts[identifier].append(datetime.now(UTC))
 
@@ -160,7 +161,9 @@ security_manager = SecurityManager()
 class SecurityMiddleware(BaseHTTPMiddleware):
     """Security middleware for request filtering and monitoring"""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         start_time = time.time()
         client_ip = security_manager.get_client_ip(request)
 
@@ -271,7 +274,7 @@ class AdminAccessLogger:
     @staticmethod
     def log_admin_action(
         user_email: str, action: str, details: dict, request: Request | None = None
-    ):
+    ) -> None:
         """Log all admin actions for audit trail"""
         # request may be None in some call sites (e.g., background tasks)
         security_manager.log_security_event(
@@ -281,12 +284,14 @@ class AdminAccessLogger:
         )
 
 
-def admin_action_required(action_name: str):
+def admin_action_required(
+    action_name: str,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to log admin actions"""
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Extract user and request from function arguments
             user = None
             request = None
@@ -321,7 +326,7 @@ def admin_action_required(action_name: str):
 # Environment validation
 
 
-def validate_production_environment():
+def validate_production_environment() -> bool:
     """Validate production environment security"""
     required_vars = [
         "JWT_SECRET",

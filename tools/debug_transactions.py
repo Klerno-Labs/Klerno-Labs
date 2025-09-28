@@ -4,8 +4,11 @@ import sqlite3
 import sys
 import tempfile
 from pathlib import Path
+from typing import cast
 
 from fastapi.testclient import TestClient
+
+from app._typing_shims import ISyncConnection
 
 # Ensure workspace root is on sys.path (like tests/conftest.py)
 ROOT = str(Path(__file__).resolve().parents[1])
@@ -16,7 +19,7 @@ if ROOT not in sys.path:
 with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
     db_path = tmp.name
 
-conn = sqlite3.connect(db_path)
+conn = cast(ISyncConnection, sqlite3.connect(db_path))
 cur = conn.cursor()
 cur.execute(
     """

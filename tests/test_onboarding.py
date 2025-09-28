@@ -4,12 +4,7 @@ Tests for onboarding and user experience features
 
 import pytest
 
-from app.onboarding import (
-    ContextualHelp,
-    GuideType,
-    OnboardingManager,
-    OnboardingStep,
-)
+from app.onboarding import ContextualHelp, GuideType, OnboardingManager, OnboardingStep
 
 
 def test_onboarding_manager_initialization():
@@ -88,17 +83,20 @@ def test_get_next_suggested_action():
 
     # New user should get start onboarding action
     action = manager.get_next_suggested_action(user_id)
-    assert action["action"] == "start_onboarding"
+    assert isinstance(action, dict)
+    assert action.get("action") == "start_onboarding"
 
     # Start onboarding
     manager.start_onboarding(user_id)
     action = manager.get_next_suggested_action(user_id)
-    assert action["action"] == "dashboard_tour"
+    assert isinstance(action, dict)
+    assert action.get("action") == "dashboard_tour"
 
     # Advance to API setup
     manager.advance_step(user_id, OnboardingStep.WELCOME)
     action = manager.get_next_suggested_action(user_id)
-    assert action["action"] == "setup_api_key"
+    assert isinstance(action, dict)
+    assert action.get("action") == "setup_api_key"
 
 
 def test_available_guides():

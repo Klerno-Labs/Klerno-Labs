@@ -8,28 +8,44 @@ import logging
 import re
 import secrets
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 import requests
 
-# Try to import argon2, fall back to hashlib if not available
-try:
-    from argon2 import PasswordHasher
-    from argon2.exceptions import HashingError, VerifyMismatchError
+if TYPE_CHECKING:
+    # Treat argon2 types as Any when running static analysis without stubs
+    PasswordHasher: Any  # pragma: no cover
+    HashingError: Any  # pragma: no cover
+    VerifyMismatchError: Any  # pragma: no cover
+else:
+    # Initialize runtime names so they exist even when argon2 is absent
+    PasswordHasher = None
+    HashingError = None
+    VerifyMismatchError = None
 
+# Try to import argon2 dynamically, fall back to hashlib if not available
+try:
+    import importlib
+
+    _argon2_mod = importlib.import_module("argon2")
+    _argon2_exc = importlib.import_module("argon2.exceptions")
+    PasswordHasher = getattr(_argon2_mod, "PasswordHasher")
+    HashingError = getattr(_argon2_exc, "HashingError")
+    VerifyMismatchError = getattr(_argon2_exc, "VerifyMismatchError")
     ARGON2_AVAILABLE = True
-except ImportError:
+except Exception:
     ARGON2_AVAILABLE = False
 
     class _FallbackPasswordHasher:
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: object, **kwargs: object) -> None:
             pass
 
-        def hash(self, password):
+        def hash(self, password: str) -> str:
             return hashlib.pbkdf2_hmac(
                 "sha256", password.encode(), b"salt", 100000
             ).hex()
 
-        def verify(self, hash_val, password):
+        def verify(self, hash_val: str, password: str) -> bool:
             return hash_val == self.hash(password)
 
     class _VerifyMismatchError(Exception):

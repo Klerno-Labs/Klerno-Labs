@@ -100,13 +100,21 @@ def check_import_app() -> bool:
     """Attempt to import the application package to surface import-time errors."""
     try:
         try:
-            # common FastAPI entrypoint
-            pass  # type: ignore
-        except Exception:
-            # fallback to importing package root
+            # common FastAPI entrypoint names that projects use
             import importlib
 
-            importlib.import_module("app")
+            for candidate in ("enterprise_main_v2", "main", "app", "preview_server"):
+                try:
+                    importlib.import_module(candidate)
+                    break
+                except Exception:
+                    continue
+            else:
+                # fallback to package import
+                importlib.import_module("app")
+        except Exception:
+            # Reraise to outer handler
+            raise
     except Exception as exc:  # pragma: no cover - environment dependent
         fail(f"Importing FastAPI app failed: {exc!r}")
         return False

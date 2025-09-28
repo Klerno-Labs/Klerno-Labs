@@ -34,10 +34,12 @@ Manages user subscriptions, tier pricing, and access control.
 import sqlite3
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from fastapi import Depends, HTTPException, status
 from pydantic import BaseModel
+
+from app._typing_shims import ISyncConnection
 
 from .config import settings
 from .security_session import get_current_user
@@ -206,8 +208,7 @@ def get_db_connection():
     if settings.USE_SQLITE:
         # Ensure directory exists using pathlib
         Path(settings.SQLITE_PATH).resolve().parent.mkdir(parents=True, exist_ok=True)
-
-        conn = sqlite3.connect(settings.SQLITE_PATH)
+        conn = cast(ISyncConnection, sqlite3.connect(settings.SQLITE_PATH))
         conn.row_factory = sqlite3.Row
         return conn
     else:
@@ -223,7 +224,7 @@ def get_tier_details(tier_id: str | SubscriptionTier) -> TierDetails:
     """Get details for a subscription tier."""
     # Coerce incoming identifier to a SubscriptionTier when possible so we
     # can index DEFAULT_TIERS (which uses SubscriptionTier enum keys).
-    tier_key: SubscriptionTier
+    tier_key: SubscriptionTier | str
     if isinstance(tier_id, SubscriptionTier):
         tier_key = tier_id
     else:
@@ -231,7 +232,7 @@ def get_tier_details(tier_id: str | SubscriptionTier) -> TierDetails:
             tier_key = SubscriptionTier(tier_id)
         except Exception:
             # If coercion fails, leave as-is to trigger fallback later
-            tier_key = tier_id  # type: ignore[assignment]
+            tier_key = tier_id
 
     # Check cache first
     if tier_key in _tier_cache:
@@ -251,8 +252,9 @@ def get_tier_details(tier_id: str | SubscriptionTier) -> TierDetails:
     conn.close()
 
     if not row:
-        # Fallback to default
-        if tier_key in DEFAULT_TIERS:
+        # Fallback to default: ensure we only use SubscriptionTier when
+        # indexing DEFAULT_TIERS to satisfy static checkers.
+        if isinstance(tier_key, SubscriptionTier) and tier_key in DEFAULT_TIERS:
             _tier_cache[tier_key] = DEFAULT_TIERS[tier_key]
             return DEFAULT_TIERS[tier_key]
         raise ValueError(f"Subscription tier {tier_id} not found")

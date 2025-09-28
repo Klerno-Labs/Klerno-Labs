@@ -54,7 +54,9 @@ class ReferralReward(BaseModel):
 class ReferralManager:
     """Handles all referral system operations"""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session | None):
+        # Accept an optional Session for test/demo usage where a DB may not
+        # be available. Callers in production should pass a real Session.
         self.db = db
 
     def generate_referral_code(self, user_id: str, prefix: str = "KL") -> str:
@@ -296,7 +298,9 @@ def integrate_referral_with_signup(signup_data: dict, referral_code: str | None 
         # Track the referral signup (defensive: only call when we have a user_id)
         new_user_id = signup_data.get("user_id")
         if new_user_id:
-            referral_manager = ReferralManager(db=None)  # type: ignore[arg-type]  # Would pass actual DB session in production
+            referral_manager = ReferralManager(
+                db=None
+            )  # Would pass actual DB session in production
             referral_manager.track_referral_signup(referral_code, str(new_user_id))
 
         # Apply signup bonus (25% discount)
@@ -309,7 +313,7 @@ def integrate_referral_with_signup(signup_data: dict, referral_code: str | None 
 # Example usage for testing
 if __name__ == "__main__":
     # Demo the referral system
-    manager = ReferralManager(db=None)  # type: ignore[arg-type]
+    manager = ReferralManager(db=None)
 
     # Generate referral link
     link = manager.create_referral_link("user_123")

@@ -2,17 +2,29 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 import requests
+
+if TYPE_CHECKING:
+    # Avoid requiring app.models to be importable at type-check time
+    Transaction: Any
 
 # Transaction model is imported inside the function to avoid top-level import issues
 
 
 def xrpl_json_to_transactions(account: str, tx_list: list[dict]):
+    # Import Transaction dynamically to avoid import-time package-layout issues
     try:
-        from app.models import Transaction  # type: ignore[no-redef]
+        import importlib
+
+        mod = importlib.import_module("app.models")
     except Exception:
-        from ..models import Transaction  # type: ignore[no-redef]
+        import importlib
+
+        mod = importlib.import_module("..models", package=__package__)
+
+    Transaction = getattr(mod, "Transaction")
 
     out = []
     for item in tx_list:

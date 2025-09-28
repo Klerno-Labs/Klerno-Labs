@@ -10,9 +10,17 @@ import sqlite3
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
-import psutil
+from app._typing_shims import ISyncConnection
+
+if TYPE_CHECKING:
+    import psutil  # pragma: no cover
+else:
+    try:
+        import psutil
+    except Exception:
+        psutil = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +79,8 @@ class SystemMonitor:
             # Scan last 10 minutes of transactions
             cutoff = datetime.now(UTC) - timedelta(minutes=10)
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+                typed_conn = cast(ISyncConnection, conn)
+                cursor = typed_conn.cursor()
                 cursor.execute(
                     """
                     SELECT
@@ -147,7 +156,8 @@ class SystemMonitor:
         """Initialize monitoring database tables."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+                typed_conn = cast(ISyncConnection, conn)
+                cursor = typed_conn.cursor()
 
                 # System metrics table
                 cursor.execute(
@@ -276,7 +286,8 @@ class SystemMonitor:
         try:
             # Count total users
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+                typed_conn = cast(ISyncConnection, conn)
+                cursor = typed_conn.cursor()
                 cursor.execute("SELECT COUNT(*) FROM users_enhanced")
                 total_users = cursor.fetchone()[0]
 
@@ -320,7 +331,8 @@ class SystemMonitor:
             hour_ago = datetime.now(UTC) - timedelta(hours=1)
 
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+                typed_conn = cast(ISyncConnection, conn)
+                cursor = typed_conn.cursor()
                 cursor.execute(
                     """
                     SELECT COUNT(*) FROM admin_actions
@@ -357,7 +369,8 @@ class SystemMonitor:
             security_metrics = self.get_security_metrics()
 
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+                typed_conn = cast(ISyncConnection, conn)
+                cursor = typed_conn.cursor()
 
                 if system_metrics:
                     cursor.execute(
@@ -428,7 +441,8 @@ class SystemMonitor:
             cutoff_time = datetime.now(UTC) - timedelta(hours=hours)
 
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+                typed_conn = cast(ISyncConnection, conn)
+                cursor = typed_conn.cursor()
 
                 # Get recent system metrics
                 cursor.execute(

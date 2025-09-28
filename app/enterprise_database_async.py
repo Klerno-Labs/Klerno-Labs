@@ -18,6 +18,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from app._typing_shims import ISyncConnection
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -62,7 +64,7 @@ class DatabaseConnectionPool:
         max_overflow: int = 10,
         timeout: int = 30,
         recycle_time: int = 3600,
-    ):
+    ) -> None:
         self.database_path = database_path
         self.pool_size = pool_size
         self.max_overflow = max_overflow
@@ -70,11 +72,11 @@ class DatabaseConnectionPool:
         self.recycle_time = recycle_time
 
         # Connection management
-        self._pool: queue.Queue[tuple[sqlite3.Connection, float]] = queue.Queue(
+        self._pool: queue.Queue[tuple[ISyncConnection, float]] = queue.Queue(
             maxsize=pool_size
         )
-        self._overflow: list[sqlite3.Connection] = []
-        self._checked_out: weakref.WeakSet[sqlite3.Connection] = weakref.WeakSet()
+        self._overflow: list[ISyncConnection] = []
+        self._checked_out: weakref.WeakSet[ISyncConnection] = weakref.WeakSet()
         self._stats: ConnectionStats = ConnectionStats()
         self._lock: threading.RLock = threading.RLock()
 
@@ -102,7 +104,10 @@ class DatabaseConnectionPool:
                 try:
                     conn = self._create_connection()
                     if conn is not None:
-                        self._pool.put((conn, time.time()))
+                        # cast the runtime sqlite3.Connection to the ISyncConnection protocol
+                        from typing import cast
+
+                        self._pool.put((cast(ISyncConnection, conn), time.time()))
                         self._stats.total_connections += 1
                 except RuntimeError:
                     # skip failed connection creation
@@ -115,7 +120,7 @@ class DatabaseConnectionPool:
         except Exception as e:
             logger.error(f"[DB-POOL] Failed to initialize pool: {e}")
 
-    def _create_connection(self) -> sqlite3.Connection | None:
+    def _create_connection(self) -> ISyncConnection | None:
         """Create a new database connection"""
         try:
             conn = sqlite3.connect(
@@ -130,14 +135,16 @@ class DatabaseConnectionPool:
             conn.execute("PRAGMA temp_store=MEMORY")
             conn.execute("PRAGMA mmap_size=268435456")  # 256MB
 
-            return conn
+            from typing import cast
+
+            return cast(ISyncConnection, conn)
 
         except Exception as e:
             logger.error(f"[DB-POOL] Failed to create connection: {e}")
             self._stats.failed_connections += 1
             raise RuntimeError(f"Failed to create DB connection: {e}") from e
 
-    def get_connection(self) -> sqlite3.Connection | None:
+    def get_connection(self) -> ISyncConnection | None:
         """Get a connection from the pool"""
         start_time = time.time()
 
@@ -145,7 +152,10 @@ class DatabaseConnectionPool:
             with self._lock:
                 # Try to get from pool
                 try:
+                    from typing import cast
+
                     conn, created_at = self._pool.get_nowait()
+                    conn = cast(ISyncConnection, conn)
 
                     # Check if connection needs recycling
                     if time.time() - created_at > self.recycle_time:
@@ -168,11 +178,13 @@ class DatabaseConnectionPool:
                             new_conn = None
 
                         if new_conn:
-                            self._overflow.append(new_conn)
-                            self._checked_out.add(new_conn)
+                            from typing import cast
+
+                            self._overflow.append(cast(ISyncConnection, new_conn))
+                            self._checked_out.add(cast(ISyncConnection, new_conn))
                             self._stats.active_connections += 1
                             self._stats.total_connections += 1
-                            return new_conn
+                            return cast(ISyncConnection, new_conn)
 
                     logger.warning("[DB-POOL] Pool exhausted, no connections available")
                     return None
@@ -193,7 +205,7 @@ class DatabaseConnectionPool:
             if self._stats.active_connections > self._stats.peak_connections:
                 self._stats.peak_connections = self._stats.active_connections
 
-    def return_connection(self, conn: sqlite3.Connection):
+    def return_connection(self, conn: ISyncConnection):
         """Return a connection to the pool"""
         if not conn:
             return
@@ -298,7 +310,7 @@ class AsyncTaskProcessor:
 
     def __init__(
         self, max_workers: int = 10, queue_size: int = 1000, batch_size: int = 50
-    ):
+    ) -> None:
         self.max_workers = max_workers
         self.queue_size = queue_size
         self.batch_size = batch_size
@@ -523,7 +535,7 @@ class AsyncTaskProcessor:
 class AsyncDatabaseManager:
     """Async database operations manager"""
 
-    def __init__(self, database_path: str = "./data/klerno.db"):
+    def __init__(self, database_path: str = "./data/klerno.db") -> None:
         self.database_path = database_path
         self._pool: DatabaseConnectionPool = DatabaseConnectionPool(database_path)
         self._task_processor: AsyncTaskProcessor = AsyncTaskProcessor()
@@ -642,7 +654,7 @@ def get_database_manager() -> AsyncDatabaseManager:
     return database_manager
 
 
-def initialize_async_database():
+def initialize_async_database() -> "AsyncDatabaseManager | None":
     """Initialize async database systems"""
     try:
         manager = get_database_manager()
@@ -655,7 +667,7 @@ def initialize_async_database():
 
 if __name__ == "__main__":
     # Test the async database system
-    async def test_async_database():
+    async def test_async_database() -> None:
         manager = get_database_manager()
 
         # Test query

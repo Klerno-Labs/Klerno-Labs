@@ -10,11 +10,12 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
+from typing import Any
 
 from fastapi import APIRouter, Request, Response
 
 
-def setup_metrics(app) -> None:  # pragma: no cover
+def setup_metrics(app: Any) -> None:  # pragma: no cover
     try:
         from prometheus_client import (
             CollectorRegistry,
@@ -40,7 +41,9 @@ def setup_metrics(app) -> None:  # pragma: no cover
     )
 
     @app.middleware("http")
-    async def _metrics_middleware(request: Request, call_next: Callable):  # type: ignore
+    async def _metrics_middleware(
+        request: Request, call_next: Callable[..., Any]
+    ) -> Response:
         start = time.perf_counter()
         response: Response = await call_next(request)
         elapsed = time.perf_counter() - start
@@ -55,13 +58,13 @@ def setup_metrics(app) -> None:  # pragma: no cover
         return response
 
     # Idempotent: if already registered skip
-    if any(r.path == "/metrics" for r in app.routes):  # type: ignore[attr-defined]
+    if any(r.path == "/metrics" for r in app.routes):
         return
 
     router = APIRouter()
 
     @router.get("/metrics", include_in_schema=False)
-    async def metrics_endpoint():  # type: ignore
+    async def metrics_endpoint() -> Response:
         try:
             payload = generate_latest(registry)
             return Response(content=payload, media_type="text/plain; version=0.0.4")

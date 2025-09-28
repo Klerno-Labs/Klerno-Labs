@@ -8,9 +8,15 @@ from typing import Any
 import requests
 
 try:
-    from app.models import Transaction  # type: ignore[no-redef]
+    import importlib
+
+    mod = importlib.import_module("app.models")
 except Exception:
-    from ..models import Transaction  # type: ignore[no-redef]
+    import importlib
+
+    mod = importlib.import_module("..models", package=__package__)
+
+Transaction = getattr(mod, "Transaction")
 
 BASE_URL = "https://api.bscscan.com/api"
 DEFAULT_LIMIT = 25

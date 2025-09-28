@@ -11,6 +11,8 @@ from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 
+from app._typing_shims import ISyncConnection
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,7 +33,7 @@ class DatabaseConnectionManager:
     @contextlib.contextmanager
     def get_connection(
         self, timeout: float = 30.0
-    ) -> Generator[sqlite3.Connection, None, None]:
+    ) -> Generator[ISyncConnection, None, None]:
         """
         Get a properly managed database connection that will be automatically closed.
 
@@ -39,12 +41,17 @@ class DatabaseConnectionManager:
             timeout: Connection timeout in seconds
 
         Yields:
-            sqlite3.Connection: Database connection with proper cleanup
+            ISyncConnection: Database connection with proper cleanup
         """
-        conn = None
+        conn: ISyncConnection | None = None
         try:
-            conn = sqlite3.connect(self.db_path, timeout=timeout)
-            conn.row_factory = sqlite3.Row
+            # Create the raw sqlite3 connection and initialize it, then cast
+            from typing import cast
+
+            _raw_conn = sqlite3.connect(self.db_path, timeout=timeout)
+            _raw_conn.row_factory = sqlite3.Row
+            # Cast runtime sqlite3.Connection to ISyncConnection protocol for typing
+            conn = cast(ISyncConnection, _raw_conn)
             # Enable WAL mode for better concurrency
             conn.execute("PRAGMA journal_mode=WAL")
             conn.execute("PRAGMA synchronous=NORMAL")
@@ -171,7 +178,7 @@ def safe_db_connection(db_path: str | None = None, timeout: float = 30.0):
         timeout: Connection timeout
 
     Yields:
-        sqlite3.Connection: Properly managed connection
+        ISyncConnection: Properly managed connection
     """
     manager = get_db_manager(db_path)
     with manager.get_connection(timeout) as conn:

@@ -11,9 +11,10 @@ import os
 import threading
 import time
 from collections.abc import Callable
+from typing import Any, Awaitable
 
 from fastapi import Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 
 class TokenBucket:
@@ -48,7 +49,7 @@ def _rate_limit_config() -> tuple[int, float]:
     return cap, rate_per_sec
 
 
-def add_rate_limiter(app) -> None:
+def add_rate_limiter(app: Any) -> None:
     if os.getenv("ENABLE_RATE_LIMIT", "false").lower() not in {"1", "true", "yes"}:
         return
 
@@ -67,7 +68,9 @@ def add_rate_limiter(app) -> None:
         return b
 
     @app.middleware("http")
-    async def _apply_rate_limit(request: Request, call_next: Callable):  # type: ignore
+    async def _apply_rate_limit(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         # Simple key: remote IP (fall back to 'unknown')
         client_host = request.client.host if request.client else "unknown"
         bucket = get_bucket(client_host)

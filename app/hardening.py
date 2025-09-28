@@ -5,6 +5,7 @@ import hmac
 import os
 import secrets
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -20,7 +21,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ):
+    ) -> Response:
         resp: Response = await call_next(request)
         csp = (
             "default - src 'self'; "
@@ -52,7 +53,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ):
+    ) -> Response:
         rid = request.headers.get(REQ_ID_HEADER) or secrets.token_hex(8)
         request.state.request_id = rid
         resp: Response = await call_next(request)
@@ -86,14 +87,14 @@ def verify_csrf(request: Request) -> None:
         raise HTTPException(status_code=403, detail="Bad CSRF token")
 
 
-async def csrf_guard(request: Request):
+async def csrf_guard(request: Request) -> bool:
     """FastAPI dependency to protect unsafe UI methods."""
     if request.method in ("POST", "PUT", "PATCH", "DELETE"):
         verify_csrf(request)
     return True
 
 
-def install_security(app) -> None:
+def install_security(app: Any) -> None:
     """Attach security middlewares (single place, avoids duplication)."""
     app.add_middleware(RequestIDMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
@@ -102,14 +103,14 @@ def install_security(app) -> None:
 # ---- Optional rate limiting (no warnings if library absent) ------------------
 
 
-def rate_limit(spec: str):
+def rate_limit(spec: str) -> Callable[..., Awaitable[bool]]:
     """
     Returns a dependency suitable for FastAPI route `dependencies=[Depends(rate_limit("10 / min"))]`.
     - If starlette - limiter is installed and REDIS_URL is set, uses it.
     - Otherwise, returns a no - op dependency (clean, no linter warnings).
     """
     try:
-        from starlette_limiter import RateLimiter  # type: ignore
+        from starlette_limiter import RateLimiter  # type: ignore[import]
 
         # Parse "10 / min", "100 / hour", or raw seconds like "20 / 30"
         parts = spec.split("/")
@@ -126,7 +127,7 @@ def rate_limit(spec: str):
     except Exception:
         # No - op dependency
 
-        async def _noop():
+        async def _noop() -> bool:
             return True
 
         return _noop

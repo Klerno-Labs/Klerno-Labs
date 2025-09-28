@@ -147,7 +147,13 @@ class RedisCache:
         """Connect to Redis"""
         try:
             self.redis_client = redis.from_url(self.redis_url, decode_responses=False)
-            await self.redis_client.ping()
+            # redis_client may be None in failure scenarios; guard before calling ping
+            if self.redis_client is not None:
+                # redis.Redis has ping in runtime; cast to Any for static checkers
+                from typing import Any, cast
+
+                client_any = cast(Any, self.redis_client)
+                await client_any.ping()
         except Exception as e:
             print(f"Redis connection failed: {e}")
             self.redis_client = None

@@ -26,7 +26,7 @@ router = APIRouter(tags=["operational"])  # no prefix to keep legacy paths stabl
 # We fall back to import-time for safety.
 START_TIME = datetime.now(UTC)
 try:  # pragma: no cover - best effort import
-    from ..main import START_TIME as APP_START_TIME  # type: ignore
+    from ..main import START_TIME as APP_START_TIME
 
     START_TIME = APP_START_TIME  # noqa: N816 (keep upper case alias semantics)
 except Exception:  # pragma: no cover

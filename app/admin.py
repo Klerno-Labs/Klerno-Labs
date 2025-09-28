@@ -6,17 +6,31 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    import pandas as pd  # pragma: no cover
+    # Avoid importing pandas during static analysis; declare as Any so
+    # mypy doesn't require pandas stubs.
+    pd: Any  # pragma: no cover
+
+    # Treat SendGrid types as Any in dev environments where stubs are missing
+    SendGridAPIClient: Any  # type: ignore
+    Content: Any  # type: ignore
+    Email: Any  # type: ignore
+    Mail: Any  # type: ignore
+    To: Any  # type: ignore
+else:
+    pd = None
 
 
 def _ensure_pandas() -> None:
     """Import pandas lazily to avoid circular import during test collection."""
-    if "pd" in globals():
+    if "pd" in globals() and globals().get("pd") is not None:
         return
     try:
-        import pandas as pd  # type: ignore
+        import importlib
 
+        pd = importlib.import_module("pandas")
         globals()["pd"] = pd
+    except ImportError as e:
+        raise RuntimeError("pandas is required for admin analytics") from e
     except Exception:
         raise
 
@@ -92,8 +106,16 @@ def _send_email(subject: str, text: str, to_email: str | None = None) -> dict[st
         reason = "missing SENDGRID_API_KEY / ALERT_EMAIL_FROM / ALERT_EMAIL_TO"
         return {"sent": False, "reason": reason}
     try:
-        from sendgrid import SendGridAPIClient
-        from sendgrid.helpers.mail import Content, Email, Mail, To
+        import importlib
+
+        sg_mod = importlib.import_module("sendgrid")
+        sg_helpers = importlib.import_module("sendgrid.helpers.mail")
+
+        SendGridAPIClient = getattr(sg_mod, "SendGridAPIClient")
+        Content = getattr(sg_helpers, "Content")
+        Email = getattr(sg_helpers, "Email")
+        Mail = getattr(sg_helpers, "Mail")
+        To = getattr(sg_helpers, "To")
 
         msg = Mail(
             from_email=Email(ALERT_FROM),
@@ -111,7 +133,7 @@ def _send_email(subject: str, text: str, to_email: str | None = None) -> dict[st
 
 
 # ---------- UI ----------
-def admin_home(request: Request, user=Depends(require_admin)):
+def admin_home(request: Request, user=Depends(require_admin)) -> Any:
     return templates.TemplateResponse(
         "admin.html", {"request": request, "title": "Admin"}
     )
@@ -119,7 +141,7 @@ def admin_home(request: Request, user=Depends(require_admin)):
 
 # ---------- Stats ----------
 @router.get("/api/stats")
-def admin_stats(user=Depends(require_admin)):
+def admin_stats(user=Depends(require_admin)) -> dict[str, Any]:
     """Enhanced admin statistics with comprehensive blockchain analytics."""
     rows = store.list_all(limit=100000)
     total = len(rows)
@@ -203,6 +225,8 @@ def admin_stats(user=Depends(require_admin)):
 
     backend = "postgres" if getattr(store, "USING_POSTGRES", False) else "sqlite"
     _ensure_pandas()
+    # Use pandas runtime object only; avoid annotating with pd.Timestamp to keep
+    # static analysis from requiring pandas at import time.
     result = {
         "backend": backend,
         "db_path": getattr(store, "DB_PATH", "data / klerno.db"),
@@ -222,7 +246,7 @@ def admin_stats(user=Depends(require_admin)):
 
 
 @router.get("/api/analytics/real-time")
-def admin_realtime_analytics(user=Depends(require_admin)):
+def admin_realtime_analytics(user=Depends(require_admin)) -> dict[str, Any]:
     """Real - time analytics data for admin dashboard."""
     con = store._conn()
     cur = con.cursor()
@@ -309,7 +333,7 @@ def admin_realtime_analytics(user=Depends(require_admin)):
 
 
 @router.get("/api/users/analytics")
-def admin_user_analytics(user=Depends(require_admin)):
+def admin_user_analytics(user=Depends(require_admin)) -> dict[str, Any]:
     """User analytics for admin dashboard."""
     con = store._conn()
     cur = con.cursor()
@@ -458,7 +482,7 @@ def admin_seed_demo(
         raise HTTPException(status_code=404, detail="sample_transactions.csv not found")
 
     # Explicitly annotate DataFrame to help type checkers understand pandas types
-    df: pd.DataFrame = pd.read_csv(data_path)
+    df: Any = pd.read_csv(data_path)
     if payload and payload.limit:
         df = df.head(int(payload.limit))
 

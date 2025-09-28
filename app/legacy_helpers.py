@@ -36,7 +36,7 @@ def create_access_token(data: dict | Any, *a, **kw) -> str:
     """
     try:
         # Try to delegate to app.auth if available
-        from app import auth as _auth  # type: ignore
+        from app import auth as _auth
 
         if hasattr(_auth, "create_access_token"):
             return _auth.create_access_token(data, *a, **kw)
@@ -101,7 +101,7 @@ def verify_token(token: str) -> dict:
     specific behavior continue to work; otherwise return a stable dict.
     """
     try:
-        from app import auth as _auth  # type: ignore
+        from app import auth as _auth
 
         if hasattr(_auth, "verify_token"):
             return _auth.verify_token(token)

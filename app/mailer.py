@@ -1,12 +1,17 @@
 # app / mailer.py
 import os
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    # Treat sendgrid types as Any in environments where stubs are missing.
+    SendGridAPIClient: Any  # type: ignore
 
 _SENDGRID_KEY = os.getenv("SENDGRID_API_KEY")
 FROM_EMAIL = os.getenv("SENDGRID_FROM")
 FROM_NAME = os.getenv("SENDGRID_NAME", "Klerno Labs")
 
 
-_cached_sg = None
+_cached_sg: Any = None
 
 
 def _get_sendgrid_client():
@@ -23,10 +28,11 @@ def _get_sendgrid_client():
             raise RuntimeError(
                 "SendGrid API key not configured. Set SENDGRID_API_KEY to use mailer"
             )
-        # Import lazily to avoid import-time dependency on sendgrid
-        import sendgrid as _sendgrid_module
+    # Import lazily to avoid import-time dependency on sendgrid
+    import importlib
 
-        _cached_sg = _sendgrid_module.SendGridAPIClient(key)
+    _sendgrid_module = importlib.import_module("sendgrid")
+    _cached_sg = getattr(_sendgrid_module, "SendGridAPIClient")(key)
     return _cached_sg
 
 
@@ -45,7 +51,10 @@ def send_email(to_email: str, subject: str, content: str):
     sg = _get_sendgrid_client()
 
     # Import Mail class lazily as well
-    from sendgrid.helpers.mail import Mail
+    import importlib
+
+    sg_helpers = importlib.import_module("sendgrid.helpers.mail")
+    Mail = getattr(sg_helpers, "Mail")
 
     message = Mail(
         from_email=(FROM_EMAIL, FROM_NAME),

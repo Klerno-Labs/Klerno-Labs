@@ -82,7 +82,7 @@ async def test_cached_decorator_async():
 
 def test_cache_key_generation():
     """Test that cache keys are generated correctly for different argument patterns."""
-    call_counts = {}
+    call_counts: dict[str, int] = {}
 
     @cached(ttl=60)
     def test_function(*args, **kwargs):

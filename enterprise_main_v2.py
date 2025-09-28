@@ -13,13 +13,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 # Import Any for runtime typing of session middleware variable
-from typing import Any
+from typing import Any, cast
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+
+from app._typing_shims import IAdminModule, IAuthModule, IStore
 
 # Explicitly declare SessionMiddleware as a runtime variable so static
 # type-checkers don't treat the imported symbol as a type declaration.
@@ -34,15 +36,26 @@ except Exception:  # itsdangerous may be missing in minimal envs
     # itsdangerous or starlette might be missing in minimal environments
     _has_session_middleware = False
 
+# Optional runtime modules - declare defaults and attempt dynamic import.
+admin: Any | None = None
+auth: Any | None = None
+store: Any | None = None
+
 try:
-    from app import admin, auth, store
+    import importlib
+
+    _mod_admin = importlib.import_module("app.admin")
+    _mod_auth = importlib.import_module("app.auth")
+    _mod_store = importlib.import_module("app.store")
+
+    admin = cast(IAdminModule, _mod_admin)
+    auth = cast(IAuthModule, _mod_auth)
+    store = cast(IStore, _mod_store)
 except Exception:
     # In minimal preview/test environments optional app submodules may
     # fail to import due to missing dependencies (jwt, itsdangerous, etc.).
-    # Defer to shim registration later.
-    admin = None  # type: ignore[assignment]
-    auth = None  # type: ignore[assignment]
-    store = None  # type: ignore[assignment]
+    # Keep the variables as None and allow shim registration later.
+    pass
 
 # Import clean app components
 from app.settings import settings

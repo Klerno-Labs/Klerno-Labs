@@ -12,15 +12,23 @@ from typing import Any, cast
 
 import psutil
 
-try:
-    import psycopg2  # type: ignore
-except Exception:  # pragma: no cover - optional dependency in some environments
-    psycopg2 = None  # type: ignore
+from ._typing_shims import IPostgresConnection, IPostgresCursor, IRedisLike
 
+psycopg2: Any | None = None
 try:
-    import redis as redis_lib  # type: ignore
+    import psycopg2 as _psycopg2
+
+    psycopg2 = _psycopg2
 except Exception:  # pragma: no cover - optional dependency in some environments
-    redis_lib = None  # type: ignore
+    psycopg2 = None
+
+redis_lib: Any | None = None
+try:
+    import redis as _redis_lib
+
+    redis_lib = _redis_lib
+except Exception:  # pragma: no cover - optional dependency in some environments
+    redis_lib = None
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 
@@ -87,7 +95,8 @@ class HealthChecker:
                 }
 
             conn = psycopg2.connect(db_url)
-            cursor = conn.cursor()
+            conn = cast(IPostgresConnection, conn)
+            cursor = cast(IPostgresCursor, conn.cursor())
             cursor.execute("SELECT 1")
             result = cursor.fetchone()
             cursor.close()
@@ -126,6 +135,7 @@ class HealthChecker:
             redis_client = redis_lib.Redis.from_url(
                 "redis://redis:6379/0", decode_responses=True
             )
+            redis_client = cast(IRedisLike, redis_client)
 
             # Ensure redis_client is not None for static analysis; runtime still handles exceptions
             assert redis_client is not None
@@ -141,7 +151,7 @@ class HealthChecker:
             # Get cache info and normalize result to a mapping
             info = redis_client.info()
             # redis client implementations can return awaitable results in some environments
-            info_obj = await info if asyncio.iscoroutine(info) else info  # type: ignore[var-annotated]
+            info_obj = await info if asyncio.iscoroutine(info) else info
             # Cast to a mapping for the type checker; runtime will still work with dict-like objects
             info_obj = cast(Mapping[str, Any], info_obj)
 

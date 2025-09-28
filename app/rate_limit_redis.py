@@ -22,15 +22,20 @@ from __future__ import annotations
 import os
 import time
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Awaitable, Optional
 
 from fastapi import Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
+from ._typing_shims import IRedisLike
+
+redis: Any | None = None
 try:  # pragma: no cover - optional dependency
-    import redis  # type: ignore
+    import redis as _redis
+
+    redis = _redis
 except Exception:  # pragma: no cover
-    redis = None  # type: ignore
+    redis = None
 
 _LUA_SCRIPT = """
 local key = KEYS[1]
@@ -70,7 +75,7 @@ return {allowed, tokens}
 _script_sha: str | None = None
 
 
-def _redis_client():  # pragma: no cover - trivial
+def _redis_client() -> Optional[IRedisLike]:  # pragma: no cover - trivial
     url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     if not redis:
         return None
@@ -80,7 +85,7 @@ def _redis_client():  # pragma: no cover - trivial
         return None
 
 
-def _rate_limit_config():
+def _rate_limit_config() -> tuple[int, float, str]:
     capacity = int(os.getenv("RATE_LIMIT_CAPACITY", "60"))
     per_minute = int(os.getenv("RATE_LIMIT_PER_MINUTE", "120"))
     rate_per_sec = per_minute / 60.0
@@ -88,7 +93,7 @@ def _rate_limit_config():
     return capacity, rate_per_sec, prefix
 
 
-def add_redis_rate_limiter(app) -> None:
+def add_redis_rate_limiter(app: Any) -> None:
     if os.getenv("ENABLE_RATE_LIMIT", "false").lower() not in {"1", "true", "yes"}:
         return
     if not os.getenv("REDIS_URL"):
@@ -108,22 +113,24 @@ def add_redis_rate_limiter(app) -> None:
         args: list[Any] = [capacity, rate_per_sec, now_ms, cost]
         try:  # pragma: no cover - network integration
             if _script_sha is None:
-                _script_sha = client.script_load(_LUA_SCRIPT)  # type: ignore[attr-defined]
-            res = client.evalsha(_script_sha, len(keys), *keys, *args)  # type: ignore[attr-defined]
+                _script_sha = client.script_load(_LUA_SCRIPT)
+                res = client.evalsha(_script_sha, len(keys), *keys, *args)
         except Exception:
             try:
-                res = client.eval(_LUA_SCRIPT, len(keys), *keys, *args)  # type: ignore[attr-defined]
+                res = client.eval(_LUA_SCRIPT, len(keys), *keys, *args)
                 _script_sha = None
             except Exception:
                 return True  # fail-open (do not block traffic)
         try:
-            allowed_flag = int(res[0]) if res else 0  # type: ignore[index]
+            allowed_flag = int(res[0]) if res else 0
         except Exception:
             return True  # fail-open on unexpected structure
         return allowed_flag == 1
 
     @app.middleware("http")
-    async def _redis_rate_limit(request: Request, call_next: Callable):  # type: ignore
+    async def _redis_rate_limit(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         remote = request.client.host if request.client else "unknown"
         allowed = _eval_bucket(remote)
         if not allowed:

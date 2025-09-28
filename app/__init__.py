@@ -35,7 +35,7 @@ create_access_token: Callable[..., str] | None = None
 verify_token: Callable[..., dict[Any, Any]] | None = None
 ACCESS_TOKEN_EXPIRE_MINUTES: int | None = None
 try:
-    from . import integrations as integrations  # type: ignore
+    from . import integrations as integrations
 except Exception:
     # If integrations cannot be imported at package import time, keep going.
     # Some repository layouts keep an `integrations` package at the top level
@@ -43,7 +43,7 @@ except Exception:
     # `app.integrations.xrp.fetch_account_tx` still work even when the
     # package layout is mixed during consolidation.
     try:
-        import integrations as integrations  # type: ignore
+        import integrations as integrations
     except Exception:
         # Provide a lightweight shim module so tests can patch attributes
         # like `app.integrations.xrp.get_xrpl_client` without raising
@@ -72,8 +72,8 @@ except Exception:
 
                 for m in (submod, app_sub):
                     # use setattr to keep static checkers happier about dynamic attrs
-                    setattr(m, "get_xrpl_client", _stub_get_xrpl_client)  # type: ignore[attr-defined]
-                    setattr(m, "fetch_account_tx", _stub_fetch_account_tx)  # type: ignore[attr-defined]
+                    setattr(m, "get_xrpl_client", _stub_get_xrpl_client)
+                    setattr(m, "fetch_account_tx", _stub_fetch_account_tx)
 
             setattr(integrations, _sub, submod)
             setattr(integrations, _sub, submod)
@@ -107,17 +107,17 @@ except Exception:
                     f"integrations.{_sub}"
                 )
                 if mod is not None:
-                    setattr(integrations, _sub, mod)  # type: ignore[attr-defined]
+                    setattr(integrations, _sub, mod)
                 else:
                     # ensure attribute exists even if module missing
-                    setattr(integrations, _sub, getattr(integrations, _sub, None))  # type: ignore[arg-type]
+                    setattr(integrations, _sub, getattr(integrations, _sub, None))
         except Exception:
             pass
 
 # Ensure auth submodule is available as attribute on the package so
 # imports/patches like 'app.auth.ACCESS_TOKEN_EXPIRE_MINUTES' resolve.
 try:
-    from . import auth as auth  # type: ignore
+    from . import auth as auth
 
     # re-export common auth helpers at package level for tests that call them
     try:
@@ -135,7 +135,7 @@ except Exception:
     # (ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, verify_token).
     _legacy: Any | None = None
     try:
-        from . import legacy_helpers as _legacy  # type: ignore
+        from . import legacy_helpers as _legacy
     except Exception:
         _legacy = None
 
@@ -145,7 +145,7 @@ except Exception:
         def __init__(self):
             # Try to bind to the real security/session values if available
             try:
-                from . import security_session as _ss  # type: ignore
+                from . import security_session as _ss
 
                 self.ACCESS_TOKEN_EXPIRE_MINUTES = getattr(
                     _ss, "ACCESS_TOKEN_EXPIRE_MINUTES", None
@@ -182,9 +182,9 @@ try:
     import builtins
 
     if create_access_token is not None and not hasattr(builtins, "create_access_token"):
-        setattr(builtins, "create_access_token", create_access_token)  # type: ignore[attr-defined]
+        setattr(builtins, "create_access_token", create_access_token)
     if verify_token is not None and not hasattr(builtins, "verify_token"):
-        setattr(builtins, "verify_token", verify_token)  # type: ignore[attr-defined]
+        setattr(builtins, "verify_token", verify_token)
 except Exception:
     # ignore failures when running in restricted environments
     pass
@@ -197,7 +197,7 @@ if not isinstance(integrations, types.ModuleType):
 
     integrations = types.ModuleType("integrations")
     for _sub in ("xrp", "bsc", "bscscan"):
-        setattr(integrations, _sub, types.ModuleType(f"integrations.{_sub}"))  # type: ignore[attr-defined]
+        setattr(integrations, _sub, types.ModuleType(f"integrations.{_sub}"))
 
 # Reconcile with any real integrations package on disk: prefer the real
 # `integrations.xrp` module if it exists and register it so patchers find

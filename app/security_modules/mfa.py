@@ -9,30 +9,41 @@ Supports TOTP, WebAuthn, and hardware key enforcement for admins.
 import contextlib
 import logging
 import os
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    # Avoid importing optional heavy dependencies during static analysis
+    pyotp: Any  # pragma: no cover
+    qrcode: Any  # pragma: no cover
+else:
+    pyotp = None
+    qrcode = None
 
 try:
-    import pyotp
+    import importlib
 
+    _pyotp_mod = importlib.import_module("pyotp")
+    pyotp = _pyotp_mod
     PYOTP_AVAILABLE = True
-except ImportError:
+except Exception:
     PYOTP_AVAILABLE = False
 
     # Minimal pyotp fallback
     class _FallbackPyOTP:
         @staticmethod
-        def random_base32():
+        def random_base32() -> str:
             return "FALLBACKSECRET32"
 
         class TOTP:
-            def __init__(self, secret):
+            def __init__(self, secret: str) -> None:
                 self.secret = secret
 
-            def provisioning_uri(self, name, issuer_name):
+            def provisioning_uri(self, name: str, issuer_name: str) -> str:
                 return (
                     f"otpauth://totp/{name}?secret={self.secret}&issuer={issuer_name}"
                 )
 
-            def verify(self, token, valid_window: int = 0):
+            def verify(self, token: str, valid_window: int = 0) -> bool:
                 # Very small, test-friendly fallback implementation
                 return token == "123456"
 
@@ -40,34 +51,38 @@ except ImportError:
 
 
 try:
-    import qrcode
+    import importlib as _importlib_qr
 
+    _qrcode_mod = _importlib_qr.import_module("qrcode")
+    qrcode = _qrcode_mod
     QRCODE_AVAILABLE = True
-except ImportError:
+except Exception:
     QRCODE_AVAILABLE = False
 
     # Minimal QR code fallback
     class _FallbackQRCode:
         class _MockImage:
-            def __init__(self):
+            def __init__(self) -> None:
                 self._content = b"FAKEPNG"
 
-            def save(self, fp, format: str = "PNG"):
+            def save(self, fp: "io.BufferedIOBase", format: str = "PNG") -> None:
                 with contextlib.suppress(Exception):
                     # Write a tiny placeholder PNG-like bytes to the buffer
                     fp.write(self._content)
 
         class QRCode:
-            def __init__(self, *args, **kwargs):
-                self._data = None
+            def __init__(self, *args: object, **kwargs: object) -> None:
+                self._data: str | None = None
 
-            def add_data(self, data):
+            def add_data(self, data: str) -> None:
                 self._data = data
 
-            def make(self, fit=True):
+            def make(self, fit: bool = True) -> None:
                 return None
 
-            def make_image(self, fill_color="black", back_color="white"):
+            def make_image(
+                self, fill_color: str = "black", back_color: str = "white"
+            ) -> "_FallbackQRCode._MockImage":
                 return _FallbackQRCode._MockImage()
 
         class _Constants:

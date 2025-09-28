@@ -20,13 +20,18 @@ import os
 import secrets
 import time
 from dataclasses import dataclass
+from typing import Any
 
 from .settings import settings
 
+# runtime-optional redis client (may be absent in dev/test envs)
+redis: Any | None = None
 try:  # pragma: no cover - optional
-    import redis  # type: ignore
+    import redis as _redis
+
+    redis = _redis
 except Exception:  # pragma: no cover
-    redis = None  # type: ignore
+    redis = None
 
 
 @dataclass
@@ -78,7 +83,10 @@ def issue_refresh(user_id: int, email: str, role: str) -> str:
     if client:
         try:  # store as hash
             key = f"{_REFRESH_PREFIX}:{token}"
-            client.hset(key, mapping={"uid": user_id, "email": email, "role": role, "exp": int(exp)})  # type: ignore[arg-type]
+            client.hset(
+                key,
+                mapping={"uid": user_id, "email": email, "role": role, "exp": int(exp)},
+            )
             client.expire(key, _ttl_seconds())
             return token
         except Exception:
@@ -111,7 +119,7 @@ def validate_refresh(token: str) -> RefreshRecord | None:
             if not data:
                 return None
             # Redis returns bytes keys/values
-            b = {k.decode(): v.decode() for k, v in data.items()}  # type: ignore[attr-defined]
+            b = {k.decode(): v.decode() for k, v in data.items()}
             exp = float(b.get("exp", "0"))
             if exp < time.time():
                 return None

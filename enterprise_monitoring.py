@@ -10,7 +10,7 @@ available. Using explicit imports avoids star-import issues with linters.
 """
 
 try:
-    import app.enterprise_monitoring as _em  # type: ignore
+    import app.enterprise_monitoring as _em
 
     get_monitoring_client = getattr(_em, "get_monitoring_client", None)
     record_metric = getattr(_em, "record_metric", None)

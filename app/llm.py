@@ -5,7 +5,7 @@ import math
 import os
 import statistics as stats
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from dotenv import load_dotenv
 
@@ -16,23 +16,40 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 _LLM_MODEL = os.getenv("OPENAI_MODEL", "gpt - 4o - mini")
 
 _use_v1 = False
-_client_v1 = None
+_client_v1: Any = None
+_openai_mod: Any = None
+_openai_legacy: Any = None
 
-# Try the modern SDK first (v1+)
+if TYPE_CHECKING:
+    # Type-only import to satisfy static analyzers when stubs are present
+    from openai import OpenAI  # type: ignore
+
+# Try the modern SDK first (v1+) using importlib to avoid static import errors
 try:
-    from openai import OpenAI  # only in v1+
+    import importlib
 
-    _client_v1 = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else OpenAI()
-    _use_v1 = True
+    _openai_mod = importlib.import_module("openai")
+    OpenAI_cls = getattr(_openai_mod, "OpenAI", None)
+    if OpenAI_cls is not None:
+        _client_v1 = (
+            OpenAI_cls(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else OpenAI_cls()
+        )
+        _use_v1 = True
+    else:
+        _use_v1 = False
 except Exception:
     _use_v1 = False
 
 if not _use_v1:
     # Fall back to legacy 0.28.x
-    import openai as _openai_legacy
+    import importlib as _importlib_legacy
 
-    if OPENAI_API_KEY:
-        _openai_legacy.api_key = OPENAI_API_KEY
+    try:
+        _openai_legacy = _importlib_legacy.import_module("openai")
+        if OPENAI_API_KEY:
+            setattr(_openai_legacy, "api_key", OPENAI_API_KEY)
+    except Exception:
+        _openai_legacy = None
 
 
 def _safe_llm(system: str, user: str, temperature: float = 0.2) -> str:

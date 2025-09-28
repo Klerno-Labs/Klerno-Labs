@@ -2,18 +2,28 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    # Avoid requiring internal models to be typed at import time during static analysis
+    Transaction: Any
 
 import requests
 
-try:
-    # Prefer app.models when available (package installed under app/)
-    from app.models import Transaction  # type: ignore[no-redef]
-except Exception:
-    from ..models import Transaction  # type: ignore[no-redef]
-
 BSC_API = "https://publicapi.dev/bscscan-api/api"
 BSC_KEY = os.getenv("BSC_API_KEY", "").strip()
+
+
+def _import_transaction():
+    try:
+        # Prefer installed package resolution
+        from app.models import Transaction  # type: ignore[import]
+
+        return Transaction
+    except Exception:
+        from ..models import Transaction as _T  # type: ignore[import]
+
+        return _T
 
 
 def _ts(sec: str | int) -> str:
@@ -66,6 +76,7 @@ def bsc_json_to_transactions(address: str, payload: list[dict[str, Any]]):
                 direction = "out"
             else:
                 direction = ""
+            Transaction = _import_transaction()
             tx = Transaction(
                 tx_id=it.get("hash") or "",
                 timestamp=_ts(str(it.get("timeStamp") or "0")),

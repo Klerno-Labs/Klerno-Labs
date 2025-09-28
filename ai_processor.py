@@ -6,7 +6,7 @@ Provides access to AI processing functionality
 """Compatibility shim for app.ai.processor."""
 
 try:
-    import app.ai.processor as _ap  # type: ignore
+    import app.ai.processor as _ap
 
     AIProcessor = getattr(_ap, "AIProcessor", None)
     process_transaction = getattr(_ap, "process_transaction", None)

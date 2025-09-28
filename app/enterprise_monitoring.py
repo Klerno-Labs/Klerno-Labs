@@ -19,9 +19,15 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import psutil
+if TYPE_CHECKING:
+    import psutil  # pragma: no cover
+else:
+    try:
+        import psutil
+    except Exception:
+        psutil = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 

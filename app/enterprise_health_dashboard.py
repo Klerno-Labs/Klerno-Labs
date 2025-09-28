@@ -13,10 +13,22 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
-import psutil
-import requests
+from app._typing_shims import ISyncConnection
+
+if TYPE_CHECKING:
+    import psutil  # pragma: no cover
+    import requests  # pragma: no cover
+else:
+    try:
+        import psutil
+    except Exception:
+        psutil = None  # type: ignore
+    try:
+        import requests
+    except Exception:
+        requests = None  # type: ignore
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -112,7 +124,7 @@ class EnterpriseHealthMonitor:
         try:
             Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
 
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             # Health check results table
@@ -246,7 +258,9 @@ class EnterpriseHealthMonitor:
             """Check database connectivity"""
             try:
                 start_time = time.time()
-                conn = sqlite3.connect(self.database_path, timeout=5)
+                conn = cast(
+                    ISyncConnection, sqlite3.connect(self.database_path, timeout=5)
+                )
                 cursor = conn.cursor()
                 cursor.execute("SELECT 1")
                 cursor.fetchone()
@@ -410,7 +424,9 @@ class EnterpriseHealthMonitor:
                 for r in health_results
                 if (datetime.now() - r.timestamp).total_seconds() < 180
             ]
-            service_status = {}
+            from typing import Dict, List
+
+            service_status: Dict[str, List[str]] = {}
 
             for result in recent_results:
                 if result.service_name not in service_status:
@@ -486,7 +502,7 @@ class EnterpriseHealthMonitor:
     def _store_health_result(self, result: HealthCheckResult):
         """Store health check result in database"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -621,7 +637,7 @@ class EnterpriseHealthMonitor:
     def _store_system_metrics(self, metrics: SystemMetrics):
         """Store system metrics in database"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -687,7 +703,7 @@ class EnterpriseHealthMonitor:
     def _store_alert(self, alert: Alert):
         """Store alert in database"""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -730,7 +746,7 @@ class EnterpriseHealthMonitor:
             cutoff_time = datetime.now() - timedelta(hours=self.metrics_retention_hours)
             alert_cutoff = datetime.now() - timedelta(days=self.alert_retention_days)
 
-            conn = sqlite3.connect(self.database_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             # Clean old health results

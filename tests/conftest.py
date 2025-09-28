@@ -5,12 +5,14 @@ import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
+
+from app._typing_shims import ISyncConnection
 
 # Ensure the workspace root (two levels up from this tests folder) is on sys.path
 # so tests that import `app` (which lives at the workspace root) can find it.
@@ -52,7 +54,7 @@ def test_db():
         db_path = tmp_file.name
 
     # Initialize test database
-    conn = sqlite3.connect(db_path)
+    conn = cast(ISyncConnection, sqlite3.connect(db_path))
     conn.execute(
         """
         CREATE TABLE users (
@@ -240,7 +242,7 @@ class DatabaseTestUtils:
     @staticmethod
     def create_test_user(db_path: str, user_data: dict[str, Any]) -> int:
         """Create a test user in the database."""
-        conn = sqlite3.connect(db_path, timeout=5.0)
+        conn = cast(ISyncConnection, sqlite3.connect(db_path, timeout=5.0))
         cursor = conn.cursor()
 
         # Try to insert; if the email already exists, return existing id.
@@ -277,7 +279,7 @@ class DatabaseTestUtils:
     @staticmethod
     def create_test_transaction(db_path: str, transaction_data: dict[str, Any]) -> int:
         """Create a test transaction in the database."""
-        conn = sqlite3.connect(db_path)
+        conn = cast(ISyncConnection, sqlite3.connect(db_path))
         cursor = conn.cursor()
         cursor.execute(
             "INSERT INTO transactions (user_id, amount, currency, status) VALUES (?, ?, ?, ?)",

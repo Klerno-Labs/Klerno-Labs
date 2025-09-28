@@ -6,13 +6,16 @@ import sqlite3
 # prepare temp DB
 import tempfile
 from pathlib import Path
+from typing import cast
 
 from httpx import ASGITransport, AsyncClient
+
+from app._typing_shims import ISyncConnection
 
 with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
     db_path = tmp.name
 
-conn = sqlite3.connect(db_path)
+conn = cast(ISyncConnection, sqlite3.connect(db_path))
 cur = conn.cursor()
 cur.execute(
     """

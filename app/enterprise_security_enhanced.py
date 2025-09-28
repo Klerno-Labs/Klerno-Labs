@@ -18,7 +18,7 @@ import logging
 import os
 import time
 from datetime import UTC, datetime
-from typing import Any, cast
+from typing import Any, Awaitable, Callable, cast
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -272,7 +272,9 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     # Whitelisted paths that bypass security checks
     WHITELISTED_PATHS = ["/health", "/healthz", "/metrics", "/status", "/ping"]
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         start_time = time.time()
         client_ip = self._get_client_ip(request)
 
@@ -407,7 +409,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 
     def _log_request(
         self, request: Request, response: Response, client_ip: str, duration: float
-    ):
+    ) -> None:
         """Log request for security monitoring."""
         log_data = {
             "timestamp": datetime.now(UTC).isoformat(),

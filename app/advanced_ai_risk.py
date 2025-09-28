@@ -12,17 +12,28 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    import numpy as np  # pragma: no cover
+    # Treat heavy ML libs as Any in static analysis environments without stubs
+    np: Any  # type: ignore
+    IsolationForest: Any  # type: ignore
+    RandomForestClassifier: Any  # type: ignore
+    StandardScaler: Any  # type: ignore
 
 
 def _ensure_numpy() -> None:
     if "np" in globals():
         return
     try:
-        import numpy as np  # type: ignore
+        import importlib
 
+        np = importlib.import_module("numpy")
         globals()["np"] = np
+    except ImportError as e:
+        # At runtime we require numpy for numerical operations used by the
+        # advanced AI risk engine. Convert import failures into a clear
+        # RuntimeError so callers can handle or surface a helpful message.
+        raise RuntimeError("numpy is required by advanced_ai_risk") from e
     except Exception:
+        # Let unexpected errors bubble up unchanged
         raise
 
 
@@ -79,8 +90,13 @@ class AdvancedAIRiskEngine:
         """Initialize AI models with synthetic training data."""
         # Import sklearn here to avoid heavy import at module import-time
         try:
-            from sklearn.ensemble import IsolationForest, RandomForestClassifier
-            from sklearn.preprocessing import StandardScaler
+            import importlib
+
+            sk_mod = importlib.import_module("sklearn.ensemble")
+            prep_mod = importlib.import_module("sklearn.preprocessing")
+            IsolationForest = getattr(sk_mod, "IsolationForest")
+            RandomForestClassifier = getattr(sk_mod, "RandomForestClassifier")
+            StandardScaler = getattr(prep_mod, "StandardScaler")
         except Exception as e:
             raise RuntimeError("sklearn is required to initialize AI models") from e
         # Generate synthetic training data for demonstration
@@ -249,7 +265,7 @@ class AdvancedAIRiskEngine:
     def _calculate_overall_score(
         self,
         anomaly_score: float,
-        risk_proba: np.ndarray,
+        risk_proba: Any,
         features: list[float],
         transaction: dict[str, Any],
     ) -> float:
