@@ -96,8 +96,9 @@ def test_circuit_breaker_stats():
     cb.call(lambda: "success1")
     cb.call(lambda: "success2")
 
-    with contextlib.suppress(Exception):
-        cb.call(lambda: exec('raise Exception("failure")'))
+    # Suppress the specific expected RuntimeError from the failing call
+    with contextlib.suppress(RuntimeError):
+        cb.call(lambda: exec('raise RuntimeError("failure")'))
 
     stats = cb.get_stats()
     assert stats["name"] == "test_service"
