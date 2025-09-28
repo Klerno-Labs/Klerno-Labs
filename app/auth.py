@@ -1,6 +1,7 @@
 import contextlib
 import json
 import logging
+from typing import Any, Callable
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -31,16 +32,17 @@ logger = logging.getLogger(__name__)
 class _LazySettings:
     """Lazy proxy for settings that calls get_settings() on first access."""
 
-    def __init__(self, factory):
+    def __init__(self, factory: Callable[[], Any]):
         self._factory = factory
-        self._obj = None
+        self._obj: Any | None = None
 
-    def _ensure(self):
+    def _ensure(self) -> None:
         if self._obj is None:
             self._obj = self._factory()
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         self._ensure()
+        assert self._obj is not None
         return getattr(self._obj, name)
 
 
@@ -183,7 +185,7 @@ def _verify_password(password: str, password_hash: str) -> bool:
 
 # Template Routes
 @router.get("/signup", response_class=HTMLResponse)
-def signup_page(request: Request):
+def signup_page(request: Request) -> Response:
     """Serve the enhanced signup page."""
     # Ensure templates have access to url_path_for
     templates.env.globals["url_path_for"] = request.app.url_path_for
@@ -203,7 +205,7 @@ def signup_page(request: Request):
 
 
 @router.get("/login", response_class=HTMLResponse)
-def login_page(request: Request, error: str | None = None):
+def login_page(request: Request, error: str | None = None) -> Response:
     """Serve the enhanced login page."""
     # Ensure templates have access to url_path_for
     templates.env.globals["url_path_for"] = request.app.url_path_for
@@ -223,7 +225,7 @@ def login_page(request: Request, error: str | None = None):
 
 # API Routes
 @router.post("/signup/api", response_model=TokenAuthResponse, status_code=201)
-def signup_api(payload: SignupReq, res: Response):
+def signup_api(payload: SignupReq, res: Response) -> dict[str, Any]:
     """API endpoint for programmatic signup."""
     # policy imported at module scope; avoid re-importing here
 
@@ -294,13 +296,17 @@ def signup_api(payload: SignupReq, res: Response):
 
 
 @router.get("/mfa/setup")
-def mfa_setup(user=Depends(require_user)):
+def mfa_setup(user: dict = Depends(require_user)) -> MFASetupResponse:
     """Get MFA setup information for current user."""
     user_data = store.get_user_by_id(user["id"])
     if not user_data or not user_data.get("totp_secret"):
         raise HTTPException(status_code=400, detail="No MFA secret found")
 
-    secret = mfa.decrypt_seed(user_data["totp_secret"])
+    # mypy: totp_secret may be Optional[str] in UserDict; narrow to str
+    totp_secret_val = user_data.get("totp_secret")
+    if not isinstance(totp_secret_val, str):
+        raise HTTPException(status_code=500, detail="Invalid MFA secret")
+    secret = mfa.decrypt_seed(totp_secret_val)
     # security_modules.mfa exposes generate_qr_code_uri(secret, email)
     qr_uri = mfa.generate_qr_code_uri(secret, user["email"])
 
@@ -312,13 +318,18 @@ def mfa_setup(user=Depends(require_user)):
 
 
 @router.post("/mfa/enable")
-def enable_mfa(totp_code: str = Form(...), user=Depends(require_user)):
+def enable_mfa(
+    totp_code: str = Form(...), user: dict = Depends(require_user)
+) -> dict[str, Any]:
     """Enable MFA after user provides valid TOTP code."""
     user_data = store.get_user_by_id(user["id"])
     if not user_data or not user_data.get("totp_secret"):
         raise HTTPException(status_code=400, detail="No MFA secret found")
 
-    secret = mfa.decrypt_seed(user_data["totp_secret"])
+    totp_secret_val = user_data.get("totp_secret")
+    if not isinstance(totp_secret_val, str):
+        raise HTTPException(status_code=500, detail="Invalid MFA secret")
+    secret = mfa.decrypt_seed(totp_secret_val)
     if not mfa.verify_totp(totp_code, secret):
         raise HTTPException(status_code=400, detail="Invalid TOTP code")
 
@@ -329,7 +340,7 @@ def enable_mfa(totp_code: str = Form(...), user=Depends(require_user)):
 
 
 @router.post("/password-reset/request")
-def request_password_reset(payload: PasswordResetRequest):
+def request_password_reset(payload: PasswordResetRequest) -> dict[str, Any]:
     """Initiate password reset process."""
     email = payload.email.lower().strip()
     user = store.get_user_by_email(email)
@@ -356,7 +367,7 @@ def request_password_reset(payload: PasswordResetRequest):
     if tokens is None:
         tokens = {}
         # Dynamic attribute for ephemeral password reset tokens (test helper)
-        store._reset_tokens = tokens  # type: ignore[attr-defined]
+        setattr(store, "_reset_tokens", tokens)
 
     tokens[reset_token] = {
         "user_id": user["id"],
@@ -373,7 +384,7 @@ def request_password_reset(payload: PasswordResetRequest):
 
 
 @router.post("/password-reset/confirm")
-def confirm_password_reset(payload: PasswordResetConfirm):
+def confirm_password_reset(payload: PasswordResetConfirm) -> dict[str, Any]:
     """Complete password reset with new password."""
     # Validate reset token
     tokens = getattr(store, "_reset_tokens", {})
@@ -412,7 +423,10 @@ def confirm_password_reset(payload: PasswordResetConfirm):
                 status_code=500, detail="MFA enabled but no secret found"
             )
 
-        secret = mfa.decrypt_seed(user["totp_secret"])
+        totp_secret_val = user.get("totp_secret")
+        if not isinstance(totp_secret_val, str):
+            raise HTTPException(status_code=500, detail="Invalid MFA secret")
+        secret = mfa.decrypt_seed(totp_secret_val)
         if not mfa.verify_totp(payload.totp_code, secret):
             raise HTTPException(status_code=401, detail="Invalid TOTP code")
 
@@ -444,7 +458,7 @@ def signup_form(
     email: str = Form(...),
     password: str = Form(...),
     wallet_addresses_json: str | None = Form(None),
-):
+) -> Response:
     """Handle form - based signup with wallet addresses."""
     try:
         email = email.lower().strip()
@@ -534,7 +548,7 @@ def signup_form(
 
 
 @router.post("/login/api", response_model=AuthResponse)
-def login_api(payload: LoginReq, res: Response):
+def login_api(payload: LoginReq, res: Response) -> dict[str, Any]:
     """API endpoint for programmatic login."""
     # policy is imported at module level; no local import required
 
@@ -555,7 +569,7 @@ def login_api(payload: LoginReq, res: Response):
         # Never raise from instrumentation
         pass
 
-    pw_hash = user.get("password_hash", "") if user else ""
+    pw_hash = str(user.get("password_hash") or "") if user else ""
     if not user or not _verify_password(payload.password, pw_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -569,7 +583,10 @@ def login_api(payload: LoginReq, res: Response):
                 status_code=500, detail="MFA enabled but no secret found"
             )
 
-        secret = mfa.decrypt_seed(user["totp_secret"])
+        totp_secret_val = user.get("totp_secret")
+        if not isinstance(totp_secret_val, str):
+            raise HTTPException(status_code=500, detail="Invalid MFA secret")
+        secret = mfa.decrypt_seed(totp_secret_val)
         if not mfa.verify_totp(payload.totp_code, secret):
             raise HTTPException(status_code=401, detail="Invalid TOTP code")
 
@@ -604,7 +621,7 @@ class RefreshResponse(BaseModel):
 
 
 @router.post("/token/refresh", response_model=RefreshResponse)
-def refresh_token(payload: RefreshRequest):  # noqa: D401
+def refresh_token(payload: RefreshRequest) -> RefreshResponse:  # noqa: D401
     rec = validate_refresh(payload.refresh_token)
     if not rec:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
@@ -621,7 +638,7 @@ class RevokeRequest(BaseModel):
 
 
 @router.post("/token/revoke", status_code=204)
-def revoke_token(payload: RevokeRequest):  # noqa: D401
+def revoke_token(payload: RevokeRequest) -> Response:  # noqa: D401
     revoke_refresh(payload.refresh_token)
     return Response(status_code=204)
 
@@ -633,7 +650,7 @@ def login_form(
     username: str | None = Form(None),
     password: str = Form(...),
     totp_code: str | None = Form(None),
-):
+) -> Response:
     """Handle form - based login."""
     # local bcrypt import removed; verification uses _verify_password which
     # will import bcrypt lazily when needed
@@ -688,7 +705,18 @@ def login_form(
                     },
                 )
 
-            secret = mfa.decrypt_seed(user["totp_secret"])
+            totp_secret_val = user.get("totp_secret")
+            if not isinstance(totp_secret_val, str):
+                return templates.TemplateResponse(
+                    "login_enhanced.html",
+                    {
+                        "request": request,
+                        "error": "MFA configuration error",
+                        "app_env": S.app_env,
+                        "show_demo_credentials": S.app_env == "dev",
+                    },
+                )
+            secret = mfa.decrypt_seed(totp_secret_val)
             if not mfa.verify_totp(totp_code, secret):
                 return templates.TemplateResponse(
                     "login_enhanced.html",
@@ -756,14 +784,14 @@ def login_form(
 
 
 @router.post("/logout", status_code=204)
-def logout(res: Response, user=Depends(require_user)):
+def logout(res: Response, user: dict = Depends(require_user)) -> Response:
     res.delete_cookie("session", path="/")
     # 204 No Content
     return Response(status_code=204)
 
 
 @router.get("/me", response_model=UserOut)
-def me(user=Depends(require_user)):
+def me(user: dict = Depends(require_user)) -> dict[str, Any]:
     return {
         "email": user["email"],
         "role": user["role"],
@@ -773,7 +801,7 @@ def me(user=Depends(require_user)):
 
 # ---- DEV helpers while Stripe isn't live ----
 @router.post("/mock/activate")
-def mock_activate(user=Depends(require_user)):
+def mock_activate(user: dict = Depends(require_user)) -> dict[str, Any]:
     """Simulate a paid subscription for the current user."""
     if user["role"] == "admin":
         store.set_subscription_active(user["email"], True)

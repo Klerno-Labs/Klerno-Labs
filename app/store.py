@@ -11,7 +11,7 @@ import time
 from collections.abc import Iterable, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, NotRequired, TypedDict
 
 from app.constants import CACHE_TTL
 
@@ -37,12 +37,12 @@ def _safe_idx(seq: Sequence[Any] | Any, idx: int) -> Any:
         return None
 
 
-def _get_cache_key(*args) -> str:
+def _get_cache_key(*args: Any) -> str:
     """Generate cache key from arguments."""
     return "|".join(str(arg) for arg in args)
 
 
-def _get_cached(key: str, ttl: int = CACHE_TTL):
+def _get_cached(key: str, ttl: int = CACHE_TTL) -> Any | None:
     """Get cached value if not expired."""
     if key in _cache:
         if time.time() < _cache_expiry.get(key, 0):
@@ -54,13 +54,13 @@ def _get_cached(key: str, ttl: int = CACHE_TTL):
     return None
 
 
-def _set_cache(key: str, value: Any, ttl: int = CACHE_TTL):
+def _set_cache(key: str, value: Any, ttl: int = CACHE_TTL) -> None:
     """Set cached value with expiry."""
     _cache[key] = value
     _cache_expiry[key] = time.time() + ttl
 
 
-def _clear_cache_pattern(pattern: str):
+def _clear_cache_pattern(pattern: str) -> None:
     """Clear cache entries matching pattern."""
     keys_to_remove = [k for k in _cache if pattern in k]
     for key in keys_to_remove:
@@ -91,25 +91,26 @@ except Exception:
 # Support either psycopg (psycopg3) or psycopg2 if available.
 PSYCOPG_AVAILABLE = False
 PSYCOPG_LIBRARY = None
-psycopg = None
-RealDictCursor = None
+psycopg: Any | None = None
+RealDictCursor: Any | None = None
 try:
-    import psycopg as psycopg3  # type: ignore
+    import psycopg as psycopg3
 
     psycopg = psycopg3
     PSYCOPG_AVAILABLE = True
     PSYCOPG_LIBRARY = "psycopg"
 except Exception:
     try:
-        import psycopg2 as psycopg2_mod  # type: ignore
-        from psycopg2.extras import RealDictCursor as RealDictCursor  # type: ignore
+        import psycopg2 as psycopg2_mod
+        from psycopg2.extras import RealDictCursor as _RealDictCursor
 
         psycopg = psycopg2_mod
+        RealDictCursor = _RealDictCursor
         PSYCOPG_AVAILABLE = True
         PSYCOPG_LIBRARY = "psycopg2"
     except Exception:  # pragma: no cover - optional dependency
-        psycopg = None  # type: ignore[assignment]
-        RealDictCursor = None  # type: ignore[assignment]
+        psycopg = None
+        RealDictCursor = None
         PSYCOPG_AVAILABLE = False
 
 # If DATABASE_URL points to a sqlite URL (common in tests/tools), prefer the
@@ -162,7 +163,7 @@ def _sqlite_conn() -> sqlite3.Connection:
     return con
 
 
-def _postgres_conn(retries: int | None = None, backoff: float | None = None):
+def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> Any:
     """
     Create a Postgres connection with a small retry/backoff policy.
 
@@ -191,7 +192,7 @@ def _postgres_conn(retries: int | None = None, backoff: float | None = None):
             # psycopg2
             assert psycopg is not None
             assert RealDictCursor is not None
-            return psycopg.connect(DATABASE_URL, cursor_factory=RealDictCursor)  # type: ignore[arg-type]
+            return psycopg.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         except Exception as e:
             last_exc = e
             # exponential backoff
@@ -206,7 +207,7 @@ def _postgres_conn(retries: int | None = None, backoff: float | None = None):
     raise RuntimeError("failed to create postgres connection")
 
 
-def _conn():
+def _conn() -> Any:
     """
     Return a DB connection:
     - Postgres if DATABASE_URL & psycopg2 are available
@@ -522,7 +523,31 @@ def init_db() -> None:
     # --- Row helpers --------------------------------------------------------------
 
 
-def _rows_to_dicts(rows: Iterable) -> list[dict[str, Any]]:
+class UserDict(TypedDict):
+    # id may be int/str depending on DB driver
+    id: Any
+    # These fields are expected to always be present after normalization
+    email: str
+    role: str
+    subscription_active: bool
+    # Normalized to a list during _row_to_user
+    wallet_addresses: list[dict[str, Any]]
+    mfa_enabled: bool
+    recovery_codes: list[str]
+    has_hardware_key: bool
+
+    # Optional fields
+    password_hash: NotRequired[str | None]
+    created_at: NotRequired[Any | None]
+    oauth_provider: NotRequired[str | None]
+    oauth_id: NotRequired[str | None]
+    display_name: NotRequired[str | None]
+    avatar_url: NotRequired[str | None]
+    totp_secret: NotRequired[str | None]
+    mfa_type: NotRequired[str | None]
+
+
+def _rows_to_dicts(rows: Iterable[Any]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for r in rows:
         # r can be psycopg2 RealDictRow (dict) or sqlite3.Row (mapping - like)
@@ -541,7 +566,7 @@ def _rows_to_dicts(rows: Iterable) -> list[dict[str, Any]]:
     return out
 
 
-def _row_to_user(row) -> dict[str, Any] | None:
+def _row_to_user(row: Any | None) -> UserDict | None:
     if not row:
         return None
     # If the legacy schema included a 'subscription_status' column (string),
@@ -598,24 +623,37 @@ def _row_to_user(row) -> dict[str, Any] | None:
     except (json.JSONDecodeError, TypeError):
         recovery_codes = []
 
-    return {
+    # Normalize and coerce required fields to satisfy static typing and
+    # provide consistent runtime shapes for callers.
+    normalized_email = d.get("email") or ""
+    normalized_role = str(d.get("role") or "viewer")
+    normalized_subscription_active = bool(d.get("subscription_active"))
+    normalized_wallet_addresses: list[dict[str, Any]] = (
+        wallet_addresses if isinstance(wallet_addresses, list) else []
+    )
+    normalized_recovery_codes: list[str] = [str(c) for c in recovery_codes]
+    normalized_mfa_enabled = bool(d.get("mfa_enabled", False))
+    normalized_has_hardware_key = bool(d.get("has_hardware_key", False))
+
+    user: UserDict = {
         "id": d.get("id"),
-        "email": d.get("email"),
+        "email": normalized_email,
         "password_hash": d.get("password_hash"),
-        "role": d.get("role") or "viewer",
-        "subscription_active": d.get("subscription_active"),
+        "role": normalized_role,
+        "subscription_active": normalized_subscription_active,
         "created_at": d.get("created_at"),
         "oauth_provider": d.get("oauth_provider"),
         "oauth_id": d.get("oauth_id"),
         "display_name": d.get("display_name"),
         "avatar_url": d.get("avatar_url"),
-        "wallet_addresses": wallet_addresses,
+        "wallet_addresses": normalized_wallet_addresses,
         "totp_secret": d.get("totp_secret"),
-        "mfa_enabled": bool(d.get("mfa_enabled", False)),
+        "mfa_enabled": normalized_mfa_enabled,
         "mfa_type": d.get("mfa_type"),
-        "recovery_codes": recovery_codes,
-        "has_hardware_key": bool(d.get("has_hardware_key", False)),
+        "recovery_codes": normalized_recovery_codes,
+        "has_hardware_key": normalized_has_hardware_key,
     }
+    return user
 
 
 # --- Transactions API ---------------------------------------------------------
@@ -799,7 +837,7 @@ def users_count() -> int:
     return int(row[0]) if row else 0
 
 
-def get_user_by_email(email: str) -> dict[str, Any] | None:
+def get_user_by_email(email: str) -> UserDict | None:
     # Debug: print runtime DB selection info when troubleshooting
     # Emit debug-level diagnostic information; controlled by central logging level
     with contextlib.suppress(Exception):
@@ -882,7 +920,7 @@ def get_user_by_email(email: str) -> dict[str, Any] | None:
     return result
 
 
-def get_user_by_id(uid: int) -> dict[str, Any] | None:
+def get_user_by_id(uid: int) -> UserDict | None:
     cache_key = f"user_by_id:{uid}"
     cached = _get_cached(cache_key, ttl=300)  # Cache for 5 minutes
     if cached is not None:
@@ -963,7 +1001,7 @@ def create_user(
     mfa_type: str | None = None,
     recovery_codes: list | None = None,
     has_hardware_key: bool = False,
-) -> dict[str, Any] | None:
+) -> UserDict | None:
     """
     Create a new user with support for both traditional email / password and OAuth authentication.
     """
@@ -1300,7 +1338,7 @@ def save_settings(user_id: int, data: dict[str, Any]) -> None:
 # --- OAuth and Wallet Management Functions -----------------------------------
 
 
-def get_user_by_oauth(oauth_provider: str, oauth_id: str) -> dict[str, Any] | None:
+def get_user_by_oauth(oauth_provider: str, oauth_id: str) -> UserDict | None:
     """Find a user by their OAuth provider and ID."""
     cache_key = f"user_by_oauth:{oauth_provider}:{oauth_id}"
     cached = _get_cached(cache_key, ttl=300)  # Cache for 5 minutes
@@ -1353,10 +1391,10 @@ def add_wallet_address(
     if not user:
         return
 
-    wallet_addresses = user.get("wallet_addresses", [])
+    wallet_addresses = user.get("wallet_addresses", []) or []
 
     # Check if address already exists
-    for wallet in wallet_addresses:
+    for wallet in wallet_addresses or []:
         if wallet.get("address") == address and wallet.get("chain") == chain:
             return  # Address already exists
 
@@ -1367,6 +1405,7 @@ def add_wallet_address(
         "label": label or f"{chain} Wallet",
         "added_at": datetime.now().isoformat(),
     }
+    wallet_addresses = list(wallet_addresses or [])
     wallet_addresses.append(new_wallet)
 
     update_user_wallet_addresses(user_id, wallet_addresses)
@@ -1455,7 +1494,7 @@ def remove_wallet_address(user_id: int, address: str, chain: str) -> None:
     wallet_addresses = user.get("wallet_addresses", [])
     wallet_addresses = [
         w
-        for w in wallet_addresses
+        for w in (wallet_addresses or [])
         if not (w.get("address") == address and w.get("chain") == chain)
     ]
 
