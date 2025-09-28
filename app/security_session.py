@@ -64,8 +64,11 @@ def hash_pw(password: str) -> str:
         pw_bytes = password.encode("utf-8")
     else:
         pw_bytes = bytes(password)
+    # Truncate to 72 bytes, then decode back to a str for passlib
     pw_bytes = pw_bytes[:72]
-    return _pwd.hash(pw_bytes)
+    pw_str = pw_bytes.decode("utf-8", errors="ignore")
+    # passlib.CryptContext.hash returns a str
+    return _pwd.hash(pw_str)
 
 
 def verify_pw(password: str, hashed: str) -> bool:
@@ -76,7 +79,8 @@ def verify_pw(password: str, hashed: str) -> bool:
     else:
         pw_bytes = bytes(password)
     pw_bytes = pw_bytes[:72]
-    return _pwd.verify(pw_bytes, hashed)
+    pw_str = pw_bytes.decode("utf-8", errors="ignore")
+    return _pwd.verify(pw_str, hashed)
 
 
 def issue_jwt(uid: int, email: str, role: str, minutes: int | None = None) -> str:

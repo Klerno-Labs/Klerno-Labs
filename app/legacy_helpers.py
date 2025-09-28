@@ -79,7 +79,14 @@ def create_access_token(data: dict | Any, *a, **kw) -> str:
             "exp": int(exp.timestamp()),
         }
         try:
-            return jwt.encode(token_payload, _SECRET, algorithm=_ALGO)
+            token = jwt.encode(token_payload, _SECRET, algorithm=_ALGO)
+            # PyJWT may return bytes in some versions; ensure str
+            if isinstance(token, bytes):
+                try:
+                    return token.decode("utf-8")
+                except Exception:
+                    return token.decode("latin-1")
+            return token
         except Exception:
             # As a last resort keep the deterministic legacy token
             pass

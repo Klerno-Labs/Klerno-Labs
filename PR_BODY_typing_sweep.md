@@ -73,5 +73,13 @@ Post-merge test-fix note
 Mypy output (summary)
 ```
 Success: no issues found in 138 source files
+Found 26 errors in 17 files (checked 138 source files) after small targeted fixes (see notes below).
 Notes (informational): several files contain untyped function bodies; consider using --check-untyped-defs for stricter checking.
 ```
+
+Recent small fixes applied after the earlier run:
+- Fixed a return-type mismatch in `app/security_session.py` so the password hash/verify helpers use str inputs/outputs for passlib (avoids bytes/str inconsistencies across environments).
+- Normalized the return value of `jwt.encode` in `app/legacy_helpers.py` to always return a `str` (some PyJWT versions return bytes).
+- Tightened `tests/test_resilience.py` to avoid broad-exception suppression (reduces ruff warnings).
+
+Remaining mypy errors are mostly missing stubs for optional, CI-only, or heavy runtime dependencies (e.g., `sqlalchemy`, `psycopg2`, `uvicorn`, `numpy`, `psycopg`) and a few attribute-defined warnings where modules are dynamically populated at import-time in the app's entrypoints. I recommend installing a targeted set of typing stubs in CI (or using `mypy --install-types` in dev) to reduce noise, or adding explicit `# type: ignore[import-not-found]` where appropriate for optional integrations.
