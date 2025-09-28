@@ -47,3 +47,9 @@ PR checklist
 - [ ] Verify CI mypy job uses configured excludes
 - [ ] Sanity-run smoke tests on a fresh env
 - [ ] Optional: ask reviewer whether tools/tests edits should be kept or reverted
+
+Mypy output (summary)
+```
+Success: no issues found in 138 source files
+Notes (informational): several files contain untyped function bodies; consider using --check-untyped-defs for stricter checking.
+```
