@@ -393,15 +393,18 @@ class ReportSummary(BaseModel):
             self.count_in = int(self.legacy_total_transactions)
         if self.legacy_total_volume is not None:
             self.total_out = Decimal(self.legacy_total_volume)
-        if self.legacy_high_risk_count is not None:
-            # Only populate the categories high_risk_count slot when the caller
-            # did not provide their own categories dict AND the legacy value is
-            # a positive count. Tests expect an explicitly supplied categories
-            # dict (even if empty) to remain unchanged, and a zero legacy
-            # high_risk_count should not inject a key.
-            if not self.categories and int(self.legacy_high_risk_count) > 0:
-                self.categories.setdefault("high_risk_count", 0)
-                self.categories["high_risk_count"] = int(self.legacy_high_risk_count)
+        # Only populate the categories high_risk_count slot when the caller
+        # did not provide their own categories dict AND the legacy value is
+        # a positive count. Tests expect an explicitly supplied categories
+        # dict (even if empty) to remain unchanged, and a zero legacy
+        # high_risk_count should not inject a key.
+        if (
+            self.legacy_high_risk_count is not None
+            and not self.categories
+            and int(self.legacy_high_risk_count) > 0
+        ):
+            self.categories.setdefault("high_risk_count", 0)
+            self.categories["high_risk_count"] = int(self.legacy_high_risk_count)
 
     # Backwards-compatible attribute accessors expected by older tests/code.
     @property

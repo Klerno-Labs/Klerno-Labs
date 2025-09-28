@@ -12,6 +12,7 @@ import asyncio
 import gc
 import hashlib  # noqa: F401  # may be used in downstream features
 import inspect
+import json
 import logging
 import os
 import pickle
@@ -53,7 +54,6 @@ try:
 except Exception:
     uvloop = None
     UVLOOP_AVAILABLE = False
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -1327,10 +1327,7 @@ class PerformanceOptimizer:
                     try:
                         # connection_timeout may be Optional[int]
                         ct = self.db_pool.connection_timeout
-                        if ct is not None:
-                            current_timeout = float(ct)
-                        else:
-                            current_timeout = None
+                        current_timeout = float(ct) if ct is not None else None
                     except Exception:
                         current_timeout = None
 

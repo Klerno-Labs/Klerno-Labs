@@ -11,6 +11,14 @@ ruff==0.13.1
 flake8==6.0.0
 pytest>=8.2,<9
 
+# Typing stubs to improve mypy coverage in developer envs
+types-requests
+types-PyYAML
+types-psutil
+types-redis
+types-PyJWT
+types-passlib
+
 # Test client compatibility pins
 httpx==0.24.1
 httpcore==0.17.0

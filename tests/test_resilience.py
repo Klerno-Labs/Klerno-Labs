@@ -48,7 +48,7 @@ def test_circuit_breaker_open_blocks_calls():
         raise RuntimeError("Service failure")
 
     # Trigger circuit to open
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         cb.call(failing_function)
     assert cb.state == CircuitState.OPEN
 
