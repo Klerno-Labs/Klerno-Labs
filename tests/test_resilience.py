@@ -24,16 +24,16 @@ def test_circuit_breaker_closed_to_open():
     assert cb.state == CircuitState.CLOSED
 
     def failing_function():
-        raise Exception("Service failure")
+        raise RuntimeError("Service failure")
 
     # First failure - should remain closed
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         cb.call(failing_function)
     assert cb.state == CircuitState.CLOSED
     assert cb.failure_count == 1
 
     # Second failure - should open circuit
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         cb.call(failing_function)
     assert cb.state == CircuitState.OPEN
     assert cb.failure_count == 2
@@ -45,7 +45,7 @@ def test_circuit_breaker_open_blocks_calls():
     cb = CircuitBreaker("test_service", config)
 
     def failing_function():
-        raise Exception("Service failure")
+        raise RuntimeError("Service failure")
 
     # Trigger circuit to open
     with pytest.raises(Exception):
@@ -67,8 +67,8 @@ def test_circuit_breaker_half_open_recovery():
     cb = CircuitBreaker("test_service", config)
 
     # Force circuit to open
-    with pytest.raises(Exception):
-        cb.call(lambda: exec('raise Exception("test")'))
+    with pytest.raises(RuntimeError):
+        cb.call(lambda: exec('raise RuntimeError("test")'))
     assert cb.state == CircuitState.OPEN
 
     # Wait for timeout

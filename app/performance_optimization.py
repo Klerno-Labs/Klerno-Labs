@@ -18,24 +18,14 @@ import pickle
 import threading
 import time
 from collections import OrderedDict, defaultdict
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from functools import wraps
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncContextManager,
-    AsyncIterator,
-    Generic,
-    Optional,
-    Protocol,
-    TypeVar,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, cast
 
 import aiohttp
 import redis
@@ -114,7 +104,7 @@ class IRedisLike(Protocol):
 
 
 class _Pool(Protocol):
-    def acquire(self) -> AsyncContextManager[Any]: ...
+    def acquire(self) -> AbstractAsyncContextManager[Any]: ...
 
     async def close(self) -> None: ...
 
@@ -165,8 +155,8 @@ class AdvancedCache(Generic[T]):
         # Use Protocols for external clients to improve typing while keeping
         # runtime optional imports. These are conservative shapes of the
         # methods we call on the clients.
-        self.redis_client: Optional[IRedisLike] = None
-        self.memcache_client: Optional[IMemcacheClient] = None
+        self.redis_client: IRedisLike | None = None
+        self.memcache_client: IMemcacheClient | None = None
 
         # stats values may be int or float
         self.stats: dict[str, int | float] = {
@@ -492,7 +482,7 @@ class DatabasePool:
         self.max_inactive_connection_lifetime = max_inactive_connection_lifetime
         # Pool is created at runtime; declare a lightweight protocol type so
         # static analysis can understand the awaited context manager / connection
-        self.pool: Optional["_Pool"] = None
+        self.pool: _Pool | None = None
         self.stats = {
             "total_connections": 0,
             "active_connections": 0,
@@ -922,8 +912,8 @@ class PerformanceOptimizer:
         # Optional async redis cache and memcached clients (populated later)
         # Use conservative protocol types so static analysis can reason about
         # methods we call while keeping runtime imports optional.
-        self.redis_cache: Optional["IRedisLike"] = None
-        self.memcached_client: Optional["IMemcacheClient"] = None
+        self.redis_cache: IRedisLike | None = None
+        self.memcached_client: IMemcacheClient | None = None
         self.metrics_history: list[PerformanceMetrics] = []
         self.thread_pool = ThreadPoolExecutor(max_workers=20)
         self.optimization_rules: list[dict[str, Any]] = []

@@ -15,7 +15,7 @@ def _shim():
 
 auth_router.add_api_route("/__shim_ping", _shim, methods=["GET"])
 # Assign router via setattr so static analyzers don't flag missing attributes on the module object
-setattr(auth_mod, "router", auth_router)
+auth_mod.router = auth_router
 
 # Ensure the shim is available under both 'app.auth' and 'app' package attr
 sys.modules["app.auth"] = auth_mod

@@ -16,7 +16,7 @@ except Exception:
 
     mod = importlib.import_module("..models", package=__package__)
 
-Transaction = getattr(mod, "Transaction")
+Transaction = mod.Transaction
 
 BASE_URL = "https://api.bscscan.com/api"
 DEFAULT_LIMIT = 25

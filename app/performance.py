@@ -11,7 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -275,7 +275,7 @@ class OptimizedLiveHub:
             "messages_queued": 0,
             "reconnections": 0,
         }
-        self._processor_task: Optional[asyncio.Task[Any]] = None
+        self._processor_task: asyncio.Task[Any] | None = None
 
     async def _start_processor(self) -> None:
         """Start the background message processor if not already running."""

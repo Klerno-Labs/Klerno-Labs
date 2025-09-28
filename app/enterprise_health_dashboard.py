@@ -424,9 +424,8 @@ class EnterpriseHealthMonitor:
                 for r in health_results
                 if (datetime.now() - r.timestamp).total_seconds() < 180
             ]
-            from typing import Dict, List
 
-            service_status: Dict[str, List[str]] = {}
+            service_status: dict[str, list[str]] = {}
 
             for result in recent_results:
                 if result.service_name not in service_status:

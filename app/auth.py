@@ -1,7 +1,8 @@
 import contextlib
 import json
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -367,7 +368,7 @@ def request_password_reset(payload: PasswordResetRequest) -> dict[str, Any]:
     if tokens is None:
         tokens = {}
         # Dynamic attribute for ephemeral password reset tokens (test helper)
-        setattr(store, "_reset_tokens", tokens)
+        store._reset_tokens = tokens
 
     tokens[reset_token] = {
         "user_id": user["id"],

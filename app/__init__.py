@@ -72,8 +72,8 @@ except Exception:
 
                 for m in (submod, app_sub):
                     # use setattr to keep static checkers happier about dynamic attrs
-                    setattr(m, "get_xrpl_client", _stub_get_xrpl_client)
-                    setattr(m, "fetch_account_tx", _stub_fetch_account_tx)
+                    m.get_xrpl_client = _stub_get_xrpl_client
+                    m.fetch_account_tx = _stub_fetch_account_tx
 
             setattr(integrations, _sub, submod)
             setattr(integrations, _sub, submod)
@@ -182,9 +182,9 @@ try:
     import builtins
 
     if create_access_token is not None and not hasattr(builtins, "create_access_token"):
-        setattr(builtins, "create_access_token", create_access_token)
+        builtins.create_access_token = create_access_token
     if verify_token is not None and not hasattr(builtins, "verify_token"):
-        setattr(builtins, "verify_token", verify_token)
+        builtins.verify_token = verify_token
 except Exception:
     # ignore failures when running in restricted environments
     pass

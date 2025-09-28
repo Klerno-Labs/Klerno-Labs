@@ -29,9 +29,9 @@ try:
 
     _argon2_mod = importlib.import_module("argon2")
     _argon2_exc = importlib.import_module("argon2.exceptions")
-    PasswordHasher = getattr(_argon2_mod, "PasswordHasher")
-    HashingError = getattr(_argon2_exc, "HashingError")
-    VerifyMismatchError = getattr(_argon2_exc, "VerifyMismatchError")
+    PasswordHasher = _argon2_mod.PasswordHasher
+    HashingError = _argon2_exc.HashingError
+    VerifyMismatchError = _argon2_exc.VerifyMismatchError
     ARGON2_AVAILABLE = True
 except Exception:
     ARGON2_AVAILABLE = False

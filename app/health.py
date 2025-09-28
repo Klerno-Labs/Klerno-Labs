@@ -11,6 +11,8 @@ from datetime import datetime
 from typing import Any, cast
 
 import psutil
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel
 
 from ._typing_shims import IPostgresConnection, IPostgresCursor, IRedisLike
 
@@ -19,7 +21,7 @@ try:
     import psycopg2 as _psycopg2
 
     psycopg2 = _psycopg2
-except Exception:  # pragma: no cover - optional dependency in some environments
+except Exception:
     psycopg2 = None
 
 redis_lib: Any | None = None
@@ -27,10 +29,12 @@ try:
     import redis as _redis_lib
 
     redis_lib = _redis_lib
-except Exception:  # pragma: no cover - optional dependency in some environments
+except Exception:
     redis_lib = None
-from fastapi import FastAPI, HTTPException, status
-from pydantic import BaseModel
+
+# FastAPI / Pydantic are lightweight and used by the health endpoints; import at module
+# scope after optional heavy deps to avoid surprising import-time failures in minimal
+# dev environments used for tests. (Imports already performed above.)
 
 
 class HealthStatus(BaseModel):

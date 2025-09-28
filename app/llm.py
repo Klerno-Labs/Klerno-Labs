@@ -22,7 +22,7 @@ _openai_legacy: Any = None
 
 if TYPE_CHECKING:
     # Type-only import to satisfy static analyzers when stubs are present
-    from openai import OpenAI  # type: ignore
+    pass  # type: ignore
 
 # Try the modern SDK first (v1+) using importlib to avoid static import errors
 try:
@@ -47,7 +47,7 @@ if not _use_v1:
     try:
         _openai_legacy = _importlib_legacy.import_module("openai")
         if OPENAI_API_KEY:
-            setattr(_openai_legacy, "api_key", OPENAI_API_KEY)
+            _openai_legacy.api_key = OPENAI_API_KEY
     except Exception:
         _openai_legacy = None
 

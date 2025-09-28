@@ -10,9 +10,10 @@ import os
 import secrets
 import time
 from collections import defaultdict
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from functools import wraps
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware

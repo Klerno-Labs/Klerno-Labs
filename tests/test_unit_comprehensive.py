@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
+import jwt
 import pytest
 
 from app.auth import create_access_token, verify_token
@@ -99,7 +100,7 @@ class TestAuthenticationSystem:
 
     def test_verify_token_invalid(self):
         """Test token verification with invalid token."""
-        with pytest.raises(Exception):
+        with pytest.raises(jwt.PyJWTError):
             verify_token("invalid.jwt.token")
 
     def test_verify_token_expired(self):
@@ -115,7 +116,7 @@ class TestAuthenticationSystem:
 
             time.sleep(1)
 
-            with pytest.raises(Exception):
+            with pytest.raises(jwt.PyJWTError):
                 verify_token(token)
 
 

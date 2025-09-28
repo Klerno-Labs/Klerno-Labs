@@ -10,8 +10,8 @@ from __future__ import annotations
 import os
 import threading
 import time
-from collections.abc import Callable
-from typing import Any, Awaitable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from fastapi import Request
 from fastapi.responses import JSONResponse, Response

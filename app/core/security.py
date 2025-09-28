@@ -22,9 +22,10 @@ import os
 import secrets
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Awaitable, Callable, cast
+from typing import Any, cast
 
 from dotenv import find_dotenv, load_dotenv
 from fastapi import Header, HTTPException, Request, Response, status

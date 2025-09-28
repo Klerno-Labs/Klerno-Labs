@@ -5,9 +5,10 @@ from __future__ import annotations
 import contextlib
 import importlib
 import os
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -722,7 +723,7 @@ fetch_account_tx: Any = None  # type: ignore[assignment]
 for mod_path in ("integrations.xrp", "app.integrations.xrp"):
     try:
         mod = importlib.import_module(mod_path)
-        fetch_account_tx = getattr(mod, "fetch_account_tx")
+        fetch_account_tx = mod.fetch_account_tx
         break
     except Exception:
         fetch_account_tx = None

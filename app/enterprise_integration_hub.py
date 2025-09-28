@@ -12,7 +12,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from ._typing_shims import (
     IAnalytics,
@@ -77,11 +77,11 @@ class EnterpriseIntegrationHub:
         self.is_running = False
 
         # Enterprise components
-        self.database_manager: Optional[IDatabaseManager] = None
-        self.error_handler: Optional[IErrorHandler] = None
-        self.cicd_pipeline: Optional[ICICDPipeline] = None
-        self.health_monitor: Optional[IHealthMonitor] = None
-        self.analytics_system: Optional[IAnalytics] = None
+        self.database_manager: IDatabaseManager | None = None
+        self.error_handler: IErrorHandler | None = None
+        self.cicd_pipeline: ICICDPipeline | None = None
+        self.health_monitor: IHealthMonitor | None = None
+        self.analytics_system: IAnalytics | None = None
 
         # Background workers
         self._workers: list[threading.Thread] = []

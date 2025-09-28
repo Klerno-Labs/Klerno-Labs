@@ -24,7 +24,7 @@ def xrpl_json_to_transactions(account: str, tx_list: list[dict]):
 
         mod = importlib.import_module("..models", package=__package__)
 
-    Transaction = getattr(mod, "Transaction")
+    Transaction = mod.Transaction
 
     out = []
     for item in tx_list:

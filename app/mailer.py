@@ -32,7 +32,7 @@ def _get_sendgrid_client():
     import importlib
 
     _sendgrid_module = importlib.import_module("sendgrid")
-    _cached_sg = getattr(_sendgrid_module, "SendGridAPIClient")(key)
+    _cached_sg = _sendgrid_module.SendGridAPIClient(key)
     return _cached_sg
 
 
@@ -54,7 +54,7 @@ def send_email(to_email: str, subject: str, content: str):
     import importlib
 
     sg_helpers = importlib.import_module("sendgrid.helpers.mail")
-    Mail = getattr(sg_helpers, "Mail")
+    Mail = sg_helpers.Mail
 
     message = Mail(
         from_email=(FROM_EMAIL, FROM_NAME),

@@ -18,8 +18,10 @@ def _ensure_pandas() -> None:
 
         pd = importlib.import_module("pandas")
         globals()["pd"] = pd
-    except ImportError:
-        raise ImportError("pandas is required to convert transactions to DataFrame")
+    except ImportError as e:
+        raise ImportError(
+            "pandas is required to convert transactions to DataFrame"
+        ) from e
 
 
 def to_dataframe(txs: list[TaggedTransaction]) -> Any:

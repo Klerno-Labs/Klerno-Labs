@@ -21,8 +21,8 @@ from __future__ import annotations
 
 import os
 import time
-from collections.abc import Callable
-from typing import Any, Awaitable, Optional
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from fastapi import Request
 from fastapi.responses import JSONResponse, Response
@@ -75,7 +75,7 @@ return {allowed, tokens}
 _script_sha: str | None = None
 
 
-def _redis_client() -> Optional[IRedisLike]:  # pragma: no cover - trivial
+def _redis_client() -> IRedisLike | None:  # pragma: no cover - trivial
     url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     if not redis:
         return None

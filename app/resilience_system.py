@@ -264,10 +264,9 @@ class RetryManager:
     """Advanced retry mechanism with various strategies."""
 
     def __init__(self):
-        from typing import Dict
 
         # Map function name -> stats dict
-        self.retry_stats: defaultdict[str, Dict[str, int]] = defaultdict(
+        self.retry_stats: defaultdict[str, dict[str, int]] = defaultdict(
             lambda: {
                 "total_attempts": 0,
                 "successful_retries": 0,
@@ -780,9 +779,8 @@ class SelfHealingManager:
     def get_healing_stats(self) -> dict[str, Any]:
         """Get self - healing statistics."""
         with self.lock:
-            from typing import Any, Dict
 
-            stats: Dict[str, Any] = {
+            stats: dict[str, Any] = {
                 "auto_healing_enabled": self.auto_healing_enabled,
                 "total_rules": len(self.healing_rules),
                 "recent_attempts": self.healing_history[-10:],

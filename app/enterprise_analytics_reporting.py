@@ -52,8 +52,8 @@ def _ensure_pandas() -> None:
 
         pd = importlib.import_module("pandas")
         globals()["pd"] = pd
-    except ImportError:
-        raise RuntimeError("pandas is required for reporting features")
+    except ImportError as e:
+        raise RuntimeError("pandas is required for reporting features") from e
 
 
 # Configure logging

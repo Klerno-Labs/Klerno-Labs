@@ -111,11 +111,11 @@ def _send_email(subject: str, text: str, to_email: str | None = None) -> dict[st
         sg_mod = importlib.import_module("sendgrid")
         sg_helpers = importlib.import_module("sendgrid.helpers.mail")
 
-        SendGridAPIClient = getattr(sg_mod, "SendGridAPIClient")
-        Content = getattr(sg_helpers, "Content")
-        Email = getattr(sg_helpers, "Email")
-        Mail = getattr(sg_helpers, "Mail")
-        To = getattr(sg_helpers, "To")
+        SendGridAPIClient = sg_mod.SendGridAPIClient
+        Content = sg_helpers.Content
+        Email = sg_helpers.Email
+        Mail = sg_helpers.Mail
+        To = sg_helpers.To
 
         msg = Mail(
             from_email=Email(ALERT_FROM),

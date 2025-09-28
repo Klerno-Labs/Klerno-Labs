@@ -310,7 +310,7 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
                 # Cast response to a concrete type that supports body_iterator so static
                 # analyzers accept the assignment.
                 # Assign directly to the response object; keep the assignment defensive inside suppress().
-                setattr(response, "body_iterator", iter([content]))
+                response.body_iterator = iter([content])
 
         except Exception as e:
             logger.error(f"Cache write error: {e}")
