@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
+
 if TYPE_CHECKING:
     # Treat heavy ML libs as Any in static analysis environments without stubs
     np: Any  # type: ignore
@@ -94,9 +96,9 @@ class AdvancedAIRiskEngine:
 
             sk_mod = importlib.import_module("sklearn.ensemble")
             prep_mod = importlib.import_module("sklearn.preprocessing")
-            IsolationForest = getattr(sk_mod, "IsolationForest")
-            RandomForestClassifier = getattr(sk_mod, "RandomForestClassifier")
-            StandardScaler = getattr(prep_mod, "StandardScaler")
+            IsolationForest = sk_mod.IsolationForest
+            RandomForestClassifier = sk_mod.RandomForestClassifier
+            StandardScaler = prep_mod.StandardScaler
         except Exception as e:
             raise RuntimeError("sklearn is required to initialize AI models") from e
         # Generate synthetic training data for demonstration
