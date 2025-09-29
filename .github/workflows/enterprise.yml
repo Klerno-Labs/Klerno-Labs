@@ -45,14 +45,16 @@ jobs:
       - name: Run DB migrations
         run: |
           # Ensure database schema is created before running integration tests.
-          # alembic is part of runtime requirements; run upgrade against the
-          # configured DATABASE_URL. In CI we fall back to a local sqlite file
-          # so tests can run without external services.
+          # Install alembic and create the local data directory used by sqlite.
           python -m pip install --upgrade alembic
+          mkdir -p ./data
+          # If CI didn't set DATABASE_URL, fall back to a local sqlite file.
           if [ -z "$DATABASE_URL" ]; then
             export DATABASE_URL="sqlite:///./data/klerno.db"
           fi
-          alembic upgrade head
+          # Run alembic pointing explicitly at the repo alembic.ini so the
+          # migrations use the correct configuration in CI.
+          python -m alembic -c alembic.ini upgrade head
 
       - name: Run Enterprise Application Tests
         run: |
