@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    # Allow PR validation from feature branches including ci/enterprise-run-migrations-pr25
+    branches: [main, "**"]
   workflow_dispatch:
 
 concurrency:
@@ -45,8 +46,12 @@ jobs:
         run: |
           # Ensure database schema is created before running integration tests.
           # alembic is part of runtime requirements; run upgrade against the
-          # configured DATABASE_URL (alembic.ini defaults to sqlite://./data/klerno.db).
+          # configured DATABASE_URL. In CI we fall back to a local sqlite file
+          # so tests can run without external services.
           python -m pip install --upgrade alembic
+          if [ -z "$DATABASE_URL" ]; then
+            export DATABASE_URL="sqlite:///./data/klerno.db"
+          fi
           alembic upgrade head
 
       - name: Run Enterprise Application Tests
