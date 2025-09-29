@@ -147,12 +147,13 @@ def main() -> int:
         out.write(traceback.format_exc())
         code = 2
 
-    # Ensure output dir
-    import os
+    # Ensure output dir using pathlib
+    from pathlib import Path
 
-    os.makedirs(".run", exist_ok=True)
-    path = os.path.join(".run", "diagnostic-startup.txt")
-    with open(path, "w", encoding="utf-8") as f:
+    out_dir = Path(".run")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / "diagnostic-startup.txt"
+    with path.open("w", encoding="utf-8") as f:
         f.write(out.getvalue())
 
     print(f"Wrote diagnostic output to {path}")
