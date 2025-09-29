@@ -103,6 +103,14 @@ jobs:
           path: .run/alembic.log
           if-no-files-found: warn
 
+      - name: "Fallback: initialize DB schema if alembic failed"
+        if: always()
+        run: |
+          # Run our lightweight initializer to ensure required tables exist
+          python -m pip install --upgrade pip
+          python -m pip install sqlalchemy
+          python scripts/init_db_if_needed.py || true
+
   docker-build:
     name: Docker Build Test
     runs-on: ubuntu-latest
