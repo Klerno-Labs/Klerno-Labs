@@ -4,7 +4,6 @@ Uses pydantic - settings for secure, validated configuration.
 """
 
 from pydantic import Field, field_validator
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

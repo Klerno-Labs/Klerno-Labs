@@ -22,7 +22,7 @@ print(json_text[:300])
 try:
     j = json.loads(json_text)
 except Exception as exc:
-    raise SystemExit(f"Failed to parse JSON: {exc}")
+    raise SystemExit(f"Failed to parse JSON: {exc}") from exc
 
 fails = [c for c in j.get("statusCheckRollup", []) if c.get("conclusion") == "FAILURE"]
 if not fails:
@@ -52,7 +52,7 @@ for c in fails[:3]:
         )
     except FileNotFoundError:
         print("gh CLI not found in PATH; aborting")
-        raise SystemExit(2)
+        raise SystemExit(2) from None
     if res.returncode != 0:
         print("gh run download failed for", run_id)
         print(res.stdout)
