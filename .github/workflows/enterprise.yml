@@ -41,6 +41,14 @@ jobs:
             python -m pip install pytest
           fi
 
+      - name: Run DB migrations
+        run: |
+          # Ensure database schema is created before running integration tests.
+          # alembic is part of runtime requirements; run upgrade against the
+          # configured DATABASE_URL (alembic.ini defaults to sqlite://./data/klerno.db).
+          python -m pip install --upgrade alembic
+          alembic upgrade head
+
       - name: Run Enterprise Application Tests
         run: |
           python -m pytest tests/ -v --tb=short
