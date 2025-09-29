@@ -3,6 +3,7 @@
 This uses the sentinel bcrypt hashes the app accepts in tests so no native
 bcrypt binding is required. Run this from the project root with the venv active.
 """
+
 import sqlite3
 from pathlib import Path
 
@@ -30,6 +31,7 @@ CREATE TABLE IF NOT EXISTS users (
 cur.execute("PRAGMA table_info(users);")
 existing_cols = {r[1] for r in cur.fetchall()}
 
+
 def add_col(name: str, col_def: str):
     if name not in existing_cols:
         try:
@@ -38,6 +40,7 @@ def add_col(name: str, col_def: str):
         except Exception:
             # Best-effort: ignore failures to add (e.g., on locked DB)
             pass
+
 
 # Ensure canonical columns exist
 add_col("password_hash", "password_hash TEXT")

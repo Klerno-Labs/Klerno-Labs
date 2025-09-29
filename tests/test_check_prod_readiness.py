@@ -1,5 +1,3 @@
-
-
 from scripts import check_prod_readiness as cpr
 
 

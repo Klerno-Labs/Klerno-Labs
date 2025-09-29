@@ -8,7 +8,9 @@ from fastapi.testclient import TestClient
 
 def test_login_api_with_temp_sqlite_db():
     # Create a temp DB file
-    tmp = tempfile.NamedTemporaryFile(prefix="klerno_test_pytest_", suffix=".db", delete=False)
+    tmp = tempfile.NamedTemporaryFile(
+        prefix="klerno_test_pytest_", suffix=".db", delete=False
+    )
     db_path = tmp.name
     tmp.close()
 
@@ -36,14 +38,24 @@ def test_login_api_with_temp_sqlite_db():
     # Create a user using the canonical create_user helper and the app's hasher
     password = "testpassword"
     pw_hash = sec.hash_pw(password)
-    user = store.create_user(email="pytest_test@example.com", password_hash=pw_hash, role="viewer", subscription_active=True)
+    user = store.create_user(
+        email="pytest_test@example.com",
+        password_hash=pw_hash,
+        role="viewer",
+        subscription_active=True,
+    )
     assert user is not None
 
     # Create TestClient and call the API
     client = TestClient(main_mod.app)
 
-    resp = client.post("/auth/login/api", json={"email": "pytest_test@example.com", "password": password})
-    assert resp.status_code == 200, f"unexpected status: {resp.status_code} body={resp.text}"
+    resp = client.post(
+        "/auth/login/api",
+        json={"email": "pytest_test@example.com", "password": password},
+    )
+    assert resp.status_code == 200, (
+        f"unexpected status: {resp.status_code} body={resp.text}"
+    )
     j = resp.json()
     assert j.get("ok") is True
     assert j.get("user", {}).get("email") == "pytest_test@example.com"
