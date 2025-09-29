@@ -1,4 +1,4 @@
-name: Core CI
+can name: Core CI
 
 on:
   push:
@@ -48,6 +48,10 @@ jobs:
             python -m pip install --upgrade pip
             if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
             if [ -f dev-requirements.txt ]; then python -m pip install -r dev-requirements.txt; fi
+            # Ensure pydantic-settings is available on CI runners; some runners
+            # may not install optional pydantic extras by default and importing
+            # settings at collection time can fail if missing.
+            python -m pip install pydantic-settings
             python -m pip install ruff mypy flake8 pytest
 
         - name: Startup diagnostic (routes & logging)
