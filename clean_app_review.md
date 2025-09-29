@@ -23,4 +23,3 @@ Recommendations to reach top 0.01%
 - Run full test-suite and iterate on any failures (auth integration tests currently failing prior to fixes; focusing now on auth registration).
 - Consolidate duplicate code identified in Deletion/ into CLEAN_APP and remove duplicates.
 - Improve DB fixture teardown and add unit tests that exercise the full auth/login flow in an isolated manner.
-

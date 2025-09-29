@@ -13,7 +13,7 @@
         position: relative;
         overflow: hidden;
     }
-    
+
     .error-content {
         text-align: center;
         background: rgba(255, 255, 255, 0.1);
@@ -25,7 +25,7 @@
         width: 90%;
         animation: slideIn 0.8s ease-out;
     }
-    
+
     .error-code {
         font-size: 6rem;
         font-weight: 700;
@@ -34,27 +34,27 @@
         margin-bottom: 1rem;
         animation: shake 2s infinite;
     }
-    
+
     .error-message {
         font-size: 1.5rem;
         color: #fff;
         margin-bottom: 2rem;
         opacity: 0.9;
     }
-    
+
     .error-description {
         color: rgba(255, 255, 255, 0.8);
         margin-bottom: 2rem;
         line-height: 1.6;
     }
-    
+
     .error-actions {
         display: flex;
         gap: 1rem;
         justify-content: center;
         flex-wrap: wrap;
     }
-    
+
     .btn-error {
         padding: 12px 24px;
         border-radius: 25px;
@@ -67,24 +67,24 @@
         align-items: center;
         gap: 8px;
     }
-    
+
     .btn-primary {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
     }
-    
+
     .btn-secondary {
         background: rgba(255, 255, 255, 0.2);
         color: white;
         border: 1px solid rgba(255, 255, 255, 0.3);
     }
-    
+
     .btn-error:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     }
-    
+
     .error-bg {
         position: absolute;
         top: 0;
@@ -94,7 +94,7 @@
         background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
         opacity: 0.3;
     }
-    
+
     @keyframes slideIn {
         from {
             opacity: 0;
@@ -105,7 +105,7 @@
             transform: translateY(0);
         }
     }
-    
+
     @keyframes shake {
         0%, 100% {
             transform: translateX(0);
@@ -117,7 +117,7 @@
             transform: translateX(2px);
         }
     }
-    
+
     .server-status {
         background: rgba(255, 255, 255, 0.1);
         border-radius: 10px;
@@ -125,7 +125,7 @@
         margin-top: 2rem;
         border: 1px solid rgba(255, 255, 255, 0.2);
     }
-    
+
     .status-item {
         display: flex;
         justify-content: space-between;
@@ -145,7 +145,7 @@
         <p class="error-description">
             Something went wrong on our end. Our team has been notified and is working to fix the issue.
         </p>
-        
+
         <div class="server-status">
             <div class="status-item">
                 <span>Error ID:</span>
@@ -160,7 +160,7 @@
                 <span style="color: #ff6b6b;">Service Temporarily Unavailable</span>
             </div>
         </div>
-        
+
         <div class="error-actions">
             <a href="/" class="btn-error btn-primary">
                 <i class="fas fa-home"></i>
@@ -179,10 +179,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update the error time
     const now = new Date();
     document.getElementById('error-time').textContent = now.toISOString().slice(0, 19).replace('T', ' ');
-    
+
     // Add glitch effect particles
     const container = document.querySelector('.error-container');
-    
+
     for (let i = 0; i < 15; i++) {
         const particle = document.createElement('div');
         particle.style.cssText = `
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         container.appendChild(particle);
     }
-    
+
     // Add glitch animation
     const style = document.createElement('style');
     style.textContent = `
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     `;
     document.head.appendChild(style);
-    
+
     // Auto-retry functionality
     setTimeout(() => {
         const retryBtn = document.querySelector('.btn-secondary');

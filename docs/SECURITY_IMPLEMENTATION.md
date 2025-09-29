@@ -8,7 +8,7 @@ This document summarizes the comprehensive security audit and upgrade implementa
 
 ### Before Implementation
 - Basic security headers middleware
-- JWT authentication with CSRF protection  
+- JWT authentication with CSRF protection
 - Standard bcrypt password hashing
 - Basic API key authentication
 - Limited audit logging
