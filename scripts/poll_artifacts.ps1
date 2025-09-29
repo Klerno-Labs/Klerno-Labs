@@ -53,6 +53,35 @@ foreach ($id in $RunIds) {
 
     if ($null -eq $artifactId) {
         Write-Host "No artifact '$ArtifactName' found for run $id"
+
+        # As a fallback, download the run logs so we can inspect migration output.
+        try {
+            Write-Host "Downloading run logs for run $id to help triage..."
+            $logOut = Join-Path -Path $OutDir -ChildPath "run-$id.log"
+            $logOutA = Join-Path -Path $OutDir -ChildPath "run-$id-alembic-snippet.log"
+            $logOutput = gh run view $id --repo $Repo --log 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "Failed to fetch run logs for $id (exit $LASTEXITCODE); output: $logOutput"
+            }
+            else {
+                # Save full logs
+                $logOutput | Out-File -FilePath $logOut -Encoding utf8
+                Write-Host "Saved run logs to $logOut"
+                # Extract alembic-related lines for quick review
+                $alembicLines = $logOutput | Select-String -Pattern "alembic|Alembic|upgrade|ERROR|Traceback" -SimpleMatch
+                if ($alembicLines) {
+                    $alembicLines.Line | Out-File -FilePath $logOutA -Encoding utf8
+                    Write-Host "Saved alembic-related snippet to $logOutA"
+                }
+                else {
+                    Write-Host "No alembic-related lines found in run logs"
+                }
+            }
+        }
+        catch {
+            Write-Host "Exception while fetching run logs: $_"
+        }
+
         continue
     }
 
