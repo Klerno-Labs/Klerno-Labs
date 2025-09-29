@@ -3,4 +3,3 @@ Found 0 errors across 0 files
 
 Top files:
 No errors found
-

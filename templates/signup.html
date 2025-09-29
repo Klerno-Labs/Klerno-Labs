@@ -306,7 +306,7 @@ body {
   .auth-card {
     padding: 2rem 1.5rem;
   }
-  
+
   .auth-title {
     font-size: 1.5rem;
   }
@@ -328,40 +328,40 @@ body {
       <h1 class="auth-title">Join Klerno Labs</h1>
       <p class="auth-subtitle">Start your compliance journey today</p>
     </div>
-    
+
     {% if success %}
     <div class="success-message">
       {{ success }}
     </div>
     {% endif %}
-    
+
     {% if error %}
     <div class="error-message">
       {{ error }}
     </div>
     {% endif %}
-    
+
     <form method="post" id="signupForm">
       <div class="form-group">
         <label for="email" class="form-label">Email Address</label>
-        <input 
-          type="email" 
-          id="email" 
-          name="email" 
-          class="form-input" 
+        <input
+          type="email"
+          id="email"
+          name="email"
+          class="form-input"
           placeholder="Enter your business email"
           required
           autocomplete="email"
         >
       </div>
-      
+
       <div class="form-group">
         <label for="password" class="form-label">Password</label>
-        <input 
-          type="password" 
-          id="password" 
-          name="password" 
-          class="form-input" 
+        <input
+          type="password"
+          id="password"
+          name="password"
+          class="form-input"
           placeholder="Create a strong password"
           required
           autocomplete="new-password"
@@ -374,7 +374,7 @@ body {
           <span id="strengthText" style="color: rgba(255, 255, 255, 0.6);">Password strength</span>
         </div>
       </div>
-      
+
       <div class="features-list">
         <div class="features-title">Your Klerno Labs account includes:</div>
         <div class="feature-item">
@@ -394,18 +394,18 @@ body {
           <span>Multi-blockchain support</span>
         </div>
       </div>
-      
+
       <button type="submit" class="btn" id="signupBtn">
         Create Account
       </button>
     </form>
-    
+
     <div class="auth-footer">
       <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.875rem;">
-        Already have an account? 
+        Already have an account?
         <a href="/login" class="auth-link">Sign in here</a>
       </p>
-      
+
       <div style="margin-top: 1rem; font-size: 0.75rem; color: rgba(255, 255, 255, 0.5);">
         By creating an account, you agree to our Terms of Service and Privacy Policy
       </div>
@@ -419,13 +419,13 @@ function checkPasswordStrength(password) {
   let strength = 0;
   let text = 'Too weak';
   let className = 'strength-weak';
-  
+
   if (password.length >= 8) strength++;
   if (/[a-z]/.test(password)) strength++;
   if (/[A-Z]/.test(password)) strength++;
   if (/[0-9]/.test(password)) strength++;
   if (/[^A-Za-z0-9]/.test(password)) strength++;
-  
+
   switch (strength) {
     case 0:
     case 1:
@@ -449,7 +449,7 @@ function checkPasswordStrength(password) {
       className = 'strength-strong';
       break;
   }
-  
+
   return { strength, text, className };
 }
 
@@ -457,7 +457,7 @@ document.getElementById('password').addEventListener('input', function() {
   const password = this.value;
   const strengthBar = document.getElementById('strengthBar');
   const strengthText = document.getElementById('strengthText');
-  
+
   if (password.length === 0) {
     strengthBar.className = 'strength-fill';
     strengthBar.style.width = '0%';
@@ -465,18 +465,18 @@ document.getElementById('password').addEventListener('input', function() {
     strengthText.style.color = 'rgba(255, 255, 255, 0.6)';
     return;
   }
-  
+
   const { strength, text, className } = checkPasswordStrength(password);
   strengthBar.className = `strength-fill ${className}`;
   strengthText.textContent = text;
-  
+
   const colors = {
     'strength-weak': '#ef4444',
     'strength-fair': '#f59e0b',
     'strength-good': '#3b82f6',
     'strength-strong': '#10b981'
   };
-  
+
   strengthText.style.color = colors[className];
 });
 
@@ -484,22 +484,22 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
   const btn = document.getElementById('signupBtn');
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
-  
+
   if (!email || !password) {
     e.preventDefault();
     return;
   }
-  
+
   if (password.length < 8) {
     e.preventDefault();
     alert('Password must be at least 8 characters long');
     return;
   }
-  
+
   // Add loading state
   btn.disabled = true;
   btn.textContent = 'Creating Account...';
-  
+
   // Form will submit naturally
   setTimeout(() => {
     if (!btn.disabled) return; // Form already submitted
@@ -513,7 +513,7 @@ document.querySelectorAll('.form-input').forEach(input => {
   input.addEventListener('focus', function() {
     this.parentNode.style.transform = 'scale(1.02)';
   });
-  
+
   input.addEventListener('blur', function() {
     this.parentNode.style.transform = 'scale(1)';
   });

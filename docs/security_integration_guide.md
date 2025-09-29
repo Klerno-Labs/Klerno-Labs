@@ -23,7 +23,7 @@ app.add_middleware(APIKeyValidationMiddleware)
 @app.post("/login")
 async def login(request: Request, credentials: UserCredentials):
     ip_address = request.client.host
-    
+
     try:
         user = authenticate_user(credentials)
         if user:

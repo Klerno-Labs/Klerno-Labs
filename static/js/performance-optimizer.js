@@ -26,10 +26,10 @@ class KlernoOptimizer {
 
     // Load external scripts faster
     this.preloadCriticalResources();
-    
+
     // Monitor performance
     this.monitorPerformance();
-    
+
     // Handle errors gracefully
     this.setupErrorHandling();
   }
@@ -53,7 +53,7 @@ class KlernoOptimizer {
     if (this.loadState.domReady) {
       this.loadState.scriptsLoaded = typeof Chart !== 'undefined';
       this.loadState.apiReady = true; // API is always ready when DOM is ready
-      
+
       if (this.allReady()) {
         this.optimize();
       } else {
@@ -70,16 +70,16 @@ class KlernoOptimizer {
   optimize() {
     const loadTime = performance.now() - this.startTime;
     console.log(`Klerno Labs optimized and ready in ${loadTime.toFixed(2)}ms`);
-    
+
     // Optimize images
     this.optimizeImages();
-    
+
     // Optimize fetch calls
     this.optimizeFetchCalls();
-    
+
     // Add loading states to buttons
     this.addLoadingStates();
-    
+
     // Trigger ready event
     document.dispatchEvent(new CustomEvent('klerno:ready', {
       detail: { loadTime }
@@ -101,12 +101,12 @@ class KlernoOptimizer {
     window.fetch = function(url, options = {}) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
+
       const fetchOptions = {
         ...options,
         signal: controller.signal
       };
-      
+
       return originalFetch(url, fetchOptions)
         .finally(() => clearTimeout(timeoutId));
     };
@@ -117,18 +117,18 @@ class KlernoOptimizer {
       if (e.target.matches('button, .btn, [role="button"]')) {
         const btn = e.target;
         const originalText = btn.textContent || btn.innerHTML;
-        
+
         // Add loading state
         btn.classList.add('loading');
         btn.disabled = true;
-        
+
         if (!btn.querySelector('.spinner')) {
           const spinner = document.createElement('span');
           spinner.className = 'spinner';
           spinner.style.marginRight = '8px';
           btn.insertBefore(spinner, btn.firstChild);
         }
-        
+
         // Auto-remove loading state after 5 seconds (fallback)
         setTimeout(() => {
           this.removeLoadingState(btn, originalText);
@@ -165,7 +165,7 @@ class KlernoOptimizer {
         const memory = performance.memory;
         const usedMB = Math.round(memory.usedJSHeapSize / 1048576);
         const limitMB = Math.round(memory.jsHeapSizeLimit / 1048576);
-        
+
         if (usedMB > limitMB * 0.8) {
           console.warn(`High memory usage: ${usedMB}MB / ${limitMB}MB`);
         }
@@ -263,13 +263,13 @@ window.klernoUtils = {
 // CSS animation for toast
 const toastCSS = `
   @keyframes slideIn {
-    from { 
-      transform: translateX(100%); 
-      opacity: 0; 
+    from {
+      transform: translateX(100%);
+      opacity: 0;
     }
-    to { 
-      transform: translateX(0); 
-      opacity: 1; 
+    to {
+      transform: translateX(0);
+      opacity: 1;
     }
   }
 `;

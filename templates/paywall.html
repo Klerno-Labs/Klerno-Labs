@@ -11,12 +11,12 @@
             Don't have a code yet? <a href="/" style="color:#bfe2ff; text-decoration:none">Back to home</a>
           </div>
         </form>
-        
+
         <hr style="margin: 30px 0; border: 0; border-top: 1px solid var(--stroke);">
-        
+
         <h2>Or Subscribe with XRP</h2>
         <p class="lead">Choose a subscription tier to unlock full access with XRP payment.</p>
-        
+
         <div id="subscription-tiers" style="margin-bottom: 20px;">
           <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
             <div class="tier-card active" data-tier="1">
@@ -57,7 +57,7 @@
               <button id="create-payment-btn" class="btn" type="button">🚀 Create Payment Request</button>
             </div>
           </div>
-          
+
           <div id="step-2" style="display: none;">
             <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 16px; margin-bottom: 16px;">
               <h3 style="margin: 0 0 12px;">Payment Instructions</h3>
@@ -76,7 +76,7 @@
                 3. After sending, enter your transaction hash below to verify
               </div>
             </div>
-            
+
             <div>
               <label for="tx-hash">XRP Transaction Hash</label>
               <input id="tx-hash" type="text" placeholder="Enter the transaction hash" required />
@@ -87,18 +87,18 @@
               <button id="back-btn" style="background: transparent; color: var(--muted); border: 1px solid var(--stroke);" class="btn" type="button">Back</button>
             </div>
           </div>
-          
+
           <div id="step-3" style="display: none;">
             <div id="success-message" style="display: none; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); border-radius: 12px; padding: 16px; margin-bottom: 16px; color: var(--ok);">
               <h3 style="margin: 0 0 12px;">Payment Verified!</h3>
               <p style="margin: 0;">Your subscription has been activated successfully.</p>
             </div>
-            
+
             <div id="error-message" style="display: none; background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); border-radius: 12px; padding: 16px; margin-bottom: 16px; color: var(--danger);">
               <h3 style="margin: 0 0 12px;">Payment Verification Failed</h3>
               <p id="error-details" style="margin: 0;"></p>
             </div>
-            
+
             <div class="row">
               <a href="/dashboard" class="btn" id="continue-btn" style="display: none;">Continue to Dashboard</a>
               <button id="try-again-btn" class="btn" style="display: none; background: transparent; color: var(--muted); border: 1px solid var(--stroke);" type="button">Try Again</button>
@@ -218,15 +218,15 @@
       border:1px solid rgba(255,107,107,.35); background:rgba(255,107,107,.08);
       color:#ffd6d6; font-size:14px;
     }
-    
+
     /* tier cards */
-    .tier-card { 
-      flex: 1; 
-      min-width: 140px; 
-      border: 1px solid var(--stroke); 
-      border-radius: 12px; 
-      padding: 16px; 
-      cursor: pointer; 
+    .tier-card {
+      flex: 1;
+      min-width: 140px;
+      border: 1px solid var(--stroke);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
       transition: all 0.2s;
     }
     .tier-card.active {
@@ -318,13 +318,13 @@
     }
     resize(); requestAnimationFrame(step); addEventListener('resize', resize);
     document.getElementById('yr').textContent = new Date().getFullYear();
-    
+
     // XRPL Payment Flow
     document.addEventListener('DOMContentLoaded', function() {
       // Variables
       let selectedTier = 1;
       let paymentRequest = null;
-      
+
       // Select elements
       const tierCards = document.querySelectorAll('.tier-card');
       const createPaymentBtn = document.getElementById('create-payment-btn');
@@ -332,12 +332,12 @@
       const backBtn = document.getElementById('back-btn');
       const tryAgainBtn = document.getElementById('try-again-btn');
       const txHashInput = document.getElementById('tx-hash');
-      
+
       // Steps
       const step1 = document.getElementById('step-1');
       const step2 = document.getElementById('step-2');
       const step3 = document.getElementById('step-3');
-      
+
       // Select tier
       tierCards.forEach(card => {
         card.addEventListener('click', function() {
@@ -349,13 +349,13 @@
           selectedTier = parseInt(this.dataset.tier);
         });
       });
-      
+
       // Create payment request
       createPaymentBtn.addEventListener('click', function() {
         // Show loading state
         this.textContent = 'Creating...';
         this.disabled = true;
-        
+
         // Call API to create payment request
         fetch(`/api/paywall/xrp-payment`, {
           method: 'POST',
@@ -368,12 +368,12 @@
         .then(data => {
           // Save payment request
           paymentRequest = data.payment_request;
-          
+
           // Fill payment details
           document.getElementById('destination-address').textContent = paymentRequest.destination_address;
           document.getElementById('payment-amount').textContent = paymentRequest.amount_xrp;
           document.getElementById('destination-tag').textContent = paymentRequest.destination_tag;
-          
+
           // Show step 2
           step1.style.display = 'none';
           step2.style.display = 'block';
@@ -385,7 +385,7 @@
           alert('Error creating payment request. Please try again.');
         });
       });
-      
+
       // Verify payment
       verifyPaymentBtn.addEventListener('click', function() {
         const txHash = txHashInput.value.trim();
@@ -393,11 +393,11 @@
           alert('Please enter a transaction hash');
           return;
         }
-        
+
         // Show loading state
         this.textContent = 'Verifying...';
         this.disabled = true;
-        
+
         // Call API to verify payment
         fetch(`/api/paywall/verify-xrp`, {
           method: 'POST',
@@ -414,7 +414,7 @@
           // Show step 3
           step2.style.display = 'none';
           step3.style.display = 'block';
-          
+
           if (data.verified) {
             // Show success message
             document.getElementById('success-message').style.display = 'block';
@@ -433,7 +433,7 @@
           alert('Error verifying payment. Please try again.');
         });
       });
-      
+
       // Back button
       backBtn.addEventListener('click', function() {
         step2.style.display = 'none';
@@ -441,7 +441,7 @@
         createPaymentBtn.textContent = 'Create Payment Request';
         createPaymentBtn.disabled = false;
       });
-      
+
       // Try again button
       tryAgainBtn.addEventListener('click', function() {
         step3.style.display = 'none';

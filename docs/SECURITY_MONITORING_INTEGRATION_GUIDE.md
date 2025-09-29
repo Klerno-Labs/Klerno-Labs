@@ -294,7 +294,7 @@ const SecurityDashboard = () => {
         // Fetch security data
         fetchSecuritySummary();
         fetchThreatTimeline();
-        
+
         // Set up real-time updates
         const interval = setInterval(fetchRealTimeMetrics, 30000);
         return () => clearInterval(interval);
@@ -338,14 +338,14 @@ import json
 @app.websocket("/security/ws")
 async def security_websocket(websocket: WebSocket):
     await websocket.accept()
-    
+
     try:
         while True:
             # Send real-time security updates
             metrics = await get_realtime_metrics()
             await websocket.send_text(json.dumps(metrics))
             await asyncio.sleep(30)  # Update every 30 seconds
-            
+
     except Exception as e:
         await websocket.close()
 ```
@@ -378,24 +378,24 @@ async def cleanup_security_data():
         try:
             now = datetime.now(timezone.utc)
             cutoff = now - timedelta(days=7)
-            
+
             # Cleanup old events
             old_events = [
                 event for event in security_middleware.event_aggregator.events
                 if event.timestamp < cutoff
             ]
-            
+
             for event in old_events:
                 security_middleware.event_aggregator.events.remove(event)
-            
+
             # Cleanup old behavioral profiles
             for user_id in list(security_middleware.behavioral_analyzer.user_profiles.keys()):
                 profile = security_middleware.behavioral_analyzer.user_profiles[user_id]
                 if profile["last_request"] and (now - profile["last_request"]) > timedelta(days=30):
                     del security_middleware.behavioral_analyzer.user_profiles[user_id]
-            
+
             await asyncio.sleep(3600)  # Run every hour
-            
+
         except Exception as e:
             security_logger.error(f"Error in security data cleanup: {e}")
             await asyncio.sleep(3600)
@@ -441,18 +441,18 @@ Configure external monitoring for security events:
 security_monitoring:
   log_files:
     - /app/data/security_events.log
-  
+
   alerts:
     critical_events:
       threshold: 1
       window: "5m"
       action: "immediate"
-    
+
     high_threat_rate:
       threshold: 10
       window: "1h"
       action: "escalate"
-    
+
     blocked_ips:
       threshold: 50
       window: "1h"
@@ -462,7 +462,7 @@ security_monitoring:
     slack:
       webhook_url: "${SLACK_WEBHOOK_URL}"
       channel: "#security-alerts"
-    
+
     email:
       smtp_server: "${SMTP_SERVER}"
       recipients: ["security@klerno.com"]

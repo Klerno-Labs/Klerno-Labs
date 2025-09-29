@@ -38,7 +38,7 @@ class ThemeController {
   toggleTheme() {
     const newTheme = this.currentTheme === 'light' ? 'dark' : 'light';
     this.applyTheme(newTheme);
-    
+
     // Add a subtle animation to indicate the change
     document.body.style.transition = 'background-color 0.3s ease';
     setTimeout(() => {
@@ -52,7 +52,7 @@ class ThemeController {
     toggle.setAttribute('aria-label', 'Toggle theme');
     toggle.setAttribute('title', 'Toggle light/dark theme');
     toggle.innerHTML = this.getToggleIcon();
-    
+
     document.body.appendChild(toggle);
     this.toggleElement = toggle;
   }
@@ -133,7 +133,7 @@ class AnimationController {
     window.addEventListener('scroll', () => {
       const scrolled = window.pageYOffset;
       const parallaxElements = document.querySelectorAll('.parallax');
-      
+
       parallaxElements.forEach(element => {
         const speed = element.dataset.speed || 0.5;
         const yPos = -(scrolled * speed);
@@ -149,7 +149,7 @@ class AnimationController {
         const rect = button.getBoundingClientRect();
         const x = e.clientX - rect.left - rect.width / 2;
         const y = e.clientY - rect.top - rect.height / 2;
-        
+
         button.style.transform = `translate(${x * 0.1}px, ${y * 0.1}px)`;
       });
 
@@ -164,7 +164,7 @@ class AnimationController {
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize theme controller
   new ThemeController();
-  
+
   // Initialize animations
   AnimationController.observeElements();
   AnimationController.initScrollAnimations();

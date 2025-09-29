@@ -263,7 +263,7 @@ body {
   .auth-card {
     padding: 2rem 1.5rem;
   }
-  
+
   .auth-title {
     font-size: 1.5rem;
   }
@@ -285,51 +285,51 @@ body {
       <h1 class="auth-title">Welcome Back</h1>
       <p class="auth-subtitle">Sign in to your Klerno Labs account</p>
     </div>
-    
+
     {% if error %}
     <div class="error-message">
       {{ error }}
     </div>
     {% endif %}
-    
+
     <form method="post" id="loginForm">
       <div class="form-group">
         <label for="email" class="form-label">Email Address</label>
-        <input 
-          type="email" 
-          id="email" 
-          name="email" 
-          class="form-input" 
+        <input
+          type="email"
+          id="email"
+          name="email"
+          class="form-input"
           placeholder="Enter your email"
           required
           autocomplete="email"
         >
       </div>
-      
+
       <div class="form-group">
         <label for="password" class="form-label">Password</label>
-        <input 
-          type="password" 
-          id="password" 
-          name="password" 
-          class="form-input" 
+        <input
+          type="password"
+          id="password"
+          name="password"
+          class="form-input"
           placeholder="Enter your password"
           required
           autocomplete="current-password"
         >
       </div>
-      
+
       <button type="submit" class="btn" id="loginBtn">
         Sign In
       </button>
     </form>
-    
+
     <div class="auth-footer">
       <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.875rem;">
-        Don't have an account? 
+        Don't have an account?
         <a href="/signup" class="auth-link">Create one here</a>
       </p>
-      
+
       <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); font-size: 0.75rem; color: rgba(255, 255, 255, 0.5);">
         <p><strong>Demo Credentials:</strong></p>
         <p>Email: klerno@outlook.com</p>
@@ -344,17 +344,17 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
   const btn = document.getElementById('loginBtn');
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
-  
+
   if (!email || !password) {
     e.preventDefault();
     return;
   }
-  
+
   // Add loading state
   btn.disabled = true;
   btn.classList.add('loading');
   btn.textContent = 'Signing In...';
-  
+
   // Form will submit naturally
   setTimeout(() => {
     if (!btn.disabled) return; // Form already submitted
@@ -368,7 +368,7 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
 window.addEventListener('load', () => {
   const emailInput = document.getElementById('email');
   const passwordInput = document.getElementById('password');
-  
+
   if (!emailInput.value && !passwordInput.value) {
     setTimeout(() => {
       emailInput.value = 'klerno@outlook.com';
@@ -382,7 +382,7 @@ document.querySelectorAll('.form-input').forEach(input => {
   input.addEventListener('focus', function() {
     this.parentNode.style.transform = 'scale(1.02)';
   });
-  
+
   input.addEventListener('blur', function() {
     this.parentNode.style.transform = 'scale(1)';
   });
