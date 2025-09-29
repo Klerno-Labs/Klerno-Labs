@@ -16,16 +16,42 @@ foreach ($id in $RunIds) {
 
     # Query run artifacts via the REST API (gh run view doesn't expose artifacts on this gh version)
     $apiPath = "repos/$Repo/actions/runs/$id/artifacts"
-    # Build jq expression safely and call gh api
-    $jq = '.artifacts[] | select(.name=="' + $ArtifactName + '") | .id'
-    $artifactId = gh api $apiPath --jq $jq 2>$null
 
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "gh api artifacts query failed for run $id (exit $LASTEXITCODE); skipping"
-        continue
+    $raw = $null
+    $artifactId = $null
+    # Small retry loop to handle transient API issues
+    for ($try = 1; $try -le 2; $try++) {
+        Write-Host "Fetching artifacts (attempt $try) for run $id"
+        $raw = gh api $apiPath 2>&1
+        $code = $LASTEXITCODE
+        if ($code -ne 0) {
+            Write-Host "gh api call failed with exit code $code; output: $raw"
+            Start-Sleep -Seconds 2
+            continue
+        }
+
+        try {
+            $json = $raw | ConvertFrom-Json
+        }
+        catch {
+            Write-Host "Failed to parse JSON response for run $id; raw output: $raw"
+            Start-Sleep -Seconds 2
+            continue
+        }
+
+        if ($null -eq $json.artifacts -or $json.artifacts.Count -eq 0) {
+            Write-Host "No artifacts array or empty artifacts for run $id"
+            break
+        }
+
+        $match = $json.artifacts | Where-Object { $_.name -eq $ArtifactName }
+        if ($null -ne $match) {
+            $artifactId = $match.id
+        }
+        break
     }
 
-    if ([string]::IsNullOrWhiteSpace($artifactId)) {
+    if ($null -eq $artifactId) {
         Write-Host "No artifact '$ArtifactName' found for run $id"
         continue
     }
