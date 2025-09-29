@@ -76,18 +76,39 @@ DATABASE_URL = os.getenv("DATABASE_URL") or ""
 # Persistent SQLite path (fallback if not using Postgres)
 # Use pathlib for clearer path operations while preserving string DB_PATH
 BASE_DIR = Path(__file__).parent
-DB_PATH = os.getenv("DB_PATH", str(BASE_DIR / ".." / "data" / "klerno.db"))
 
-# If DATABASE_URL points to a sqlite file (used by tests), prefer that path.
-try:
-    if DATABASE_URL and DATABASE_URL.startswith("sqlite://"):
-        path = DATABASE_URL.split("sqlite://", 1)[1].lstrip("/")
-        if path:
-            DB_PATH = path
-except Exception:
-    # Best-effort: if parsing fails, keep default DB_PATH
-    with contextlib.suppress(Exception):
-        _ = None
+
+# DB_PATH: expose a path-like object so code (and tests) that read
+# `store.DB_PATH` after tests set `DATABASE_URL` will get the runtime
+# effective path. Many tests set DATABASE_URL in fixtures (after
+# modules are imported) — making DB_PATH dynamic fixes cases where the
+# module-level value was captured too early and pointed at the wrong DB.
+class _DBPath:
+    def __init__(self, default_path: str) -> None:
+        self._default = default_path
+
+    def _compute(self) -> str:
+        # Prefer explicit sqlite DATABASE_URL when present
+        runtime_db = os.getenv("DATABASE_URL") or ""
+        if runtime_db and runtime_db.startswith("sqlite://"):
+            path = runtime_db.split("sqlite://", 1)[1].lstrip("/")
+            if path:
+                return path
+            # if no path fragment, fall back to default
+        # else prefer explicit DB_PATH env var or default
+        return os.getenv("DB_PATH", self._default)
+
+    def __fspath__(self) -> str:  # pathlib / os.fspath compatibility
+        return self._compute()
+
+    def __str__(self) -> str:
+        return self._compute()
+
+    def __repr__(self) -> str:
+        return f"<DB_PATH {self._compute()}>"
+
+
+DB_PATH = _DBPath(str(BASE_DIR / ".." / "data" / "klerno.db"))
 
 # Support either psycopg (psycopg3) or psycopg2 if available.
 PSYCOPG_AVAILABLE = False
