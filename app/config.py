@@ -5,24 +5,7 @@ Uses pydantic - settings for secure, validated configuration.
 
 from pydantic import Field, field_validator
 
-# Support environments where `pydantic-settings` isn't available.
-try:
-    from pydantic_settings import BaseSettings, SettingsConfigDict
-except Exception:  # pragma: no cover - defensive fallback
-    # Fall back to a minimal shim using pydantic.BaseModel so importing
-    # `app.config` doesn't fail on runners that don't have the separate
-    # `pydantic-settings` package installed. This mirrors the defensive
-    # pattern used in `app/settings.py` and keeps import-time behaviour
-    # stable for diagnostics and lightweight environments. Production
-    # users should install `pydantic-settings` for full feature parity.
-    from pydantic import BaseModel as _BaseModel
-
-    # Use alias assignment rather than subclassing to avoid static analysis
-    # complaining about dynamic base classes in some environments.
-    BaseSettings = _BaseModel
-
-    class SettingsConfigDict(dict):
-        pass
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
