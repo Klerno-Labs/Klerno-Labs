@@ -2,18 +2,18 @@ can name: Core CI
 
 on:
   push:
-    branches: [ main, master, chore/dev-dx ]
+    branches: [main, master, chore/dev-dx]
   pull_request:
-    branches: [ main, master, chore/dev-dx ]
+    branches: [main, master, chore/dev-dx]
 
 jobs:
   name: Core CI
 
   on:
     push:
-      branches: [ main, master, chore/dev-dx ]
+      branches: [main, master, chore/dev-dx]
     pull_request:
-      branches: [ main, master, chore/dev-dx ]
+      branches: [main, master, chore/dev-dx]
 
   jobs:
     lint-and-test:
@@ -21,7 +21,7 @@ jobs:
       timeout-minutes: 15
       strategy:
         matrix:
-          python-version: [ '3.11' ]
+          python-version: ["3.11"]
       env:
         PYTHONUNBUFFERED: 1
         PYTHONDONTWRITEBYTECODE: 1
