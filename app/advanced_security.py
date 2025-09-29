@@ -27,8 +27,6 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
-logger = logging.getLogger(__name__)
-
 
 class ThreatLevel(str, Enum):
     """Threat severity levels."""
@@ -101,7 +99,7 @@ class SecurityRule:
 class BehavioralAnalyzer:
     """Analyzes user behavior for anomaly detection."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.user_profiles: dict[str, dict] = {}
         self.session_data: dict[str, list] = defaultdict(list)
         self.anomaly_threshold = 0.7  # Anomaly score threshold
@@ -134,13 +132,15 @@ class BehavioralAnalyzer:
                 profile["ip_addresses"].add(activity["ip_address"])
                 # Keep only last 20 IP addresses
                 if len(profile["ip_addresses"]) > 20:
-                    profile["ip_addresses"] = set(list(profile["ip_addresses"])[-20:])
+                    tmp_ips = list(profile["ip_addresses"])[-20:]
+                    profile["ip_addresses"] = set(tmp_ips)
 
             if "user_agent" in activity:
                 profile["user_agents"].add(activity["user_agent"])
                 # Keep only last 10 user agents
                 if len(profile["user_agents"]) > 10:
-                    profile["user_agents"] = set(list(profile["user_agents"])[-10:])
+                    tmp_agents = list(profile["user_agents"])[-10:]
+                    profile["user_agents"] = set(tmp_agents)
 
             if "endpoint" in activity:
                 profile["request_patterns"][activity["endpoint"]] += 1
@@ -160,7 +160,7 @@ class BehavioralAnalyzer:
         self, user_id: str, current_activity: dict[str, Any]
     ) -> list[dict[str, Any]]:
         """Detect behavioral anomalies."""
-        anomalies = []
+        anomalies: list[dict[str, Any]] = []
 
         if user_id not in self.user_profiles:
             return anomalies
@@ -174,7 +174,7 @@ class BehavioralAnalyzer:
             current_hour = current_time.hour
 
             # If current hour is not in usual pattern (simple heuristic)
-            hour_counts = defaultdict(int)
+            hour_counts: dict[int, int] = defaultdict(int)
             for hour in usual_hours:
                 hour_counts[hour] += 1
 
@@ -183,7 +183,7 @@ class BehavioralAnalyzer:
                     {
                         "type": "unusual_login_time",
                         "severity": "medium",
-                        "description": f"Login at unusual hour: {current_hour}",
+                        "description": (f"Login at unusual hour: {current_hour}"),
                         "confidence": 0.6,
                     }
                 )
@@ -219,22 +219,25 @@ class BehavioralAnalyzer:
                     {
                         "type": "high_request_frequency",
                         "severity": "high",
-                        "description": f"High frequency requests to {current_endpoint}",
+                        "description": (
+                            f"High frequency requests to {current_endpoint}"
+                        ),
                         "confidence": 0.8,
                     }
                 )
 
         # Check for privilege escalation attempts
-        if current_activity.get("type") == "admin_access":
-            if user_id not in profile.get("admin_users", set()):
-                anomalies.append(
-                    {
-                        "type": "privilege_escalation",
-                        "severity": "critical",
-                        "description": "Unauthorized admin access attempt",
-                        "confidence": 0.9,
-                    }
-                )
+        if current_activity.get(
+            "type"
+        ) == "admin_access" and user_id not in profile.get("admin_users", set()):
+            anomalies.append(
+                {
+                    "type": "privilege_escalation",
+                    "severity": "critical",
+                    "description": "Unauthorized admin access attempt",
+                    "confidence": 0.9,
+                }
+            )
 
         return anomalies
 
@@ -254,10 +257,10 @@ class BehavioralAnalyzer:
 class ThreatIntelligence:
     """Threat intelligence and reputation system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.malicious_ips: set[str] = set()
         self.suspicious_patterns: list[str] = []
-        self.reputation_cache: dict[str, dict] = {}
+        self.reputation_cache: dict[str, dict[str, Any]] = {}
         self.threat_feeds: list[str] = []
         self.lock = threading.Lock()
 
@@ -309,7 +312,7 @@ class ThreatIntelligence:
                 if cached["timestamp"] > datetime.now(UTC) - timedelta(hours=1):
                     return cached
 
-            reputation = {
+            reputation: dict[str, Any] = {
                 "ip": ip_address,
                 "is_malicious": ip_address in self.malicious_ips,
                 "threat_level": "low",
@@ -342,8 +345,8 @@ class ThreatIntelligence:
 
     def analyze_payload(self, payload: str) -> dict[str, Any]:
         """Analyze payload for malicious patterns."""
-        threats = []
-        confidence = 0.0
+        threats: list[dict[str, Any]] = []
+        confidence: float = 0.0
 
         payload_lower = payload.lower()
 
@@ -457,7 +460,7 @@ class ThreatIntelligence:
 class AdvancedFirewall:
     """Advanced firewall with dynamic rules."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.blocked_ips: set[str] = set()
         self.rate_limits: dict[str, dict] = defaultdict(dict)
         self.dynamic_rules: list[SecurityRule] = []
@@ -523,11 +526,17 @@ class AdvancedFirewall:
 class CryptographicManager:
     """Advanced cryptographic operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.encryption_keys: dict[str, bytes] = {}
         self.signing_keys: dict[str, rsa.RSAPrivateKey] = {}
         self.session_keys: dict[str, bytes] = {}
-        self._initialize_keys()
+        self._initialized = False
+
+    def ensure_initialized(self) -> None:
+        """Ensure keys are generated. Safe to call multiple times."""
+        if not getattr(self, "_initialized", False):
+            self._initialize_keys()
+            self._initialized = True
 
     def _initialize_keys(self) -> None:
         """Initialize cryptographic keys."""
@@ -542,6 +551,8 @@ class CryptographicManager:
 
     def encrypt_sensitive_data(self, data: str, key_id: str = "master") -> str:
         """Encrypt sensitive data."""
+        # Ensure keys exist (lazy initialize)
+        self.ensure_initialized()
         if key_id not in self.encryption_keys:
             raise ValueError(f"Encryption key {key_id} not found")
 
@@ -553,6 +564,7 @@ class CryptographicManager:
         self, encrypted_data: str, key_id: str = "master"
     ) -> str:
         """Decrypt sensitive data."""
+        self.ensure_initialized()
         if key_id not in self.encryption_keys:
             raise ValueError(f"Encryption key {key_id} not found")
 
@@ -562,6 +574,7 @@ class CryptographicManager:
 
     def sign_data(self, data: str, key_id: str = "master") -> str:
         """Sign data with RSA private key."""
+        self.ensure_initialized()
         if key_id not in self.signing_keys:
             raise ValueError(f"Signing key {key_id} not found")
 
@@ -579,6 +592,7 @@ class CryptographicManager:
         self, data: str, signature: str, key_id: str = "master"
     ) -> bool:
         """Verify data signature."""
+        self.ensure_initialized()
         if key_id not in self.signing_keys:
             raise ValueError(f"Signing key {key_id} not found")
 
@@ -601,6 +615,8 @@ class CryptographicManager:
 
     def generate_session_key(self, session_id: str) -> str:
         """Generate session encryption key."""
+        # Ensure master key exists if needed
+        self.ensure_initialized()
         key = secrets.token_bytes(32)  # 256 - bit key
         self.session_keys[session_id] = key
         return key.hex()
@@ -689,13 +705,14 @@ class SecurityOrchestrator:
             payload_analysis = self.threat_intelligence.analyze_payload(payload)
             if payload_analysis["threats"]:
                 for threat_data in payload_analysis["threats"]:
+                    desc = threat_data.get("description", "")
                     threat = SecurityThreat(
                         id=secrets.token_hex(8),
                         threat_type=AttackType(threat_data.get("type", "unknown")),
                         threat_level=ThreatLevel(payload_analysis["threat_level"]),
                         source_ip=ip_address,
                         target=endpoint,
-                        description=f"Malicious payload detected: {threat_data.get('description', '')}",
+                        description=f"Malicious payload detected: {desc}",
                         timestamp=datetime.now(UTC),
                         evidence=threat_data,
                         confidence_score=threat_data.get("confidence", 0.5),
@@ -794,8 +811,33 @@ class SecurityOrchestrator:
             return "low"
 
 
-# Global security orchestrator
-security_orchestrator = SecurityOrchestrator()
+# Global security orchestrator (lazy-instantiated to avoid heavy import-time work)
+
+
+class _LazySecurityOrchestrator:
+    """Lazy proxy that creates a SecurityOrchestrator on first access."""
+
+    def __init__(self, factory):
+        self._factory = factory
+        self._obj: SecurityOrchestrator | None = None
+
+    def _ensure(self):
+        if self._obj is None:
+            self._obj = self._factory()
+
+    def __getattr__(self, name):
+        self._ensure()
+        return getattr(self._obj, name)
+
+    def __call__(self, *args, **kwargs):
+        self._ensure()
+        if callable(self._obj):
+            return self._obj(*args, **kwargs)
+        raise TypeError(f"'{type(self._obj).__name__}' object is not callable")
+
+
+# Public lazy instance
+security_orchestrator = _LazySecurityOrchestrator(SecurityOrchestrator)
 
 
 def analyze_security_request(request_data: dict[str, Any]) -> dict[str, Any]:

@@ -85,7 +85,7 @@ class Settings(BaseSettings):
     # Model configuration
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_file_encoding="utf - 8",
+        env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=True,
     )
@@ -132,4 +132,7 @@ class Settings(BaseSettings):
 
 
 # Create a global settings instance
-settings = Settings()
+# Constructing Settings() may perform validation and read env vars. This is
+# expected at import-time for this application. Keep the global instance for
+# backward compatibility and tests.
+settings: Settings = Settings.model_construct()

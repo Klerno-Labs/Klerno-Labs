@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klerno Labs - Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .dashboard-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .dashboard-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-online { background-color: #28a745; }
+        .status-warning { background-color: #ffc107; }
+        .status-offline { background-color: #dc3545; }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 30px;
+        }
+        .admin-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .role-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        .role-owner { background-color: #dc3545; color: white; }
+        .role-admin { background-color: #fd7e14; color: white; }
+        .role-manager { background-color: #20c997; color: white; }
+        .role-user { background-color: #6c757d; color: white; }
+        .status-active { background-color: #28a745; color: white; }
+        .status-temp_blocked { background-color: #ffc107; color: black; }
+        .status-perm_blocked { background-color: #dc3545; color: white; }
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            border-radius: 5px;
+            margin: 2px 0;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+        .main-content {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+        .confirmation-modal {
+            backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-3">
+                <div class="text-center mb-4">
+                    <img src="/static/klerno-wordmark.png" alt="Klerno Labs" style="max-width: 120px;">
+                    <h6 class="mt-2">Admin Dashboard</h6>
+                </div>
+
+                <nav class="nav flex-column">
+                    <a class="nav-link active" href="#dashboard" data-section="dashboard">
+                        <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                    </a>
+                    <a class="nav-link" href="#users" data-section="users">
+                        <i class="fas fa-users me-2"></i> User Management
+                    </a>
+                    <a class="nav-link" href="#monitoring" data-section="monitoring">
+                        <i class="fas fa-chart-line me-2"></i> System Monitoring
+                    </a>
+                    <a class="nav-link" href="#security" data-section="security">
+                        <i class="fas fa-shield-alt me-2"></i> Security
+                    </a>
+                    <a class="nav-link" href="#reports" data-section="reports">
+                        <i class="fas fa-file-alt me-2"></i> Reports
+                    </a>
+                    {% if user.is_owner() %}
+                    <a class="nav-link" href="#settings" data-section="settings">
+                        <i class="fas fa-cog me-2"></i> Settings
+                    </a>
+                    {% endif %}
+                </nav>
+
+                <div class="mt-auto pt-4">
+                    <div class="text-center">
+                        <small>Logged in as:</small><br>
+                        <strong>{{ user.email }}</strong><br>
+                        <span class="role-badge role-{{ user.role.value }}">{{ user.role.value.title() }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 main-content p-4">
+                <!-- Dashboard Section -->
+                <div id="dashboard-section" class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-tachometer-alt me-2"></i>System Dashboard</h2>
+                        <div class="text-end">
+                            <span class="status-indicator status-online"></span>
+                            <small>System Online</small>
+                            <br>
+                            <small class="text-muted">Last updated: <span id="last-update">{{ dashboard_data.status.last_update }}</span></small>
+                        </div>
+                    </div>
+
+                    <!-- Status Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6>Server Status</h6>
+                                        <h4 id="server-status">
+                                            {% if dashboard_data.status.server_online %}
+                                            <i class="fas fa-check-circle text-success"></i> Online
+                                            {% else %}
+                                            <i class="fas fa-times-circle text-danger"></i> Offline
+                                            {% endif %}
+                                        </h4>
+                                    </div>
+                                    <i class="fas fa-server fa-2x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6>Uptime</h6>
+                                        <h4 id="uptime">{{ dashboard_data.status.uptime_hours }}h</h4>
+                                    </div>
+                                    <i class="fas fa-clock fa-2x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6>Total Users</h6>
+                                        <h4 id="total-users">{{ users|length }}</h4>
+                                    </div>
+                                    <i class="fas fa-users fa-2x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="metric-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6>Active Sessions</h6>
+                                        <h4 id="active-sessions">
+                                            {% if dashboard_data.current_metrics.application %}
+                                            {{ dashboard_data.current_metrics.application.active_sessions }}
+                                            {% else %}
+                                            0
+                                            {% endif %}
+                                        </h4>
+                                    </div>
+                                    <i class="fas fa-user-check fa-2x opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card bg-danger" id="alert-widget">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6>Security & Compliance Alerts</h6>
+                                        <ul id="alert-list" style="list-style:none;padding-left:0;margin-bottom:0;">
+                                            <li class="text-white-50">No alerts</li>
+                                        </ul>
+                                    </div>
+                                    <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="dashboard-card p-3">
+                                <h5>System Performance</h5>
+                                <div class="chart-container">
+                                    <canvas id="systemChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="dashboard-card p-3">
+                                <h5>User Activity</h5>
+                                <div class="chart-container">
+                                    <canvas id="activityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Actions -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="dashboard-card p-3">
+                                <h5>Recent Admin Actions</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Admin</th>
+                                                <th>Action</th>
+                                                <th>Target</th>
+                                                <th>Reason</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for action in recent_actions %}
+                                            <tr>
+                                                <td><small>{{ action.timestamp.strftime('%Y-%m-%d %H:%M') }}</small></td>
+                                                <td>{{ action.admin_email }}</td>
+                                                <td><span class="badge bg-primary">{{ action.action.value }}</span></td>
+                                                <td>{{ action.target_email }}</td>
+                                                <td><small>{{ action.reason[:50] }}{% if action.reason|length > 50 %}...{% endif %}</small></td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Management Section -->
+                <div id="users-section" class="content-section" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-users me-2"></i>User Management</h2>
+                        {% if user.is_admin_or_higher() %}
+                        <button class="btn btn-primary" onclick="showCreateUserModal()">
+                            <i class="fas fa-plus me-2"></i>Create User
+                        </button>
+                        {% endif %}
+                    </div>
+
+                    <div class="dashboard-card p-3">
+                        <div class="table-responsive">
+                            <table class="table table-hover admin-table">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Last Login</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table-body">
+                                    {% for user_item in users %}
+                                    <tr data-email="{{ user_item.email }}">
+                                        <td>{{ user_item.email }}</td>
+                                        <td><span class="role-badge role-{{ user_item.role }}">{{ user_item.role.title() }}</span></td>
+                                        <td><span class="role-badge status-{{ user_item.status }}">{{ user_item.status.title() }}</span></td>
+                                        <td><small>{{ user_item.created_at[:10] if user_item.created_at else 'N/A' }}</small></td>
+                                        <td><small>{{ user_item.last_login[:10] if user_item.last_login else 'Never' }}</small></td>
+                                        <td>
+                                            {% if user.can_edit_role(user_item.role) %}
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="editUser('{{ user_item.email }}')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                {% if user.can_block_users() and user_item.email != user.email %}
+                                                <button class="btn btn-outline-warning" onclick="blockUser('{{ user_item.email }}')">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other sections would continue here... -->
+                <div id="monitoring-section" class="content-section" style="display: none;">
+                    <h2><i class="fas fa-chart-line me-2"></i>System Monitoring</h2>
+                    <p>Advanced system monitoring charts and metrics will be displayed here.</p>
+                </div>
+
+                <div id="security-section" class="content-section" style="display: none;">
+                    <h2><i class="fas fa-shield-alt me-2"></i>Security</h2>
+                    <p>Security monitoring and threat detection will be displayed here.</p>
+                </div>
+
+                <div id="reports-section" class="content-section" style="display: none;">
+                    <h2><i class="fas fa-file-alt me-2"></i>Reports</h2>
+                    <p>Monthly reports and analytics will be displayed here.</p>
+                </div>
+
+                {% if user.is_owner() %}
+                <div id="settings-section" class="content-section" style="display: none;">
+                    <h2><i class="fas fa-cog me-2"></i>Settings</h2>
+                    <p>System settings and configuration will be displayed here.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Block User Confirmation Modal -->
+    <div class="modal fade confirmation-modal" id="blockUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Block User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="blockUserForm">
+                        <div class="mb-3">
+                            <label class="form-label">User Email:</label>
+                            <input type="email" class="form-control" id="blockUserEmail" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Block Duration:</label>
+                            <select class="form-select" id="blockDuration">
+                                <option value="24">24 Hours (Temporary)</option>
+                                {% if user.is_owner() %}
+                                <option value="">Permanent</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason for blocking:</label>
+                            <textarea class="form-control" id="blockReason" rows="3" required
+                                placeholder="Please provide a detailed reason for blocking this user..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" onclick="confirmBlock()">
+                        <i class="fas fa-ban me-2"></i>Block User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Confirmation Modal -->
+    <div class="modal fade" id="finalConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h6 class="modal-title">Are you sure?</h6>
+                </div>
+                <div class="modal-body text-center">
+                    <p id="confirmationMessage">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="executeBlock()">Yes, Block</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let systemChart, activityChart;
+        let currentBlockUser = null;
+
+        // Initialize dashboard
+        $(document).ready(function() {
+            initializeCharts();
+            setupNavigation();
+            startRealTimeUpdates();
+        });
+
+        // Navigation
+        function setupNavigation() {
+            $('.sidebar .nav-link').click(function(e) {
+                e.preventDefault();
+                const section = $(this).data('section');
+
+                // Update active nav
+                $('.sidebar .nav-link').removeClass('active');
+                $(this).addClass('active');
+
+                // Show/hide sections
+                $('.content-section').hide();
+                $(`#${section}-section`).show();
+            });
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            // System Performance Chart
+            const systemCtx = document.getElementById('systemChart').getContext('2d');
+            systemChart = new Chart(systemCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'CPU %',
+                        data: [],
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        tension: 0.1
+                    }, {
+                        label: 'Memory %',
+                        data: [],
+                        borderColor: 'rgb(54, 162, 235)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // Load initial chart data
+            loadChartData();
+        }
+
+        // Load chart data
+        function loadChartData() {
+            $.get('/admin/api/charts/system-performance')
+                .done(function(data) {
+                    if (systemChart && data.labels) {
+                        systemChart.data.labels = data.labels;
+                        systemChart.data.datasets = data.datasets;
+                        systemChart.update();
+                    }
+                });
+        }
+
+        // Real-time updates
+        function startRealTimeUpdates() {
+            setInterval(function() {
+                updateDashboardMetrics();
+                loadChartData();
+                updateAlertWidget();
+            }, 30000); // Update every 30 seconds
+            updateAlertWidget();
+        }
+
+        function updateDashboardMetrics() {
+            $.get('/admin/api/live-status')
+                .done(function(data) {
+                    $('#last-update').text(new Date().toLocaleString());
+
+                    if (data.metrics.application) {
+                        $('#active-sessions').text(data.metrics.application.active_sessions);
+                    }
+                });
+        }
+
+        // Real-time alert widget
+        function updateAlertWidget() {
+            $.get('/admin/api/live-status')
+                .done(function(data) {
+                    let alerts = [];
+                    if (data.metrics.security) {
+                        if (data.metrics.security.threat_level && data.metrics.security.threat_level !== 'LOW') {
+                            alerts.push('Threat Level: ' + data.metrics.security.threat_level);
+                        }
+                        if (data.metrics.security.failed_login_attempts > 0) {
+                            alerts.push('Failed Logins: ' + data.metrics.security.failed_login_attempts);
+                        }
+                        if (data.metrics.security.suspicious_activities > 0) {
+                            alerts.push('Suspicious Activities: ' + data.metrics.security.suspicious_activities);
+                        }
+                    }
+                    if (data.metrics.application && data.metrics.application.error_rate_percent > 5) {
+                        alerts.push('High Error Rate: ' + data.metrics.application.error_rate_percent + '%');
+                    }
+                    if (alerts.length === 0) {
+                        alerts.push('<span class="text-white-50">No alerts</span>');
+                    }
+                    $('#alert-list').html(alerts.map(a => `<li>${a}</li>`).join(''));
+                });
+        }
+
+        // User management functions
+        function blockUser(email) {
+            currentBlockUser = email;
+            $('#blockUserEmail').val(email);
+            $('#blockReason').val('');
+            $('#blockUserModal').modal('show');
+        }
+
+        function confirmBlock() {
+            const reason = $('#blockReason').val().trim();
+            if (!reason) {
+                alert('Please provide a reason for blocking this user.');
+                return;
+            }
+
+            const duration = $('#blockDuration').val();
+            const durationType = duration ? `${duration} hours` : 'permanently';
+
+            $('#confirmationMessage').text(
+                `You are about to block ${currentBlockUser} ${durationType}. This action will be logged and notifications sent.`
+            );
+
+            $('#blockUserModal').modal('hide');
+            $('#finalConfirmModal').modal('show');
+        }
+
+        function executeBlock() {
+            const blockData = {
+                target_email: currentBlockUser,
+                reason: $('#blockReason').val(),
+                duration_hours: $('#blockDuration').val() || null
+            };
+
+            $.ajax({
+                url: '/admin/api/users/block',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(blockData),
+                success: function(response) {
+                    $('#finalConfirmModal').modal('hide');
+                    alert('User blocked successfully.');
+                    location.reload(); // Refresh the page
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON?.detail || 'Error blocking user';
+                    alert(error);
+                }
+            });
+        }
+
+        function editUser(email) {
+            // Implementation for user editing
+            alert('User editing functionality will be implemented here.');
+        }
+
+        function showCreateUserModal() {
+            // Implementation for creating new users
+            alert('Create user functionality will be implemented here.');
+        }
+    </script>
+</body>
+</html>

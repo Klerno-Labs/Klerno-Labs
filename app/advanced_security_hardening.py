@@ -332,13 +332,16 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
 
             # Check specific endpoint limits
             for endpoint, limits in self.rate_limits.items():
-                if endpoint != "general" and endpoint != "api":
-                    if path.startswith(endpoint):
-                        if self.rate_limiter.is_rate_limited(
-                            ip, endpoint, limits["limit"], limits["window"]
-                        ):
-                            rate_limited = True
-                            break
+                if (
+                    endpoint != "general"
+                    and endpoint != "api"
+                    and path.startswith(endpoint)
+                    and self.rate_limiter.is_rate_limited(
+                        ip, endpoint, limits["limit"], limits["window"]
+                    )
+                ):
+                    rate_limited = True
+                    break
 
             # Check general API limits
             if not rate_limited and path.startswith("/api/"):

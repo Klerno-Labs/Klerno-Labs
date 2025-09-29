@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Terms of Service - Klerno Labs{% endblock %}
+
+{% block head %}
+<style>
+    .terms-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 2rem;
+        color: #333;
+        line-height: 1.6;
+    }
+
+    .terms-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 20px;
+    }
+
+    .terms-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .terms-date {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+
+    .terms-content {
+        background: #fff;
+        padding: 3rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        color: #667eea;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 2rem 0 1rem 0;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 0.5rem;
+    }
+
+    .subsection-title {
+        color: #333;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 1.5rem 0 0.5rem 0;
+    }
+
+    .terms-text {
+        margin-bottom: 1rem;
+        text-align: justify;
+    }
+
+    .highlight {
+        background: linear-gradient(120deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        border-left: 4px solid #667eea;
+    }
+
+    .contact-info {
+        background: #f8f9fa;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin: 2rem auto;
+        display: block;
+        width: fit-content;
+    }
+
+    .back-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="terms-container">
+    <div class="terms-header">
+        <h1 class="terms-title">Terms of Service</h1>
+        <p class="terms-date">Last Updated: {{ moment().format('MMMM D, YYYY') }}</p>
+    </div>
+
+    <div class="terms-content">
+        <div class="highlight">
+            <p><strong>Important:</strong> Please read these Terms of Service carefully before using Klerno Labs' blockchain analysis platform. By accessing or using our service, you agree to be bound by these terms.</p>
+        </div>
+
+        <h2 class="section-title">1. Acceptance of Terms</h2>
+        <p class="terms-text">
+            By accessing and using Klerno Labs ("we," "our," or "us"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
+        </p>
+
+        <h2 class="section-title">2. Service Description</h2>
+        <p class="terms-text">
+            Klerno Labs provides blockchain transaction analysis, compliance monitoring, and financial intelligence services. Our platform offers real-time transaction monitoring, risk scoring, and regulatory compliance tools for cryptocurrency transactions.
+        </p>
+
+        <h3 class="subsection-title">2.1 Key Features</h3>
+        <p class="terms-text">
+            • Real-time transaction analysis and risk scoring<br>
+            • Compliance monitoring and regulatory reporting<br>
+            • Advanced pattern recognition and anomaly detection<br>
+            • API access for integration with third-party systems<br>
+            • Comprehensive reporting and analytics dashboard
+        </p>
+
+        <h2 class="section-title">3. User Responsibilities</h2>
+        <p class="terms-text">
+            You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account or password.
+        </p>
+
+        <div class="highlight">
+            <p><strong>Data Usage:</strong> You agree to use our service only for lawful purposes and in accordance with applicable regulations including AML/KYC requirements.</p>
+        </div>
+
+        <h2 class="section-title">4. Privacy and Data Protection</h2>
+        <p class="terms-text">
+            We are committed to protecting your privacy. Our Privacy Policy explains how we collect, use, and protect your information when you use our service.
+        </p>
+
+        <h3 class="subsection-title">4.1 Data Security</h3>
+        <p class="terms-text">
+            We implement industry-standard security measures to protect your data, including encryption, secure data centers, and regular security audits.
+        </p>
+
+        <h2 class="section-title">5. Service Availability</h2>
+        <p class="terms-text">
+            While we strive for 99.9% uptime, we cannot guarantee uninterrupted service. Scheduled maintenance and updates may temporarily affect service availability.
+        </p>
+
+        <h2 class="section-title">6. Limitation of Liability</h2>
+        <p class="terms-text">
+            Klerno Labs shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly.
+        </p>
+
+        <h2 class="section-title">7. Intellectual Property</h2>
+        <p class="terms-text">
+            All content, features, and functionality of our service are owned by Klerno Labs and are protected by international copyright, trademark, and other intellectual property laws.
+        </p>
+
+        <h2 class="section-title">8. Termination</h2>
+        <p class="terms-text">
+            We may terminate or suspend your account immediately, without prior notice, for conduct that we believe violates these Terms of Service or is harmful to other users of the service.
+        </p>
+
+        <h2 class="section-title">9. Changes to Terms</h2>
+        <p class="terms-text">
+            We reserve the right to modify these terms at any time. We will notify users of any material changes via email or through our service dashboard.
+        </p>
+
+        <h2 class="section-title">10. Governing Law</h2>
+        <p class="terms-text">
+            These Terms of Service are governed by and construed in accordance with the laws of the jurisdiction in which Klerno Labs operates.
+        </p>
+
+        <div class="contact-info">
+            <h3>Contact Information</h3>
+            <p>If you have any questions about these Terms of Service, please contact us:</p>
+            <p>
+                <strong>Email:</strong> legal@klernolabs.com<br>
+                <strong>Address:</strong> Klerno Labs Legal Department<br>
+                <strong>Phone:</strong> +1 (555) 123-4567
+            </p>
+        </div>
+    </div>
+
+    <a href="/" class="back-button">
+        <i class="fas fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
+</div>
+{% endblock %}

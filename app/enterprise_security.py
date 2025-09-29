@@ -10,10 +10,12 @@ import os
 import secrets
 import time
 from collections import defaultdict
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from functools import wraps
+from typing import Any
 
-from fastapi import HTTPException, Request, status
+from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # Configure security logging
@@ -37,7 +39,7 @@ SECURITY_EVENTS = {
 class SecurityManager:
     """Central security management system"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.failed_attempts: dict[str, list[datetime]] = defaultdict(list)
         self.blocked_ips: set[str] = set()
         self.rate_limits: dict[str, list[datetime]] = defaultdict(list)
@@ -54,7 +56,7 @@ class SecurityManager:
 
     def log_security_event(
         self, event_type: str, details: dict, request: Request | None = None
-    ):
+    ) -> None:
         """Log security events for monitoring"""
         event_data = {
             "timestamp": datetime.now(UTC).isoformat(),
@@ -101,7 +103,7 @@ class SecurityManager:
 
         return len(self.failed_attempts[identifier]) >= max_attempts
 
-    def record_failed_attempt(self, identifier: str):
+    def record_failed_attempt(self, identifier: str) -> None:
         """Record a failed authentication attempt"""
         self.failed_attempts[identifier].append(datetime.now(UTC))
 
@@ -160,7 +162,9 @@ security_manager = SecurityManager()
 class SecurityMiddleware(BaseHTTPMiddleware):
     """Security middleware for request filtering and monitoring"""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         start_time = time.time()
         client_ip = security_manager.get_client_ip(request)
 
@@ -201,7 +205,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             try:
                 body = await request.body()
                 if body and security_manager.check_suspicious_input(
-                    body.decode("utf - 8", errors="ignore")
+                    body.decode("utf-8", errors="ignore")
                 ):
                     security_manager.log_security_event(
                         SECURITY_EVENTS["INJECTION_ATTEMPT"],
@@ -213,7 +217,12 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                         detail="Invalid request",
                     )
             except Exception:
-                pass  # Continue if body reading fails
+                # Continue silently if reading the body fails (best-effort)
+                # Use best-effort suppression to avoid masking other errors
+                import contextlib
+
+                with contextlib.suppress(Exception):
+                    _ = None
 
         response = await call_next(request)
 
@@ -221,15 +230,15 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         process_time = time.time() - start_time
         response.headers["X-Process-Time"] = str(process_time)
 
-        # Security headers
+        # Security headers (normalized header names)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X - XSS - Protection"] = "1; mode=block"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = (
-            "max - age=31536000; includeSubDomains"
+            "max-age=31536000; includeSubDomains"
         )
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions - Policy"] = (
+        response.headers["Permissions-Policy"] = (
             "geolocation=(), microphone=(), camera=()"
         )
 
@@ -246,7 +255,8 @@ def require_secure_password(password: str) -> bool:
         return False
     if not any(c.isdigit() for c in password):
         return False
-    return any(c in "!@  #$%^&*()_+-=[]{}|;:,.<>?" for c in password)
+    # Allow a conservative set of special characters
+    return any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password)
 
 
 def generate_secure_token(length: int = 32) -> str:
@@ -264,22 +274,25 @@ class AdminAccessLogger:
 
     @staticmethod
     def log_admin_action(
-        user_email: str, action: str, details: dict, request: Request = None
-    ):
+        user_email: str, action: str, details: dict, request: Request | None = None
+    ) -> None:
         """Log all admin actions for audit trail"""
+        # request may be None in some call sites (e.g., background tasks)
         security_manager.log_security_event(
             SECURITY_EVENTS["ADMIN_ACCESS"],
             {"admin_user": user_email, "action": action, "details": details},
-            request,
+            request if request is not None else None,
         )
 
 
-def admin_action_required(action_name: str):
+def admin_action_required(
+    action_name: str,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to log admin actions"""
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Extract user and request from function arguments
             user = None
             request = None
@@ -314,7 +327,7 @@ def admin_action_required(action_name: str):
 # Environment validation
 
 
-def validate_production_environment():
+def validate_production_environment() -> bool:
     """Validate production environment security"""
     required_vars = [
         "JWT_SECRET",
@@ -342,14 +355,22 @@ def validate_production_environment():
 
 def get_content_security_policy() -> str:
     """Generate Content Security Policy header"""
-    return (
-        "default - src 'self'; "
-        "script - src 'self' 'unsafe - inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-        "style - src 'self' 'unsafe - inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-        "img - src 'self' data: https:; "
-        "font - src 'self' https://fonts.gstatic.com; "
-        "connect - src 'self'; "
-        "frame - ancestors 'none'; "
-        "form - action 'self'; "
-        "base - uri 'self';"
-    )
+    parts = [
+        "default - src 'self';",
+        (
+            "script - src 'self' 'unsafe - inline' https://cdn.jsdelivr.net "
+            "https://cdnjs.cloudflare.com;"
+        ),
+        (
+            "style - src 'self' 'unsafe - inline' https://cdn.jsdelivr.net "
+            "https://cdnjs.cloudflare.com;"
+        ),
+        "img - src 'self' data: https:;",
+        "font - src 'self' https://fonts.gstatic.com;",
+        "connect - src 'self';",
+        "frame - ancestors 'none';",
+        "form - action 'self';",
+        "base - uri 'self';",
+    ]
+
+    return " ".join(parts)

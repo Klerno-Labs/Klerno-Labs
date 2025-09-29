@@ -6,6 +6,7 @@ Handles referral tracking, rewards, and viral growth mechanics
 import hashlib
 import secrets
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -53,7 +54,9 @@ class ReferralReward(BaseModel):
 class ReferralManager:
     """Handles all referral system operations"""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session | None):
+        # Accept an optional Session for test/demo usage where a DB may not
+        # be available. Callers in production should pass a real Session.
         self.db = db
 
     def generate_referral_code(self, user_id: str, prefix: str = "KL") -> str:
@@ -115,7 +118,7 @@ class ReferralManager:
         # Process reward
         return self._process_referral_reward(reward)
 
-    def get_user_referral_stats(self, user_id: str) -> dict:
+    def get_user_referral_stats(self, user_id: str) -> dict[str, Any]:
         """Get referral statistics for a user"""
         return {
             "referral_code": self.generate_referral_code(user_id),
@@ -126,28 +129,43 @@ class ReferralManager:
             "referral_link": self.create_referral_link(user_id),
         }
 
-    def generate_social_share_content(self, user_id: str, platform: str) -> dict:
+    def generate_social_share_content(
+        self, user_id: str, platform: str
+    ) -> dict[str, Any]:
         """Generate platform - specific sharing content"""
         referral_link = self.create_referral_link(user_id, f"social_{platform}")
 
-        templates = {
+        templates: dict[str, dict[str, Any]] = {
             "twitter": {
-                "text": "🚀 Just discovered @KlernoLabs - AI - powered crypto compliance that actually makes sense! Get explainable risk insights in real - time. Perfect for compliance teams who want speed AND clarity.",
+                "text": (
+                    "Just discovered @KlernoLabs - AI-powered crypto compliance "
+                    "that actually makes sense! Get explainable risk insights in real - "
+                    "time. Perfect for compliance teams who want speed AND clarity."
+                ),
                 "url": referral_link,
                 "hashtags": ["crypto", "compliance", "AI", "fintech"],
             },
             "linkedin": {
                 "title": "Game - changing crypto compliance tool",
-                "summary": "Klerno Labs transforms crypto compliance with explainable AI. Real - time risk insights your team can trust.",
+                "summary": (
+                    "Klerno Labs transforms crypto compliance with explainable AI. "
+                    "Real - time risk insights your team can trust."
+                ),
                 "url": referral_link,
             },
             "email": {
-                "subject": "Check out Klerno Labs - Game - changing crypto compliance tool",
+                "subject": (
+                    "Check out Klerno Labs - Game - changing crypto compliance tool"
+                ),
                 "body": self._generate_email_template(referral_link),
             },
         }
 
-        return templates.get(platform, templates["twitter"])
+        # Ensure the returned value is a dict for static type checkers
+        val = templates.get(platform)
+        if val is not None:
+            return val
+        return templates["twitter"]
 
     # Helper methods (would integrate with actual database / infrastructure)
 
@@ -197,24 +215,22 @@ class ReferralManager:
 
     def _generate_email_template(self, referral_link: str) -> str:
         """Generate email sharing template"""
-        return f"""Hi there!
-
-I wanted to share this incredible tool I just found - Klerno Labs.
-
-It's an AI - powered compliance platform that gives you explainable risk insights for crypto transactions in real - time. Finally, a compliance tool that doesn't feel like a black box!
-
-What makes it special:
-✅ Real - time XRPL monitoring
-✅ AI explanations you can actually understand
-✅ Built for compliance teams who need speed AND accuracy
-
-They're offering a free trial, and honestly, if you're in compliance, this could be a game - changer.
-
-Check it out: {referral_link}
-
-Let me know what you think!
-
-Best regards"""
+        return (
+            "Hi there!\n\n"
+            "I wanted to share this incredible tool I just found - Klerno Labs.\n\n"
+            "It's an AI - powered compliance platform that gives you explainable risk "
+            "insights for crypto transactions in real - time. Finally, a compliance "
+            "tool that doesn't feel like a black box!\n\n"
+            "What makes it special:\n"
+            "[OK] Real - time XRPL monitoring\n"
+            "[OK] AI explanations you can actually understand\n"
+            "[OK] Built for compliance teams who need speed AND accuracy\n\n"
+            "They're offering a free trial, and honestly, if you're in compliance, "
+            "this could be a game - changer.\n\n"
+            f"Check it out: {referral_link}\n\n"
+            "Let me know what you think!\n\n"
+            "Best regards"
+        )
 
 
 # Viral Growth Analytics
@@ -232,7 +248,7 @@ class ViralAnalytics:
         # Would use actual data from database
         return 0.45  # Mock value
 
-    def get_referral_funnel(self) -> dict:
+    def get_referral_funnel(self) -> dict[str, Any]:
         """Get referral conversion funnel metrics"""
         return {
             "link_clicks": 1250,
@@ -242,7 +258,7 @@ class ViralAnalytics:
             "conversion_rate": 7.12,
         }
 
-    def get_top_referrers(self, limit: int = 10) -> list[dict]:
+    def get_top_referrers(self, limit: int = 10) -> list[dict[str, Any]]:
         """Get top performing referrers"""
         return [
             {
@@ -279,11 +295,13 @@ class ViralAnalytics:
 def integrate_referral_with_signup(signup_data: dict, referral_code: str | None = None):
     """Integrate referral tracking with user signup"""
     if referral_code:
-        # Track the referral signup
-        referral_manager = ReferralManager(db=None)  # Would pass actual DB session
-        referral_manager.track_referral_signup(
-            referral_code, signup_data.get("user_id")
-        )
+        # Track the referral signup (defensive: only call when we have a user_id)
+        new_user_id = signup_data.get("user_id")
+        if new_user_id:
+            referral_manager = ReferralManager(
+                db=None
+            )  # Would pass actual DB session in production
+            referral_manager.track_referral_signup(referral_code, str(new_user_id))
 
         # Apply signup bonus (25% discount)
         signup_data["discount_code"] = "REFERRAL25"

@@ -10,10 +10,11 @@ import os
 import shutil
 import subprocess
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -79,12 +80,12 @@ class CICDPipeline:
         self.backups_path.mkdir(parents=True, exist_ok=True)
 
         # Pipeline state
-        self.current_build = None
+        self.current_build: BuildArtifact | None = None
         self.deployment_history: list[dict] = []
         self.rollback_points: list[dict] = []
 
         # Load configuration
-        self.config = self._load_config()
+        self.config: dict[str, Any] = self._load_config()
 
         logger.info("[CICD] Enterprise CI/CD pipeline initialized")
 
@@ -198,13 +199,14 @@ class CICDPipeline:
 
         try:
             if Path(self.config_path).exists():
-                with open(self.config_path) as f:
-                    config = yaml.safe_load(f)
+                with Path(self.config_path).open() as f:
+                    raw_config = yaml.safe_load(f)
+                    config = dict(raw_config) if isinstance(raw_config, dict) else {}
                     # Merge with defaults
                     default_config.update(config)
             else:
                 # Create default config file
-                with open(self.config_path, "w") as f:
+                with Path(self.config_path).open("w") as f:
                     yaml.dump(default_config, f, default_flow_style=False)
                 logger.info(f"[CICD] Created default configuration: {self.config_path}")
 
@@ -217,8 +219,8 @@ class CICDPipeline:
     def run_pipeline(
         self,
         target_branch: str = "main",
-        skip_stages: list[str] = None,
-        environment_overrides: dict[str, str] = None,
+        skip_stages: list[str] | None = None,
+        environment_overrides: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """Run the complete CI/CD pipeline"""
 
@@ -230,7 +232,7 @@ class CICDPipeline:
         )
 
         # Initialize pipeline results
-        results = {
+        results: dict[str, Any] = {
             "pipeline_id": pipeline_id,
             "branch": target_branch,
             "start_time": start_time.isoformat(),
@@ -243,7 +245,10 @@ class CICDPipeline:
 
         try:
             # Run each stage
-            for stage_config in self.config["pipeline_stages"]:
+            pipeline_stages = cast(
+                list[dict[str, Any]], self.config.get("pipeline_stages", [])
+            )
+            for stage_config in pipeline_stages:
                 stage_name = stage_config["name"]
 
                 if skip_stages and stage_name in skip_stages:
@@ -255,7 +260,8 @@ class CICDPipeline:
 
                 # Collect artifacts
                 if stage_result.get("artifacts"):
-                    results["artifacts"].extend(stage_result["artifacts"])
+                    artifacts = stage_result.get("artifacts") or []
+                    results["artifacts"].extend(artifacts)
 
                 # Check if stage failed and shouldn't continue
                 if not stage_result["success"] and not stage_config.get(
@@ -304,7 +310,9 @@ class CICDPipeline:
         return results
 
     def _run_stage(
-        self, stage_config: dict, environment_overrides: dict = None
+        self,
+        stage_config: dict[str, Any],
+        environment_overrides: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """Run a single pipeline stage"""
         stage_name = stage_config["name"]
@@ -352,16 +360,19 @@ class CICDPipeline:
                     stage_result["output"] += f"Command: {command}\n{stdout}\n"
 
                     if process.returncode != 0:
-                        stage_result[
-                            "error"
-                        ] += f"Command failed: {command}\n{stderr}\n"
+                        stage_result["error"] += (
+                            f"Command failed: {command}\n{stderr}\n"
+                        )
                         raise subprocess.CalledProcessError(
                             process.returncode, command, stderr
                         )
 
                 except subprocess.TimeoutExpired:
                     process.kill()
-                    raise Exception(f"Command timed out after {timeout}s: {command}")
+                    # Use a specific exception and avoid implicit exception chaining
+                    raise RuntimeError(
+                        f"Command timed out after {timeout}s: {command}"
+                    ) from None
 
             # Collect artifacts
             artifacts = stage_config.get("artifacts", [])
@@ -412,7 +423,7 @@ class CICDPipeline:
         """Run quality gate checks"""
         quality_gates = self.config.get("quality_gates", {})
 
-        gate_results = {"passed": True, "checks": [], "failures": []}
+        gate_results: dict[str, Any] = {"passed": True, "checks": [], "failures": []}
 
         # Code coverage check
         coverage_threshold = quality_gates.get("code_coverage_threshold", 80)
@@ -425,11 +436,11 @@ class CICDPipeline:
             "passed": coverage_actual >= coverage_threshold,
         }
 
-        gate_results["checks"].append(coverage_check)
+        cast(list[dict[str, Any]], gate_results["checks"]).append(coverage_check)
 
         if not coverage_check["passed"]:
             gate_results["passed"] = False
-            gate_results["failures"].append(
+            cast(list[str], gate_results["failures"]).append(
                 f"Code coverage {coverage_actual}% below threshold {coverage_threshold}%"
             )
 
@@ -449,11 +460,13 @@ class CICDPipeline:
             ),
         }
 
-        gate_results["checks"].append(security_check)
+        cast(list[dict[str, Any]], gate_results["checks"]).append(security_check)
 
         if not security_check["passed"]:
             gate_results["passed"] = False
-            gate_results["failures"].append("Security issues exceed thresholds")
+            cast(list[str], gate_results["failures"]).append(
+                "Security issues exceed thresholds"
+            )
 
         logger.info(
             f"[CICD] Quality gates: {'PASSED' if gate_results['passed'] else 'FAILED'}"
@@ -473,7 +486,7 @@ class CICDPipeline:
             coverage_match = re.search(r"TOTAL.*?(\d+)%", output)
             if coverage_match:
                 return float(coverage_match.group(1))
-        except:
+        except Exception:
             pass
 
         return 0.0
@@ -486,14 +499,14 @@ class CICDPipeline:
             # Look for bandit security report
             security_report_path = self.artifacts_path / "security_report.json"
             if security_report_path.exists():
-                with open(security_report_path) as f:
+                with security_report_path.open() as f:
                     report = json.load(f)
 
                 for result in report.get("results", []):
                     severity = result.get("issue_severity", "").lower()
                     if severity in issues:
                         issues[severity] += 1
-        except:
+        except Exception:
             pass
 
         return issues
@@ -549,7 +562,7 @@ class CICDPipeline:
     def _calculate_checksum(self, file_path: Path) -> str:
         """Calculate SHA256 checksum of file"""
         sha256_hash = hashlib.sha256()
-        with open(file_path, "rb") as f:
+        with Path(file_path).open("rb") as f:
             for byte_block in iter(lambda: f.read(4096), b""):
                 sha256_hash.update(byte_block)
         return sha256_hash.hexdigest()
@@ -561,14 +574,15 @@ class CICDPipeline:
                 ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
             )
             return result.stdout.strip()
-        except:
+        except Exception as e:
+            logger.warning(f"[CICD] Could not get git commit hash: {e}")
             return f"no-git-{int(time.time())}"
 
     def _save_pipeline_results(self, results: dict):
         """Save pipeline results to file"""
         try:
             results_file = self.logs_path / f"pipeline_{results['pipeline_id']}.json"
-            with open(results_file, "w") as f:
+            with results_file.open("w") as f:
                 json.dump(results, f, indent=2, default=str)
 
             logger.info(f"[CICD] Pipeline results saved: {results_file}")
@@ -640,7 +654,7 @@ class CICDPipeline:
         if not target_config:
             raise ValueError(f"Unknown deployment target: {target_environment}")
 
-        deployment_result = {
+        deployment_result: dict[str, Any] = {
             "deployment_id": deployment_id,
             "artifact_id": artifact.artifact_id,
             "target_environment": target_environment,
@@ -657,7 +671,7 @@ class CICDPipeline:
                 deployment_result["rollback_point"] = rollback_point
 
             # Deploy artifact
-            deploy_steps = [
+            deploy_steps_raw = [
                 ("validate_artifact", self._validate_artifact_for_deployment, artifact),
                 (
                     "prepare_deployment",
@@ -676,13 +690,17 @@ class CICDPipeline:
                 ("smoke_tests", self._run_smoke_tests, target_config),
             ]
 
-            for step_name, step_func, *args in deploy_steps:
-                step_result = self._run_deployment_step(step_name, step_func, *args)
+            for item in deploy_steps_raw:
+                name = cast(str, item[0])
+                func = cast(Callable[..., Any], item[1])
+                args_tuple: tuple[Any, ...] = tuple(item[2:])
+
+                step_result = self._run_deployment_step(name, func, *args_tuple)
                 deployment_result["steps"].append(step_result)
 
                 if not step_result["success"]:
                     deployment_result["status"] = "failed"
-                    deployment_result["failed_step"] = step_name
+                    deployment_result["failed_step"] = name
 
                     # Attempt rollback if enabled
                     if enable_rollback and deployment_result["rollback_point"]:
@@ -715,7 +733,7 @@ class CICDPipeline:
         return deployment_result
 
     def _run_deployment_step(
-        self, step_name: str, step_func: callable, *args
+        self, step_name: str, step_func: Callable, *args
     ) -> dict[str, Any]:
         """Run a single deployment step"""
         logger.info(f"[CICD] Running deployment step: {step_name}")

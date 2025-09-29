@@ -1,447 +1,340 @@
+# Klerno Labs - Clean Application
 
-# ==============================================================================
-# Klerno Labs - Premium Blockchain Compliance Platform ⭐
-# ==============================================================================
+This is the **clean, consolidated version** of the Klerno Labs Enterprise Transaction Analysis Platform. This version contains only the essential core functionality without the duplicate files found in the main project.
 
-[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg)](https://fastapi.tiangolo.com)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](Dockerfile)
-[![Security](https://img.shields.io/badge/Security-Enhanced-brightgreen.svg)](#security)
-[![XRPL](https://img.shields.io/badge/XRPL-Native-orange.svg)](https://xrpl.org)
-[![Quality](https://img.shields.io/badge/Quality-Top%200.1%25-gold.svg)](#quality)
+## ✨ What's Different
 
-> **🏆 TOP 0.1% BLOCKCHAIN COMPLIANCE PLATFORM**  
-> Professional-grade AML intelligence with premium UX, real-time risk scoring, and comprehensive fund management. Built for enterprises that demand excellence.
-
-## ✨ Premium Features
-
-### 🎯 **Professional Paywall System**
-- **3-Tier Pricing**: Starter ($29/mo), Professional ($99/mo), Enterprise ($299/mo)
-- **XRP Payment Integration**: Real-time cryptocurrency payments
-- **Glass Morphism Design**: Modern UI with smooth animations
-- **Dynamic Value Proposition**: Personalized pricing based on usage
-
-### 💼 **Advanced Admin Controls**
-- **Multi-Wallet Fund Management**: Distribute funds across multiple wallets with percentage controls
-- **Real-time Transaction Tracking**: Monitor all fund movements with detailed analytics
-- **Automated Distribution**: Smart fund allocation based on admin-defined rules
-- **Comprehensive Dashboard**: Executive-level oversight with actionable insights
-
-### 🔧 **Enterprise Wallet Management**
-- **Multi-Chain Support**: Bitcoin, Ethereum, XRP, Polygon, BSC, Cardano, Solana, Avalanche
-- **Smart Detection**: Auto-detect blockchain from address format
-- **Professional Organization**: Custom labels, categories, and portfolio management
-- **Real-time Balances**: Live balance tracking with error handling and retry logic
-
-### ⚡ **Performance Excellence**
-- **Sub-200ms Response Times**: Enterprise-grade performance optimization
-- **Advanced Caching**: Multi-layer caching with intelligent invalidation
-- **Database Optimization**: Optimized queries with proper indexing
-- **Async Architecture**: Non-blocking operations for maximum scalability
+- **Single Authentication System**: Consolidated from 5 conflicting auth files to 1 clean auth.py
+- **Unified Landing Page**: One cohesive design instead of multiple conflicting templates
+- **Streamlined Codebase**: Essential functionality only, no duplicates
+- **Clean Architecture**: FastAPI + SQLite + Bootstrap for simplicity
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- **Python 3.11+** (3.12 recommended)
-- **Docker** (optional, for containerized deployment)
-- **PostgreSQL** (for production deployments)
-
-### Development Setup
-
-#### Option 1: All-in-One Launcher (Recommended)
-```powershell
-# This script will try multiple methods to run the application
-# until it finds one that works with your security software
-.\run-all.bat
-
-# Or use the unified master controller
-.\klerno-master.bat
-```
-
-#### Option 2: Network Diagnostics & Troubleshooting
-
-If you encounter issues with ports or security software blocking the application, use our diagnostic tools:
-
-```powershell
-# Run comprehensive network diagnostics
-.\network-diagnostics.bat
-
-# Find available ports that work with your security software
-.\run-port-finder.bat
-
-# Free up blocked ports
-.\port-reset-tool.bat
-
-# Run advanced system diagnostics
-.\run-advanced-diagnostics.bat
-
-# Check and fix security settings
-.\run-network-analysis.bat
-```
-
-#### Option 3: Automated Setup (Windows)
-```powershell
-# Run with PowerShell
-.\start.ps1
-
-# Or use the batch file
-.\start.bat
-
-# To specify a custom port (default is 10000)
-.\start.ps1 -Port 8080
-# or
-.\start.bat 8080
-```
-
-#### Option 2: Manual Setup (All Platforms)
-```bash
-# Clone the repository
-git clone https://github.com/Klerno-Labs/Klerno-Labs.git
-cd Klerno-Labs
-
-# Create and activate virtual environment
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-# or
-.venv\Scripts\activate     # Windows
-
-# Install dependencies
-pip install --upgrade pip
-pip install -r requirements.txt
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
-
-# Run the application
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-#### Option 3: Docker Deployment
-```bash
-# Build and run with Docker
-docker build -t klerno-labs .
-docker run -p 8000:8000 -e APP_ENV=dev klerno-labs
-
-# Or with Docker Compose
-docker-compose up -d
-```
-
-### First Run Configuration
-
-1. **Navigate to**: `http://localhost:8000`
-2. **Set up admin account**: Follow the on-screen setup wizard
-3. **Configure API keys**: Go to `/admin` → API Key Management
-4. **Test integration**: Use the built-in XRPL sandbox
-
-### XRPL Integration
-
-Klerno Labs features native XRPL integration for payments and subscriptions:
-
-- **Subscription Tiers**: Starter, Professional, and Enterprise tiers with XRP payments
-- **Payment Processing**: Generate and verify XRPL payments
-- **Admin Management**: Manage subscriptions via admin panel or CLI tools
-
-For detailed information, see [XRPL Integration Documentation](docs/XRPL_INTEGRATION.md).
-
-## 🏗️ Architecture
-
-### Core Components
-
-```
-├── app/                    # Core application
-│   ├── main.py            # FastAPI application entry point
-│   ├── models.py          # Pydantic data models
-│   ├── security/          # Authentication & authorization
-│   ├── hardening.py       # Security middleware
-│   ├── integrations/      # Blockchain integrations
-│   ├── xrpl_payments.py   # XRPL payment processing
-│   ├── subscriptions.py   # Subscription management
-│   ├── config.py          # Environment-based configuration
-│   └── routes/            # API endpoints
-├── automation/            # AI-powered automation
-├── data/                  # Data storage & samples
-├── docs/                  # Documentation
-└── launch/                # Marketing & launch materials
-```
-
-### Technology Stack
-
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| **Backend** | FastAPI + Python 3.11+ | High-performance async API |
-| **Database** | PostgreSQL + SQLite | Data persistence & caching |
-| **Blockchain** | XRPL-py | Native XRPL integration |
-| **AI/ML** | OpenAI GPT-4 | Risk analysis & explanations |
-| **Security** | JWT + bcrypt | Authentication & session management |
-| **Monitoring** | Built-in metrics | Performance & health tracking |
-| **Frontend** | Jinja2 templates | Server-side rendered UI |
-
-## 🔧 Features
-
-### 💰 AML Risk Intelligence
-- **Real-time transaction analysis** across XRPL networks
-- **Advanced risk scoring** with machine learning models
-- **Automated transaction tagging** for compliance categories
-- **Explainable AI insights** - understand *why* transactions are flagged
-
-### 🧠 AI-Powered Analytics
-- **Advanced analytics dashboards** with comprehensive metrics
-- **AI-generated insights** and risk trend analysis
-- **Network analysis** for money laundering pattern detection
-- **Anomaly detection** with statistical modeling
-- **Natural language queries** - ask questions about your data
-
-### 🔌 Extensible Plugin System
-- **Plugin architecture** for custom functionality
-- **Hook system** for extending core features
-- **Sample plugins** for analytics and compliance
-- **Easy plugin development** with comprehensive APIs
-
-### 🚀 Seamless Onboarding
-- **Interactive guided tours** for new users
-- **Progressive disclosure** of advanced features
-- **Contextual help** and quick tips
-- **Customizable onboarding flows** based on user role
-
-### 👥 Community & Collaboration
-- **Knowledge base** with expert articles and tutorials
-- **Community forums** for questions and discussions
-- **Team workspaces** for collaborative analysis
-- **Transaction annotations** and shared insights
-
-### 🚨 Compliance Automation
-- **Instant alerts** with detailed risk explanations
-- **Regulatory reporting** with exportable summaries
-- **Audit trails** with complete transaction history
-- **Custom risk thresholds** per organization
-
-### 📊 Enhanced Analytics & Reporting
-- **Interactive dashboards** with real-time metrics
-- **Executive summaries** compress days of activity into actionable insights
-- **Trend analysis** to identify emerging risk patterns
-- **Export capabilities** for compliance documentation
-- **Network visualizations** and connection analysis
-
-### 🔐 Enterprise Security
-- **Multi-factor authentication** with role-based access control
-- **API key rotation** with granular permissions
-- **CSRF protection** and comprehensive security headers
-- **Audit logging** for all system activities
-
-## 🛠️ Development
-
-### Code Quality Standards
-- **Type hints** throughout the codebase
-- **Comprehensive testing** with pytest
-- **Security scanning** with automated tools
-- **Code formatting** with black and isort
-- **Documentation** with automated API docs
-
-### Running Tests
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=app --cov-report=html
-
-# Run specific test categories
-pytest app/tests/test_security.py -v
-pytest app/tests/test_compliance.py -v
-```
-
-### ISO20022 and Crypto Compliance Endpoints
-
-All enterprise endpoints require the API key header in production: `X-API-Key: <your key>`. In development, if no key is configured, access is allowed.
-
-- GET `/enterprise/iso20022/status` — Overall ISO20022 compliance report.
-- POST `/enterprise/iso20022/validate-message` — Validate a JSON payload for ISO20022 compliance.
-- POST `/enterprise/iso20022/validate-xml` — Validate raw ISO20022 XML (content-type: application/xml).
-- POST `/enterprise/iso20022/build-message` — Build ISO XML from a JSON description (supports pain.001, pain.002, camt.053).
-- GET `/enterprise/iso20022/cryptos` — Supported cryptocurrencies with compliance snapshots.
-- POST `/enterprise/iso20022/crypto-payment` — Build ISO-style crypto payment payload (no on-chain submit).
-
-Note: Timestamps are handled as timezone-aware UTC; ISO strings with `Z` are accepted.
-
-### API Documentation
-- **Interactive docs**: `http://localhost:8000/docs`
-- **ReDoc format**: `http://localhost:8000/redoc`
-- **OpenAPI spec**: `http://localhost:8000/openapi.json`
-
-## � Troubleshooting
-
-### Common Issues
-
-#### Security Software Blocking Servers
-If your security software is blocking or terminating Python web servers:
-
-1. **Try the All-in-One Launcher**: 
-   ```
-   .\run-all.bat
-   ```
-   This script tries multiple server implementations in sequence until one works.
-
-2. **Individual Solutions**:
-   - **Full Application**: `.\run-app.bat` (all features, most likely to be blocked)
-   - **Simple Server**: `.\run-simple.bat` (basic features, less likely to be blocked)
-   - **Minimal API**: `.\run-minimal-api.bat` (essential features only)
-   - **Static Server**: `.\run-static-server.bat` (http.server, very basic)
-   - **Static Site**: `.\view-static-site.bat` (no server required)
-
-3. **Add Firewall Exceptions**:
-   ```
-   .\add-firewall-exceptions.bat
-   ```
-   Run as administrator to add firewall exceptions for Python and common ports.
-
-4. **Run Diagnostics**:
-   ```
-   .\run-diagnostics.bat
-   ```
-   Identifies potential issues with your environment that might be causing problems.
-
-5. **Test Different Server Implementations**:
-   ```
-   .\test-servers.bat
-   ```
-   Tests multiple server implementations to find one that works with your security software.
-
-#### Port Conflicts
-If you encounter "Address already in use" errors:
-
-1. **Check for port conflicts**:
-   ```
-   powershell -ExecutionPolicy Bypass -File check-ports.ps1
-   ```
-   This script identifies and can terminate processes using port 8000.
-
-2. **Specify a different port**:
-   ```
-   # With start.ps1
-   .\start.ps1 -Port 8080
-   
-   # With uvicorn directly
-   uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
-   ```
-
-#### Missing Dependencies
-If you encounter import errors:
-
-1. **Ensure all dependencies are installed**:
-   ```
+1. **Install Dependencies**:
+   ```bash
    pip install -r requirements.txt
    ```
 
-2. **Check Python version compatibility**:
+2. **Start the Application**:
+   ```bash
+   python start_clean.py
    ```
-   python --version
-   ```
-   Ensure you're using Python 3.11 or newer.
 
-## �🔒 Security
+3. **Access the Application**:
+   - **Landing Page**: [http://localhost:8000](http://localhost:8000)
+   - **Login**: [http://localhost:8000/auth/login](http://localhost:8000/auth/login)
+   - **Admin Dashboard**: [http://localhost:8000/admin](http://localhost:8000/admin) (after login as admin)
 
-### Security Features
-- ✅ **HTTPS enforcement** with HSTS headers
-- ✅ **Content Security Policy** preventing XSS attacks
-- ✅ **CSRF protection** with double-submit cookies
-- ✅ **Rate limiting** to prevent abuse
-- ✅ **Input validation** and sanitization
-- ✅ **Secure session management** with JWT tokens
-- ✅ **API key rotation** and secure storage
+## Development
 
-### Security Reporting
-If you discover a security vulnerability, please email: **security@klerno.com**
+Dev / test notes
+---------------
 
-## 📈 Performance
+For local testing we use a Python 3.11 virtual environment to keep
+dependency wheels compatible with the project's pinned packages. A
+recommended workflow on Windows PowerShell:
 
-### Optimization Features
-- **Async/await** throughout for high concurrency
-- **Connection pooling** for database efficiency
-- **Caching strategies** for frequently accessed data
-- **Efficient serialization** with orjson
-- **Database indexing** for query optimization
-- **Horizontal scaling** ready architecture
-
-### Performance Metrics
-- **Response times**: < 100ms for most endpoints
-- **Throughput**: 1000+ requests/second
-- **Memory usage**: < 512MB typical operation
-- **Database queries**: Optimized with indexes
-
-## 🌐 Deployment
-
-### Supported Platforms
-- **Docker** (recommended)
-- **Render.com** (configured)
-- **Railway** (configured)
-- **AWS/Azure/GCP** (with Docker)
-- **Self-hosted** (Linux/Windows/macOS)
-
-### Environment Variables
-```bash
-# Application Settings
-APP_ENV=production
-DEMO_MODE=false
-SECRET_KEY=your-32-char-secret-key
-
-# Database
-DATABASE_URL=postgresql://user:password@host:port/dbname
-
-# XRPL Integration
-XRPL_RPC_URL=wss://xrplcluster.com/
-
-# OpenAI (optional)
-OPENAI_API_KEY=your-openai-key
-OPENAI_MODEL=gpt-4o-mini
-
-# Email Notifications
-SENDGRID_API_KEY=your-sendgrid-key
-ALERT_EMAIL_FROM=alerts@yourdomain.com
-
-# Stripe (for payments)
-STRIPE_SECRET_KEY=your-stripe-key
-STRIPE_PRICE_ID=your-price-id
+```powershell
+python -m venv .venv-py311
+. .\.venv-py311\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m pytest -q
 ```
 
-## 📚 Documentation
+The `requirements.txt` is runtime-only. Test and developer-only packages
+are listed in `dev-requirements.txt`. To install just the test helpers
+locally run:
 
-- 📖 **[API Documentation](docs/api.md)** - Complete API reference
-- 🏗️ **[Architecture Guide](docs/architecture.md)** - System design and patterns
-- 🚀 **[Deployment Guide](docs/deployment.md)** - Production deployment instructions
-- 🔐 **[Security Guide](docs/security.md)** - Security best practices
-- 🧪 **[Testing Guide](docs/testing.md)** - Testing strategies and guidelines
+```powershell
+python -m pip install -r dev-requirements.txt
+```
 
-## 🤝 Contributing
+### Migration note
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+`app/legacy_helpers.py` is retained as a small compatibility shim for
+older tests that import `create_access_token`/`verify_token` from
+builtins. Teams should migrate tests and code to import the functions
+directly from `app.auth` or `app.security_session` and then the shim can
+be removed. For local installs of only the test helpers use:
 
-### Development Workflow
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes with tests
-4. Run the test suite (`pytest`)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
+```powershell
+python -m pip install -r dev-requirements.txt
+```
 
-## 📄 License
+### CI status
 
-This project is proprietary software. All rights reserved by Klerno Labs.  
-See [LICENSE](LICENSE) for details.
+![Core CI](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/core-ci.yml/badge.svg)
 
-## 🏢 About Klerno Labs
 
-Klerno Labs is at the forefront of AML risk intelligence, building tools that give compliance teams clarity at the speed of crypto. We believe in transparency, explainability, and precision in financial crime prevention.
+## 🔑 JWT Rotation & Refresh Tokens
 
-**Contact**: [hello@klerno.com](mailto:hello@klerno.com)  
-**Website**: [klerno.com](https://klerno.com)  
-**LinkedIn**: [Klerno Labs](https://linkedin.com/company/klerno-labs)
+Klerno Labs uses short-lived access tokens (default 15 minutes) and long-lived refresh tokens (default 7 days) for authentication. Refresh tokens are single-use and are rotated on each refresh. Revoked/used tokens are tracked until expiry.
 
----
+- **Access token lifetime**: Configurable via `ACCESS_TOKEN_EXPIRE_MINUTES` (default: 15)
+- **Refresh token lifetime**: Configurable via `REFRESH_TOKEN_EXPIRE_DAYS` (default: 7)
+- **Redis support**: If `USE_REDIS_REFRESH=true` and `REDIS_URL` is set, refresh tokens are stored in Redis for distributed deployments; otherwise, in-memory fallback is used.
+- **Endpoints**:
+   - `/auth/token/refresh`: Exchange a valid refresh token for a new access+refresh token pair (rotates refresh token)
+   - `/auth/token/revoke`: Revoke a refresh token (logout)
 
-<div align="center">
-  <strong>Clarity at the speed of crypto.</strong><br>
-  Built with ❤️ by the Klerno Labs team
-</div>
+**Environment variables:**
+
+```
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=7
+USE_REDIS_REFRESH=true
+REDIS_URL=redis://localhost:6379
+```
+
+**Security notes:**
+- Refresh tokens are single-use; reusing an old token after rotation will fail.
+- If Redis is unavailable, the system falls back to in-memory storage (ephemeral, not suitable for multi-instance production).
+- Access tokens should be sent as Bearer tokens; refresh tokens are returned in API responses and should be stored securely by the client.
+
+## 👤 First Time Setup
+
+1. Visit [http://localhost:8000/auth/signup](http://localhost:8000/auth/signup)
+2. Create your account (first user becomes admin automatically)
+3. Login and access the admin dashboard
+
+## 📁 Project Structure
+
+```
+CLEAN_APP/
+├── app/
+│   ├── __init__.py          # Package init
+│   ├── main.py             # FastAPI application
+│   ├── auth.py             # Authentication system
+│   ├── admin.py            # Admin panel
+│   ├── models.py           # Data models
+│   ├── store.py            # Database operations
+│   └── settings.py         # Configuration
+├── templates/
+│   ├── base.html           # Base template
+│   ├── landing.html        # Landing page
+│   ├── login.html          # Login form
+│   ├── signup.html         # Signup form
+│   ├── admin.html          # Admin dashboard
+│   └── dashboard.html      # User dashboard
+├── static/                 # Static files (CSS, JS, images)
+├── data/                   # SQLite database (auto-created)
+├── requirements.txt        # Python dependencies
+├── start_clean.py         # Startup script
+└── README.md              # This file
+```
+
+## 🔧 Key Features
+
+- **Authentication**: Secure login/signup with bcrypt password hashing
+- **Admin Panel**: User management and system administration
+- **Responsive Design**: Bootstrap-based responsive UI
+- **Database**: SQLite for simplicity (easily upgradeable to PostgreSQL)
+- **API**: RESTful FastAPI backend
+
+## 🛡️ Security Features
+
+- **Password Hashing**: bcrypt for secure password storage
+- **Session Management**: FastAPI session middleware
+- **Role-Based Access**: Admin/User role separation
+- **Input Validation**: Pydantic models for API validation
+- **Hardened Cookies**: `SameSite=Strict` and secure flag automatically enabled outside development
+- **Secret Validation**: Startup guard rejects weak or default JWT secrets in non-development environments
+
+## 🔄 Migration from Original Project
+
+This clean version was created by:
+1. Identifying and removing 254 duplicate files from the original 256-file project
+2. Consolidating conflicting authentication systems
+3. Creating a unified landing page design
+4. Streamlining the database schema
+5. Removing unnecessary complexity
+
+## 📈 Next Steps
+
+From this clean foundation, you can:
+
+- Add blockchain analysis features
+- Implement transaction monitoring
+- Add more sophisticated user management
+- Integrate with external APIs
+- Add real-time dashboard features
+
+## One-line deploy / run
+
+For a quick production-ish run (use real secrets in env):
+
+```powershell
+# build image
+docker build -t klerno-app .
+# run with env (example)
+docker run --rm -e APP_ENV=production -e JWT_SECRET='your-very-strong-secret' -p 8000:8000 klerno-app
+```
+
+For more detailed steps and rollback instructions, see `docs/DEPLOY_RUNBOOK.md`.
+
+## 🆘 Support
+
+This clean application provides the same core functionality as the original project but with:
+
+- 99% fewer files
+- No conflicting systems
+- Clear architecture
+- Easy maintenance
+
+The original project structure remains available for reference in the parent directory.
+
+## Run locally (Windows PowerShell)
+
+If you want to start the app locally and quickly verify the login flow (dev-only admin credentials are created automatically on first run), follow these steps in PowerShell:
+
+```powershell
+# Create and activate a Python 3.11 venv (one-time)
+python -m venv .venv-py311
+. .\.venv-py311\Scripts\Activate.ps1
+
+# Install runtime deps (use dev-requirements for test helpers if needed)
+python -m pip install -r requirements.txt
+
+# Start the server in the background (keeps this shell free)
+Start-Process -FilePath ".\.venv-py311\Scripts\python.exe" -ArgumentList '-m','uvicorn','app.main:app','--host','127.0.0.1','--port','8000','--log-level','info' -NoNewWindow
+
+# Run a small smoke-test (optional)
+. .\.venv-py311\Scripts\python.exe scripts\smoke_test.py
+```
+
+Default dev admin credentials (local development only):
+
+- email: `klerno@outlook.com`
+- password: `Labs2025`
+
+Troubleshooting:
+
+- If the server exits immediately, inspect the terminal that started uvicorn for startup logs. Common causes: missing python packages, or a locked port; install requirements and retry.
+- If templates fail to render, ensure the working directory is the project root so the `templates/` folder is on the app path.
+
+## CI and Contributing
+
+This repository includes a CI workflow that runs import-safety checks, `mypy`, and `pytest` on pull requests to `main`.
+
+To create a PR from a feature branch (example using the current hardening work):
+
+```powershell
+# Create a descriptive branch
+git checkout -b chore/ci-observability-hardening
+
+# Push and open PR (requires GitHub CLI)
+git push -u origin chore/ci-observability-hardening
+gh pr create --title "chore(ci+observability+security): consolidate workflows; add readiness & metrics" --body-file PULL_REQUEST_DRAFT.md --base main
+```
+
+The unified `core-ci.yml` replaces the prior fragmented `ci.yml`, `ci-minimal.yml`, and `pytest.yml` workflows (now removed). Use one branch per logical change set to keep reviews focused.
+
+## Local development helper files
+
+Two helper files were added to make running locally easier:
+
+- `.env.example` — copy to `.env` or read and set the listed environment variables. It lists `X_API_KEY`, `JWT_SECRET`, `DATABASE_URL`, and optional integration keys (OpenAI, SendGrid, Stripe, BSC).
+- `start-local.ps1` — convenience script for Windows PowerShell that sets session-only environment variables and starts the app using the project's `.venv-py311` virtualenv. Run it from the repo root: `./start-local.ps1`.
+
+If port 8000 is already in use, `scripts/start_local.ps1` will try 8000 and then fall back to ports 8001..8100 automatically and start the app using `.venv-py311\Scripts\python.exe` when available.
+
+Also included: `data/api_key.secret.example` as an example file the app will read for the API key if env vars are not present.
+
+### Operational endpoints
+
+The application now exposes several operational/observability endpoints:
+
+- `GET /health` or `/healthz` – Basic liveness (always returns 200 if process is running)
+- `GET /status` – Returns JSON with `{"status": "running", "version": <app_version>}`
+- `GET /ready` – Readiness probe that verifies datastore connectivity and returns uptime seconds. Returns 503 if the database layer is not ready.
+- `GET /metrics` – Prometheus metrics (request count & latency histogram) if `prometheus_client` is installed. Omitted silently if the library is not present.
+
+Logging is structured and can emit JSON when `LOG_FORMAT=json` is set in the environment. This improves ingestion into log aggregation systems.
+
+### Optional Rate Limiting
+
+An in-memory token bucket limiter can be enabled for quick protection:
+
+Environment variables:
+- `ENABLE_RATE_LIMIT=true` – Activate limiter.
+- `RATE_LIMIT_CAPACITY` (default 60) – Burst size.
+- `RATE_LIMIT_PER_MINUTE` (default 120) – Sustained rate.
+
+This scaffold is per-process only; for real production use a distributed backend (e.g. Redis + `starlette-limiter`).
+
+### CSP Nonce (Report-Only Rollout)
+
+You can enable a per-request CSP nonce to harden script/style execution:
+
+Environment variables:
+
+- `CSP_NONCE_ENABLED=true` – Turn on nonce generation and injection.
+- `CSP_REPORT_ONLY=true` (default) – Emit `Content-Security-Policy-Report-Only` instead of enforcing.
+- `CSP_BASE_POLICY="default-src 'self'"` – Base policy; nonce rules for `script-src` & `style-src` are appended automatically.
+
+Violation reports (browsers that support reporting) can be POSTed to `/csp/report`; they are currently logged (structured) for analysis. Once the policy is tuned in report-only mode you can set `CSP_REPORT_ONLY=false` to enforce.
+
+### Coverage & Security Scans
+
+Core CI now generates a `coverage.xml` artifact and runs a vulnerability scan using `pip-audit` (non-blocking). To run locally:
+
+```powershell
+python -m pip install coverage pip-audit
+coverage run -m pytest -q
+coverage report -m
+pip-audit -r requirements.txt
+```
+
+### Production Readiness Script
+
+Before deploying, execute:
+
+```powershell
+python scripts/check_prod_readiness.py
+```
+
+It validates presence of required environment variables, weak secrets, port usage, and highlights recommended improvements (e.g. moving off SQLite). Exit code 1 indicates a hard failure.
+
+
+To set up `pre-commit` locally and run the import-safety check before commits:
+
+```powershell
+python -m pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
+### PostgreSQL (Optional) & Migrations
+
+The application now supports running on PostgreSQL. A `db` service was added to
+`docker-compose.yml` along with an Alembic migration scaffold.
+
+Quick start with Docker Compose (app + Postgres + Redis):
+
+```powershell
+docker compose up --build
+```
+
+By default the compose file sets:
+
+- `DATABASE_URL=postgresql+psycopg://klerno:klerno@db:5432/klerno`
+- `DB_CONNECT_RETRIES=10` with exponential backoff for startup races
+
+To generate / apply migrations locally:
+
+```powershell
+python -m pip install alembic psycopg[binary]
+# Create a new revision (example)
+alembic revision -m "add new table" --autogenerate
+# Apply migrations
+alembic upgrade head
+```
+
+Initial revision `0001_initial_core_tables` creates minimal `users` and
+`transactions` tables. The legacy `store.py` still auto-manages columns for
+SQLite / compatibility; over time these should migrate into explicit Alembic
+revisions. When `DATABASE_URL` points to Postgres and `psycopg` is available the
+runtime automatically uses Postgres connections.
+
+Fallback: If Postgres is unavailable the app will continue to work with SQLite.

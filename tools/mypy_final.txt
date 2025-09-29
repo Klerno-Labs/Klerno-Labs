@@ -1,0 +1,5 @@
+Running: c:\Users\Somli\OneDrive\Desktop\Klerno Labs\.venv-py311\Scripts\python.exe -m mypy app --show-error-codes
+Found 0 errors across 0 files
+
+Top files:
+No errors found

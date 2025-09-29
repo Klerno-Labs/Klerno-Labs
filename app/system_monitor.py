@@ -10,9 +10,17 @@ import sqlite3
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
-import psutil
+from app._typing_shims import ISyncConnection
+
+if TYPE_CHECKING:
+    import psutil  # pragma: no cover
+else:
+    try:
+        import psutil
+    except Exception:
+        psutil = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +68,6 @@ class SecurityMetrics:
 
 
 class SystemMonitor:
-
     def auto_block_suspicious_users(
         self, admin_manager, guardian_module, risk_threshold=0.9
     ):
@@ -72,7 +79,8 @@ class SystemMonitor:
             # Scan last 10 minutes of transactions
             cutoff = datetime.now(UTC) - timedelta(minutes=10)
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+                typed_conn = cast(ISyncConnection, conn)
+                cursor = typed_conn.cursor()
                 cursor.execute(
                     """
                     SELECT
@@ -123,21 +131,33 @@ class SystemMonitor:
 
     """Comprehensive system monitoring for enterprise admin dashboard."""
 
-    def __init__(self, db_path: str = "data/klerno.db"):
+    def __init__(self, db_path: str = "data/klerno.db", init_db: bool = False):
+        """Create a SystemMonitor instance.
+
+        By default this constructor does not perform any filesystem or
+        database initialization. Pass init_db=True to create monitoring
+        tables immediately (used by application startup).
+        """
         self.db_path = db_path
         self.start_time = time.time()
         self.request_count = 0
-        self.response_times = []
+        self.response_times: list[float] = []
         self.error_count = 0
-        self.active_sessions = set()
+        self.active_sessions: set[Any] = set()
         self.failed_logins = 0
-        self.init_monitoring_tables()
+
+        # Avoid side-effects during import/normal construction. Table
+        # initialization is opt-in to keep tests and tooling safe; call
+        # init_monitoring_tables() explicitly when needed.
+        if init_db:
+            self.init_monitoring_tables()
 
     def init_monitoring_tables(self):
         """Initialize monitoring database tables."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+                typed_conn = cast(ISyncConnection, conn)
+                cursor = typed_conn.cursor()
 
                 # System metrics table
                 cursor.execute(
@@ -209,7 +229,7 @@ class SystemMonitor:
         except Exception as e:
             logger.error("Error initializing monitoring tables: %s", e)
 
-    def get_system_metrics(self) -> SystemMetrics:
+    def get_system_metrics(self) -> SystemMetrics | None:
         """Get current system performance metrics."""
         try:
             # CPU usage
@@ -227,8 +247,13 @@ class SystemMonitor:
 
             # Network stats
             network = psutil.net_io_counters()
-            network_bytes_sent = network.bytes_sent
-            network_bytes_recv = network.bytes_recv
+            # psutil may return a namedtuple or None; guard attribute access
+            network_bytes_sent = (
+                getattr(network, "bytes_sent", 0) if network is not None else 0
+            )
+            network_bytes_recv = (
+                getattr(network, "bytes_recv", 0) if network is not None else 0
+            )
 
             # Connection count
             active_connections = len(psutil.net_connections())
@@ -236,9 +261,13 @@ class SystemMonitor:
             # Uptime
             uptime_seconds = int(time.time() - self.start_time)
 
+            cpu_val = (
+                float(cpu_percent) if isinstance(cpu_percent, (int, float)) else 0.0
+            )
+
             return SystemMetrics(
                 timestamp=datetime.now(UTC),
-                cpu_percent=cpu_percent,
+                cpu_percent=cpu_val,
                 memory_percent=memory_percent,
                 memory_available_gb=memory_available_gb,
                 disk_usage_percent=disk_usage_percent,
@@ -252,12 +281,13 @@ class SystemMonitor:
             logger.error("Error getting system metrics: %s", e)
             return None
 
-    def get_application_metrics(self) -> ApplicationMetrics:
+    def get_application_metrics(self) -> ApplicationMetrics | None:
         """Get current application metrics."""
         try:
             # Count total users
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+                typed_conn = cast(ISyncConnection, conn)
+                cursor = typed_conn.cursor()
                 cursor.execute("SELECT COUNT(*) FROM users_enhanced")
                 total_users = cursor.fetchone()[0]
 
@@ -294,14 +324,15 @@ class SystemMonitor:
             logger.error("Error getting application metrics: %s", e)
             return None
 
-    def get_security_metrics(self) -> SecurityMetrics:
+    def get_security_metrics(self) -> SecurityMetrics | None:
         """Get current security metrics."""
         try:
             # Count recent failed logins
             hour_ago = datetime.now(UTC) - timedelta(hours=1)
 
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+                typed_conn = cast(ISyncConnection, conn)
+                cursor = typed_conn.cursor()
                 cursor.execute(
                     """
                     SELECT COUNT(*) FROM admin_actions
@@ -338,7 +369,8 @@ class SystemMonitor:
             security_metrics = self.get_security_metrics()
 
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+                typed_conn = cast(ISyncConnection, conn)
+                cursor = typed_conn.cursor()
 
                 if system_metrics:
                     cursor.execute(
@@ -409,7 +441,8 @@ class SystemMonitor:
             cutoff_time = datetime.now(UTC) - timedelta(hours=hours)
 
             with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+                typed_conn = cast(ISyncConnection, conn)
+                cursor = typed_conn.cursor()
 
                 # Get recent system metrics
                 cursor.execute(

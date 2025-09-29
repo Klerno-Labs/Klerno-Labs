@@ -12,12 +12,14 @@ Comprehensive security hardening including:
 
 from __future__ import annotations
 
+import contextlib
 import ipaddress
 import logging
 import os
 import time
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -40,12 +42,12 @@ try:
     USE_REDIS = True
 except ImportError:
     USE_REDIS = False
+    # Note: Redis not available or failed to connect; fall back to in-memory store
     rate_limit_store: dict[str, dict[str, Any]] = {}
-    # Note: Redis not available, using in-memory rate limiting (this is expected in development)
 except Exception:
     USE_REDIS = False
-    rate_limit_store: dict[str, dict[str, Any]] = {}
     # Note: Redis connection failed, using in-memory rate limiting (this is expected in development)
+    rate_limit_store = {}
 
 
 class SecurityConfig:
@@ -146,8 +148,7 @@ class AntiTheftProtection:
     def verify_request_integrity(request: Request) -> bool:
         """Verify request hasn't been tampered with."""
         # Check for suspicious headers that indicate automation / scraping
-
-        user_agent = request.headers.get("user - agent", "").lower()
+        user_agent = request.headers.get("user-agent", "").lower()
 
         # Block obvious bots / scrapers
         if any(bot in user_agent for bot in SecurityConfig.BLOCKED_USER_AGENTS):
@@ -168,7 +169,19 @@ class AntiTheftProtection:
                 if current is None:
                     redis_client.setex(key, window, 1)
                     return True
-                elif int(current) >= limit:
+                # Safely coerce Redis return value to int
+                try:
+                    curr_val = int(cast(Any, current))
+                except Exception:
+                    try:
+                        curr_val = int(str(cast(Any, current)))
+                    except Exception:
+                        # Unknown type from Redis client; increment and allow
+                        with contextlib.suppress(Exception):
+                            redis_client.incr(key)
+                        return True
+
+                if curr_val >= limit:
                     return False
                 else:
                     redis_client.incr(key)
@@ -260,7 +273,9 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     # Whitelisted paths that bypass security checks
     WHITELISTED_PATHS = ["/health", "/healthz", "/metrics", "/status", "/ping"]
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         start_time = time.time()
         client_ip = self._get_client_ip(request)
 
@@ -370,8 +385,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                     continue
 
         # Fall back to direct connection
-        if hasattr(request.client, "host"):
-            return request.client.host
+        if request.client:
+            return getattr(request.client, "host", "unknown")
         return "unknown"
 
     def _get_endpoint_type(self, path: str) -> str:
@@ -380,7 +395,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             return "auth"
         elif path.startswith("/admin/"):
             return "admin"
-        elif path.startswith("/api / payment") or path.startswith("/paywall"):
+        elif path.startswith("/api/payment") or path.startswith("/paywall"):
             return "payment"
         elif path.startswith("/api/"):
             return "api"
@@ -395,7 +410,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 
     def _log_request(
         self, request: Request, response: Response, client_ip: str, duration: float
-    ):
+    ) -> None:
         """Log request for security monitoring."""
         log_data = {
             "timestamp": datetime.now(UTC).isoformat(),
@@ -404,7 +419,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             "path": request.url.path,
             "status_code": response.status_code,
             "duration_ms": round(duration * 1000, 2),
-            "user_agent": request.headers.get("user - agent", "")[:200],
+            "user_agent": request.headers.get("user-agent", "")[:200],
             "referer": request.headers.get("referer", "")[:200],
         }
 
@@ -417,7 +432,7 @@ class AuditLogger:
 
     @staticmethod
     def log_security_event(
-        event_type: str, details: dict[str, Any], client_ip: str = None
+        event_type: str, details: dict[str, Any], client_ip: str | None = None
     ):
         """Log security - related events for audit trail."""
         log_entry = {
@@ -431,7 +446,7 @@ class AuditLogger:
 
     @staticmethod
     def log_admin_action(
-        admin_email: str, action: str, target: str, client_ip: str = None
+        admin_email: str, action: str, target: str, client_ip: str | None = None
     ):
         """Log administrative actions for compliance."""
         AuditLogger.log_security_event(
@@ -441,7 +456,7 @@ class AuditLogger:
         )
 
     @staticmethod
-    def log_authentication(email: str, success: bool, client_ip: str = None):
+    def log_authentication(email: str, success: bool, client_ip: str | None = None):
         """Log authentication attempts."""
         AuditLogger.log_security_event(
             "authentication", {"email": email, "success": success}, client_ip

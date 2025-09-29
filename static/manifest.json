@@ -1,0 +1,104 @@
+{
+    "name": "Klerno Labs - Blockchain Security Platform",
+    "short_name": "Klerno Labs",
+    "description": "Enterprise-grade blockchain security and risk analysis platform for XRPL and other cryptocurrencies",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#667eea",
+    "theme_color": "#667eea",
+    "orientation": "portrait-primary",
+    "categories": [
+        "business",
+        "finance",
+        "security"
+    ],
+    "lang": "en-US",
+    "icons": [
+        {
+            "src": "/static/klerno-logo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/static/klerno-wordmark.png",
+            "sizes": "256x256",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/static/images/dashboard-screenshot.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Klerno Labs Dashboard"
+        },
+        {
+            "src": "/static/images/mobile-screenshot.png",
+            "sizes": "375x667",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Mobile View"
+        }
+    ],
+    "features": [
+        "blockchain-security",
+        "xrpl-analysis",
+        "risk-assessment",
+        "compliance-monitoring"
+    ],
+    "shortcuts": [
+        {
+            "name": "Dashboard",
+            "short_name": "Dashboard",
+            "description": "Access your blockchain security dashboard",
+            "url": "/dashboard",
+            "icons": [
+                {
+                    "src": "/static/klerno-logo.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Analyze Transaction",
+            "short_name": "Analyze",
+            "description": "Quick transaction analysis",
+            "url": "/analyze",
+            "icons": [
+                {
+                    "src": "/static/klerno-logo.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Admin Panel",
+            "short_name": "Admin",
+            "description": "Administrative controls",
+            "url": "/admin",
+            "icons": [
+                {
+                    "src": "/static/klerno-logo.png",
+                    "sizes": "96x96"
+                }
+            ]
+        }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false,
+    "protocol_handlers": [
+        {
+            "protocol": "web+klerno",
+            "url": "/analyze?url=%s"
+        }
+    ],
+    "edge_side_panel": {
+        "preferred_width": 400
+    },
+    "launch_handler": {
+        "client_mode": "navigate-existing"
+    }
+}

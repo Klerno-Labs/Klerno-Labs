@@ -49,16 +49,16 @@ class PerformanceTracker:
 
     def __init__(self):
         self.metrics: list[PerformanceMetric] = []
-        self.request_times = deque(maxlen=1000)  # Last 1000 requests
-        self.error_rates = defaultdict(int)
-        self.endpoint_stats = defaultdict(list)
-        self.system_metrics = {}
+        self.request_times: deque[float] = deque(maxlen=1000)  # Last 1000 requests
+        self.error_rates: dict[str, int] = defaultdict(int)
+        self.endpoint_stats: dict[str, list[float]] = defaultdict(list)
+        self.system_metrics: dict[str, Any] = {}
 
     def record_metric(
         self,
         name: str,
         value: float,
-        labels: dict[str, str] = None,
+        labels: dict[str, str] | None = None,
         metric_type: MetricType = MetricType.GAUGE,
     ):
         """Record a performance metric"""
@@ -130,7 +130,7 @@ class PerformanceTracker:
             cpu_percent = psutil.cpu_percent(interval=1)
             memory = psutil.virtual_memory()
             disk = psutil.disk_usage("/")
-        except:
+        except Exception:
             cpu_percent = 0
             memory = None
             disk = None
@@ -248,13 +248,13 @@ class UserAnalytics:
 
     def _get_popular_flows(self) -> list[dict[str, Any]]:
         """Get most popular user flows"""
-        flow_counts = defaultdict(int)
+        flow_counts: defaultdict[str, int] = defaultdict(int)
 
         for flow in self.user_flows.values():
             if len(flow) >= 2:
                 # Track 2-page flows
                 for i in range(len(flow) - 1):
-                    flow_pattern = f"{flow[i]} -> {flow[i+1]}"
+                    flow_pattern = f"{flow[i]} -> {flow[i + 1]}"
                     flow_counts[flow_pattern] += 1
 
         return [
@@ -269,8 +269,8 @@ class RegressionDetector:
     """Automated performance regression detection"""
 
     def __init__(self):
-        self.baseline_metrics = {}
-        self.alerts = []
+        self.baseline_metrics: dict[str, Any] = {}
+        self.alerts: list[dict[str, Any]] = []
         self.thresholds = {
             "response_time_increase": 0.5,  # 50% increase
             "error_rate_increase": 0.1,  # 10% increase
@@ -292,7 +292,7 @@ class RegressionDetector:
         self, current_metrics: dict[str, Any]
     ) -> list[dict[str, Any]]:
         """Check for performance regressions"""
-        alerts = []
+        alerts: list[dict[str, Any]] = []
 
         if not self.baseline_metrics:
             return alerts
@@ -352,14 +352,15 @@ class RegressionDetector:
 class AdvancedMonitoringMiddleware(BaseHTTPMiddleware):
     """Comprehensive monitoring middleware"""
 
-    def __init__(self, app):
+    def __init__(self, app, start_background: bool = False):
         super().__init__(app)
         self.performance_tracker = PerformanceTracker()
         self.user_analytics = UserAnalytics()
         self.regression_detector = RegressionDetector()
 
-        # Start background monitoring task
-        asyncio.create_task(self._background_monitoring())
+        # Start background monitoring task only if explicitly requested
+        if start_background:
+            asyncio.create_task(self._background_monitoring())
 
     async def dispatch(self, request: Request, call_next):
         """Main monitoring dispatch"""
@@ -433,7 +434,7 @@ class AdvancedMonitoringMiddleware(BaseHTTPMiddleware):
                 if time.time() - self._last_baseline_update > 3600:  # 1 hour
                     self.regression_detector.update_baseline(performance_summary)
                     self._last_baseline_update = time.time()
-                    print("📊 Performance baseline updated")
+                    print("[MONITOR] Performance baseline updated")
 
             except Exception as e:
                 print(f"Monitoring error: {e}")
@@ -479,9 +480,16 @@ class AdvancedMonitoringMiddleware(BaseHTTPMiddleware):
 monitoring_middleware = None
 
 
-def get_monitoring_middleware():
-    """Get or create monitoring middleware instance"""
+def get_monitoring_middleware(start_background: bool = False):
+    """Get or create monitoring middleware instance.
+
+    By default the background monitoring loop is not started. Pass
+    `start_background=True` when running in production to enable the
+    periodic monitoring task.
+    """
     global monitoring_middleware
     if not monitoring_middleware:
-        monitoring_middleware = AdvancedMonitoringMiddleware(None)
+        monitoring_middleware = AdvancedMonitoringMiddleware(
+            None, start_background=start_background
+        )
     return monitoring_middleware

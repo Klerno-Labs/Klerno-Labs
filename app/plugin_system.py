@@ -3,12 +3,12 @@ Plugin System for Klerno Labs
 Provides extensible API functionality through a plugin architecture
 """
 
-import importlib
+import importlib.util as importlib_util
 import inspect
 import logging
-import os
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
@@ -37,11 +37,11 @@ class PluginHook:
         self.description = description
         self.callbacks: list[Callable] = []
 
-    def register(self, callback: Callable):
+    def register(self, callback: Callable) -> None:
         """Register a callback for this hook"""
         self.callbacks.append(callback)
 
-    def execute(self, *args, **kwargs) -> list[Any]:
+    def execute(self, *args: Any, **kwargs: Any) -> list[Any]:
         """Execute all callbacks for this hook"""
         results = []
         for callback in self.callbacks:
@@ -56,7 +56,7 @@ class PluginHook:
 class BasePlugin(ABC):
     """Base class for all plugins"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.metadata: PluginMetadata | None = None
         self.hooks: dict[str, PluginHook] = {}
 
@@ -66,17 +66,22 @@ class BasePlugin(ABC):
         pass
 
     @abstractmethod
-    def initialize(self, app: FastAPI, plugin_manager: "PluginManager"):
+    def initialize(self, app: FastAPI, plugin_manager: "PluginManager") -> None:
         """Initialize the plugin"""
         pass
 
-    def register_hook(self, hook_name: str, callback: Callable):
+    def register_hook(self, hook_name: str, callback: Callable) -> None:
         """Register a callback for a specific hook"""
         if hook_name in self.hooks:
             self.hooks[hook_name].register(callback)
 
-    def add_api_route(self, app: FastAPI, path: str, endpoint: Callable, **kwargs):
+    def add_api_route(
+        self, app: FastAPI, path: str, endpoint: Callable, **kwargs: Any
+    ) -> None:
         """Helper to add API routes with plugin prefix"""
+        if self.metadata is None:
+            raise RuntimeError("Plugin metadata not set; cannot add API route")
+
         plugin_path = f"/plugins/{self.metadata.name.lower()}{path}"
         app.add_api_route(plugin_path, endpoint, **kwargs)
 
@@ -84,7 +89,7 @@ class BasePlugin(ABC):
 class PluginManager:
     """Manages plugin lifecycle and hooks"""
 
-    def __init__(self, app: FastAPI):
+    def __init__(self, app: FastAPI) -> None:
         self.app = app
         self.plugins: dict[str, BasePlugin] = {}
         self.hooks: dict[str, PluginHook] = {}
@@ -93,7 +98,7 @@ class PluginManager:
         # Initialize core hooks
         self._initialize_core_hooks()
 
-    def _initialize_core_hooks(self):
+    def _initialize_core_hooks(self) -> None:
         """Initialize core system hooks"""
         self.hooks.update(
             {
@@ -144,22 +149,38 @@ class PluginManager:
             logger.error(f"Failed to register plugin {plugin_class.__name__}: {e}")
             return False
 
-    def load_plugins_from_directory(self, directory: str):
+    def load_plugins_from_directory(self, directory: str | Path) -> None:
         """Load all plugins from a directory"""
-        if not os.path.exists(directory):
+        dir_path = Path(directory)
+        if not dir_path.exists():
             logger.warning(f"Plugin directory {directory} does not exist")
             return
 
-        for filename in os.listdir(directory):
-            if filename.endswith(".py") and not filename.startswith("_"):
-                self._load_plugin_file(os.path.join(directory, filename))
+        for p in dir_path.iterdir():
+            if p.is_file() and p.suffix == ".py" and not p.name.startswith("_"):
+                self._load_plugin_file(str(p))
 
-    def _load_plugin_file(self, filepath: str):
+    def _load_plugin_file(self, filepath: str) -> None:
         """Load a plugin from a Python file"""
         try:
-            spec = importlib.util.spec_from_file_location("plugin", filepath)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
+            spec = importlib_util.spec_from_file_location("plugin", filepath)
+            if spec is None:
+                raise ImportError("Failed to create module spec for plugin")
+
+            module = importlib_util.module_from_spec(spec)
+
+            # Some environments provide a spec without a loader or with a
+            # loader that doesn't expose exec_module. Guard against that.
+            loader = getattr(spec, "loader", None)
+            if loader is None or not hasattr(loader, "exec_module"):
+                raise ImportError("Plugin spec does not have a usable loader")
+
+            exec_fn = loader.exec_module
+            if not callable(exec_fn):
+                raise ImportError("Plugin loader.exec_module is not callable")
+
+            # Execute plugin module in isolated namespace
+            exec_fn(module)
 
             # Find plugin classes in the module
             for _name, obj in inspect.getmembers(module):
@@ -173,7 +194,7 @@ class PluginManager:
         except Exception as e:
             logger.error(f"Failed to load plugin from {filepath}: {e}")
 
-    def execute_hook(self, hook_name: str, *args, **kwargs) -> list[Any]:
+    def execute_hook(self, hook_name: str, *args: Any, **kwargs: Any) -> list[Any]:
         """Execute all callbacks for a hook"""
         if hook_name in self.hooks:
             return self.hooks[hook_name].execute(*args, **kwargs)
@@ -183,30 +204,57 @@ class PluginManager:
         """Get information about a specific plugin"""
         if plugin_name in self.plugins:
             plugin = self.plugins[plugin_name]
-            return {
-                "metadata": plugin.metadata.dict(),
-                "status": "active",
-                "hooks_registered": len(
-                    [
-                        h
-                        for h in self.hooks.values()
-                        if plugin
-                        in [
-                            cb.__self__ for cb in h.callbacks if hasattr(cb, "__self__")
-                        ]
+            # Normalize metadata to a mapping so callers always receive a dict
+            metadata: dict[str, Any] | None = None
+            if plugin.metadata is not None:
+                try:
+                    # pydantic v2+: model_dump
+                    metadata = plugin.metadata.model_dump()
+                except Exception:
+                    try:
+                        # pydantic v1: dict()
+                        metadata = plugin.metadata.dict()
+                    except Exception:
+                        # Provide a consistent mapping fallback
+                        metadata = {"info": str(plugin.metadata)}
+
+            hooks_registered = 0
+            for h in self.hooks.values():
+                try:
+                    callbacks = [
+                        cb.__self__ for cb in h.callbacks if hasattr(cb, "__self__")
                     ]
-                ),
+                    if plugin in callbacks:
+                        hooks_registered += 1
+                except Exception:
+                    continue
+
+            return {
+                "metadata": metadata,
+                "status": "active",
+                "hooks_registered": hooks_registered,
             }
         return None
 
     def list_plugins(self) -> list[dict[str, Any]]:
         """List all registered plugins"""
-        return [
-            {"name": name, "metadata": plugin.metadata.dict(), "status": "active"}
-            for name, plugin in self.plugins.items()
-        ]
+        out: list[dict[str, Any]] = []
+        for name, plugin in self.plugins.items():
+            metadata: dict[str, Any] | None = None
+            if plugin.metadata is not None:
+                try:
+                    metadata = plugin.metadata.model_dump()
+                except Exception:
+                    try:
+                        metadata = plugin.metadata.dict()
+                    except Exception:
+                        metadata = {"info": str(plugin.metadata)}
 
-    def set_plugin_data(self, plugin_name: str, key: str, value: Any):
+            out.append({"name": name, "metadata": metadata, "status": "active"})
+
+        return out
+
+    def set_plugin_data(self, plugin_name: str, key: str, value: Any) -> None:
         """Store data for a plugin"""
         if plugin_name not in self.plugin_data:
             self.plugin_data[plugin_name] = {}
@@ -233,7 +281,7 @@ class SampleAnalyticsPlugin(BasePlugin):
             dependencies=[],
         )
 
-    def initialize(self, app: FastAPI, plugin_manager: PluginManager):
+    def initialize(self, app: FastAPI, plugin_manager: PluginManager) -> None:
         """Initialize the sample analytics plugin"""
         # Register hook callbacks
         plugin_manager.hooks["transaction_analyzed"].register(
@@ -263,7 +311,7 @@ class SampleAnalyticsPlugin(BasePlugin):
             "analysis_note": "Custom analytics applied",
         }
 
-    async def get_custom_analytics(self):
+    async def get_custom_analytics(self) -> dict[str, Any]:
         """Custom analytics endpoint"""
         return {
             "plugin": "SampleAnalytics",
@@ -288,7 +336,7 @@ class CompliancePlugin(BasePlugin):
             dependencies=[],
         )
 
-    def initialize(self, app: FastAPI, plugin_manager: PluginManager):
+    def initialize(self, app: FastAPI, plugin_manager: PluginManager) -> None:
         """Initialize the compliance plugin"""
         plugin_manager.hooks["alert_generated"].register(self.on_alert_generated)
         plugin_manager.hooks["report_generated"].register(self.on_report_generated)
@@ -329,7 +377,7 @@ class CompliancePlugin(BasePlugin):
 
         return flags
 
-    async def generate_compliance_report(self):
+    async def generate_compliance_report(self) -> dict[str, Any]:
         """Generate a compliance - focused report"""
         return {
             "plugin": "ComplianceReporting",
@@ -357,9 +405,9 @@ def initialize_plugin_system(app: FastAPI) -> PluginManager:
     plugin_manager.register_plugin(CompliancePlugin)
 
     # Load plugins from directory if it exists
-    plugins_dir = os.path.join(os.path.dirname(__file__), "plugins")
-    if os.path.exists(plugins_dir):
-        plugin_manager.load_plugins_from_directory(plugins_dir)
+    plugins_dir = Path(__file__).parent / "plugins"
+    if plugins_dir.exists():
+        plugin_manager.load_plugins_from_directory(str(plugins_dir))
 
     return plugin_manager
 

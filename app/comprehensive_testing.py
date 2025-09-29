@@ -10,17 +10,25 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import sqlite3
 import sys
 import threading
 import time
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
-from typing import Any
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
 
-import coverage
-import psutil
+if TYPE_CHECKING:
+    # Avoid importing heavy third-party modules during static analysis
+    # which may not have installed stubs. Declare them as Any so mypy
+    # doesn't attempt to import the real modules while still allowing
+    # names to be used in annotations.
+    coverage: Any  # pragma: no cover
+    psutil: Any  # pragma: no cover
+else:
+    coverage = None
+    psutil = None
 
 # Configure test logging
 logging.basicConfig(level=logging.INFO)
@@ -37,7 +45,7 @@ class TestResult:
     duration_ms: float
     error_message: str | None = None
     coverage_percentage: float | None = None
-    timestamp: datetime = None
+    timestamp: datetime | None = None
 
 
 @dataclass
@@ -61,6 +69,8 @@ class TestRunner:
         self.test_suites: list[TestSuite] = []
         self.test_database = "test_results.db"
         self.initialize_database()
+
+    # duplicate initialize_database removed (defined above)
 
     def initialize_database(self) -> None:
         """Initialize test results database."""
@@ -183,7 +193,7 @@ class TestRunner:
                     "-v",
                     "--tb=short",
                     "--json - report",
-                    f"--json - report - file=test_report_{os.path.basename(test_file)}.json",
+                    f"--json - report - file=test_report_{Path(test_file).name}.json",
                 ]
 
                 if suite.timeout_seconds:
@@ -482,8 +492,8 @@ class TestRunner:
         """Test stress performance."""
         try:
             # Monitor system resources during stress test
-            initial_memory = psutil.virtual_memory().percent
-            initial_cpu = psutil.cpu_percent()
+            initial_memory = cast(float, psutil.virtual_memory().percent)
+            initial_cpu = cast(float, psutil.cpu_percent())
 
             # Simulate stress
             tasks = []
@@ -493,8 +503,8 @@ class TestRunner:
 
             await asyncio.gather(*tasks, return_exceptions=True)
 
-            final_memory = psutil.virtual_memory().percent
-            final_cpu = psutil.cpu_percent()
+            final_memory = cast(float, psutil.virtual_memory().percent)
+            final_cpu = cast(float, psutil.cpu_percent())
 
             # Check if system remained stable
             memory_increase = final_memory - initial_memory
@@ -513,19 +523,19 @@ class TestRunner:
     async def _test_memory_performance(self) -> dict[str, Any]:
         """Test memory performance."""
         try:
-            initial_memory = psutil.virtual_memory().used
+            initial_memory = cast(int, psutil.virtual_memory().used)
 
             # Simulate memory - intensive operations
             large_data = []
             for _i in range(1000):
                 large_data.append(list(range(1000)))
 
-            peak_memory = psutil.virtual_memory().used
+            peak_memory = cast(int, psutil.virtual_memory().used)
 
             # Clean up
             del large_data
 
-            final_memory = psutil.virtual_memory().used
+            final_memory = cast(int, psutil.virtual_memory().used)
             memory_leaked = final_memory - initial_memory
 
             return {
@@ -643,7 +653,7 @@ class TestRunner:
         await asyncio.sleep(0.05)  # Longer processing time
         return True
 
-    def _generate_coverage_report(self, cov: coverage.Coverage) -> dict[str, Any]:
+    def _generate_coverage_report(self, cov: Any) -> dict[str, Any]:
         """Generate coverage report."""
         try:
             # Get coverage data

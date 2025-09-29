@@ -16,7 +16,7 @@ import threading
 import time
 import traceback
 from collections import defaultdict, deque
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
@@ -80,7 +80,7 @@ class RetryPolicy:
     max_delay: float = 60.0
     exponential_base: float = 2.0
     jitter: bool = True
-    retry_on_exceptions: list[type] = None
+    retry_on_exceptions: list[type] | None = None
 
 
 @dataclass
@@ -102,15 +102,15 @@ class CircuitBreaker:
         self.state = CircuitState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time = None
+        self.last_failure_time: float | None = None
         self.request_count = 0
         self.success_request_count = 0
         self.lock = threading.RLock()
 
         # Statistics
-        self.total_requests = 0
-        self.total_failures = 0
-        self.state_transitions = []
+        self.total_requests: int = 0
+        self.total_failures: int = 0
+        self.state_transitions: list[dict[str, Any]] = []
 
     def call(self, func: Callable[..., T], *args, **kwargs) -> T:
         """Execute function with circuit breaker protection."""
@@ -136,7 +136,7 @@ class CircuitBreaker:
                 self._on_failure(e)
                 raise
 
-    async def call_async(self, func: Callable[..., T], *args, **kwargs) -> T:
+    async def call_async(self, func: Callable[..., Awaitable[T]], *args, **kwargs) -> T:
         """Execute async function with circuit breaker protection."""
         with self.lock:
             self.total_requests += 1
@@ -199,10 +199,14 @@ class CircuitBreaker:
 
     def _should_attempt_reset(self) -> bool:
         """Check if circuit breaker should attempt to reset."""
-        return (
-            self.last_failure_time
-            and time.time() - self.last_failure_time >= self.config.timeout_duration
-        )
+        # Ensure we always return a plain bool. Using `and` can return None or a
+        # numeric value which causes type-checkers to complain (and is less
+        # explicit). If there was no previous failure time, we should not
+        # attempt a reset.
+        if self.last_failure_time is None:
+            return False
+
+        return (time.time() - self.last_failure_time) >= self.config.timeout_duration
 
     def _record_state_transition(self, new_state: CircuitState) -> None:
         """Record state transition for monitoring."""
@@ -260,7 +264,8 @@ class RetryManager:
     """Advanced retry mechanism with various strategies."""
 
     def __init__(self):
-        self.retry_stats = defaultdict(
+        # Map function name -> stats dict
+        self.retry_stats: defaultdict[str, dict[str, int]] = defaultdict(
             lambda: {
                 "total_attempts": 0,
                 "successful_retries": 0,
@@ -291,12 +296,11 @@ class RetryManager:
         return decorator
 
     async def _execute_with_retry_async(
-        self, func: Callable, policy: RetryPolicy, *args, **kwargs
+        self, func: Callable[..., Awaitable[Any]], policy: RetryPolicy, *args, **kwargs
     ) -> Any:
         """Execute async function with retry logic."""
         func_name = func.__name__
         last_exception = None
-
         for attempt in range(policy.max_attempts):
             try:
                 self.retry_stats[func_name]["total_attempts"] += 1
@@ -311,12 +315,10 @@ class RetryManager:
                 last_exception = e
 
                 # Check if we should retry this exception
-                if policy.retry_on_exceptions:
-                    if not any(
-                        isinstance(e, exc_type)
-                        for exc_type in policy.retry_on_exceptions
-                    ):
-                        raise e
+                if policy.retry_on_exceptions and not any(
+                    isinstance(e, exc_type) for exc_type in policy.retry_on_exceptions
+                ):
+                    raise e
 
                 if attempt < policy.max_attempts - 1:
                     delay = self._calculate_delay(attempt, policy)
@@ -334,7 +336,10 @@ class RetryManager:
                         f"All {policy.max_attempts} attempts failed for {func_name}"
                     )
 
-        raise last_exception
+        # Ensure we never raise None which would be an invalid exception.
+        if last_exception:
+            raise last_exception
+        raise RuntimeError(f"All {policy.max_attempts} retry attempts failed")
 
     def _execute_with_retry_sync(
         self, func: Callable, policy: RetryPolicy, *args, **kwargs
@@ -342,7 +347,6 @@ class RetryManager:
         """Execute sync function with retry logic."""
         func_name = func.__name__
         last_exception = None
-
         for attempt in range(policy.max_attempts):
             try:
                 self.retry_stats[func_name]["total_attempts"] += 1
@@ -357,12 +361,10 @@ class RetryManager:
                 last_exception = e
 
                 # Check if we should retry this exception
-                if policy.retry_on_exceptions:
-                    if not any(
-                        isinstance(e, exc_type)
-                        for exc_type in policy.retry_on_exceptions
-                    ):
-                        raise e
+                if policy.retry_on_exceptions and not any(
+                    isinstance(e, exc_type) for exc_type in policy.retry_on_exceptions
+                ):
+                    raise e
 
                 if attempt < policy.max_attempts - 1:
                     delay = self._calculate_delay(attempt, policy)
@@ -380,7 +382,9 @@ class RetryManager:
                         f"All {policy.max_attempts} attempts failed for {func_name}"
                     )
 
-        raise last_exception
+        if last_exception:
+            raise last_exception
+        raise RuntimeError(f"All {policy.max_attempts} retry attempts failed")
 
     def _calculate_delay(self, attempt: int, policy: RetryPolicy) -> float:
         """Calculate retry delay with exponential backoff and jitter."""
@@ -774,7 +778,7 @@ class SelfHealingManager:
     def get_healing_stats(self) -> dict[str, Any]:
         """Get self - healing statistics."""
         with self.lock:
-            stats = {
+            stats: dict[str, Any] = {
                 "auto_healing_enabled": self.auto_healing_enabled,
                 "total_rules": len(self.healing_rules),
                 "recent_attempts": self.healing_history[-10:],
@@ -801,7 +805,7 @@ class ResilienceOrchestrator:
         self.failover_manager = FailoverManager()
         self.degradation_manager = GracefulDegradationManager()
         self.healing_manager = SelfHealingManager()
-        self.error_events = deque(maxlen=1000)
+        self.error_events: deque[ErrorEvent] = deque(maxlen=1000)
         self.lock = threading.RLock()
 
         self._setup_default_healing_rules()
@@ -949,10 +953,12 @@ class ResilienceOrchestrator:
                 cb_stats[name] = cb.get_stats()
 
             # Recent errors by severity
-            recent_errors = list(self.error_events)[-50:]  # Last 50 errors
-            error_counts = defaultdict(int)
+            recent_errors: list[ErrorEvent] = list(self.error_events)[
+                -50:
+            ]  # Last 50 errors
+            error_counts: defaultdict[str, int] = defaultdict(int)
             for error in recent_errors:
-                error_counts[error.severity.value] += 1
+                error_counts[str(error.severity.value)] += 1
 
             # Auto - resolution rate
             resolved_errors = sum(1 for error in recent_errors if error.resolved)
@@ -978,19 +984,19 @@ class ResilienceOrchestrator:
 
     def _calculate_system_health(self) -> dict[str, Any]:
         """Calculate overall system health score."""
-        health_factors = []
+        health_factors: list[float] = []
 
         # Circuit breaker health
-        cb_health = 0
+        cb_health: float = 0.0
         if self.circuit_breakers:
             closed_breakers = sum(
                 1
                 for cb in self.circuit_breakers.values()
                 if cb.state == CircuitState.CLOSED
             )
-            cb_health = (closed_breakers / len(self.circuit_breakers)) * 100
+            cb_health = (closed_breakers / len(self.circuit_breakers)) * 100.0
         else:
-            cb_health = 100  # No circuit breakers=no circuit breaker issues
+            cb_health = 100.0  # No circuit breakers=no circuit breaker issues
 
         health_factors.append(cb_health)
 
@@ -999,20 +1005,20 @@ class ResilienceOrchestrator:
         critical_errors = sum(
             1 for error in recent_errors if error.severity == ErrorSeverity.CRITICAL
         )
-        error_health = max(
-            0, 100 - (critical_errors * 10)
+        error_health: float = float(
+            max(0, 100 - (critical_errors * 10))
         )  # 10 points per critical error
         health_factors.append(error_health)
 
         # Auto - resolution health
         resolved_errors = sum(1 for error in recent_errors if error.resolved)
-        resolution_health = (
-            resolved_errors / len(recent_errors) * 100 if recent_errors else 100
+        resolution_health: float = (
+            (resolved_errors / len(recent_errors) * 100.0) if recent_errors else 100.0
         )
         health_factors.append(resolution_health)
 
-        overall_health = (
-            sum(health_factors) / len(health_factors) if health_factors else 100
+        overall_health: float = (
+            (sum(health_factors) / len(health_factors)) if health_factors else 100.0
         )
 
         return {
@@ -1043,7 +1049,7 @@ resilience_orchestrator = ResilienceOrchestrator()
 # Convenience decorators and functions
 
 
-def circuit_breaker(name: str, config: CircuitBreakerConfig = None):
+def circuit_breaker(name: str, config: CircuitBreakerConfig | None = None):
     """Circuit breaker decorator."""
     if config is None:
         config = CircuitBreakerConfig()
@@ -1067,7 +1073,7 @@ def circuit_breaker(name: str, config: CircuitBreakerConfig = None):
     return decorator
 
 
-def retry_on_failure(policy: RetryPolicy = None):
+def retry_on_failure(policy: RetryPolicy | None = None):
     """Retry decorator."""
     if policy is None:
         policy = RetryPolicy()
@@ -1076,8 +1082,8 @@ def retry_on_failure(policy: RetryPolicy = None):
 
 
 async def handle_service_error(
-    error: Exception, service_name: str, context: dict[str, Any] = None
-):
+    error: Exception, service_name: str, context: dict[str, Any] | None = None
+) -> None:
     """Handle service error with full resilience features."""
     await resilience_orchestrator.handle_error(error, service_name, context or {})
 

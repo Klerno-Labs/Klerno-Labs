@@ -2,6 +2,7 @@
 """
 Comprehensive audit logging system for security events and compliance.
 """
+
 from __future__ import annotations
 
 import json
@@ -97,7 +98,6 @@ class AuditLogger:
         # JSON formatter for structured logging
 
         class JSONFormatter(logging.Formatter):
-
             def format(self, record):
                 log_entry = {
                     "timestamp": datetime.fromtimestamp(

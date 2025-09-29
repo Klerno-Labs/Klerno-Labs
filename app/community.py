@@ -145,9 +145,9 @@ class CommunityManager:
         self.knowledge_articles: dict[int, KnowledgeArticle] = {}
         self.tutorials: dict[int, Tutorial] = {}
         self.user_contributions: dict[int, UserContribution] = {}
-        self.votes: dict[str, dict[int, VoteType]] = (
-            {}
-        )  # user_id -> {post_id: vote_type}
+        self.votes: dict[
+            str, dict[int, VoteType]
+        ] = {}  # user_id -> {post_id: vote_type}
 
         # Initialize with sample content
         self._initialize_sample_content()
@@ -320,11 +320,14 @@ def safe_analyze(client, transaction):
         self.posts[1] = CommunityPost(
             id=1,
             title="Best practices for setting risk thresholds?",
-            content="""I'm new to AML compliance and trying to figure out the optimal risk threshold settings for our organization. We're a mid - size fintech company processing about 10K transactions per day.
-
-Currently, we have the threshold set at 0.75, but we're getting too many false positives. Should we increase it to 0.85 or 0.9? What do other organizations typically use?
-
-Also, should thresholds vary by transaction amount or time of day?""",
+            content=(
+                """I'm new to AML compliance and trying to figure out the optimal risk threshold "
+                "settings for our organization. We're a mid - size fintech company processing "
+                "about 10K transactions per day.\n\nCurrently, we have the threshold set at "
+                "0.75, but we're getting too many false positives. Should we increase it to "
+                "0.85 or 0.9? What do other organizations typically use?\n\nAlso, should "
+                "thresholds vary by transaction amount or time of day?"""
+            ),
             post_type=PostType.QUESTION,
             status=PostStatus.PUBLISHED,
             author_id=2,
@@ -344,16 +347,17 @@ Also, should thresholds vary by transaction amount or time of day?""",
             CommunityReply(
                 id=1,
                 post_id=1,
-                content="""Great question! In our experience, 0.75 is actually quite conservative. Here's what we've learned:
-
-1. **Start with 0.85** for most organizations - this significantly reduces false positives while still catching genuine risks
-2. **Use dynamic thresholds** based on transaction amount:
-   - Amounts < $1, 000: 0.9 threshold
-   - $1, 000 - $10, 000: 0.85 threshold
-   - $10, 000+: 0.75 threshold
-3. **Time - based adjustments** can help - slightly lower thresholds during off - hours when legitimate activity is lower
-
-The key is to monitor your false positive rate and adjust accordingly. Aim for < 5% false positives for best efficiency.""",
+                content=(
+                    """Great question! In our experience, 0.75 is actually quite conservative. "
+                    "Here's what we've learned:\n\n1. **Start with 0.85** for most organizations - "
+                    "this significantly reduces false positives while still catching genuine "
+                    "risks\n2. **Use dynamic thresholds** based on transaction amount:\n   - "
+                    "Amounts < $1, 000: 0.9 threshold\n   - $1, 000 - $10, 000: 0.85 "
+                    "threshold\n   - $10, 000+: 0.75 threshold\n3. **Time - based adjustments** "
+                    "can help - slightly lower thresholds during off - hours when legitimate "
+                    "activity is lower\n\nThe key is to monitor your false positive rate and adjust accordingly. "
+                    "Aim for < 5% false positives for best efficiency."""
+                ),
                 author_id=3,
                 author_name="AML_Expert_Sarah",
                 created_at=datetime.utcnow(),
@@ -437,10 +441,10 @@ This has worked well for us and reduces alert fatigue significantly.""",
         post_type: PostType,
         author_id: int,
         author_name: str,
-        tags: list[str] = None,
+        tags: list[str] | None = None,
     ) -> CommunityPost:
         """Create a new community post"""
-        post_id = max(self.posts.keys(), default=0) + 1
+        post_id = max(self.posts, default=0) + 1
 
         post = CommunityPost(
             id=post_id,
@@ -523,7 +527,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
 
     def get_trending_topics(self) -> list[dict[str, Any]]:
         """Get trending topics and tags"""
-        tag_counts = {}
+        tag_counts: dict[str, int] = {}
 
         # Count tags from recent posts (last 30 days)
         cutoff = datetime.utcnow().timestamp() - (30 * 24 * 60 * 60)
@@ -558,7 +562,7 @@ class CollaborationFeatures:
         self, name: str, description: str, owner_id: int, team_members: list[int]
     ) -> dict[str, Any]:
         """Create a shared workspace for team collaboration"""
-        workspace_id = max(self.shared_workspaces.keys(), default=0) + 1
+        workspace_id = max(self.shared_workspaces, default=0) + 1
 
         workspace = {
             "id": workspace_id,

@@ -18,11 +18,44 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import psutil
 
+from app._typing_shims import ISyncConnection
+
 logger = logging.getLogger(__name__)
+
+
+def _to_iso(timestamp: Any) -> str:
+    """Safely convert various timestamp representations to ISO string.
+
+    Accepts datetime, str, numeric (epoch) or objects with an `isoformat` method.
+    Falls back to current time when `timestamp` is None or conversion fails.
+    """
+    if timestamp is None:
+        return datetime.now().isoformat()
+
+    if isinstance(timestamp, str):
+        return timestamp
+
+    try:
+        iso = getattr(timestamp, "isoformat", None)
+        if callable(iso):
+            return str(iso())
+    except Exception:
+        pass
+
+    if isinstance(timestamp, (int, float)):
+        try:
+            return datetime.fromtimestamp(timestamp).isoformat()
+        except Exception:
+            pass
+
+    try:
+        return str(timestamp)
+    except Exception:
+        return datetime.now().isoformat()
 
 
 @dataclass
@@ -58,7 +91,7 @@ class AdvancedCache:
         self.max_size_bytes = max_size_mb * 1024 * 1024
         self.compression_threshold = compression_threshold
         self.cache: dict[str, CacheEntry] = {}
-        self.access_order = deque()  # LRU tracking
+        self.access_order: deque[str] = deque()  # LRU tracking
         self.current_size_bytes = 0
         self.hit_count = 0
         self.miss_count = 0
@@ -66,8 +99,8 @@ class AdvancedCache:
         self._lock = threading.RLock()
 
         # Performance tracking
-        self.get_times = deque(maxlen=1000)
-        self.set_times = deque(maxlen=1000)
+        self.get_times: deque[float] = deque(maxlen=1000)
+        self.set_times: deque[float] = deque(maxlen=1000)
 
     def _serialize_value(self, value: Any) -> bytes:
         """Serialize and optionally compress value."""
@@ -84,7 +117,7 @@ class AdvancedCache:
             # Try decompression first
             decompressed = gzip.decompress(data)
             return pickle.loads(decompressed)
-        except:
+        except Exception:
             # If decompression fails, try direct pickle
             return pickle.loads(data)
 
@@ -92,7 +125,7 @@ class AdvancedCache:
         """Calculate approximate size of value in bytes."""
         try:
             return len(self._serialize_value(value))
-        except:
+        except Exception:
             return 1024  # Default size if calculation fails
 
     def _evict_lru(self) -> None:
@@ -135,7 +168,7 @@ class AdvancedCache:
 
                 try:
                     return self._deserialize_value(entry.value)
-                except:
+                except Exception:
                     # If deserialization fails, remove entry
                     self.delete(key)
                     self.miss_count += 1
@@ -244,10 +277,12 @@ class PerformanceProfiler:
     def __init__(self, db_path: str = "./data/performance.db"):
         self.db_path = db_path
         self.metrics: list[PerformanceMetric] = []
-        self.operation_times: dict[str, deque] = defaultdict(lambda: deque(maxlen=1000))
+        self.operation_times: defaultdict[str, deque[float]] = defaultdict(
+            lambda: deque(maxlen=1000)
+        )
         self.slow_query_threshold_ms = 1000
-        self.memory_samples = deque(maxlen=100)
-        self.cpu_samples = deque(maxlen=100)
+        self.memory_samples: deque[float] = deque(maxlen=100)
+        self.cpu_samples: deque[float] = deque(maxlen=100)
 
         # Initialize database
         self._init_performance_database()
@@ -259,7 +294,7 @@ class PerformanceProfiler:
         """Initialize performance monitoring database."""
         Path(self.db_path).parent.mkdir(exist_ok=True, parents=True)
 
-        conn = sqlite3.connect(self.db_path)
+        conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
         cursor = conn.cursor()
 
         # Performance metrics table
@@ -312,7 +347,7 @@ class PerformanceProfiler:
         conn.commit()
         conn.close()
 
-        logger.info("✅ Performance database initialized")
+    logger.info("[OK] Performance database initialized")
 
     def _start_system_monitoring(self) -> None:
         """Start background system monitoring."""
@@ -326,8 +361,8 @@ class PerformanceProfiler:
                     disk_io = psutil.disk_io_counters()
                     network_io = psutil.net_io_counters()
 
-                    self.cpu_samples.append(cpu_percent)
-                    self.memory_samples.append(memory.percent)
+                    self.cpu_samples.append(float(cpu_percent))
+                    self.memory_samples.append(float(memory.percent))
 
                     # Log to database periodically
                     now = datetime.now()
@@ -339,16 +374,56 @@ class PerformanceProfiler:
                                 "memory_percent": memory.percent,
                                 "memory_available_mb": memory.available / 1024 / 1024,
                                 "disk_io_read_mb": (
-                                    disk_io.read_bytes / 1024 / 1024 if disk_io else 0
+                                    float(
+                                        (
+                                            getattr(disk_io, "read_bytes", None)
+                                            if not isinstance(disk_io, dict)
+                                            else disk_io.get("read_bytes", 0)
+                                        )
+                                        or 0
+                                    )
+                                    / 1024
+                                    / 1024
+                                    if disk_io
+                                    else 0
                                 ),
                                 "disk_io_write_mb": (
-                                    disk_io.write_bytes / 1024 / 1024 if disk_io else 0
+                                    float(
+                                        (
+                                            getattr(disk_io, "write_bytes", None)
+                                            if not isinstance(disk_io, dict)
+                                            else disk_io.get("write_bytes", 0)
+                                        )
+                                        or 0
+                                    )
+                                    / 1024
+                                    / 1024
+                                    if disk_io
+                                    else 0
                                 ),
                                 "network_bytes_sent": (
-                                    network_io.bytes_sent if network_io else 0
+                                    float(
+                                        (
+                                            getattr(network_io, "bytes_sent", None)
+                                            if not isinstance(network_io, dict)
+                                            else network_io.get("bytes_sent", 0)
+                                        )
+                                        or 0
+                                    )
+                                    if network_io
+                                    else 0
                                 ),
                                 "network_bytes_recv": (
-                                    network_io.bytes_recv if network_io else 0
+                                    float(
+                                        (
+                                            getattr(network_io, "bytes_recv", None)
+                                            if not isinstance(network_io, dict)
+                                            else network_io.get("bytes_recv", 0)
+                                        )
+                                        or 0
+                                    )
+                                    if network_io
+                                    else 0
                                 ),
                             }
                         )
@@ -366,7 +441,7 @@ class PerformanceProfiler:
     def _log_system_metrics(self, metrics: dict[str, Any]) -> None:
         """Log system metrics to database."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -377,7 +452,7 @@ class PerformanceProfiler:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
-                    metrics["timestamp"].isoformat(),
+                    _to_iso(metrics.get("timestamp")),
                     metrics["cpu_percent"],
                     metrics["memory_percent"],
                     metrics["memory_available_mb"],
@@ -505,7 +580,7 @@ class PerformanceProfiler:
             return
 
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             for metric in self.metrics:
@@ -514,9 +589,9 @@ class PerformanceProfiler:
                     INSERT INTO performance_metrics
                     (timestamp, operation, duration_ms, memory_used_mb, cpu_percent, status, details)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
+                    """,
                     (
-                        metric.timestamp.isoformat(),
+                        _to_iso(metric.timestamp),
                         metric.operation,
                         metric.duration_ms,
                         metric.memory_used_mb,
@@ -538,7 +613,7 @@ class PerformanceProfiler:
     def get_performance_summary(self, hours: int = 1) -> dict[str, Any]:
         """Get performance summary for the last N hours."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             since = datetime.now() - timedelta(hours=hours)
@@ -558,7 +633,7 @@ class PerformanceProfiler:
                 GROUP BY operation
                 ORDER BY avg_duration DESC
             """,
-                (since.isoformat(),),
+                (_to_iso(since),),
             )
 
             operations = []
@@ -612,7 +687,7 @@ class PerformanceProfiler:
                 ORDER BY duration_ms DESC
                 LIMIT 10
             """,
-                (since.isoformat(), self.slow_query_threshold_ms),
+                (_to_iso(since), self.slow_query_threshold_ms),
             )
 
             slow_operations = []
@@ -628,7 +703,7 @@ class PerformanceProfiler:
             conn.close()
 
             return {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": _to_iso(datetime.now()),
                 "summary_period_hours": hours,
                 "operations": operations,
                 "system_summary": system_summary,
@@ -668,7 +743,9 @@ def cached(ttl_seconds: int | None = None, key_func: Callable | None = None):
             if key_func:
                 cache_key = key_func(*args, **kwargs)
             else:
-                cache_key = f"{func.__name__}:{hashlib.md5(str(args + tuple(kwargs.items())).encode()).hexdigest()}"
+                # Keep cache key compact and safe for hashing
+                key_source = (func.__name__, args, tuple(sorted(kwargs.items())))
+                cache_key = f"{func.__name__}:{hashlib.md5(str(key_source).encode()).hexdigest()}"
 
             # Try to get from cache
             result = cache.get(cache_key)

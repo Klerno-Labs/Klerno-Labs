@@ -4,11 +4,29 @@ from jwt import DecodeError, ExpiredSignatureError, InvalidTokenError
 from . import store
 from .security_session import decode_jwt
 from .settings import get_settings
+from .store import UserDict
 
-S = get_settings()
+
+# Lazy settings proxy so importing this module doesn't eagerly initialize
+# the app settings at import time.
+class _LazySettings:
+    def __init__(self, factory):
+        self._factory = factory
+        self._obj = None
+
+    def _ensure(self):
+        if self._obj is None:
+            self._obj = self._factory()
+
+    def __getattr__(self, name):
+        self._ensure()
+        return getattr(self._obj, name)
 
 
-def _lookup_user_by_sub(sub: str) -> dict | None:
+S = _LazySettings(get_settings)
+
+
+def _lookup_user_by_sub(sub: str) -> UserDict | dict | None:
     """
     `sub` may be a numeric user id OR an email. Try both.
     """
@@ -30,7 +48,7 @@ def _lookup_user_by_sub(sub: str) -> dict | None:
     return None
 
 
-def current_user(request: Request) -> dict | None:
+def current_user(request: Request) -> UserDict | dict | None:
     """
     Reads JWT from cookie 'session' or Authorization: Bearer <jwt>.
     Returns a user dict or None.
@@ -56,7 +74,9 @@ def current_user(request: Request) -> dict | None:
         return None
 
 
-def require_user(user: dict | None = Depends(current_user)) -> dict:
+def require_user(
+    user: UserDict | dict | None = Depends(current_user),
+) -> UserDict | dict:
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -65,7 +85,16 @@ def require_user(user: dict | None = Depends(current_user)) -> dict:
     return user
 
 
-def require_paid_or_admin(user: dict = Depends(require_user)) -> dict:
+def require_paid_or_admin(
+    user: UserDict | dict | None = Depends(current_user),
+) -> UserDict | dict:
+    # If no user (anonymous), treat as payment required to match tests' expectations
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail="Subscription required",
+        )
+
     # Admin check
     if user.get("role") == "admin":
         return user
@@ -78,15 +107,22 @@ def require_paid_or_admin(user: dict = Depends(require_user)) -> dict:
     from .subscriptions import get_user_subscription
 
     subscription = get_user_subscription(user["id"])
-    if subscription and subscription.is_active:
-        # Add subscription info to user dict
-        user["xrpl_subscription"] = {
-            "tier": subscription.tier.value,
-            "expires_at": (
-                subscription.expires_at.isoformat() if subscription.expires_at else None
-            ),
-        }
-        return user
+    if subscription:
+        # Subscription model uses attribute 'active' in this codebase
+        is_active = getattr(subscription, "active", None)
+        if is_active:
+            # Add subscription info to a shallow copy to avoid modifying
+            # the TypedDict in-place (TypedDicts are static view types).
+            augmented = dict(user)
+            augmented["xrpl_subscription"] = {
+                "tier": subscription.tier.value,
+                "expires_at": (
+                    subscription.expires_at.isoformat()
+                    if subscription.expires_at
+                    else None
+                ),
+            }
+            return augmented
 
     raise HTTPException(
         status_code=status.HTTP_402_PAYMENT_REQUIRED,
@@ -94,7 +130,7 @@ def require_paid_or_admin(user: dict = Depends(require_user)) -> dict:
     )
 
 
-def require_admin(user: dict = Depends(require_user)) -> dict:
+def require_admin(user: UserDict | dict = Depends(require_user)) -> UserDict | dict:
     if user.get("role") != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

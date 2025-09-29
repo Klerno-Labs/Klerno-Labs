@@ -1,0 +1,14 @@
+name: CI Minimal Fix
+
+on:
+  push:
+    branches: [ pr-25 ]
+
+jobs:
+  echo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Echo test
+        run: echo "CI minimal validation run"
