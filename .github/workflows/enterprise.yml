@@ -28,6 +28,16 @@ jobs:
           name: alembic-logs
           path: .run/alembic.log
           if-no-files-found: warn
+      - name: Create run marker
+        run: |
+          mkdir -p .run || true
+          echo "run-marker: $GITHUB_SHA $GITHUB_RUN_ID" > .run/run-marker.txt || true
+      - name: Upload run marker artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: run-marker
+          path: .run/run-marker.txt
+          if-no-files-found: warn
 
   enterprise-validation:
     name: Enterprise Application Validation
