@@ -48,13 +48,18 @@ jobs:
           # Install alembic and create the local data directory used by sqlite.
           python -m pip install --upgrade alembic
           mkdir -p ./data
+          mkdir -p .run
           # If CI didn't set DATABASE_URL, fall back to a local sqlite file.
           if [ -z "$DATABASE_URL" ]; then
             export DATABASE_URL="sqlite:///./data/klerno.db"
           fi
           # Run alembic pointing explicitly at the repo alembic.ini so the
-          # migrations use the correct configuration in CI.
-          python -m alembic -c alembic.ini upgrade head
+          # migrations use the correct configuration in CI. Capture verbose
+          # output to .run/alembic.log for debugging on failure.
+          echo "=== alembic current ===" > .run/alembic.log || true
+          python -m alembic -c alembic.ini current >> .run/alembic.log 2>&1 || true
+          echo "=== alembic upgrade head ===" >> .run/alembic.log || true
+          python -m alembic -c alembic.ini upgrade head >> .run/alembic.log 2>&1 || true
 
       - name: Run Enterprise Application Tests
         run: |
@@ -82,6 +87,14 @@ jobs:
           pip install bandit safety
           bandit -r app/ -f json -o security-report.json || true
           safety check --json || true
+
+      - name: Upload migration logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alembic-logs
+          path: .run/alembic.log
+          if-no-files-found: warn
 
   docker-build:
     name: Docker Build Test
