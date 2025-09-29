@@ -42,6 +42,11 @@ jobs:
             python -m pip install pytest
           fi
 
+      - name: Ensure alembic log file exists
+        run: |
+          mkdir -p .run || true
+          echo "CI: alembic log placeholder" > .run/alembic.log || true
+
       - name: Run DB migrations
         run: |
           # Ensure database schema is created before running integration tests.
