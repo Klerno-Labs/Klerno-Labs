@@ -1,7 +1,7 @@
 Param(
-    [Parameter(Mandatory=$false)]
+    [Parameter(Mandatory = $false)]
     [string[]]$RunIds = @(
-        '18084494090','18084306090','18084253043','18084214995','18084173760','18084144557','18083937513','18083727726','18083727627'
+        '18084494090', '18084306090', '18084253043', '18084214995', '18084173760', '18084144557', '18083937513', '18083727726', '18083727627'
     ),
     [string]$Repo = 'Klerno-Labs/Klerno-Labs',
     [string]$ArtifactName = 'alembic-logs',
@@ -14,14 +14,14 @@ if (-not (Test-Path -Path $OutDir)) { New-Item -ItemType Directory -Path $OutDir
 foreach ($id in $RunIds) {
     Write-Host "Checking run $id for artifact '$ArtifactName'..."
 
-    # Query run artifacts and look for the artifact by name
-    # Build a jq expression safely. Use single quotes for the outer PowerShell string
-    # and inject the artifact name using a subexpression to avoid quoting issues.
+    # Query run artifacts via the REST API (gh run view doesn't expose artifacts on this gh version)
+    $apiPath = "repos/$Repo/actions/runs/$id/artifacts"
+    # Build jq expression safely and call gh api
     $jq = '.artifacts[] | select(.name=="' + $ArtifactName + '") | .id'
-    $artifactId = gh run view $id --repo $Repo --json artifacts --jq $jq 2>$null
+    $artifactId = gh api $apiPath --jq $jq 2>$null
 
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "gh run view failed for $id (exit $LASTEXITCODE); skipping"
+        Write-Host "gh api artifacts query failed for run $id (exit $LASTEXITCODE); skipping"
         continue
     }
 
@@ -38,7 +38,8 @@ foreach ($id in $RunIds) {
     if ($code -eq 0) {
         Write-Host "Downloaded artifact '$ArtifactName' from run $id to $OutDir"
         exit 0
-    } else {
+    }
+    else {
         Write-Host "Download attempt failed for run $id with exit code $code; continuing"
         continue
     }
