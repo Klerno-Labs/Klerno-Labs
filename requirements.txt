@@ -12,5 +12,5 @@ alembic==1.13.2
 redis==5.0.1
 itsdangerous
 structlog
-pydantic-settings==0.5.0
+pydantic-settings==2.11.0
 passlib
