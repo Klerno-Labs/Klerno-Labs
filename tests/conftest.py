@@ -128,12 +128,26 @@ def ensure_test_db_initialized(test_db):
     `test_db` path so tests and the application see the same schema.
     """
     # Ensure DATABASE_URL points to the temporary DB used by the tests.
-    os.environ["DATABASE_URL"] = f"sqlite:///{test_db}"
+    # Use a POSIX path so SQLAlchemy correctly resolves absolute Windows paths
+    # (avoid creating tables on an unexpected path due to backslashes).
+    os.environ["DATABASE_URL"] = f"sqlite:///{Path(test_db).as_posix()}"
     try:
         # Import and run the helper initializer (it's safe to call repeatedly).
-        from scripts import init_db_if_needed
+        # Prefer the lightweight SQLAlchemy-based initializer if available
+        try:
+            from scripts import init_db_if_needed
 
-        init_db_if_needed.main()
+            init_db_if_needed.main()
+        except Exception:
+            # Fall back to calling the store init which uses sqlite3 directly
+            # (avoids SQLAlchemy dependency and ensures the txs table exists).
+            try:
+                from app import store as _store
+
+                _store.init_db()
+            except Exception:
+                # If that also fails, continue silently and let tests surface errors
+                pass
     except Exception:
         # Best-effort: don't fail test collection if initializer can't run.
         # Tests will surface schema-related errors themselves.
@@ -144,7 +158,7 @@ def ensure_test_db_initialized(test_db):
 @pytest.fixture
 def test_client(test_db):
     """Create a test client with temporary database."""
-    os.environ["DATABASE_URL"] = f"sqlite:///{test_db}"
+    os.environ["DATABASE_URL"] = f"sqlite:///{Path(test_db).as_posix()}"
 
     from app.main import app
 
@@ -160,7 +174,7 @@ async def _async_client_impl(test_db):
     fixture decorator. This avoids having two functions named `async_client`
     which static checkers complain about.
     """
-    os.environ["DATABASE_URL"] = f"sqlite:///{test_db}"
+    os.environ["DATABASE_URL"] = f"sqlite:///{Path(test_db).as_posix()}"
 
     from app.main import app
 
