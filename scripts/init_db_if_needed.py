@@ -19,8 +19,14 @@ from sqlalchemy import (
 )
 
 
-def main() -> int:
-    url = os.getenv("DATABASE_URL") or "sqlite:///./data/klerno.db"
+def main(url: str | None = None) -> int:
+    """Create minimal core tables on `url` or DATABASE_URL.
+
+    The optional `url` argument allows callers (tests) to explicitly target
+    a temporary database file without relying on environment initialization
+    order. Returns 0 on success, non-zero on error (for use from scripts).
+    """
+    url = url or os.getenv("DATABASE_URL") or "sqlite:///./data/klerno.db"
     engine = sa.create_engine(url)
     meta = MetaData()
 
@@ -96,6 +102,7 @@ def main() -> int:
         print("Failed to create tables:", exc, file=sys.stderr)
         return 2
 
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    if __name__ == "__main__":
+        # When invoked as a script, call main() without args so it reads
+        # DATABASE_URL from the environment as before.
+        raise SystemExit(main())

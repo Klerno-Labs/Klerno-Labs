@@ -132,13 +132,19 @@ def ensure_test_db_initialized(test_db: str) -> Generator[None, None, None]:
     # Use a POSIX path so SQLAlchemy correctly resolves absolute Windows paths
     # (avoid creating tables on an unexpected path due to backslashes).
     os.environ["DATABASE_URL"] = f"sqlite:///{Path(test_db).as_posix()}"
+    # Ensure tests have a deterministic, sufficiently-strong JWT secret so the
+    # application does not emit a RuntimeWarning about weak/missing secrets.
+    # This value is only used for tests and should not be used in production.
+    os.environ.setdefault("JWT_SECRET", "test-jwt-secret-0123456789abcdefABCDEF")
     try:
         # Import and run the helper initializer (it's safe to call repeatedly).
         # Prefer the lightweight SQLAlchemy-based initializer if available
         try:
             from scripts import init_db_if_needed
 
-            init_db_if_needed.main()
+            # Pass explicit URL to ensure the initializer targets the
+            # temporary test DB created for this session.
+            init_db_if_needed.main(os.environ.get("DATABASE_URL"))
         except Exception:
             # Fall back to calling the store init which uses sqlite3 directly
             # (avoids SQLAlchemy dependency and ensures the txs table exists).
