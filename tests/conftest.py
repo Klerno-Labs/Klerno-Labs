@@ -5,7 +5,7 @@ import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, AsyncGenerator, Generator, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -34,21 +34,21 @@ except Exception:
     pass
 
 
-@pytest.fixture(scope="session")
-def workspace_root():
+@pytest.fixture(scope="session")  # type: ignore[misc]
+def workspace_root() -> str:
     return ROOT
 
 
-@pytest.fixture(scope="session")
-def event_loop():
+@pytest.fixture(scope="session")  # type: ignore[misc]
+def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     """Create an instance of the default event loop for the test session."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
 
 
-@pytest.fixture(scope="session")
-def test_db():
+@pytest.fixture(scope="session")  # type: ignore[misc]
+def test_db() -> Generator[str, None, None]:
     """Create a temporary test database."""
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp_file:
         db_path = tmp_file.name
@@ -118,8 +118,8 @@ def test_db():
             pass
 
 
-@pytest.fixture(scope="session", autouse=True)
-def ensure_test_db_initialized(test_db):
+@pytest.fixture(scope="session", autouse=True)  # type: ignore[misc]
+def ensure_test_db_initialized(test_db: str) -> Generator[None, None, None]:
     """Ensure the fallback initializer runs against the temporary test DB.
 
     Some CI/test scenarios rely on the lightweight initializer to add
@@ -155,8 +155,8 @@ def ensure_test_db_initialized(test_db):
     yield
 
 
-@pytest.fixture
-def test_client(test_db):
+@pytest.fixture  # type: ignore[misc]
+def test_client(test_db: str) -> Generator[TestClient, None, None]:
     """Create a test client with temporary database."""
     os.environ["DATABASE_URL"] = f"sqlite:///{Path(test_db).as_posix()}"
 
@@ -166,7 +166,7 @@ def test_client(test_db):
         yield client
 
 
-async def _async_client_impl(test_db):
+async def _async_client_impl(test_db: str) -> AsyncGenerator[AsyncClient, None]:
     """Create an async test client implementation used to expose a fixture.
 
     We dynamically register this implementation as a fixture using either
@@ -183,7 +183,7 @@ async def _async_client_impl(test_db):
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://test",
-    ) as client:  # type: ignore[arg-type]
+    ) as client:
         yield client
 
 
@@ -194,8 +194,8 @@ else:
     async_client = pytest.fixture(_async_client_impl)
 
 
-@pytest.fixture
-def mock_user():
+@pytest.fixture  # type: ignore[misc]
+def mock_user() -> dict[str, Any]:
     """Create a mock user for testing."""
     return {
         "id": 1,
@@ -206,8 +206,8 @@ def mock_user():
     }
 
 
-@pytest.fixture
-def mock_admin_user():
+@pytest.fixture  # type: ignore[misc]
+def mock_admin_user() -> dict[str, Any]:
     """Create a mock admin user for testing."""
     return {
         "id": 2,
@@ -218,8 +218,8 @@ def mock_admin_user():
     }
 
 
-@pytest.fixture
-def mock_transaction():
+@pytest.fixture  # type: ignore[misc]
+def mock_transaction() -> dict[str, Any]:
     """Create a mock transaction for testing."""
     return {
         "id": 1,
@@ -231,8 +231,8 @@ def mock_transaction():
     }
 
 
-@pytest.fixture
-def mock_xrpl_client():
+@pytest.fixture  # type: ignore[misc]
+def mock_xrpl_client() -> Mock:
     """Create a mock XRPL client for testing."""
     mock_client = Mock()
     mock_client.is_connected.return_value = True
@@ -242,8 +242,8 @@ def mock_xrpl_client():
     return mock_client
 
 
-@pytest.fixture
-def sample_iso20022_message():
+@pytest.fixture  # type: ignore[misc]
+def sample_iso20022_message() -> str:
     """Create a sample ISO 20022 message for testing."""
     return """<?xml version="1.0" encoding="UTF-8"?>
     <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.02">
@@ -297,7 +297,8 @@ class DatabaseTestUtils:
         # Fetch id (either newly inserted or existing)
         cursor.execute("SELECT id FROM users WHERE email = ?", (user_data["email"],))
         row = cursor.fetchone()
-        user_id = row[0] if row else 0
+        # Ensure the returned id is an int (sqlite may return Any)
+        user_id: int = int(row[0]) if row else 0
         # If the test provided a subscription_status, update the row so paid tests
         # can mark users as having an active subscription across the session.
         if "subscription_status" in user_data:
@@ -346,7 +347,8 @@ class APITestUtils:
             "/auth/login", data={"username": email, "password": password}
         )
         assert response.status_code == 200
-        return response.json()["access_token"]
+        # Cast to str to satisfy strict typing (response.json() is Any at runtime)
+        return cast(str, response.json()["access_token"])
 
     @staticmethod
     def get_auth_headers(token: str) -> dict[str, str]:
@@ -354,13 +356,13 @@ class APITestUtils:
         return {"Authorization": f"Bearer {token}"}
 
 
-@pytest.fixture
-def db_utils():
+@pytest.fixture  # type: ignore[misc]
+def db_utils() -> DatabaseTestUtils:
     """Database test utilities fixture."""
     return DatabaseTestUtils()
 
 
-@pytest.fixture
-def api_utils():
+@pytest.fixture  # type: ignore[misc]
+def api_utils() -> APITestUtils:
     """API test utilities fixture."""
     return APITestUtils()
