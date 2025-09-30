@@ -36,7 +36,10 @@ CREATE TABLE IF NOT EXISTS users (
 """
 )
 cur.execute(
-    "INSERT OR REPLACE INTO users (id, email, hashed_password, is_active, is_admin) VALUES (1, 'test@example.com', '$2b$12$test_hash', 1, 0)"
+    (
+        "INSERT OR REPLACE INTO users (id, email, hashed_password, is_active, is_admin)"
+        " VALUES (1, 'test@example.com', '$2b$12$test_hash', 1, 0)"
+    )
 )
 con.commit()
 con.close()

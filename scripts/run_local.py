@@ -68,13 +68,14 @@ def main() -> None:
                 break
         if fallback is None:
             print(
-                "No free ports found in 8001-8100. Either stop the process using the port or set LOCAL_PORT to a free port manually."
+                "No free ports found in 8001-8100. Either stop the process using the port"
             )
-            print(
-                f"To inspect the owner on Windows: Get-NetTCPConnection -LocalPort {port} | Format-List *"
-            )
+            print("or set LOCAL_PORT to a free port manually.")
+            print("To inspect the owner on Windows run:")
+            print(f"  Get-NetTCPConnection -LocalPort {port} | Format-List *")
         print(
-            f"[run_local] will start on fallback port {fallback} instead; to force 8000 stop the owning process or set LOCAL_PORT."
+            f"[run_local] will start on fallback port {fallback} instead. To force 8000, "
+            "stop the owning process or set LOCAL_PORT."
         )
         assert fallback is not None
         port = fallback
@@ -94,8 +95,9 @@ def main() -> None:
         # Common case on Windows is errno 10048 when the port is in use.
         if getattr(exc, "errno", None) in (10048, 98):
             print(f"[run_local] OSError while binding to {host}:{port}: {exc}")
+            print("The port is already in use.")
             print(
-                "The port is already in use. Use the PowerShell commands printed earlier to find and stop the owning process."
+                "Use the PowerShell commands printed earlier to find and stop the owning process."
             )
             sys.exit(1)
         raise

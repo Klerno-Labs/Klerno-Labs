@@ -1,0 +1,342 @@
+﻿{
+    "total_count":  4,
+    "jobs":  [
+                 {
+                     "id":  51546543926,
+                     "run_id":  18114183610,
+                     "workflow_name":  "Klerno Labs Enterprise Production",
+                     "head_branch":  "ci/enterprise-run-migrations-pr25",
+                     "run_url":  "https://api.github.com/repos/Klerno-Labs/Klerno-Labs/actions/runs/18114183610",
+                     "run_attempt":  1,
+                     "node_id":  "CR_kwDOPoDCCM8AAAAMAGnXNg",
+                     "head_sha":  "212dce3bb395d4cfca2cd9f86848a3106c2f1608",
+                     "url":  "https://api.github.com/repos/Klerno-Labs/Klerno-Labs/actions/jobs/51546543926",
+                     "html_url":  "https://github.com/Klerno-Labs/Klerno-Labs/actions/runs/18114183610/job/51546543926",
+                     "status":  "completed",
+                     "conclusion":  "success",
+                     "created_at":  "2025-09-30T00:02:13Z",
+                     "started_at":  "2025-09-30T00:02:16Z",
+                     "completed_at":  "2025-09-30T00:02:24Z",
+                     "name":  "Early artifact (placeholder)",
+                     "steps":  [
+                                   {
+                                       "name":  "Set up job",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  1,
+                                       "started_at":  "2025-09-30T00:02:17Z",
+                                       "completed_at":  "2025-09-30T00:02:18Z"
+                                   },
+                                   {
+                                       "name":  "Run actions/checkout@v4",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  2,
+                                       "started_at":  "2025-09-30T00:02:18Z",
+                                       "completed_at":  "2025-09-30T00:02:19Z"
+                                   },
+                                   {
+                                       "name":  "Create placeholder alembic log",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  3,
+                                       "started_at":  "2025-09-30T00:02:19Z",
+                                       "completed_at":  "2025-09-30T00:02:19Z"
+                                   },
+                                   {
+                                       "name":  "Upload placeholder alembic log",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  4,
+                                       "started_at":  "2025-09-30T00:02:19Z",
+                                       "completed_at":  "2025-09-30T00:02:20Z"
+                                   },
+                                   {
+                                       "name":  "Create run marker",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  5,
+                                       "started_at":  "2025-09-30T00:02:20Z",
+                                       "completed_at":  "2025-09-30T00:02:20Z"
+                                   },
+                                   {
+                                       "name":  "Upload run marker artifact",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  6,
+                                       "started_at":  "2025-09-30T00:02:20Z",
+                                       "completed_at":  "2025-09-30T00:02:21Z"
+                                   },
+                                   {
+                                       "name":  "Post Run actions/checkout@v4",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  12,
+                                       "started_at":  "2025-09-30T00:02:21Z",
+                                       "completed_at":  "2025-09-30T00:02:21Z"
+                                   },
+                                   {
+                                       "name":  "Complete job",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  13,
+                                       "started_at":  "2025-09-30T00:02:21Z",
+                                       "completed_at":  "2025-09-30T00:02:21Z"
+                                   }
+                               ],
+                     "check_run_url":  "https://api.github.com/repos/Klerno-Labs/Klerno-Labs/check-runs/51546543926",
+                     "labels":  [
+                                    "ubuntu-latest"
+                                ],
+                     "runner_id":  1000000225,
+                     "runner_name":  "GitHub Actions 1000000225",
+                     "runner_group_id":  0,
+                     "runner_group_name":  "GitHub Actions"
+                 },
+                 {
+                     "id":  51546554406,
+                     "run_id":  18114183610,
+                     "workflow_name":  "Klerno Labs Enterprise Production",
+                     "head_branch":  "ci/enterprise-run-migrations-pr25",
+                     "run_url":  "https://api.github.com/repos/Klerno-Labs/Klerno-Labs/actions/runs/18114183610",
+                     "run_attempt":  1,
+                     "node_id":  "CR_kwDOPoDCCM8AAAAMAGoAJg",
+                     "head_sha":  "212dce3bb395d4cfca2cd9f86848a3106c2f1608",
+                     "url":  "https://api.github.com/repos/Klerno-Labs/Klerno-Labs/actions/jobs/51546554406",
+                     "html_url":  "https://github.com/Klerno-Labs/Klerno-Labs/actions/runs/18114183610/job/51546554406",
+                     "status":  "completed",
+                     "conclusion":  "success",
+                     "created_at":  "2025-09-30T00:02:25Z",
+                     "started_at":  "2025-09-30T00:02:27Z",
+                     "completed_at":  "2025-09-30T00:02:33Z",
+                     "name":  "Artifact Publisher (dedicated)",
+                     "steps":  [
+                                   {
+                                       "name":  "Set up job",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  1,
+                                       "started_at":  "2025-09-30T00:02:28Z",
+                                       "completed_at":  "2025-09-30T00:02:28Z"
+                                   },
+                                   {
+                                       "name":  "Run actions/checkout@v4",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  2,
+                                       "started_at":  "2025-09-30T00:02:28Z",
+                                       "completed_at":  "2025-09-30T00:02:29Z"
+                                   },
+                                   {
+                                       "name":  "Create dedicated early marker",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  3,
+                                       "started_at":  "2025-09-30T00:02:29Z",
+                                       "completed_at":  "2025-09-30T00:02:30Z"
+                                   },
+                                   {
+                                       "name":  "Upload early marker",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  4,
+                                       "started_at":  "2025-09-30T00:02:30Z",
+                                       "completed_at":  "2025-09-30T00:02:31Z"
+                                   },
+                                   {
+                                       "name":  "Post Run actions/checkout@v4",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  8,
+                                       "started_at":  "2025-09-30T00:02:31Z",
+                                       "completed_at":  "2025-09-30T00:02:31Z"
+                                   },
+                                   {
+                                       "name":  "Complete job",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  9,
+                                       "started_at":  "2025-09-30T00:02:31Z",
+                                       "completed_at":  "2025-09-30T00:02:31Z"
+                                   }
+                               ],
+                     "check_run_url":  "https://api.github.com/repos/Klerno-Labs/Klerno-Labs/check-runs/51546554406",
+                     "labels":  [
+                                    "ubuntu-latest"
+                                ],
+                     "runner_id":  1000000226,
+                     "runner_name":  "GitHub Actions 1000000226",
+                     "runner_group_id":  0,
+                     "runner_group_name":  "GitHub Actions"
+                 },
+                 {
+                     "id":  51546562094,
+                     "run_id":  18114183610,
+                     "workflow_name":  "Klerno Labs Enterprise Production",
+                     "head_branch":  "ci/enterprise-run-migrations-pr25",
+                     "run_url":  "https://api.github.com/repos/Klerno-Labs/Klerno-Labs/actions/runs/18114183610",
+                     "run_attempt":  1,
+                     "node_id":  "CR_kwDOPoDCCM8AAAAMAGoeLg",
+                     "head_sha":  "212dce3bb395d4cfca2cd9f86848a3106c2f1608",
+                     "url":  "https://api.github.com/repos/Klerno-Labs/Klerno-Labs/actions/jobs/51546562094",
+                     "html_url":  "https://github.com/Klerno-Labs/Klerno-Labs/actions/runs/18114183610/job/51546562094",
+                     "status":  "completed",
+                     "conclusion":  "failure",
+                     "created_at":  "2025-09-30T00:02:33Z",
+                     "started_at":  "2025-09-30T00:02:35Z",
+                     "completed_at":  "2025-09-30T00:03:28Z",
+                     "name":  "Enterprise Application Validation",
+                     "steps":  [
+                                   {
+                                       "name":  "Set up job",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  1,
+                                       "started_at":  "2025-09-30T00:02:36Z",
+                                       "completed_at":  "2025-09-30T00:02:37Z"
+                                   },
+                                   {
+                                       "name":  "Run actions/checkout@v4",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  2,
+                                       "started_at":  "2025-09-30T00:02:37Z",
+                                       "completed_at":  "2025-09-30T00:02:38Z"
+                                   },
+                                   {
+                                       "name":  "Set up Python",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  3,
+                                       "started_at":  "2025-09-30T00:02:38Z",
+                                       "completed_at":  "2025-09-30T00:02:38Z"
+                                   },
+                                   {
+                                       "name":  "Install dependencies",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  4,
+                                       "started_at":  "2025-09-30T00:02:38Z",
+                                       "completed_at":  "2025-09-30T00:03:02Z"
+                                   },
+                                   {
+                                       "name":  "Ensure alembic log file exists",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  5,
+                                       "started_at":  "2025-09-30T00:03:02Z",
+                                       "completed_at":  "2025-09-30T00:03:02Z"
+                                   },
+                                   {
+                                       "name":  "Run DB migrations",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  6,
+                                       "started_at":  "2025-09-30T00:03:02Z",
+                                       "completed_at":  "2025-09-30T00:03:05Z"
+                                   },
+                                   {
+                                       "name":  "Run Enterprise Application Tests",
+                                       "status":  "completed",
+                                       "conclusion":  "failure",
+                                       "number":  7,
+                                       "started_at":  "2025-09-30T00:03:05Z",
+                                       "completed_at":  "2025-09-30T00:03:24Z"
+                                   },
+                                   {
+                                       "name":  "Validate Enterprise Features",
+                                       "status":  "completed",
+                                       "conclusion":  "skipped",
+                                       "number":  8,
+                                       "started_at":  "2025-09-30T00:03:24Z",
+                                       "completed_at":  "2025-09-30T00:03:24Z"
+                                   },
+                                   {
+                                       "name":  "Security Scan",
+                                       "status":  "completed",
+                                       "conclusion":  "skipped",
+                                       "number":  9,
+                                       "started_at":  "2025-09-30T00:03:24Z",
+                                       "completed_at":  "2025-09-30T00:03:24Z"
+                                   },
+                                   {
+                                       "name":  "Upload migration logs",
+                                       "status":  "completed",
+                                       "conclusion":  "failure",
+                                       "number":  10,
+                                       "started_at":  "2025-09-30T00:03:24Z",
+                                       "completed_at":  "2025-09-30T00:03:24Z"
+                                   },
+                                   {
+                                       "name":  "Fallback: initialize DB schema if alembic failed",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  11,
+                                       "started_at":  "2025-09-30T00:03:24Z",
+                                       "completed_at":  "2025-09-30T00:03:26Z"
+                                   },
+                                   {
+                                       "name":  "Post Set up Python",
+                                       "status":  "completed",
+                                       "conclusion":  "skipped",
+                                       "number":  21,
+                                       "started_at":  "2025-09-30T00:03:26Z",
+                                       "completed_at":  "2025-09-30T00:03:26Z"
+                                   },
+                                   {
+                                       "name":  "Post Run actions/checkout@v4",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  22,
+                                       "started_at":  "2025-09-30T00:03:26Z",
+                                       "completed_at":  "2025-09-30T00:03:26Z"
+                                   },
+                                   {
+                                       "name":  "Complete job",
+                                       "status":  "completed",
+                                       "conclusion":  "success",
+                                       "number":  23,
+                                       "started_at":  "2025-09-30T00:03:26Z",
+                                       "completed_at":  "2025-09-30T00:03:26Z"
+                                   }
+                               ],
+                     "check_run_url":  "https://api.github.com/repos/Klerno-Labs/Klerno-Labs/check-runs/51546562094",
+                     "labels":  [
+                                    "ubuntu-latest"
+                                ],
+                     "runner_id":  1000000227,
+                     "runner_name":  "GitHub Actions 1000000227",
+                     "runner_group_id":  0,
+                     "runner_group_name":  "GitHub Actions"
+                 },
+                 {
+                     "id":  51546613392,
+                     "run_id":  18114183610,
+                     "workflow_name":  "Klerno Labs Enterprise Production",
+                     "head_branch":  "ci/enterprise-run-migrations-pr25",
+                     "run_url":  "https://api.github.com/repos/Klerno-Labs/Klerno-Labs/actions/runs/18114183610",
+                     "run_attempt":  1,
+                     "node_id":  "CR_kwDOPoDCCM8AAAAMAGrmkA",
+                     "head_sha":  "212dce3bb395d4cfca2cd9f86848a3106c2f1608",
+                     "url":  "https://api.github.com/repos/Klerno-Labs/Klerno-Labs/actions/jobs/51546613392",
+                     "html_url":  "https://github.com/Klerno-Labs/Klerno-Labs/actions/runs/18114183610/job/51546613392",
+                     "status":  "completed",
+                     "conclusion":  "skipped",
+                     "created_at":  "2025-09-30T00:03:28Z",
+                     "started_at":  "2025-09-30T00:03:28Z",
+                     "completed_at":  "2025-09-30T00:03:28Z",
+                     "name":  "Docker Build Test",
+                     "steps":  [
+
+                               ],
+                     "check_run_url":  "https://api.github.com/repos/Klerno-Labs/Klerno-Labs/check-runs/51546613392",
+                     "labels":  [
+                                    "ubuntu-latest"
+                                ],
+                     "runner_id":  null,
+                     "runner_name":  null,
+                     "runner_group_id":  null,
+                     "runner_group_name":  null
+                 }
+             ]
+}

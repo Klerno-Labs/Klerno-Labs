@@ -327,13 +327,16 @@ with contextlib.suppress(Exception):
 
 # Backwards-compatible simple aliases for older endpoints expected by tests
 with contextlib.suppress(Exception):
-    from fastapi import Response
+    # Alias FastAPI Response to avoid multiple unqualified imports which
+    # trigger flake8 F811 (redefinition) when the module imports Response
+    # in multiple conditional blocks.
+    from fastapi import Response as FastAPIResponse
 
     # Import the concrete submodule to avoid hitting a package-level shim
     _auth_mod = importlib.import_module("app.auth")
 
     @app.post("/auth/register")
-    def _legacy_register(payload: dict, res: Response | None = None) -> Any:
+    def _legacy_register(payload: dict, res: FastAPIResponse | None = None) -> Any:
         """Compatibility alias: accept a JSON dict from older tests and delegate
         to auth.signup_api using the Pydantic model and a Response object.
         """
@@ -349,11 +352,13 @@ with contextlib.suppress(Exception):
         except Exception as exc:  # invalid payload
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-        response = res or Response()
+        response = res or FastAPIResponse()
         return _auth_mod.signup_api(signup_payload, response)
 
     @app.post("/auth/login")
-    def _legacy_login(payload: dict | None = None, res: Response | None = None) -> Any:
+    def _legacy_login(
+        payload: dict | None = None, res: FastAPIResponse | None = None
+    ) -> Any:
         """Compatibility alias: accept JSON login payload and delegate to
         auth.login_api, coercing to the LoginReq model when available.
         """
@@ -367,7 +372,7 @@ with contextlib.suppress(Exception):
         except Exception as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-        response = res or Response()
+        response = res or FastAPIResponse()
         return _auth_mod.login_api(login_payload, response)
 
 
@@ -726,7 +731,10 @@ for mod_path in ("integrations.xrp", "app.integrations.xrp"):
         fetch_account_tx = mod.fetch_account_tx
         break
     except Exception:
-        fetch_account_tx = None
+        # Leave fetch_account_tx as-is (None) and continue searching other
+        # module paths. Assigning None here caused a mypy type complaint on
+        # some checkers, so avoid reassigning.
+        continue
 
 if not fetch_account_tx:
 
