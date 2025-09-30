@@ -117,6 +117,14 @@ jobs:
           )
           set +o pipefail || true
 
+      - name: Ensure fallback DB tables exist
+        # Run the lightweight initializer immediately after migrations so
+        # tests will see the legacy `txs` table even if alembic created
+        # a differently named table or partially failed.
+        run: |
+          python -m pip install --upgrade pip sqlalchemy
+          python scripts/init_db_if_needed.py || true
+
       - name: Run Enterprise Application Tests
         run: |
           python -m pytest tests/ -v --tb=short
