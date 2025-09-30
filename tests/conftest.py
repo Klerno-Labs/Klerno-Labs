@@ -118,6 +118,29 @@ def test_db():
             pass
 
 
+@pytest.fixture(scope="session", autouse=True)
+def ensure_test_db_initialized(test_db):
+    """Ensure the fallback initializer runs against the temporary test DB.
+
+    Some CI/test scenarios rely on the lightweight initializer to add
+    legacy-compatible columns (for example `notes`) to the temporary sqlite
+    database. Run the initializer once per test session against the
+    `test_db` path so tests and the application see the same schema.
+    """
+    # Ensure DATABASE_URL points to the temporary DB used by the tests.
+    os.environ["DATABASE_URL"] = f"sqlite:///{test_db}"
+    try:
+        # Import and run the helper initializer (it's safe to call repeatedly).
+        from scripts import init_db_if_needed
+
+        init_db_if_needed.main()
+    except Exception:
+        # Best-effort: don't fail test collection if initializer can't run.
+        # Tests will surface schema-related errors themselves.
+        pass
+    yield
+
+
 @pytest.fixture
 def test_client(test_db):
     """Create a test client with temporary database."""
