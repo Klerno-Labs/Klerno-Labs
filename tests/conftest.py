@@ -3,9 +3,10 @@ import os
 import sqlite3
 import sys
 import tempfile
+from collections.abc import AsyncGenerator, Generator
 from datetime import datetime
 from pathlib import Path
-from typing import Any, AsyncGenerator, Generator, cast
+from typing import Any, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -34,12 +35,12 @@ except Exception:
     pass
 
 
-@pytest.fixture(scope="session")  # type: ignore[misc]
+@pytest.fixture(scope="session")
 def workspace_root() -> str:
     return ROOT
 
 
-@pytest.fixture(scope="session")  # type: ignore[misc]
+@pytest.fixture(scope="session")
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     """Create an instance of the default event loop for the test session."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
@@ -47,7 +48,7 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     loop.close()
 
 
-@pytest.fixture(scope="session")  # type: ignore[misc]
+@pytest.fixture(scope="session")
 def test_db() -> Generator[str, None, None]:
     """Create a temporary test database."""
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp_file:
@@ -118,7 +119,7 @@ def test_db() -> Generator[str, None, None]:
             pass
 
 
-@pytest.fixture(scope="session", autouse=True)  # type: ignore[misc]
+@pytest.fixture(scope="session", autouse=True)
 def ensure_test_db_initialized(test_db: str) -> Generator[None, None, None]:
     """Ensure the fallback initializer runs against the temporary test DB.
 
@@ -155,7 +156,7 @@ def ensure_test_db_initialized(test_db: str) -> Generator[None, None, None]:
     yield
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def test_client(test_db: str) -> Generator[TestClient, None, None]:
     """Create a test client with temporary database."""
     os.environ["DATABASE_URL"] = f"sqlite:///{Path(test_db).as_posix()}"
@@ -194,7 +195,7 @@ else:
     async_client = pytest.fixture(_async_client_impl)
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def mock_user() -> dict[str, Any]:
     """Create a mock user for testing."""
     return {
@@ -206,7 +207,7 @@ def mock_user() -> dict[str, Any]:
     }
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def mock_admin_user() -> dict[str, Any]:
     """Create a mock admin user for testing."""
     return {
@@ -218,7 +219,7 @@ def mock_admin_user() -> dict[str, Any]:
     }
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def mock_transaction() -> dict[str, Any]:
     """Create a mock transaction for testing."""
     return {
@@ -231,7 +232,7 @@ def mock_transaction() -> dict[str, Any]:
     }
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def mock_xrpl_client() -> Mock:
     """Create a mock XRPL client for testing."""
     mock_client = Mock()
@@ -242,7 +243,7 @@ def mock_xrpl_client() -> Mock:
     return mock_client
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def sample_iso20022_message() -> str:
     """Create a sample ISO 20022 message for testing."""
     return """<?xml version="1.0" encoding="UTF-8"?>
@@ -356,13 +357,13 @@ class APITestUtils:
         return {"Authorization": f"Bearer {token}"}
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def db_utils() -> DatabaseTestUtils:
     """Database test utilities fixture."""
     return DatabaseTestUtils()
 
 
-@pytest.fixture  # type: ignore[misc]
+@pytest.fixture
 def api_utils() -> APITestUtils:
     """API test utilities fixture."""
     return APITestUtils()
