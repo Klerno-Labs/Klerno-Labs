@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Create minimal core tables if they don't exist (fallback when alembic fails)."""
+
 from __future__ import annotations
 
 import os
