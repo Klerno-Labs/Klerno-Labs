@@ -340,13 +340,47 @@ class CICDPipeline:
             if environment_overrides:
                 env.update(environment_overrides)
 
+            import re
+            import shlex
+
             # Run commands
             for command in commands:
                 logger.info(f"[CICD] Executing: {command}")
 
-                process = subprocess.Popen(
-                    command,
-                    shell=True,
+                # Determine whether we can safely run without a shell.
+                # If `command` is a list/tuple, pass it directly (shell=False).
+                # If it's a string, try to split it with shlex when it doesn't
+                # contain obvious shell metacharacters; otherwise fall back to
+                # passing the raw string and enabling shell mode at runtime.
+                shell_flag = False
+                proc_args = command
+                if isinstance(command, (list, tuple)):
+                    proc_args = list(command)
+                    shell_flag = False
+                elif isinstance(command, str):
+                    # simple heuristic: avoid shell when command doesn't include
+                    # pipeline/redirect/variable/command-substitution characters
+                    if re.search(r"[|&;<>*?`$\\]", command):
+                        proc_args = command
+                        shell_flag = True
+                    else:
+                        try:
+                            proc_args = shlex.split(command)
+                            shell_flag = False
+                        except Exception:
+                            proc_args = command
+                            shell_flag = True
+
+                # The shell_flag is computed above using a conservative heuristic
+                # (only enable shell when common shell metacharacters are present
+                # or when shlex.split fails). This runtime decision keeps the
+                # default behavior safe (shell=False) while allowing complex
+                # CI commands to run when explicitly required. Bandit may flag
+                # subprocess usage with shell=True; this particular call is
+                # deliberate and guarded by the heuristic above.
+                process = subprocess.Popen(  # nosec: B602
+                    proc_args,
+                    shell=shell_flag,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,

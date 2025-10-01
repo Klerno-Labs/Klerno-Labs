@@ -783,7 +783,9 @@ def list_by_wallet(wallet: str, limit: int = 100) -> list[dict[str, Any]]:
         ORDER BY id DESC
         LIMIT {_ph()}
     """  # nosec: B608 - parameterized placeholders used
-    cur.execute(sql, (wallet, wallet, limit))
+    cur.execute(
+        sql, (wallet, wallet, limit)
+    )  # nosec: B608 - parameterized placeholders used
     rows = cur.fetchall()
     con.close()
     return _rows_to_dicts(rows)
@@ -805,7 +807,9 @@ def list_alerts(threshold: float = 0.75, limit: int = 100) -> list[dict[str, Any
         ORDER BY id DESC
         LIMIT {_ph()}
     """  # nosec: B608 - parameterized placeholders used
-    cur.execute(sql, (threshold, limit))
+    cur.execute(
+        sql, (threshold, limit)
+    )  # nosec: B608 - parameterized placeholders used
     rows = cur.fetchall()
     con.close()
     return _rows_to_dicts(rows)
@@ -832,7 +836,7 @@ def list_all(limit: int = 1000) -> list[dict[str, Any]]:
         ORDER BY id DESC
         LIMIT {_ph()}
     """  # nosec: B608 - parameterized placeholders used
-    cur.execute(sql, (limit,))
+    cur.execute(sql, (limit,))  # nosec: B608 - parameterized placeholders used
     rows = cur.fetchall()
     con.close()
     result = _rows_to_dicts(rows)
@@ -916,7 +920,7 @@ def get_user_by_email(email: str) -> UserDict | None:
             os.getenv("DATABASE_URL"),
             DB_PATH,
         )
-        cur.execute(sql, (email,))
+        cur.execute(sql, (email,))  # nosec: B608 - parameterized placeholders used
         row = cur.fetchone()
         logger.debug("get_user_by_email: fetched row=%r", row)
     except sqlite3.OperationalError:
@@ -990,7 +994,7 @@ def get_user_by_id(uid: int) -> UserDict | None:
         FROM users WHERE id={_ph()}
         """
         # nosec: B608 - parameterized placeholders used
-        cur.execute(sql, (uid,))
+        cur.execute(sql, (uid,))  # nosec: B608 - parameterized placeholders used
         row = cur.fetchone()
     except sqlite3.OperationalError:
         # Fallback for legacy/test DB schemas
@@ -1262,7 +1266,7 @@ def get_settings_for_user(user_id: int) -> dict[str, Any]:
           FROM user_settings
           WHERE user_id={_ph()}
             """  # nosec: B608 - parameterized placeholders used
-        cur.execute(sql, (user_id,))
+        cur.execute(sql, (user_id,))  # nosec: B608 - parameterized placeholders used
         row = cur.fetchone()
         con.close()
         if not row:
@@ -1419,7 +1423,9 @@ def get_user_by_oauth(oauth_provider: str, oauth_id: str) -> UserDict | None:
                oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses
     FROM users WHERE oauth_provider={_ph()} AND oauth_id={_ph()}
             """  # nosec: B608 - parameterized placeholders used
-    cur.execute(sql, (oauth_provider, oauth_id))
+    cur.execute(
+        sql, (oauth_provider, oauth_id)
+    )  # nosec: B608 - parameterized placeholders used
     row = cur.fetchone()
     con.close()
     result = _row_to_user(row)
