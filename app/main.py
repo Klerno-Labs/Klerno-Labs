@@ -337,7 +337,7 @@ with contextlib.suppress(Exception):
     _auth_mod = importlib.import_module("app.auth")
 
     @app.post("/auth/register")
-    def _legacy_register(payload: dict, res: FastAPIResponse | None = None) -> Any:
+    def _legacy_register(payload: dict, res=None) -> Any:
         """Compatibility alias: accept a JSON dict from older tests and delegate
         to auth.signup_api using the Pydantic model and a Response object.
         """
@@ -357,9 +357,7 @@ with contextlib.suppress(Exception):
         return _auth_mod.signup_api(signup_payload, response)
 
     @app.post("/auth/login")
-    def _legacy_login(
-        payload: dict | None = None, res: FastAPIResponse | None = None
-    ) -> Any:
+    def _legacy_login(payload: dict | None = None, res=None) -> Any:
         """Compatibility alias: accept JSON login payload and delegate to
         auth.login_api, coercing to the LoginReq model when available.
         """
@@ -517,8 +515,9 @@ try:
                     raise HTTPException(status_code=422, detail=str(exc)) from exc
 
             # Provide a Response object so the underlying handler can set cookies
-            from fastapi import Response as FastAPIResponse
-            from fastapi.responses import JSONResponse
+            # Reuse the module-level Response alias to avoid re-importing and
+            # triggering flake8 F811 (redefinition).
+            FastAPIResponse = Response
 
             res = FastAPIResponse()
             result = _auth_mod.login_api(payload, res)
@@ -722,6 +721,10 @@ if __name__ == "__main__":
     # runtime behavior unchanged.
     import uvicorn
 
+    # Binding to all interfaces is intentional for local development and CI smoke
+    # tests that run the server in the container/runner. Suppress Bandit B104 here
+    # with a clear justification: this is a non-production, developer-run path.
+    # nosec: B104
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
 
 # Expose certain integration helpers at module-level so tests that patch

@@ -828,8 +828,10 @@ class ResilienceOrchestrator:
         self, error: Exception, service_name: str, context: dict[str, Any]
     ) -> None:
         """Comprehensive error handling with resilience features."""
+        # Use SHA-256 for generated IDs to avoid weak-hash warnings (MD5).
+        # These IDs are non-secret identifiers for internal error events.
         error_event = ErrorEvent(
-            id=hashlib.md5(f"{service_name}{time.time()}".encode()).hexdigest(),
+            id=hashlib.sha256(f"{service_name}{time.time()}".encode()).hexdigest(),
             service=service_name,
             error_type=type(error).__name__,
             error_message=str(error),

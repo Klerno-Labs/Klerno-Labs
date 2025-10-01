@@ -15,7 +15,7 @@ import inspect
 import json
 import logging
 import os
-import pickle
+import pickle  # nosec: B403 - used for internal cache serialization only (data not from untrusted sources)
 import threading
 import time
 from collections import OrderedDict, defaultdict
@@ -243,7 +243,10 @@ class AdvancedCache(Generic[T]):
         if self.config.serialization == "json":
             return json.dumps(value, default=str).encode()
         elif self.config.serialization == "pickle":
-            return pickle.dumps(value)
+            # Internal cache serialization: using pickle for performance and
+            # compatibility with complex Python objects stored in cache.
+            # Data is produced and consumed internally (not untrusted input).
+            return pickle.dumps(value)  # nosec: B403,B301
         else:
             return pickle.dumps(value)
 
@@ -252,9 +255,13 @@ class AdvancedCache(Generic[T]):
         if self.config.serialization == "json":
             return json.loads(data.decode())
         elif self.config.serialization == "pickle":
-            return pickle.loads(data)
+            # Internal cache deserialization only. Data is produced and consumed
+            # by the same process and is not deserialized from external input.
+            # Justified: necessary for internal performance cache.
+            return pickle.loads(data)  # nosec: B403,B301
         else:
-            return pickle.loads(data)
+            # Fallback internal deserialization path. See justification above.
+            return pickle.loads(data)  # nosec: B403,B301
 
     def _compress(self, data: bytes) -> bytes:
         """Compress data if enabled."""

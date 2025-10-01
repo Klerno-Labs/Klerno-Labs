@@ -73,6 +73,7 @@ except Exception:
     except Exception:
         # Give up silently; user can inspect DB manually
         pass
+
 con.commit()
 con.close()
 print(f"Seeded {DB.resolve()}")

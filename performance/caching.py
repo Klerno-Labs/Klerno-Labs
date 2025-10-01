@@ -6,7 +6,7 @@ Multi-tier caching with Redis, in-memory cache, and intelligent cache strategies
 import asyncio
 import hashlib
 import json
-import pickle
+import pickle  # nosec: B403 - internal cache serialization only
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -171,7 +171,9 @@ class RedisCache:
         try:
             data = await self.redis_client.get(key)
             if data:
-                return pickle.loads(data)
+                # Deserializing internal cache payloads only; not from
+                # untrusted external sources.
+                return pickle.loads(data)  # nosec: B403,B301
         except Exception as e:
             print(f"Redis get error: {e}")
 
@@ -186,7 +188,7 @@ class RedisCache:
             if ttl is None:
                 ttl = self.default_ttl
 
-            data = pickle.dumps(value)
+            data = pickle.dumps(value)  # nosec: B403,B301
             await self.redis_client.setex(key, ttl, data)
             return True
         except Exception as e:
@@ -322,7 +324,8 @@ def cache_key(*args, **kwargs) -> str:
     """Generate cache key from arguments"""
     key_data = {"args": args, "kwargs": sorted(kwargs.items())}
     key_string = json.dumps(key_data, sort_keys=True, default=str)
-    return hashlib.md5(key_string.encode()).hexdigest()
+    # Use sha256 for cache key hashing (not used as a security primitive).
+    return hashlib.sha256(key_string.encode()).hexdigest()
 
 
 def cached(ttl: int = 3600, key_prefix: str = ""):

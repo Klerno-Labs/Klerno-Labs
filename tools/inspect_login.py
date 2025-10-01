@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS users (
 """
 )
 cur.execute(
-    "INSERT OR REPLACE INTO users (id, email, hashed_password, is_active, is_admin)"
-    " VALUES (1, 'test@example.com', '$2b$12$test_hash', 1, 0)"
+    "INSERT OR REPLACE INTO users (id, email, hashed_password, is_active, "
+    "is_admin) VALUES (1, 'test@example.com', '$2b$12$test_hash', 1, 0)"
 )
 con.commit()
 con.close()
@@ -89,11 +89,17 @@ try:
     # Insert into legacy hashed_password column; store.get_user_by_email will
     # normalize this into password_hash for the auth path.
     cur.execute(
-        "INSERT OR REPLACE INTO users (id, email, hashed_password, is_active, is_admin) VALUES (?, ?, ?, ?, ?)",
+        (
+            "INSERT OR REPLACE INTO users (id, email, hashed_password, is_active, "
+            "is_admin) VALUES (?, ?, ?, ?, ?)"
+        ),
         (1, "test@example.com", pw_hash, 1, 0),
     )
     cur.execute(
-        "INSERT OR REPLACE INTO users (id, email, hashed_password, is_active, is_admin) VALUES (?, ?, ?, ?, ?)",
+        (
+            "INSERT OR REPLACE INTO users (id, email, hashed_password, is_active, "
+            "is_admin) VALUES (?, ?, ?, ?, ?)"
+        ),
         (2, "admin@example.com", admin_hash, 1, 1),
     )
     con.commit()

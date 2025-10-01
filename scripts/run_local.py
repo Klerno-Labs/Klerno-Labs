@@ -68,14 +68,17 @@ def main() -> None:
                 break
         if fallback is None:
             print(
-                "No free ports found in 8001-8100. Either stop the process using the port"
+                "No free ports found in 8001-8100. Either stop the process "
+                "using the port"
             )
             print("or set LOCAL_PORT to a free port manually.")
             print("To inspect the owner on Windows run:")
-            print(f"  Get-NetTCPConnection -LocalPort {port} | Format-List *")
+            # Split the PowerShell hint across two prints to avoid long lines
+            print(f"  Get-NetTCPConnection -LocalPort {port} ")
+            print("  | Format-List *")
         print(
-            f"[run_local] will start on fallback port {fallback} instead. To force 8000, "
-            "stop the owning process or set LOCAL_PORT."
+            f"[run_local] will start on fallback port {fallback} instead. "
+            "To force 8000, stop the owning process or set LOCAL_PORT."
         )
         assert fallback is not None
         port = fallback

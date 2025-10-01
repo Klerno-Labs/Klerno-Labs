@@ -1,1 +1,1 @@
-﻿NO_ARTIFACT: branch=ci/enterprise-run-migrations-pr25 minutes=10
+﻿NO_ARTIFACT: branch=ci/enterprise-run-migrations-pr25 minutes=2
