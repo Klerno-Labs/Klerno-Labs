@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -330,7 +330,8 @@ with contextlib.suppress(Exception):
     # Alias FastAPI Response to avoid multiple unqualified imports which
     # trigger flake8 F811 (redefinition) when the module imports Response
     # in multiple conditional blocks.
-    from fastapi import Response as FastAPIResponse
+    # avoid re-importing Response (flake8 F811); alias the already-imported Response
+    FastAPIResponse = Response
 
     # Import the concrete submodule to avoid hitting a package-level shim
     _auth_mod = importlib.import_module("app.auth")
@@ -403,7 +404,8 @@ try:
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
 
         # Provide a Response object so the underlying handler can set cookies
-        from fastapi import Response as FastAPIResponse
+        # avoid re-importing Response (flake8 F811); alias the already-imported Response
+        FastAPIResponse = Response
         from fastapi.responses import JSONResponse
 
         res = FastAPIResponse()
@@ -541,7 +543,8 @@ try:
     _auth_mod = importlib.import_module("app.auth")
     try:
         # Ensure FastAPI Response is available for the forwarder implementation
-        from fastapi import Response
+        # avoid re-importing Response (flake8 F811); use the already-imported Response
+        FastAPIResponse = Response
 
         # Disable response model generation and avoid Pydantic-incompatible
         # parameter annotations so FastAPI doesn't attempt to coerce the
