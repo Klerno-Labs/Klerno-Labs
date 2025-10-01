@@ -2,7 +2,7 @@
 Main integration file for updating app.main.py to use the new XRPL payment and subscription modules.
 
 This module is a reference only. It does not execute or define application routes directly to avoid
-introducing undefined - name errors in tooling. Copy the relevant snippets into `app / main.py` where
+introducing undefined-name errors in tooling. Copy the relevant snippets into `app/main.py` where
 the FastAPI `app`, `Depends`, and other dependencies are available.
 """
 
@@ -20,16 +20,12 @@ from app.subscriptions import (
 
 # ---- XRPL Payment Routes ----
 
-@app.get("/xrpl / network - info")
-
-
+@app.get("/xrpl/network-info")
 def xrpl_network_info(_user=Depends(require_user)):
     """Get information about the XRPL network configuration."""
     return get_network_info()
 
-@app.post("/xrpl / payment - request")
-
-
+@app.post("/xrpl/payment-request")
 def create_xrpl_payment(amount_xrp: Optional[float] = None, _user=Depends(require_user)):
     """Create a payment request for XRPL."""
     payment=create_payment_request(
@@ -39,13 +35,11 @@ def create_xrpl_payment(amount_xrp: Optional[float] = None, _user=Depends(requir
     )
     return payment
 
-@app.post("/xrpl / verify - payment")
-
-
+@app.post("/xrpl/verify-payment")
 def verify_xrpl_payment(
     payment_id: str,
-        tx_hash: Optional[str] = None,
-        _user=Depends(require_user)
+    tx_hash: Optional[str] = None,
+    _user=Depends(require_user),
 ):
     """Verify an XRPL payment and activate subscription if valid."""
     payment_request=create_payment_request(
@@ -71,18 +65,13 @@ def verify_xrpl_payment(
     return {"verified": False, "message": message}
 
 # ---- Subscription Routes ----
-
-@app.get("/subscriptions / tiers")
-
-
+@app.get("/subscriptions/tiers")
 def list_subscription_tiers():
     return [tier.model_dump() for tier in get_all_tiers()]
 
-@app.get("/subscriptions / my - subscription")
-
-
+@app.get("/subscriptions/my-subscription")
 def get_my_subscription(_user=Depends(require_user)):
-    subscription=get_user_subscription(_user["id"])
+    subscription = get_user_subscription(_user["id"])
     if not subscription:
         return {"active": False, "subscription": None}
     is_active=subscription.active and subscription.expires_at > datetime.utcnow()

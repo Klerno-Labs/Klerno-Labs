@@ -263,7 +263,7 @@ class AuditLogger:
     def _enrich_from_request(self, event: AuditEvent, request: Request) -> None:
         """Enrich audit event with request information."""
         event.ip_address = self._get_client_ip(request)
-        event.user_agent = request.headers.get("user - agent")
+        event.user_agent = request.headers.get("user-agent")
         event.request_id = getattr(request.state, "request_id", None)
         event.session_id = request.cookies.get("session")
 

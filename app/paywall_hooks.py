@@ -23,7 +23,7 @@ def _stripe() -> Any | None:
         return None
 
 
-@router.post("/create - checkout - session")
+@router.post("/create-checkout-session")
 async def create_checkout_session(req: Request):
     stripe_sdk = _stripe()
     price_id = (os.getenv("STRIPE_PRICE_ID", "") or "").strip()
@@ -40,20 +40,20 @@ async def create_checkout_session(req: Request):
         mode="subscription",
         line_items=[{"price": price_id, "quantity": 1}],
         customer_email=email,
-        success_url=f"{base}create - account?session_id={{CHECKOUT_SESSION_ID}}",
+        success_url=f"{base}create-account?session_id={{CHECKOUT_SESSION_ID}}",
         cancel_url=f"{base}?canceled=1",
     )
     return {"id": session.id, "url": session.url}
 
 
-@router.post("/stripe / webhook")
+@router.post("/stripe/webhook")
 async def stripe_webhook(request: Request):
     stripe_sdk = _stripe()
     if not stripe_sdk:
         raise HTTPException(status_code=501, detail="Stripe not configured")
 
     payload = await request.body()
-    sig_header = request.headers.get("stripe - signature") or ""
+    sig_header = request.headers.get("stripe-signature") or ""
     secret = (os.getenv("STRIPE_WEBHOOK_SECRET", "") or "").strip()
     if not sig_header or not secret:
         raise HTTPException(

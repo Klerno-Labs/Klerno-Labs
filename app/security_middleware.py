@@ -47,7 +47,7 @@ class TLSEnforcementMiddleware(BaseHTTPMiddleware):
             return Response(
                 content="HTTPS required",
                 status_code=400,
-                headers={"Content - Type": "text / plain"},
+                headers={"Content-Type": "text/plain"},
             )
 
         return await call_next(request)
@@ -85,18 +85,18 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # Enhanced Content Security Policy
         csp_directives = [
-            "default - src 'self'",
-            "script - src 'self' 'unsafe - inline' https://cdn.jsdelivr.net https://js.stripe.com",
-            "style - src 'self' 'unsafe - inline' https://cdn.jsdelivr.net",
-            "img - src 'self' data: https:",
-            "font - src 'self' data: https://cdn.jsdelivr.net",
-            "connect - src 'self' ws: wss: https://api.stripe.com",
-            "frame - src https://js.stripe.com https://hooks.stripe.com",
-            "object - src 'none'",
-            "base - uri 'self'",
-            "frame - ancestors 'none'",
-            "form - action 'self'",
-            "upgrade - insecure - requests" if self.is_production else "",
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://js.stripe.com",
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+            "img-src 'self' data: https:",
+            "font-src 'self' data: https://cdn.jsdelivr.net",
+            "connect-src 'self' ws: wss: https://api.stripe.com",
+            "frame-src https://js.stripe.com https://hooks.stripe.com",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "frame-ancestors 'none'",
+            "form-action 'self'",
+            "upgrade-insecure-requests" if self.is_production else "",
         ]
         csp = "; ".join(filter(None, csp_directives))
 
@@ -105,15 +105,15 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Content-Security-Policy": csp,
             "X-Content-Type-Options": "nosniff",
             "X-Frame-Options": "DENY",
-            "X - XSS - Protection": "1; mode=block",
+            "X-XSS-Protection": "1; mode=block",
             "Referrer-Policy": "strict-origin-when-cross-origin",
-            "Permissions - Policy": (
+            "Permissions-Policy": (
                 "camera=(), microphone=(), geolocation=(), "
                 "payment=(), usb=(), magnetometer=(), gyroscope=()"
             ),
-            "Cross - Origin - Embedder - Policy": "require - corp",
-            "Cross - Origin - Opener - Policy": "same - origin",
-            "Cross - Origin - Resource - Policy": "same - origin",
+            "Cross-Origin-Embedder-Policy": "require-corp",
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Resource-Policy": "same-origin",
         }
 
         # HSTS for HTTPS requests
@@ -121,12 +121,12 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
             if self.is_production:
                 # Production: long max - age with preload
                 security_headers["Strict-Transport-Security"] = (
-                    "max - age=31536000; includeSubDomains; preload"
+                    "max-age=31536000; includeSubDomains; preload"
                 )
             else:
                 # Staging: shorter max - age, no preload
                 security_headers["Strict-Transport-Security"] = (
-                    "max - age=86400; includeSubDomains"
+                    "max-age=86400; includeSubDomains"
                 )
 
         # Apply headers that aren't already set

@@ -192,8 +192,8 @@ class TestRunner:
                     test_file,
                     "-v",
                     "--tb=short",
-                    "--json - report",
-                    f"--json - report - file=test_report_{Path(test_file).name}.json",
+                    "--json-report",
+                    f"--json-report-file=test_report_{Path(test_file).name}.json",
                 ]
 
                 if suite.timeout_seconds:
@@ -278,7 +278,7 @@ class TestRunner:
         return results
 
     async def _run_e2e_tests(self, suite: TestSuite) -> list[TestResult]:
-        """Run end - to - end tests."""
+        """Run end-to-end tests."""
         results = []
 
         for test_scenario in suite.test_files:
@@ -933,13 +933,16 @@ class ContinuousTestingPipeline:
         """Get test history from database."""
         try:
             with sqlite3.connect(self.test_runner.test_database) as conn:
-                # Get recent test runs
+                # Get recent test runs. Parameterize the relative days to avoid
+                # building SQL via f-strings which Bandit flags as B608.
+                days = int(days)
                 cursor = conn.execute(
-                    f"""
+                    """
                     SELECT * FROM test_runs
-                    WHERE timestamp > datetime('now', '-{days} days')
+                    WHERE timestamp > datetime('now', ?)
                     ORDER BY timestamp DESC
-                """
+                """,
+                    (f"-{days} days",),
                 )
 
                 runs = []

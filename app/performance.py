@@ -126,9 +126,10 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
         self.monitor.record_metric(metric)
 
         # Add performance headers
-        response.headers["X - Response - Time - Ms"] = str(round(response_time_ms, 2))
+        metric.user_agent = request.headers.get("user-agent")
+        response.headers["X-Response-Time-Ms"] = str(round(response_time_ms, 2))
         if response_time_ms > 100:
-            response.headers["X - Performance - Warning"] = "slow - response"
+            response.headers["X-Performance-Warning"] = "slow-response"
 
         return response
 
