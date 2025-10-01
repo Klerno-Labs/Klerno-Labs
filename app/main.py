@@ -354,7 +354,28 @@ with contextlib.suppress(Exception):
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
         response = res or FastAPIResponse()
-        return _auth_mod.signup_api(signup_payload, response)
+        # Call the underlying handler. If it returns a dict (legacy behavior),
+        # wrap it in a JSONResponse with status 201 to match the async forwarder
+        # and preserve any Set-Cookie header the handler added to `response`.
+        result = _auth_mod.signup_api(signup_payload, response)
+        try:
+            from fastapi.responses import JSONResponse
+
+            if isinstance(result, dict) and "user" in result:
+                body = {
+                    "email": result["user"]["email"],
+                    "id": result["user"].get("id"),
+                }
+                headers = {}
+                cookie_hdr = response.headers.get("set-cookie")
+                if cookie_hdr:
+                    headers["set-cookie"] = cookie_hdr
+                return JSONResponse(content=body, status_code=201, headers=headers)
+        except Exception:
+            # If anything goes wrong constructing the JSONResponse, fall back to
+            # returning the original result so we don't break runtime.
+            pass
+        return result
 
     @app.post("/auth/login")
     def _legacy_login(payload: dict | None = None, res=None) -> Any:

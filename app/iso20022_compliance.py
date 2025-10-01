@@ -10,26 +10,32 @@ from __future__ import annotations
 
 import re
 import uuid
-import xml.etree.ElementTree as ET
 
+# Attempt to harden stdlib XML parsing before importing any xml modules.
+# If defusedxml is available we call defuse_stdlib() so subsequent imports of
+# xml.etree and xml.dom are protected. If it's not available we gracefully
+# fall back to stdlib and document fallbacks where necessary.
 try:
-    # defusedxml protects stdlib XML parsers against XXE and related attacks.
-    # Calling defuse_stdlib() will monkeypatch xml.etree.ElementTree to a
-    # safe implementation so existing ET.fromstring calls are protected.
     import defusedxml
 
     defusedxml.defuse_stdlib()
 except Exception:
-    # defusedxml is an optional hardening dependency. If it's unavailable in
-    # the environment (tests/local dev), fall back to running with a warning.
-    # Bandit will still flag direct ET.fromstring usages, but the runtime
-    # behavior remains unchanged in constrained environments.
+    # defusedxml is optional; continue with stdlib in test/local envs.
     pass
+
+import xml.etree.ElementTree as ET  # nosec: B405 - defusedxml.defuse_stdlib() attempted above
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
-from xml.dom import minidom
+
+# Prefer defusedxml's minidom when available; otherwise fall back to stdlib
+# and explicitly document the fallback for Bandit. The defuse_stdlib() call
+# above will protect stdlib where possible.
+try:
+    from defusedxml import minidom  # type: ignore
+except Exception:
+    from xml.dom import minidom  # nosec: B408 - defusedxml optional; fallback for tests
 
 # ISO20022 Message Types
 
@@ -301,9 +307,9 @@ class ISO20022MessageBuilder:
             ET.SubElement(cdtr_acct_id, "IBAN").text = instruction.creditor_account
 
             # Purpose
-            ET.SubElement(cdt_trf_tx_inf, "Purp").text = (
-                instruction.payment_purpose.value
-            )
+            ET.SubElement(
+                cdt_trf_tx_inf, "Purp"
+            ).text = instruction.payment_purpose.value
 
             # Remittance Information
             if instruction.remittance_info:
@@ -340,9 +346,9 @@ class ISO20022MessageBuilder:
         for status in payment_statuses:
             tx_inf_and_sts = ET.SubElement(pmt_sts_rpt, "TxInfAndSts")
             ET.SubElement(tx_inf_and_sts, "StsId").text = status.status_id
-            ET.SubElement(tx_inf_and_sts, "OrgnlInstrId").text = (
-                status.original_instruction_id
-            )
+            ET.SubElement(
+                tx_inf_and_sts, "OrgnlInstrId"
+            ).text = status.original_instruction_id
             ET.SubElement(tx_inf_and_sts, "TxSts").text = status.status_code
 
             if status.status_reason:
@@ -406,7 +412,10 @@ class ISO20022MessageBuilder:
     def _format_xml(self, root: ET.Element) -> str:
         """Format XML with proper indentation."""
         rough_string = ET.tostring(root, encoding="unicode")
-        reparsed = minidom.parseString(rough_string)
+        # defusedxml.defuse_stdlib() is attempted at module import. When
+        # defusedxml is unavailable we fall back to stdlib minidom for
+        # test/dev usage; suppress Bandit B318 here with a short rationale.
+        reparsed = minidom.parseString(rough_string)  # nosec: B318
         return reparsed.toprettyxml(indent="  ")
 
     def build_pain001_message(self, payment_data: dict[str, Any]) -> str:
