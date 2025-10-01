@@ -911,8 +911,7 @@ def get_user_by_email(email: str) -> UserDict | None:
                    oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
                        totp_secret, mfa_enabled, mfa_type, recovery_codes, has_hardware_key
             FROM users WHERE email={_ph()}
-        """
-        # nosec: B608 - parameterized placeholders used
+        """  # nosec: B608 - parameterized placeholders used
         logger.debug(
             "get_user_by_email: executing SQL=%r params=%r DATABASE_URL=%r DB_PATH=%r",
             sql,
@@ -992,8 +991,7 @@ def get_user_by_id(uid: int) -> UserDict | None:
                oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
                    totp_secret, mfa_enabled, mfa_type, recovery_codes, has_hardware_key
         FROM users WHERE id={_ph()}
-        """
-        # nosec: B608 - parameterized placeholders used
+        """  # nosec: B608 - parameterized placeholders used
         cur.execute(sql, (uid,))  # nosec: B608 - parameterized placeholders used
         row = cur.fetchone()
     except sqlite3.OperationalError:
@@ -1082,8 +1080,7 @@ def create_user(
             {_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()}
         )
         RETURNING id
-        """
-        # nosec: B608 - parameterized placeholders used
+        """  # nosec: B608 - parameterized placeholders used
         cur.execute(
             sql,
             (
