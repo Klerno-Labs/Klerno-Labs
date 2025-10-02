@@ -80,3 +80,14 @@ jobs:
             coverage.xml
             pytest_output.txt
           if-no-files-found: warn
+
+      - name: Show last 200 lines of pytest output (on failure)
+        if: failure()
+        run: |
+          echo '--- TAIL pytest_output.txt ---' || true
+          if [ -f pytest_output.txt ]; then
+            tail -n 200 pytest_output.txt || true
+          else
+            echo 'pytest_output.txt not found' || true
+          fi
+          echo '--- END TAIL pytest_output.txt ---' || true

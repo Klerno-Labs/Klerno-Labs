@@ -183,6 +183,17 @@ jobs:
           path: enterprise_pytest_output.txt
           if-no-files-found: warn
 
+      - name: Show last 200 lines of enterprise pytest output (on failure)
+        if: failure()
+        run: |
+          echo '--- TAIL enterprise_pytest_output.txt ---' || true
+          if [ -f enterprise_pytest_output.txt ]; then
+            tail -n 200 enterprise_pytest_output.txt || true
+          else
+            echo 'enterprise_pytest_output.txt not found' || true
+          fi
+          echo '--- END TAIL enterprise_pytest_output.txt ---' || true
+
       - name: "Fallback: initialize DB schema if alembic failed"
         if: always()
         run: |
