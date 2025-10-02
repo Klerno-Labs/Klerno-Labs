@@ -31,7 +31,8 @@ fastapi==0.104.1
 itsdangerous
 
 # Runtime libraries required by application imports during test collection
-PyYAML==6.0
+# Use a wheel that supports newer Python versions (incl. 3.13)
+PyYAML==6.0.2
 email-validator==2.1.1
 structlog==24.2.0
 redis==5.0.1
