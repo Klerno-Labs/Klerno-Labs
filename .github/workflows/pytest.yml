@@ -1,28 +1,12 @@
-name: Run tests (legacy - folded into core-ci.yml)
+name: Run tests (legacy - disabled)
 
+# Disabled from automatic triggers to avoid duplicate runs; core-ci.yml handles tests.
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch: {}
 
 jobs:
   test:
+    if: ${{ false }} # disabled
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.11]
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m pip install -r dev-requirements.txt
-      - name: Run tests
-        run: |
-          python -m pytest -q
+      - run: echo "Legacy pytest workflow disabled; use core-ci.yml"
