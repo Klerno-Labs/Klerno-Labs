@@ -127,7 +127,11 @@ jobs:
 
       - name: Run Enterprise Application Tests
         run: |
-          python -m pytest tests/ -v --tb=short
+          # Capture verbose pytest output while preserving exit status
+          set -o pipefail || true
+          python -m pytest tests/ -vv -rA --tb=short | tee enterprise_pytest_output.txt
+          status=${PIPESTATUS[0]}
+          exit $status
 
       - name: Validate Enterprise Features
         run: |
@@ -169,6 +173,14 @@ jobs:
         with:
           name: alembic-logs-${{ github.run_id }}
           path: .run/alembic.log
+          if-no-files-found: warn
+
+      - name: Upload enterprise test output (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: enterprise-pytest-output-${{ github.run_id }}
+          path: enterprise_pytest_output.txt
           if-no-files-found: warn
 
       - name: "Fallback: initialize DB schema if alembic failed"

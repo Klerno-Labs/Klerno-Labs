@@ -2,12 +2,12 @@ name: CodeQL
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   # Temporarily disable CodeQL on PRs to unblock CI while alerts are triaged.
   #pull_request:
   #  branches: [ main, master ]
   schedule:
-    - cron: '0 3 * * 1'
+    - cron: "0 3 * * 1"
 
 jobs:
   analyze:
@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'python' ]
+        language: ["python"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,4 +37,4 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: '/language:${{matrix.language}}'
+          category: "/language:${{matrix.language}}"

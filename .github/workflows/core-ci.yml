@@ -51,9 +51,14 @@ jobs:
       - name: Unit tests and coverage
         run: |
           python -m pip install coverage >/dev/null
-          coverage run -m pytest -q
+          # Run tests with coverage and capture full output for diagnostics
+          # Use pipefail so we can tee output and still propagate pytest's exit code
+          set -o pipefail || true
+          coverage run -m pytest -vv -rA | tee pytest_output.txt
+          test_status=${PIPESTATUS[0]}
           coverage xml -o coverage.xml || true
           coverage report -m || true
+          exit $test_status
 
       - name: Upload coverage artifact
         if: always()

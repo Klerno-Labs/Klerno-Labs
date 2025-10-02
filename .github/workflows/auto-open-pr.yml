@@ -1,13 +1,13 @@
 name: Auto-open PR for ci branches
 
 on:
-  push:
-    branches:
-      - "ci/**"
-  workflow_dispatch:
-  pull_request_target:
-    branches:
-      - main
+    push:
+        branches:
+            - "ci/**"
+    workflow_dispatch:
+    pull_request_target:
+        branches:
+            - main
 
 permissions:
     contents: read
