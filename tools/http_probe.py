@@ -1,5 +1,4 @@
-import urllib.request
-from urllib.error import HTTPError, URLError
+import requests
 
 BASE = "http://127.0.0.1:8002"
 paths = [
@@ -17,16 +16,16 @@ paths = [
 ]
 
 
-def probe(path):
+def probe(path, timeout: int = 5):
     url = BASE + path
-    req = urllib.request.Request(url, headers={"User-Agent": "probe/1.0"})
+    headers = {"User-Agent": "probe/1.0"}
     try:
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            return resp.status, resp.getheader("Content-Type")
-    except HTTPError as e:
-        return e.code, e.headers.get("Content-Type")
-    except URLError as e:
-        return None, str(e.reason)
+        resp = requests.get(url, headers=headers, timeout=timeout)
+        return resp.status_code, resp.headers.get("Content-Type")
+    except requests.exceptions.HTTPError as e:
+        return e.response.status_code if e.response is not None else None, None
+    except requests.exceptions.RequestException as e:
+        return None, str(e)
 
 
 if __name__ == "__main__":

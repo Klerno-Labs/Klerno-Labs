@@ -30,6 +30,11 @@ _suppress = contextlib.suppress
 # Track application startup time
 START_TIME = datetime.now(UTC)
 
+# Provide a module-level alias for Response so later conditional blocks can
+# reuse the same annotation without triggering multiple-assignment mypy errors.
+
+FastAPIResponse: type[Response] = Response
+
 # Templates setup
 templates = Jinja2Templates(directory="templates")
 
@@ -745,13 +750,12 @@ if __name__ == "__main__":
     # Binding to all interfaces is intentional for local development and CI smoke
     # tests that run the server in the container/runner. Suppress Bandit B104 here
     # with a clear justification: this is a non-production, developer-run path.
-    # nosec: B104
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)  # nosec: B104
 
 # Expose certain integration helpers at module-level so tests that patch
 # "app.main.fetch_account_tx" continue to work. We lazily import to avoid
 # pulling integration dependencies during test collection when not needed.
-fetch_account_tx: Any = None  # type: ignore[assignment]
+fetch_account_tx: Any = None
 for mod_path in ("integrations.xrp", "app.integrations.xrp"):
     try:
         mod = importlib.import_module(mod_path)
@@ -763,7 +767,7 @@ for mod_path in ("integrations.xrp", "app.integrations.xrp"):
         # some checkers, so avoid reassigning.
         continue
 
-if not fetch_account_tx:
+if fetch_account_tx is None:
 
     def fetch_account_tx(account: str, limit: int = 10) -> list[dict]:
         """Fallback stub used when the integrations package isn't available.
@@ -771,4 +775,5 @@ if not fetch_account_tx:
         This matches the real function signature so runtime callers can import
         the symbol even when the package is absent.
         """
+        raise RuntimeError("integrations.xrp.fetch_account_tx not available")
         raise RuntimeError("integrations.xrp.fetch_account_tx not available")

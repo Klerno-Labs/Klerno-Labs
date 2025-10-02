@@ -551,9 +551,9 @@ class ComplianceReportingEngine:
                     "alert_type": random.choice(
                         ["velocity", "amount", "pattern", "geographic"]
                     ),
-                    "status": random.choice(
-                        ["pending", "reviewed", "cleared", "flagged"]
-                    ),
+                            "status": random.choice(
+                                ["pending", "reviewed", "cleared", "flagged"]
+                            ),  # nosec: B311 - non-crypto randomness used for synthetic/test data
                 }
             )
 

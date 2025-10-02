@@ -393,9 +393,11 @@ class RetryManager:
         )
 
         if policy.jitter:
-            # Add random jitter (±25%)
+            # Add random jitter (±25%). This jitter is non-cryptographic and
+            # used purely to avoid synchronized retries across processes; using
+            # the standard random module is acceptable here (not security-sensitive).
             jitter_range = delay * 0.25
-            delay += random.uniform(-jitter_range, jitter_range)
+            delay += random.uniform(-jitter_range, jitter_range)  # nosec: B311 - non-crypto jitter for backoff, cryptographic randomness not required
 
         return max(0, delay)
 

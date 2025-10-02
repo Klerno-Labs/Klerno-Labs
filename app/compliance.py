@@ -196,7 +196,7 @@ def tag_category(tx, address_book: AddressBook | None = None) -> Category:
     """Pick a single winner (scores first; PRIORITY breaks ties)."""
     results = tag_categories(tx, address_book=address_book)
     if not results:
-        return cast(Category, "unknown")
+        return "unknown"
 
     top_score = results[0].score
     contenders = [r for r in results if r.score == top_score]

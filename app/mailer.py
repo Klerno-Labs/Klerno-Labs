@@ -4,7 +4,9 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     # Treat sendgrid types as Any in environments where stubs are missing.
-    SendGridAPIClient: Any  # type: ignore
+    # Use a simple Any assignment instead of a type: ignore comment which mypy
+    # can sometimes mark as unused.
+    SendGridAPIClient: Any
 
 _SENDGRID_KEY = os.getenv("SENDGRID_API_KEY")
 FROM_EMAIL = os.getenv("SENDGRID_FROM")

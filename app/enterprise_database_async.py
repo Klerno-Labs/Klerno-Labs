@@ -152,10 +152,7 @@ class DatabaseConnectionPool:
             with self._lock:
                 # Try to get from pool
                 try:
-                    from typing import cast
-
                     conn, created_at = self._pool.get_nowait()
-                    conn = cast(ISyncConnection, conn)
 
                     # Check if connection needs recycling
                     if time.time() - created_at > self.recycle_time:
@@ -178,13 +175,11 @@ class DatabaseConnectionPool:
                             new_conn = None
 
                         if new_conn:
-                            from typing import cast
-
-                            self._overflow.append(cast(ISyncConnection, new_conn))
-                            self._checked_out.add(cast(ISyncConnection, new_conn))
+                            self._overflow.append(new_conn)
+                            self._checked_out.add(new_conn)
                             self._stats.active_connections += 1
                             self._stats.total_connections += 1
-                            return cast(ISyncConnection, new_conn)
+                            return new_conn
 
                     logger.warning("[DB-POOL] Pool exhausted, no connections available")
                     return None

@@ -67,8 +67,11 @@ def test_circuit_breaker_half_open_recovery():
     cb = CircuitBreaker("test_service", config)
 
     # Force circuit to open
+    def _raise_test() -> None:
+        raise RuntimeError("test")
+
     with pytest.raises(RuntimeError):
-        cb.call(lambda: exec('raise RuntimeError("test")'))
+        cb.call(_raise_test)
     assert cb.state == CircuitState.OPEN
 
     # Wait for timeout
@@ -98,7 +101,11 @@ def test_circuit_breaker_stats():
 
     # Suppress the specific expected RuntimeError from the failing call
     with contextlib.suppress(RuntimeError):
-        cb.call(lambda: exec('raise RuntimeError("failure")'))
+
+        def _maybe_fail() -> None:
+            raise RuntimeError("failure")
+
+        cb.call(_maybe_fail)
 
     stats = cb.get_stats()
     assert stats["name"] == "test_service"

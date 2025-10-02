@@ -2,17 +2,20 @@
 Data store utilities with SQLite/Postgres backends and a small cache.
 """
 
-# bandit: skip-file
-# Justification: This module constructs SQL using an internal `_ph()` placeholder
-# function and passes parameters separately to DB driver APIs (sqlite3/psycopg).
-# Bandit generates many B608 (hardcoded_sql_expressions) findings on the
-# multi-line f-strings even though values are supplied via parameters. To
-# reduce noisy CI failures while preserving runtime safety, skip Bandit for
-# this file and add a follow-up audit to re-introduce granular suppressions
-# where appropriate.
-# TODO(klerno): Re-audit `app/store.py` to remove `bandit: skip-file` and
-# replace with explicit `# nosec: B608` on exact lines or refactor to avoid
-# f-string interpolation in SQL literals.
+# NOTE: Bandit analysis intentionally enabled for this file.
+#
+# Rationale: Historically this module used "# bandit: skip-file" because it
+# constructs SQL using an internal `_ph()` placeholder and passes parameters
+# separately to the DB drivers (sqlite3/psycopg). That broad skip was noisy
+# in CI and hides per-line issues. We've removed the module-level skip so
+# we can apply focused, per-line `# nosec: B608` comments or refactor
+# individual query sites. Please keep changes minimal and add a one-line
+# justification when using `# nosec: B608` on a query that is safe because
+# parameters are passed separately.
+#
+# TODO(klerno): Replace remaining `f"...{_ph()}..."` query literals with
+# parameterized calls where practical, or add precise `# nosec: B608`
+# comments with a short rationale to keep Bandit signals actionable.
 
 import contextlib
 import json
@@ -196,8 +199,8 @@ def _sqlite_conn() -> ISyncConnection:
         # Best-effort: don't fail connection creation if pragmas are unsupported
         with contextlib.suppress(Exception):
             _ = None
-    # Cast runtime sqlite3.Connection to ISyncConnection for typing
-    return cast(ISyncConnection, con)
+    # Return the connection (already assigned with the appropriate runtime type)
+    return con
 
 
 def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> Any:
@@ -224,11 +227,14 @@ def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> 
         try:
             if PSYCOPG_LIBRARY == "psycopg":
                 # psycopg3: connect with the URL directly
-                assert psycopg is not None
+                if psycopg is None:
+                    raise RuntimeError("psycopg (psycopg3) expected but not available")
                 return psycopg.connect(DATABASE_URL)
             # psycopg2
-            assert psycopg is not None
-            assert RealDictCursor is not None
+            if psycopg is None or RealDictCursor is None:
+                raise RuntimeError(
+                    "psycopg2 and RealDictCursor required but not available"
+                )
             return psycopg.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         except Exception as e:
             last_exc = e
@@ -509,7 +515,13 @@ def init_db() -> None:
                 ("has_hardware_key INTEGER NOT NULL DEFAULT 0",),
             ]:
                 with contextlib.suppress(sqlite3.OperationalError):
-                    cur.execute(f"ALTER TABLE users ADD COLUMN {coldef[0]};")
+                    # coldef values are from an internal hardcoded list above
+                    # (migration definitions). This is not user input; add a
+                    # precise suppression so Bandit doesn't flag this dynamic
+                    # DDL string as a false-positive for hardcoded SQL.
+                    cur.execute(
+                        f"ALTER TABLE users ADD COLUMN {coldef[0]};"
+                    )  # nosec: B608 - migration column definition is an internal constant
     except Exception as e:
         print(f"Migration warning: {e}")
 
@@ -910,7 +922,7 @@ def get_user_by_email(email: str) -> UserDict | None:
             SELECT id, email, password_hash, role, subscription_active, created_at,
                    oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
                        totp_secret, mfa_enabled, mfa_type, recovery_codes, has_hardware_key
-            FROM users WHERE email={_ph()}
+    FROM users WHERE email={_ph()}
         """  # nosec: B608 - parameterized placeholders used
         logger.debug(
             "get_user_by_email: executing SQL=%r params=%r DATABASE_URL=%r DB_PATH=%r",
@@ -990,8 +1002,8 @@ def get_user_by_id(uid: int) -> UserDict | None:
         SELECT id, email, password_hash, role, subscription_active, created_at,
                oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
                    totp_secret, mfa_enabled, mfa_type, recovery_codes, has_hardware_key
-        FROM users WHERE id={_ph()}
-        """  # nosec: B608 - parameterized placeholders used
+    FROM users WHERE id={_ph()}
+    """  # nosec: B608 - parameterized placeholders used
         cur.execute(sql, (uid,))  # nosec: B608 - parameterized placeholders used
         row = cur.fetchone()
     except sqlite3.OperationalError:
@@ -1261,8 +1273,8 @@ def get_settings_for_user(user_id: int) -> dict[str, Any]:
         sql = f"""
           SELECT x_api_key, risk_threshold, time_range_days, ui_prefs
           FROM user_settings
-          WHERE user_id={_ph()}
-            """  # nosec: B608 - parameterized placeholders used
+    WHERE user_id={_ph()}
+    """  # nosec: B608 - parameterized placeholders used
         cur.execute(sql, (user_id,))  # nosec: B608 - parameterized placeholders used
         row = cur.fetchone()
         con.close()
@@ -1419,7 +1431,7 @@ def get_user_by_oauth(oauth_provider: str, oauth_id: str) -> UserDict | None:
         SELECT id, email, password_hash, role, subscription_active, created_at,
                oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses
     FROM users WHERE oauth_provider={_ph()} AND oauth_id={_ph()}
-            """  # nosec: B608 - parameterized placeholders used
+        """  # nosec: B608 - parameterized placeholders used
     cur.execute(
         sql, (oauth_provider, oauth_id)
     )  # nosec: B608 - parameterized placeholders used
@@ -1499,35 +1511,49 @@ def update_user_mfa(
 
     if mfa_enabled is not None:
         if USING_POSTGRES:
-            updates.append(f"mfa_enabled={_ph()}")
+            updates.append(
+                f"mfa_enabled={_ph()}"
+            )  # nosec: B608 - internal placeholder; value passed via params
             values.append(mfa_enabled)
         else:
-            updates.append(f"mfa_enabled={_ph()}")
+            updates.append(
+                f"mfa_enabled={_ph()}"
+            )  # nosec: B608 - internal placeholder; value passed via params
             values.append(1 if mfa_enabled else 0)
 
     if mfa_type is not None:
-        updates.append(f"mfa_type={_ph()}")
+        updates.append(
+            f"mfa_type={_ph()}"
+        )  # nosec: B608 - internal placeholder; value passed via params
         values.append(mfa_type)
 
     if totp_secret is not None:
-        updates.append(f"totp_secret={_ph()}")
+        updates.append(
+            f"totp_secret={_ph()}"
+        )  # nosec: B608 - internal placeholder; value passed via params
         values.append(totp_secret)
 
     if recovery_codes is not None:
-        updates.append(f"recovery_codes={_ph()}")
+        updates.append(
+            f"recovery_codes={_ph()}"
+        )  # nosec: B608 - internal placeholder; value passed via params
         values.append(json.dumps(recovery_codes))
 
     if has_hardware_key is not None:
         if USING_POSTGRES:
-            updates.append(f"has_hardware_key={_ph()}")
+            updates.append(
+                f"has_hardware_key={_ph()}"
+            )  # nosec: B608 - internal placeholder; value passed via params
             values.append(has_hardware_key)
         else:
-            updates.append(f"has_hardware_key={_ph()}")
+            updates.append(
+                f"has_hardware_key={_ph()}"
+            )  # nosec: B608 - internal placeholder; value passed via params
             values.append(1 if has_hardware_key else 0)
 
     if updates:
         values.append(user_id)
-    query = f"UPDATE users SET {', '.join(updates)} WHERE id={_ph()}"  # nosec: B608
+    query = f"UPDATE users SET {', '.join(updates)} WHERE id={_ph()}"  # nosec: B608 - internal _ph() placeholders used; params passed separately
     cur.execute(query, values)
     con.commit()
 
@@ -1544,7 +1570,7 @@ def update_user_password(user_id: int, password_hash: str) -> None:
     cur = con.cursor()
 
     cur.execute(
-        f"UPDATE users SET password_hash={_ph()} WHERE id={_ph()}",  # nosec: B608
+        f"UPDATE users SET password_hash={_ph()} WHERE id={_ph()}",  # nosec: B608 - internal placeholders; values provided in params
         (password_hash, user_id),
     )
     con.commit()
@@ -1618,11 +1644,15 @@ def update_user_profile(
     params: list[Any] = []
 
     if display_name is not None:
-        updates.append(f"display_name={_ph()}")
+        updates.append(
+            f"display_name={_ph()}"
+        )  # nosec: B608 - internal placeholder; value passed via params
         params.append(display_name)
 
     if avatar_url is not None:
-        updates.append(f"avatar_url={_ph()}")
+        updates.append(
+            f"avatar_url={_ph()}"
+        )  # nosec: B608 - internal placeholder; value passed via params
         params.append(avatar_url)
 
     if updates:

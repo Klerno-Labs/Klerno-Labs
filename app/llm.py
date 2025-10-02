@@ -22,7 +22,7 @@ _openai_legacy: Any = None
 
 if TYPE_CHECKING:
     # Type-only import to satisfy static analyzers when stubs are present
-    pass  # type: ignore
+    pass
 
 # Try the modern SDK first (v1+) using importlib to avoid static import errors
 try:

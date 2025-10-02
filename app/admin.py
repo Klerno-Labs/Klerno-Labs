@@ -8,14 +8,14 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     # Avoid importing pandas during static analysis; declare as Any so
     # mypy doesn't require pandas stubs.
-    pd: Any  # pragma: no cover
+    pd: Any
 
     # Treat SendGrid types as Any in dev environments where stubs are missing
-    SendGridAPIClient: Any  # type: ignore
-    Content: Any  # type: ignore
-    Email: Any  # type: ignore
-    Mail: Any  # type: ignore
-    To: Any  # type: ignore
+    SendGridAPIClient: Any
+    Content: Any
+    Email: Any
+    Mail: Any
+    To: Any
 else:
     pd = None
 
@@ -473,7 +473,7 @@ class SeedDemoPayload(BaseModel):
     limit: int | None = None  # rows to import from sample
 
 
-@router.post("/api / data / seed_demo")
+@router.post("/api/data/seed_demo")
 def admin_seed_demo(
     payload: SeedDemoPayload = Body(default=None), user=Depends(require_admin)
 ):
@@ -540,7 +540,7 @@ class PurgePayload(BaseModel):
     confirm: str
 
 
-@router.post("/api / data / purge")
+@router.post("/api/data/purge")
 def admin_purge(payload: PurgePayload, user=Depends(require_admin)):
     if (payload.confirm or "").upper() != "DELETE":
         raise HTTPException(status_code=400, detail='Type "DELETE" to confirm')
@@ -559,7 +559,7 @@ class TestEmailPayload(BaseModel):
     email: str | None = None
 
 
-@router.post("/api / email / test")
+@router.post("/api/email/test")
 def admin_email_test(
     payload: TestEmailPayload = Body(default=None), user=Depends(require_admin)
 ):
@@ -575,7 +575,7 @@ class XRPLPingPayload(BaseModel):
     limit: int | None = 1
 
 
-@router.post("/api / xrpl / ping")
+@router.post("/api/xrpl/ping")
 def admin_xrpl_ping(payload: XRPLPingPayload, user=Depends(require_admin)):
     # Try both package layouts to import the XRPL helper
     fetch_account_tx = None
@@ -616,13 +616,13 @@ class ApiKeyRotateResponse(BaseModel):
     api_key: str  # returned ONCE so the admin can copy it
 
 
-@router.post("/api - key / rotate", response_model=ApiKeyRotateResponse)
+@router.post("/api-key/rotate", response_model=ApiKeyRotateResponse)
 def admin_rotate_api_key(user=Depends(require_admin)):
     new_key = rotate_api_key()
     return {"api_key": new_key}
 
 
-@router.get("/api - key / preview")
+@router.get("/api-key/preview")
 def admin_preview_api_key(user=Depends(require_admin)):
     return preview_api_key()
 
@@ -683,7 +683,7 @@ def get_fund_config(user=Depends(require_admin)) -> dict[str, Any] | None:
     }
 
 
-@router.post("/api / fund - management / config")
+@router.post("/api/fund-management/config")
 def update_fund_config(config: FundDistributionConfig, user=Depends(require_admin)):
     """Update fund distribution configuration."""
     # Validate percentages add up to 100%
@@ -704,7 +704,7 @@ def update_fund_config(config: FundDistributionConfig, user=Depends(require_admi
     }
 
 
-@router.get("/api / fund - management / transactions")
+@router.get("/api/fund-management/transactions")
 def get_fund_transactions(
     limit: int = 50, offset: int = 0, user=Depends(require_admin)
 ):
@@ -745,7 +745,7 @@ def get_fund_transactions(
     }
 
 
-@router.post("/api / fund - management / distribute/{transaction_id}")
+@router.post("/api/fund-management/distribute/{transaction_id}")
 def distribute_transaction_funds(transaction_id: str, user=Depends(require_admin)):
     """Manually distribute funds for a specific transaction."""
     # In production, this would:
@@ -782,7 +782,7 @@ def distribute_transaction_funds(transaction_id: str, user=Depends(require_admin
     }
 
 
-@router.get("/api / fund - management / balances")
+@router.get("/api/fund-management/balances")
 def get_wallet_balances(user=Depends(require_admin)) -> dict[str, Any] | None:
     """Get current balances for all managed wallets."""
     # Mock data - in production, query actual wallet balances
@@ -838,7 +838,7 @@ class SecurityPolicyConfig(BaseModel):
     admin_mfa_required: bool = True
 
 
-@router.get("/security / policy")
+@router.get("/security/policy")
 def get_security_policy(admin=Depends(require_admin)) -> dict[str, Any] | None:
     """Get current security policy configuration."""
     cfg = getattr(policy, "config", None)
@@ -864,7 +864,7 @@ def get_security_policy(admin=Depends(require_admin)) -> dict[str, Any] | None:
     }
 
 
-@router.post("/security / policy")
+@router.post("/security/policy")
 def update_security_policy(config: SecurityPolicyConfig, admin=Depends(require_admin)):
     """Update security policy configuration."""
     # Update password policy safely via getattr/setattr so missing attributes
@@ -922,7 +922,7 @@ def update_security_policy(config: SecurityPolicyConfig, admin=Depends(require_a
     }
 
 
-@router.get("/security / users")
+@router.get("/security/users")
 def get_users_security_status(admin=Depends(require_admin)) -> dict[str, Any] | None:
     """Get security status for all users."""
     # This would need a new store function to get all users with security info
@@ -949,7 +949,7 @@ def get_users_security_status(admin=Depends(require_admin)) -> dict[str, Any] | 
     }
 
 
-@router.post("/security / users/{user_id}/force - mfa")
+@router.post("/security/users/{user_id}/force-mfa")
 def force_user_mfa(user_id: int, admin=Depends(require_admin)):
     """Force MFA setup for a specific user."""
     user = store.get_user_by_id(user_id)

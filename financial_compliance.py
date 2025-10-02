@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import re
 import uuid
-import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
-from xml.dom import minidom
+
+from defusedxml import ElementTree as ET
+from defusedxml import minidom
 
 # ISO20022 Message Types
 

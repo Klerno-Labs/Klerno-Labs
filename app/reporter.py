@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     # Use Any so mypy doesn't require pandas to be installed in the dev env
-    pd: Any  # type: ignore
+    pd: Any
 else:
     pd = None
 

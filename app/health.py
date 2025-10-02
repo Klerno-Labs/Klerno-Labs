@@ -14,7 +14,7 @@ import psutil
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 
-from ._typing_shims import IPostgresConnection, IPostgresCursor, IRedisLike
+from ._typing_shims import IRedisLike
 
 psycopg2: Any | None = None
 try:
@@ -99,8 +99,7 @@ class HealthChecker:
                 }
 
             conn = psycopg2.connect(db_url)
-            conn = cast(IPostgresConnection, conn)
-            cursor = cast(IPostgresCursor, conn.cursor())
+            cursor = conn.cursor()
             cursor.execute("SELECT 1")
             result = cursor.fetchone()
             cursor.close()

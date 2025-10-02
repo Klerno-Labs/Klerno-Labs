@@ -17,41 +17,40 @@ from typing import TYPE_CHECKING, Any, cast
 from app._typing_shims import ISyncConnection
 from app.constants import CACHE_TTL
 
+if TYPE_CHECKING:
+    # Static analysis: declare heavy third-party names as Any so type checkers
+    # don't require installed stubs during CI or local checks.
+    np: Any
+    pd: Any
+else:
+    # Runtime: set placeholders and lazy-import helpers. Use simple try/except
+    # when importing heavy optional packages at runtime.
+    np = None
+    pd = None
+
 
 def _ensure_numpy() -> None:
-    if "np" in globals():
+    if "np" in globals() and globals()["np"] is not None:
         return
     try:
-        # runtime import; mypy may not have numpy stubs in this environment
-        import numpy as np  # type: ignore[import]
+        import importlib
 
-        globals()["np"] = np
+        np_mod = importlib.import_module("numpy")
+        globals()["np"] = np_mod
     except Exception:
         raise
 
 
-if TYPE_CHECKING:
-    # Avoid importing heavy third-party packages during static analysis.
-    np: Any
-    pd: Any
-else:
-    # runtime: try to import pandas but fall back to a typed None/Any so mypy
-    # doesn't complain in environments without pandas installed.
-    try:
-        import pandas as pd  # type: ignore[import]
-    except Exception:
-        pd: Any = None  # type: ignore[assignment]
-    # ensure numpy name exists at module level for runtime lazy-loading helper
-    np = None
-
-
 def _ensure_pandas() -> None:
-    if "pd" in globals():
+    if "pd" in globals() and globals()["pd"] is not None:
         return
-    # runtime import; add mypy ignore for environments without pandas stubs
-    import pandas as pd  # type: ignore[import]
+    try:
+        import importlib
 
-    globals()["pd"] = pd
+        pd_mod = importlib.import_module("pandas")
+        globals()["pd"] = pd_mod
+    except Exception:
+        raise
 
 
 # Configure logging

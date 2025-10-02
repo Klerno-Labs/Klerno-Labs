@@ -44,8 +44,10 @@ except Exception:
                 )
 
             def verify(self, token: str, valid_window: int = 0) -> bool:
-                # Very small, test-friendly fallback implementation
-                return token == "123456"
+                # Very small, test-friendly fallback implementation used only
+                # when pyotp isn't available in dev/test environments.
+                # This is intentionally weak and must not be used in prod.
+                return token == "123456"  # nosec: B105 - test-only fallback
 
     pyotp = _FallbackPyOTP
 

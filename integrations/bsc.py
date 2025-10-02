@@ -17,11 +17,11 @@ BSC_KEY = os.getenv("BSC_API_KEY", "").strip()
 def _import_transaction():
     try:
         # Prefer installed package resolution
-        from app.models import Transaction  # type: ignore[import]
+        from app.models import Transaction
 
         return Transaction
     except Exception:
-        from ..models import Transaction as _T  # type: ignore[import]
+        from ..models import Transaction as _T
 
         return _T
 

@@ -10,32 +10,32 @@ from __future__ import annotations
 
 import re
 import uuid
-
-# Attempt to harden stdlib XML parsing before importing any xml modules.
-# If defusedxml is available we call defuse_stdlib() so subsequent imports of
-# xml.etree and xml.dom are protected. If it's not available we gracefully
-# fall back to stdlib and document fallbacks where necessary.
-try:
-    import defusedxml
-
-    defusedxml.defuse_stdlib()
-except Exception:
-    # defusedxml is optional; continue with stdlib in test/local envs.
-    pass
-
-import xml.etree.ElementTree as ET  # nosec: B405 - defusedxml.defuse_stdlib() attempted above
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-# Prefer defusedxml's minidom when available; otherwise fall back to stdlib
-# and explicitly document the fallback for Bandit. The defuse_stdlib() call
-# above will protect stdlib where possible.
-try:
-    from defusedxml import minidom  # type: ignore
-except Exception:
-    from xml.dom import minidom  # nosec: B408 - defusedxml optional; fallback for tests
+# Prefer defusedxml's minidom when available and harden stdlib XML parsing
+# where possible. Use a runtime importlib lookup to avoid static unresolved- import
+# diagnostics in analysis environments that lack defusedxml.
+if TYPE_CHECKING:
+    minidom: Any
+else:
+    try:
+        import importlib
+
+        defusedxml = importlib.import_module("defusedxml")
+        getattr(defusedxml, "defuse_stdlib", lambda: None)()
+
+        minidom = getattr(defusedxml, "minidom", None)
+        if minidom is None:
+            from xml.dom import minidom  # nosec: B408 - fallback for tests
+    except Exception:
+        from xml.dom import (
+            minidom,
+        )  # nosec: B408 - defusedxml optional; fallback for tests
+
+import xml.etree.ElementTree as ET  # nosec: B405 - defusedxml.defuse_stdlib() attempted above
 
 # ISO20022 Message Types
 
@@ -307,9 +307,9 @@ class ISO20022MessageBuilder:
             ET.SubElement(cdtr_acct_id, "IBAN").text = instruction.creditor_account
 
             # Purpose
-            ET.SubElement(
-                cdt_trf_tx_inf, "Purp"
-            ).text = instruction.payment_purpose.value
+            ET.SubElement(cdt_trf_tx_inf, "Purp").text = (
+                instruction.payment_purpose.value
+            )
 
             # Remittance Information
             if instruction.remittance_info:
@@ -346,9 +346,9 @@ class ISO20022MessageBuilder:
         for status in payment_statuses:
             tx_inf_and_sts = ET.SubElement(pmt_sts_rpt, "TxInfAndSts")
             ET.SubElement(tx_inf_and_sts, "StsId").text = status.status_id
-            ET.SubElement(
-                tx_inf_and_sts, "OrgnlInstrId"
-            ).text = status.original_instruction_id
+            ET.SubElement(tx_inf_and_sts, "OrgnlInstrId").text = (
+                status.original_instruction_id
+            )
             ET.SubElement(tx_inf_and_sts, "TxSts").text = status.status_code
 
             if status.status_reason:

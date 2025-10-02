@@ -105,7 +105,7 @@ class AsyncConnectionPool:
         """Create a new database connection with optimizations"""
         # runtime import; may not be available in the type-check environment
         try:
-            import aiosqlite  # type: ignore[import]
+            import aiosqlite
         except Exception:
             raise
 

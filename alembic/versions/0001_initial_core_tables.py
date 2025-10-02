@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 
-from alembic import op
+from alembic import op  # type: ignore[attr-defined]
 
 # revision identifiers, used by Alembic.
 revision = "0001_initial_core_tables"
@@ -52,7 +52,9 @@ def upgrade():  # noqa: D401
             server_default=sa.text("CURRENT_TIMESTAMP"),
         ),
     )
-    op.create_index("idx_transactions_created_at", "transactions", ["created_at"])  # noqa: E501
+    op.create_index(
+        "idx_transactions_created_at", "transactions", ["created_at"]
+    )  # noqa: E501
 
 
 def downgrade():  # noqa: D401

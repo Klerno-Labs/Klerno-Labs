@@ -21,7 +21,10 @@ class Settings(BaseSettings):
     )
 
     # Web server
-    HOST: str = Field("0.0.0.0", description="Host to bind to")
+    # Default to 0.0.0.0 for local development and containerized environments.
+    # This is an intentional default for dev/test; production should override via
+    # environment variables.
+    HOST: str = Field("0.0.0.0", description="Host to bind to")  # nosec: B104
     PORT: int = Field(8000, description="Port to bind to")
     WORKERS: int = Field(1, description="Number of uvicorn workers")
 

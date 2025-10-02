@@ -110,22 +110,28 @@ def rate_limit(spec: str) -> Callable[..., Awaitable[bool]]:
     - Otherwise, returns a no - op dependency (clean, no linter warnings).
     """
     try:
-        from starlette_limiter import RateLimiter  # type: ignore[import]
+        from starlette_limiter import RateLimiter
 
         # Parse "10 / min", "100 / hour", or raw seconds like "20 / 30"
         parts = spec.split("/")
         times = int(parts[0])
         per = parts[1].lower() if len(parts) > 1 else "min"
-        seconds = {"sec": 1, "second": 1, "min": 60, "minute": 60, "hour": 3600}.get(
-            per, 60
-        )
+        seconds = {
+            "sec": 1,
+            "second": 1,
+            "min": 60,
+            "minute": 60,
+            "hour": 3600,
+        }.get(per, 60)
+
         # Require redis URL to actually enable limiter
         if not os.getenv("REDIS_URL"):
-            # RateLimiter without Redis will fail; fall back to no - op
+            # RateLimiter without Redis will fail; fall back to no-op
             raise RuntimeError("No REDIS_URL set; skipping real limiter.")
+
         return RateLimiter(times=times, seconds=seconds)
     except Exception:
-        # No - op dependency
+        # No-op dependency when limiter or its infra is unavailable
 
         async def _noop() -> bool:
             return True

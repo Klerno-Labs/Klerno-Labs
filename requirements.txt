@@ -14,3 +14,4 @@ itsdangerous
 structlog
 pydantic-settings==2.11.0
 passlib
+defusedxml==0.7.1

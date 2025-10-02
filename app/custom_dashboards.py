@@ -451,7 +451,8 @@ class DashboardManager:
             data.append(
                 {
                     "timestamp": date.isoformat(),
-                    "risk_score": random.uniform(0.1, 0.9),
+                        "risk_score": random.uniform(0.1, 0.9),
+                        # nosec: B311 - non-crypto randomness for demo/test data
                     "transaction_count": random.randint(10, 100),
                 }
             )

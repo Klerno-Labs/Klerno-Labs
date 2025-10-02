@@ -49,8 +49,8 @@ def _ensure_pandas() -> None:
 if TYPE_CHECKING:
     # Use Any for heavy optional dependencies so mypy doesn't require their
     # presence in developer environments where installing them is undesirable.
-    np: Any  # type: ignore
-    pd: Any  # type: ignore
+    np: Any
+    pd: Any
 else:
     np = None
     pd = None

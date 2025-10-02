@@ -30,6 +30,7 @@ try:  # pragma: no cover - best effort import
 
     START_TIME = APP_START_TIME  # noqa: N816 (keep upper case alias semantics)
 except Exception:  # pragma: no cover
+    # Best-effort import only: ignore failures (startup ordering in tests/ASGI)
     pass
 
 

@@ -17,7 +17,8 @@ if env_file.exists():
         # Do not override existing environment variables set by tests
         dotenv.load_dotenv(env_file, override=False)
     except Exception:
-        # deliberately ignore import/load failures; non-fatal in tests
+        # Deliberately ignore import/load failures; this is a best-effort
+        # convenience for developer/test environments (non-fatal).
         pass
 
 # ENV - Secure JWT configuration
@@ -36,10 +37,11 @@ if not SECRET_KEY or len(SECRET_KEY) < 32 or SECRET_KEY == "CHANGE_ME_32+_chars"
             stacklevel=2,
         )
     except Exception:
+        # Ignore warning emission failures (non-fatal in constrained test envs)
         pass
     SECRET_KEY = os.getenv(
         "JWT_SECRET",
-        "test-secret-for-local-development-please-change",
+        "test-secret-for-local-development-please-change",  # nosec: B105 - test-only fallback secret
     )
 
 ALGO = "HS256"

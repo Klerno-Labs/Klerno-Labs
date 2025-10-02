@@ -364,11 +364,14 @@ def request_password_reset(payload: PasswordResetRequest) -> dict[str, Any]:
     # For now, we'll use a simple in-memory approach
     # Use getattr/setattr to avoid creating a hard dependency on a dynamic
     # attribute which mypy can't statically verify.
+    # _reset_tokens is a runtime-only, dynamically-attached test helper.
+    # mypy can't see dynamic attributes assigned at runtime; use getattr safely.
     tokens = getattr(store, "_reset_tokens", None)
     if tokens is None:
         tokens = {}
         # Dynamic attribute for ephemeral password reset tokens (test helper)
-        store._reset_tokens = tokens
+    # Use setattr so static analyzers don't complain about unknown attrs.
+    setattr(store, "_reset_tokens", tokens)
 
     tokens[reset_token] = {
         "user_id": user["id"],

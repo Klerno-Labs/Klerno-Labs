@@ -15,10 +15,9 @@ import numpy as np
 
 if TYPE_CHECKING:
     # Treat heavy ML libs as Any in static analysis environments without stubs
-    np: Any  # type: ignore
-    IsolationForest: Any  # type: ignore
-    RandomForestClassifier: Any  # type: ignore
-    StandardScaler: Any  # type: ignore
+    IsolationForest: Any
+    RandomForestClassifier: Any
+    StandardScaler: Any
 
 
 def _ensure_numpy() -> None:

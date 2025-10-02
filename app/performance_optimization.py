@@ -47,7 +47,7 @@ try:
     # Try import uvloop at runtime; if unavailable leave as None
     # mypy: uvloop is optional; silence import-not-found when no stubs are
     # available.
-    import uvloop as _uvloop  # type: ignore[import]
+    import uvloop as _uvloop
 
     uvloop = _uvloop
     UVLOOP_AVAILABLE = True
@@ -172,7 +172,7 @@ class AdvancedCache(Generic[T]):
         """Initialize caching backends with graceful fallbacks."""
         # Import config to check if services are enabled
         try:
-            from config import settings  # type: ignore[import]
+            from config import settings
 
             cache_manager = getattr(settings, "cache_manager", None)
             use_redis = bool(
@@ -1167,9 +1167,7 @@ class PerformanceOptimizer:
             try:
                 # Import may not be available in all environments; mypy should ignore
                 # missing stubs for this optional dependency.
-                from pymemcache.client.base import (
-                    Client as MemcachedClient,  # type: ignore[import]
-                )
+                from pymemcache.client.base import Client as MemcachedClient
 
                 self.memcached_client = MemcachedClient(
                     (
@@ -1380,7 +1378,7 @@ class PerformanceOptimizer:
 
             # Get backend targets from configuration
             try:
-                from config import settings  # type: ignore[import]
+                from config import settings
 
                 get_targets = getattr(settings, "get_backend_targets", None)
                 if callable(get_targets):

@@ -5,44 +5,47 @@ Includes strong secret enforcement outside development/test and preserves the
 public API (settings.<field>) expected by existing code/tests.
 """
 
+# predeclare fallback names so the class definition below always has a base
+# available at parse-time. These will be overridden if the real package is
+# importable.
 from __future__ import annotations
 
 import os
 import sys
 from functools import lru_cache
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import Field, ValidationInfo, field_validator, model_validator
 
-# pydantic v2 splits the settings helpers into a separate package `pydantic-settings`.
-# Support environments where that package isn't installed by falling back to
-# compatible names from `pydantic` itself so the app can still import and run
-# (useful for lightweight diagnostics or older installs). This keeps runtime
-# behavior stable without forcing a hard dependency change in this commit.
-try:
+# For static type checking, import the real types so mypy understands the
+# shape of BaseSettings and SettingsConfigDict. At runtime, fall back to a
+# minimal shim when the external package isn't available.
+if TYPE_CHECKING:
     from pydantic_settings import BaseSettings, SettingsConfigDict
-except Exception:  # pragma: no cover - fallback for environments missing the package
-    # The `pydantic-settings` package may not be installed in some environments
-    # and `pydantic.BaseSettings` was removed in pydantic v2 (it now raises a
-    # migration error on import). Provide a minimal, safe shim that subclasses
-    # `pydantic.BaseModel` so the code can import and `model_construct()` still
-    # works for lightweight diagnostics and tests. This is intentionally small
-    # and conservative; production users should install `pydantic-settings`.
-    from pydantic import BaseModel as _BaseModel
+else:
+    try:
+        from pydantic_settings import BaseSettings as _BaseSettings
+        from pydantic_settings import SettingsConfigDict as _SettingsConfigDict
 
-    class BaseSettings(_BaseModel):
-        """Tiny BaseSettings shim backed by pydantic.BaseModel.
+        BaseSettings = _BaseSettings
+        SettingsConfigDict = _SettingsConfigDict
+    except (
+        Exception
+    ):  # pragma: no cover - fallback for environments missing the package
+        from pydantic import BaseModel as _BaseModel
 
-        This provides `model_construct()` via BaseModel and allows the rest of
-        the code to reference `BaseSettings` without importing the external
-        package. It is not a full replacement for pydantic-settings and only
-        intended as a defensive fallback.
-        """
+        class _FallbackBaseSettings(_BaseModel):
+            """Tiny BaseSettings shim backed by pydantic.BaseModel.
 
-        pass
+            This provides `model_construct()` via BaseModel and allows the rest of
+            the code to reference a Settings-like type without importing the
+            external package. It is intentionally minimal.
+            """
 
-    class SettingsConfigDict(dict):
-        pass
+            pass
+
+        BaseSettings = _FallbackBaseSettings
+        SettingsConfigDict = dict
 
 
 WEAK_SECRETS = {
