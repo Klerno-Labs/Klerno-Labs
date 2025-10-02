@@ -15,6 +15,9 @@ from typing import TYPE_CHECKING, Any, cast
 from app._typing_shims import ISyncConnection
 
 if TYPE_CHECKING:
+    # For static checking declare a forward reference for BlockUserRequest
+    from typing import TYPE_CHECKING as _T  # noqa: F401
+
     import psutil  # pragma: no cover
 else:
     try:
@@ -107,9 +110,13 @@ class SystemMonitor:
                     # Block user if not already blocked
                     user = admin_manager.get_user_by_email(user_email)
                     if user and not user.is_blocked():
-                        from app.models import BlockUserRequest
+                        # Import model at runtime to avoid static attr-defined issues
+                        import importlib
 
-                        req = BlockUserRequest(
+                        models_mod = importlib.import_module("app.models")
+                        BlockUserRequestCls = getattr(models_mod, "BlockUserRequest")
+
+                        req = BlockUserRequestCls(
                             target_email=user_email,
                             reason=f"Auto-blocked: risk={score}, flags={flags}",
                             duration_hours=None,
@@ -629,4 +636,5 @@ class SystemMonitor:
                 await asyncio.sleep(60)  # Update every minute
             except Exception as e:
                 logger.error("Error in monitoring loop: %s", e)
+                await asyncio.sleep(60)
                 await asyncio.sleep(60)

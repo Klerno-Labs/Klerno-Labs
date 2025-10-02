@@ -104,10 +104,9 @@ class DatabaseConnectionPool:
                 try:
                     conn = self._create_connection()
                     if conn is not None:
-                        # cast the runtime sqlite3.Connection to the ISyncConnection protocol
-                        from typing import cast
-
-                        self._pool.put((cast(ISyncConnection, conn), time.time()))
+                        # Put the runtime sqlite3.Connection into the pool; the ISyncConnection
+                        # protocol describes the expected attributes at type-check time.
+                        self._pool.put((conn, time.time()))
                         self._stats.total_connections += 1
                 except RuntimeError:
                     # skip failed connection creation
