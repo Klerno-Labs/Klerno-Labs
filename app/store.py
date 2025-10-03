@@ -603,7 +603,7 @@ def _rows_to_dicts(rows: Iterable[Any]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for r in rows:
         # r can be psycopg2 RealDictRow (dict[str, Any]) or sqlite3.Row (mapping - like)
-        d = dict[str, Any](r) if isinstance(r, dict[str, Any]) else {k: r[k] for k in r}
+        d = dict(r) if isinstance(r, dict) else {k: r[k] for k in r}
 
         # normalize risk_flags to a list[Any]
         raw = d.get("risk_flags")
@@ -646,8 +646,8 @@ def _row_to_user(row: Any | None) -> UserDict | None:
     ]
 
     # Convert row to dict[str, Any] safely
-    if isinstance(row, dict[str, Any]):
-        d = dict[str, Any](row)
+    if isinstance(row, dict):
+        d = dict(row)
     else:
         # SQLite Row object - convert using column positions
         d = {}
@@ -681,7 +681,7 @@ def _row_to_user(row: Any | None) -> UserDict | None:
     normalized_role = str(d.get("role") or "viewer")
     normalized_subscription_active = bool(d.get("subscription_active"))
     normalized_wallet_addresses: list[dict[str, Any]] = (
-        wallet_addresses if isinstance(wallet_addresses, list[Any]) else []
+        wallet_addresses if isinstance(wallet_addresses, list) else []
     )
     normalized_recovery_codes: list[str] = [str(c) for c in recovery_codes]
     normalized_mfa_enabled = bool(d.get("mfa_enabled", False))
@@ -775,11 +775,7 @@ def get_by_id(tx_id: int) -> dict[str, Any] | None:
         con.close()
         if not row:
             return None
-        return (
-            dict[str, Any](row)
-            if isinstance(row, dict[str, Any])
-            else {k: row[k] for k in row}
-        )
+        return dict(row) if isinstance(row, dict) else {k: row[k] for k in row}
     except Exception:
         with contextlib.suppress(Exception):
             con.close()
@@ -897,7 +893,7 @@ def users_count() -> int:
     cur.execute("SELECT COUNT(*) AS n FROM users")
     row = cur.fetchone()
     con.close()
-    if isinstance(row, dict[str, Any]):
+    if isinstance(row, dict):
         return int(row.get("n", 0))
     return int(row[0]) if row else 0
 
@@ -951,7 +947,7 @@ def get_user_by_email(email: str) -> UserDict | None:
             row = cur.fetchone()
             if row:
                 # Normalize to expected shape
-                if isinstance(row, dict[str, Any]):
+                if isinstance(row, dict):
                     hashed = row.get("hashed_password")
                     is_active = bool(row.get("is_active"))
                     is_admin = bool(row.get("is_admin"))
@@ -1022,7 +1018,7 @@ def get_user_by_id(uid: int) -> UserDict | None:
             )
             r = cur.fetchone()
             if r:
-                if isinstance(r, dict[str, Any]):
+                if isinstance(r, dict):
                     hashed = r.get("hashed_password")
                     is_active = bool(r.get("is_active"))
                     is_admin = bool(r.get("is_admin"))
@@ -1123,7 +1119,7 @@ def create_user(
         # Normalize returned shape: psycopg2 may return a dict[str, Any]-like row, sqlite returns a sequence
         if _f is None:
             new_id = None
-        elif isinstance(_f, dict[str, Any]):
+        elif isinstance(_f, dict):
             new_id = _f.get("id")
         else:
             new_id = _safe_idx(_f, 0)
@@ -1287,7 +1283,7 @@ def get_settings_for_user(user_id: int) -> dict[str, Any]:
         con.close()
         if not row:
             return {}
-        if not isinstance(row, dict[str, Any]):
+        if not isinstance(row, dict):
             row = {k: row[k] for k in row}
         out: dict[str, Any] = {
             "x_api_key": row.get("x_api_key") or None,
@@ -1308,7 +1304,7 @@ def get_settings_for_user(user_id: int) -> dict[str, Any]:
             out["ui_prefs"] = (
                 json.loads(prefs_raw)
                 if isinstance(prefs_raw, (str, bytes))
-                else (prefs_raw if isinstance(prefs_raw, dict[str, Any]) else {})
+                else (prefs_raw if isinstance(prefs_raw, dict) else {})
             )
         except Exception:
             out["ui_prefs"] = {}
@@ -1345,7 +1341,7 @@ def save_settings_for_user(user_id: int, patch: dict[str, Any]) -> dict[str, Any
             merged["time_range_days"] = int(patch["time_range_days"])
     if "ui_prefs" in patch and patch["ui_prefs"] is not None:
         prefs = patch["ui_prefs"]
-        if not isinstance(prefs, (dict[str, Any], list[Any])):
+        if not isinstance(prefs, (dict, list)):
             try:
                 prefs = json.loads(str(prefs))
             except Exception:

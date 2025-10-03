@@ -915,8 +915,7 @@ def oauth_google(request: Request) -> Response:
     # For now, redirect to regular login with a message
     # This can be expanded to implement actual OAuth flow later
     return RedirectResponse(
-        url="/auth/login?error=OAuth+authentication+coming+soon",
-        status_code=302
+        url="/auth/login?error=OAuth+authentication+coming+soon", status_code=302
     )
 
 
@@ -926,8 +925,7 @@ def oauth_microsoft(request: Request) -> Response:
     # For now, redirect to regular login with a message
     # This can be expanded to implement actual OAuth flow later
     return RedirectResponse(
-        url="/auth/login?error=OAuth+authentication+coming+soon",
-        status_code=302
+        url="/auth/login?error=OAuth+authentication+coming+soon", status_code=302
     )
 
 

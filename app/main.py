@@ -181,6 +181,7 @@ with _suppress(Exception):
 def favicon() -> Response:
     """Serve favicon.ico from static files."""
     import os
+
     favicon_path = os.path.join("static", "favicon.ico")
     if os.path.exists(favicon_path):
         with open(favicon_path, "rb") as f:
@@ -189,6 +190,7 @@ def favicon() -> Response:
     else:
         # Return a simple 1x1 transparent PNG if favicon doesn't exist
         from base64 import b64decode
+
         transparent_png = b64decode(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
         )
