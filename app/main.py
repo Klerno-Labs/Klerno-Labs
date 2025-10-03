@@ -176,6 +176,25 @@ with _suppress(Exception):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
+# Favicon route to prevent 404 errors
+@app.get("/favicon.ico")
+def favicon() -> Response:
+    """Serve favicon.ico from static files."""
+    import os
+    favicon_path = os.path.join("static", "favicon.ico")
+    if os.path.exists(favicon_path):
+        with open(favicon_path, "rb") as f:
+            content = f.read()
+        return Response(content=content, media_type="image/x-icon")
+    else:
+        # Return a simple 1x1 transparent PNG if favicon doesn't exist
+        from base64 import b64decode
+        transparent_png = b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+        )
+        return Response(content=transparent_png, media_type="image/png")
+
+
 # Basic models
 class HealthResponse(BaseModel):  # kept for backward compatibility imports in tests
     status: str

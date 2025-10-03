@@ -908,6 +908,29 @@ def me(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
     }
 
 
+# ---- OAuth Routes ----
+@router.get("/oauth/google")
+def oauth_google(request: Request) -> Response:
+    """Handle Google OAuth authentication."""
+    # For now, redirect to regular login with a message
+    # This can be expanded to implement actual OAuth flow later
+    return RedirectResponse(
+        url="/auth/login?error=OAuth+authentication+coming+soon",
+        status_code=302
+    )
+
+
+@router.get("/oauth/microsoft")
+def oauth_microsoft(request: Request) -> Response:
+    """Handle Microsoft OAuth authentication."""
+    # For now, redirect to regular login with a message
+    # This can be expanded to implement actual OAuth flow later
+    return RedirectResponse(
+        url="/auth/login?error=OAuth+authentication+coming+soon",
+        status_code=302
+    )
+
+
 # ---- DEV helpers while Stripe isn't live ----
 @router.post("/mock/activate")
 def mock_activate(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
