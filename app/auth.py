@@ -845,13 +845,15 @@ def login_form(
         content_type = request.headers.get("content-type", "")
         accept_hdr = request.headers.get("accept", "")
 
-        # If the caller posted form-encoded data (tests use this) return JSON
-        # with the access token so API-style clients can authenticate.
-        if (
-            "application/x-www-form-urlencoded" in content_type
-            or "multipart/form-data" in content_type
+        # Check if this is an API request (JSON content-type or JSON accept header)
+        is_api_request = (
+            "application/json" in content_type
             or "application/json" in accept_hdr
-        ):
+            or request.headers.get("x-requested-with") == "XMLHttpRequest"
+        )
+
+        # For API requests, return JSON response
+        if is_api_request:
             from fastapi.responses import JSONResponse
 
             # Create a temporary Response to capture Set-Cookie header
@@ -870,8 +872,7 @@ def login_form(
                 headers=headers,
             )
 
-        # Otherwise behave like a browser: redirect after setting cookie
-        # Redirect all users to the dashboard/root page after successful login
+        # For browser form submissions, redirect after setting cookie
         redirect_url = "/"
         response = RedirectResponse(url=redirect_url, status_code=302)
         _set_session_cookie(response, token)
