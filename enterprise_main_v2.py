@@ -469,6 +469,81 @@ async def admin_page(request: Request):
 from fastapi import APIRouter
 
 
+# Add missing route handlers to fix 404 errors
+@app.get("/healthz")
+async def healthz():
+    """Kubernetes-style health check."""
+    return {"status": "healthy", "service": "klerno-labs"}
+
+
+@app.get("/status")
+async def status():
+    """Application status endpoint."""
+    return {"status": "running", "version": "2.0.0-Enterprise"}
+
+
+@app.get("/ready")
+async def readiness():
+    """Readiness probe endpoint."""
+    return {"ready": True, "status": "ready"}
+
+
+@app.get("/robots.txt")
+async def robots_txt():
+    """Serve robots.txt from static files."""
+    from fastapi.responses import FileResponse
+    robots_path = Path("static/robots.txt")
+    if robots_path.exists():
+        return FileResponse(str(robots_path), media_type="text/plain")
+    # Return default robots.txt content
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse("User-agent: *\nDisallow: /admin/\nDisallow: /api/\nAllow: /")
+
+
+@app.get("/manifest.json")
+async def manifest_json():
+    """Serve manifest.json from static files."""
+    from fastapi.responses import FileResponse
+    manifest_path = Path("static/manifest.json")
+    if manifest_path.exists():
+        return FileResponse(str(manifest_path), media_type="application/json")
+    raise HTTPException(status_code=404, detail="manifest.json not found")
+
+
+@app.get("/sw.js")
+async def service_worker():
+    """Serve service worker from static files."""
+    from fastapi.responses import FileResponse
+    sw_path = Path("static/sw.js")
+    if sw_path.exists():
+        return FileResponse(str(sw_path), media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="sw.js not found")
+
+
+@app.get("/.well-known/security.txt")
+async def security_txt():
+    """Security disclosure information."""
+    from fastapi.responses import PlainTextResponse
+    security_content = """Contact: mailto:security@klernolabs.com
+Expires: 2025-12-31T23:59:59.000Z
+Encryption: https://klernolabs.com/pgp-key.txt
+Acknowledgments: https://klernolabs.com/security-thanks
+Policy: https://klernolabs.com/security-policy"""
+    return PlainTextResponse(security_content)
+
+
+@app.get("/api/status")
+async def api_status():
+    """API status endpoint."""
+    return {"api": "operational", "version": "2.0.0-Enterprise", "status": "healthy"}
+
+
+@app.get("/api/health")
+async def api_health():
+    """API health endpoint."""
+    return {"health": "ok", "timestamp": datetime.now(UTC).isoformat()}
+
+
 def _register_auth_router():
     if auth is not None and getattr(auth, "router", None) is not None:
         app.include_router(auth.router)
@@ -515,6 +590,30 @@ def _register_admin_router():
 _register_auth_router()
 _register_admin_router()
 
+# Register paywall router for /paywall and /logout routes
+try:
+    import app.paywall as paywall_module
+    if hasattr(paywall_module, "router"):
+        app.include_router(paywall_module.router)
+        logger.info("Paywall router included")
+except ImportError:
+    logger.warning("Paywall module not available")
+
+# Add missing compatibility routes
+
+
+@app.get("/admin/users")
+async def admin_users_compat():
+    """Compatibility route - redirect to API endpoint."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/admin/api/users", status_code=302)
+
+
+@app.get("/premium/advanced-analytics")
+async def premium_advanced_analytics():
+    """Premium advanced analytics feature."""
+    raise HTTPException(status_code=402, detail="Premium feature requires subscription")
+
 
 if __name__ == "__main__":
     import uvicorn
@@ -536,7 +635,7 @@ if __name__ == "__main__":
     try:
         print("[DIAG] Starting uvicorn...")
         uvicorn.run(
-            "enterprise_main_v2:app",
+            app,
             host="127.0.0.1",
             port=8002,  # Use different port for enterprise
             reload=config.debug_mode,

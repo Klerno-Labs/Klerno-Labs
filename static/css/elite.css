@@ -1,0 +1,18 @@
+/* Elite CSS - Import all elite styling */
+@import url('./elite-enhancements.css');
+@import url('./typography-enhanced.css');
+@import url('./transitions.css');
+@import url('./icons.css');
+
+/* Additional elite styling for compatibility */
+.elite-container {
+    /* Container styles compatible with existing elite components */
+}
+
+.elite-button {
+    /* Elite button styling compatible with existing system */
+}
+
+.elite-card {
+    /* Elite card styling compatible with existing system */
+}
