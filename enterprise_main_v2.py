@@ -436,6 +436,18 @@ async def offline_page():
     raise HTTPException(status_code=404, detail="offline.html not found")
 
 
+# Favicon route
+@app.get("/favicon.ico")
+async def favicon():
+    """Serve favicon."""
+    favicon_path = Path("static/favicon.ico")
+    if favicon_path.exists():
+        from fastapi.responses import FileResponse
+
+        return FileResponse(str(favicon_path), media_type="image/x-icon")
+    raise HTTPException(status_code=404, detail="favicon.ico not found")
+
+
 # User Dashboard route
 @app.get("/dashboard")
 async def dashboard_page(request: Request):
