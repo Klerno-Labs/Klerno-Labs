@@ -88,6 +88,24 @@ Run the full local smoke flow (seeds DB, starts server, probes login, runs smoke
 python .\tools\run_local_smoke.py
 ```
 
+Compatibility paths and behaviors
+
+- Auth forwarders
+  - POST /auth/register forwards to the API signup and returns `{ email, id }` while preserving Set-Cookie.
+  - POST /auth/login accepts JSON or form data and returns `{ ok, access_token, token_type }` and sets the session cookie.
+  - Prefer calling `/auth/signup/api` and `/auth/login/api` directly from programmatic clients; the forwarders exist for tests and legacy callers.
+
+- Transactions and compliance tags
+  - When the legacy `transactions` table exists, POST /transactions writes there and, for high-value amounts (>= 50,000), inserts a `HIGH_AMOUNT` tag into `compliance_tags`.
+  - When the canonical `txs` store is used (no legacy `transactions` table), we still insert a `HIGH_AMOUNT` row into `compliance_tags` so `/transactions/{id}/compliance-tags` returns data consistently in tests.
+
+- XRPL compatibility
+  - GET /integrations/xrpl/fetch always returns an object with an `items` array (and optional `count`). If the underlying client returns a list, it will be wrapped.
+
+- Audit logging (dev vs test)
+  - In dev, audit events log to console at INFO and to `logs/audit.log`.
+  - In tests, console output is reduced (WARNING level) and file output is disabled by default; set `DISABLE_AUDIT_FILE=0` to force file logging if needed.
+
 Release notes template
 
 See `RELEASE_NOTES_TEMPLATE.md` for a small release-notes stub you can use when cutting tags.

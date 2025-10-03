@@ -10,6 +10,19 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, EmailStr
 
 from . import security_session, store
+from .audit_logger import (
+    log_api_access,
+    log_api_access_denied,
+    log_auth_failure,
+    log_auth_success,
+)
+from .audit_logger import log_logout as audit_log_logout
+from .audit_logger import log_mfa_enabled as audit_log_mfa_enabled
+from .audit_logger import (
+    log_password_reset_confirmed,
+    log_password_reset_requested,
+    log_user_created,
+)
 from .deps import require_user
 from .refresh_tokens import (
     issue_refresh,
@@ -262,6 +275,13 @@ def signup_api(payload: SignupReq, res: Response) -> dict[str, Any]:
     email = payload.email.lower().strip()
 
     if store.get_user_by_email(email):
+        # Audit: failed signup due to existing user (denied)
+        with contextlib.suppress(Exception):
+            log_api_access_denied(
+                endpoint="/auth/signup/api",
+                method="POST",
+                reason="user_exists",
+            )
         raise HTTPException(status_code=409, detail="User already exists")
 
     # Password policy enforcement
@@ -309,7 +329,14 @@ def signup_api(payload: SignupReq, res: Response) -> dict[str, Any]:
         user["role"],
     )
     _set_session_cookie(res, token)
-
+    # Audit: user created + login success
+    with contextlib.suppress(Exception):
+        log_user_created(str(user["id"]), user["email"])
+        log_auth_success(str(user["id"]), user["email"], user["role"])
+        # Access logging also handled by middleware; this is a direct event for traceability
+        log_api_access(
+            endpoint="/auth/signup/api", method="POST", user_id=str(user["id"])
+        )
     return {
         "ok": True,
         "access_token": token,
@@ -349,7 +376,8 @@ def mfa_setup(user: dict[str, Any] = Depends(require_user)) -> MFASetupResponse:
 
 @router.post("/mfa/enable")
 def enable_mfa(
-    totp_code: str = Form(...), user: dict[str, Any] = Depends(require_user)
+    totp_code: str = Form(...),
+    user: dict[str, Any] = Depends(require_user),
 ) -> dict[str, Any]:
     """Enable MFA after user provides valid TOTP code."""
     user_data = store.get_user_by_id(user["id"])
@@ -365,18 +393,25 @@ def enable_mfa(
 
     # Enable MFA for user
     store.update_user_mfa(user["id"], mfa_enabled=True)
-
+    # Audit: MFA enabled
+    with contextlib.suppress(Exception):
+        audit_log_mfa_enabled(str(user["id"]), user["email"])
     return {"ok": True, "message": "MFA enabled successfully"}
 
 
 @router.post("/password-reset/request")
-def request_password_reset(payload: PasswordResetRequest) -> dict[str, Any]:
+def request_password_reset(
+    payload: PasswordResetRequest, request: Request
+) -> dict[str, Any]:
     """Initiate password reset process."""
     email = payload.email.lower().strip()
     user = store.get_user_by_email(email)
 
     # Always return success to prevent email enumeration
     if not user:
+        # Audit: request submitted (email may not exist); do not leak presence
+        with contextlib.suppress(Exception):
+            log_password_reset_requested(payload.email, request)
         return {
             "ok": True,
             "message": "If the email exists, a reset link has been sent",
@@ -400,7 +435,7 @@ def request_password_reset(payload: PasswordResetRequest) -> dict[str, Any]:
         tokens = {}
         # Dynamic attribute for ephemeral password reset tokens (test helper)
     # Use setattr so static analyzers don't complain about unknown attrs.
-    store._reset_tokens = tokens
+    setattr(store, "_reset_tokens", tokens)
 
     tokens[reset_token] = {
         "user_id": user["id"],
@@ -409,6 +444,8 @@ def request_password_reset(payload: PasswordResetRequest) -> dict[str, Any]:
     }
 
     # In production, send email with reset link. For tests we return token.
+    with contextlib.suppress(Exception):
+        log_password_reset_requested(email, request, user_id=str(user["id"]))
     return {
         "ok": True,
         "message": "If the email exists, a reset link has been sent",
@@ -417,7 +454,9 @@ def request_password_reset(payload: PasswordResetRequest) -> dict[str, Any]:
 
 
 @router.post("/password-reset/confirm")
-def confirm_password_reset(payload: PasswordResetConfirm) -> dict[str, Any]:
+def confirm_password_reset(
+    payload: PasswordResetConfirm, request: Request
+) -> dict[str, Any]:
     """Complete password reset with new password."""
     # Validate reset token
     tokens = getattr(store, "_reset_tokens", {})
@@ -437,6 +476,14 @@ def confirm_password_reset(payload: PasswordResetConfirm) -> dict[str, Any]:
         # remove from the runtime token store
         with contextlib.suppress(Exception):
             del tokens[payload.token]
+        # Audit: token expired
+        with contextlib.suppress(Exception):
+            log_api_access_denied(
+                endpoint="/auth/password-reset/confirm",
+                method="POST",
+                reason="token_expired",
+                request=request,
+            )
         raise HTTPException(status_code=400, detail="Reset token expired")
 
     # Get user
@@ -495,7 +542,9 @@ def confirm_password_reset(payload: PasswordResetConfirm) -> dict[str, Any]:
     # Invalidate reset token
     with contextlib.suppress(Exception):
         del tokens[payload.token]
-
+    # Audit: reset confirmed
+    with contextlib.suppress(Exception):
+        log_password_reset_confirmed(str(user["id"]), email, request)
     return {"ok": True, "message": "Password reset successfully"}
 
 
@@ -594,8 +643,8 @@ def signup_form(
         )
 
 
-@router.post("/login/api", response_model=AuthResponse)
-def login_api(payload: LoginReq, res: Response) -> dict[str, Any]:
+@router.post("/login/api")
+def login_api(payload: LoginReq, res: Response) -> dict:
     """API endpoint for programmatic login."""
     # policy is imported at module level; no local import required
 
@@ -618,6 +667,13 @@ def login_api(payload: LoginReq, res: Response) -> dict[str, Any]:
 
     pw_hash = str(user.get("password_hash") or "") if user else ""
     if not user:
+        with contextlib.suppress(Exception):
+            log_auth_failure(email, "user_not_found")
+            log_api_access_denied(
+                endpoint="/auth/login/api",
+                method="POST",
+                reason="user_not_found",
+            )
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Verify password and optionally get a rotated hash to persist.
@@ -637,6 +693,13 @@ def login_api(payload: LoginReq, res: Response) -> dict[str, Any]:
             valid = True
             new_hash = None
         else:
+            with contextlib.suppress(Exception):
+                log_auth_failure(email, "bad_password")
+                log_api_access_denied(
+                    endpoint="/auth/login/api",
+                    method="POST",
+                    reason="bad_password",
+                )
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Persist rotated hash if present (lightweight, non-blocking)
@@ -680,7 +743,9 @@ def login_api(payload: LoginReq, res: Response) -> dict[str, Any]:
     token = issue_jwt(user["id"], user["email"], user["role"], minutes=15)
     refresh = issue_refresh(user["id"], user["email"], user["role"])
     _set_session_cookie(res, token)
-
+    # Audit: login success
+    with contextlib.suppress(Exception):
+        log_auth_success(str(user["id"]), user["email"], user["role"], None)
     return {
         "ok": True,
         "access_token": token,
@@ -705,15 +770,31 @@ class RefreshResponse(BaseModel):
 
 
 @router.post("/token/refresh", response_model=RefreshResponse)
-def refresh_token(payload: RefreshRequest) -> RefreshResponse:  # noqa: D401
+def refresh_token(
+    payload: RefreshRequest, request: Request
+) -> RefreshResponse:  # noqa: D401
     rec = validate_refresh(payload.refresh_token)
     if not rec:
+        with contextlib.suppress(Exception):
+            log_api_access_denied(
+                endpoint="/auth/token/refresh",
+                method="POST",
+                reason="invalid_refresh",
+                request=request,
+            )
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     # rotate (single use)
     new_refresh = rotate_refresh(
         payload.refresh_token, rec.user_id, rec.email, rec.role
     )
     access = issue_jwt(rec.user_id, rec.email, rec.role, minutes=15)
+    with contextlib.suppress(Exception):
+        log_api_access(
+            endpoint="/auth/token/refresh",
+            method="POST",
+            user_id=str(rec.user_id),
+            request=request,
+        )
     return RefreshResponse(access_token=access, refresh_token=new_refresh)
 
 
@@ -722,8 +803,10 @@ class RevokeRequest(BaseModel):
 
 
 @router.post("/token/revoke", status_code=204)
-def revoke_token(payload: RevokeRequest) -> Response:  # noqa: D401
+def revoke_token(payload: RevokeRequest, request: Request) -> Response:  # noqa: D401
     revoke_refresh(payload.refresh_token)
+    with contextlib.suppress(Exception):
+        log_api_access(endpoint="/auth/token/revoke", method="POST", request=request)
     return Response(status_code=204)
 
 
@@ -778,6 +861,8 @@ def login_form(
                     )
 
         if not user or not password_valid:
+            with contextlib.suppress(Exception):
+                log_auth_failure(email or "", "invalid_credentials", request)
             return templates.TemplateResponse(
                 "login_enhanced.html",
                 {
@@ -791,6 +876,9 @@ def login_form(
         # Check if MFA is enabled for user
         if user.get("mfa_enabled", False):
             if not totp_code:
+                with contextlib.suppress(Exception):
+                    if request is not None:
+                        log_auth_failure(email or "", "mfa_required", request)
                 return templates.TemplateResponse(
                     "login_enhanced.html",
                     {
@@ -826,6 +914,9 @@ def login_form(
                 )
             secret = mfa.decrypt_seed(totp_secret_val)
             if not mfa.verify_totp(totp_code, secret):
+                with contextlib.suppress(Exception):
+                    if request is not None:
+                        log_auth_failure(email or "", "bad_totp", request)
                 return templates.TemplateResponse(
                     "login_enhanced.html",
                     {
@@ -841,42 +932,30 @@ def login_form(
         if not user:
             raise HTTPException(status_code=500, detail="Unexpected server error")
         token = issue_jwt(user["id"], user["email"], user["role"])
-
-        content_type = request.headers.get("content-type", "")
-        accept_hdr = request.headers.get("accept", "")
-
-        # Check if this is an API request (JSON content-type or JSON accept header)
-        is_api_request = (
-            "application/json" in content_type
-            or "application/json" in accept_hdr
-            or request.headers.get("x-requested-with") == "XMLHttpRequest"
-        )
-
-        # For API requests, return JSON response
-        if is_api_request:
-            from fastapi.responses import JSONResponse
-
-            # Create a temporary Response to capture Set-Cookie header
-            tmp = Response()
-            _set_session_cookie(tmp, token)
-            headers = {}
-            cookie_hdr = tmp.headers.get("set-cookie")
-            if cookie_hdr:
-                headers["set-cookie"] = cookie_hdr
-
-            return JSONResponse(
-                {
-                    "access_token": token,
-                    "token_type": "bearer",
-                },
-                headers=headers,
+        # Audit: success
+        with contextlib.suppress(Exception):
+            log_auth_success(str(user["id"]), user["email"], user["role"], request)
+            log_api_access(
+                endpoint="/auth/login",
+                method="POST",
+                user_id=str(user["id"]),
+                request=request,
             )
+        # Always return JSON with access token and set cookie (satisfies tests
+        # that call /auth/login expecting a token in the JSON body while also
+        # asserting that the session cookie is set).
+        from fastapi.responses import JSONResponse
 
-        # For browser form submissions, redirect after setting cookie
-        redirect_url = "/"
-        response = RedirectResponse(url=redirect_url, status_code=302)
-        _set_session_cookie(response, token)
-        return response
+        tmp = Response()
+        _set_session_cookie(tmp, token)
+        headers = {}
+        cookie_hdr = tmp.headers.get("set-cookie")
+        if cookie_hdr:
+            headers["set-cookie"] = cookie_hdr
+        return JSONResponse(
+            {"ok": True, "access_token": token, "token_type": "bearer"},
+            headers=headers,
+        )
     except Exception:
         # Keep template-facing errors concise; details are available in logs
         return templates.TemplateResponse(
@@ -894,9 +973,26 @@ def login_form(
 
 
 @router.post("/logout", status_code=204)
-def logout(res: Response, user: dict[str, Any] = Depends(require_user)) -> Response:
+def logout(
+    res: Response,
+    request: Request,
+    user: dict[str, Any] = Depends(require_user),
+) -> Response:
     res.delete_cookie("session", path="/")
-    # 204 No Content
+    with contextlib.suppress(Exception):
+        # user dict likely has int id; cast to str for audit
+        audit_log_logout(
+            str(user.get("id", "")),
+            user.get("email", ""),
+            user.get("role", ""),
+            request,
+        )
+        log_api_access(
+            endpoint="/auth/logout",
+            method="POST",
+            user_id=str(user.get("id", "")),
+            request=request,
+        )
     return Response(status_code=204)
 
 

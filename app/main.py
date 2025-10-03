@@ -170,6 +170,41 @@ async def add_security_headers(
     return response
 
 
+@app.middleware("http")
+async def audit_access_logging(
+    request: Request, call_next: Callable[[Request], Awaitable[Any]]
+) -> Any:
+    """Middleware to log API access after request is processed.
+
+    Attempts to extract a user id from the session cookie for attribution. Errors
+    are suppressed to avoid impacting request flow.
+    """
+    response = await call_next(request)
+    try:
+        # Import locally to avoid import cycles on startup
+        from . import security_session as _sec
+        from .audit_logger import log_api_access
+
+        user_id: str | None = None
+        tok = request.cookies.get("session")
+        if tok:
+            try:
+                payload = _sec.decode_jwt(tok)
+                uid = payload.get("uid") or payload.get("user_id")
+                if uid is not None:
+                    user_id = str(uid)
+            except Exception:
+                user_id = None
+
+        path = str(request.url.path)
+        method = request.method
+        # Best-effort logging; ignore failures
+        log_api_access(endpoint=path, method=method, user_id=user_id, request=request)
+    except Exception:
+        pass
+    return response
+
+
 # Mount static files
 
 with _suppress(Exception):
@@ -313,7 +348,7 @@ def compat_admin_users() -> Any:
             con.close()
             out = []
             for r in rows:
-                if isinstance(r, dict[str, Any]):
+                if isinstance(r, dict):
                     out.append({"id": r.get("id"), "email": r.get("email")})
                 else:
                     out.append({"id": r[0], "email": r[1]})
@@ -379,21 +414,21 @@ with contextlib.suppress(Exception):
         # Ensure we pass a Pydantic SignupReq instance and a Response object
         signup_payload = payload
         try:
-            # If the module exposes the SignupReq model, coerce dict[str, Any] -> model
-            if isinstance(payload, dict[str, Any]) and hasattr(_auth_mod, "SignupReq"):
+            # If the module exposes the SignupReq model, coerce dict -> model
+            if isinstance(payload, dict) and hasattr(_auth_mod, "SignupReq"):
                 signup_payload = _auth_mod.SignupReq(**payload)
         except Exception as exc:  # invalid payload
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
         response = res or FastAPIResponse()
-        # Call the underlying handler. If it returns a dict[str, Any] (legacy behavior),
+        # Call the underlying handler. If it returns a dict (legacy behavior),
         # wrap it in a JSONResponse with status 201 to match the async forwarder
         # and preserve any Set-Cookie header the handler added to `response`.
         result = _auth_mod.signup_api(signup_payload, response)
         try:
             from fastapi.responses import JSONResponse
 
-            if isinstance(result, dict[str, Any]) and "user" in result:
+            if isinstance(result, dict) and "user" in result:
                 body = {
                     "email": result["user"]["email"],
                     "id": result["user"].get("id"),
@@ -421,7 +456,7 @@ with contextlib.suppress(Exception):
 
         login_payload = payload
         try:
-            if isinstance(payload, dict[str, Any]) and hasattr(_auth_mod, "LoginReq"):
+            if isinstance(payload, dict) and hasattr(_auth_mod, "LoginReq"):
                 login_payload = _auth_mod.LoginReq(**payload)
         except Exception as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -450,7 +485,7 @@ try:
             raise HTTPException(status_code=501, detail="Register not implemented")
 
         payload = payload_dict
-        if isinstance(payload_dict, dict[str, Any]) and hasattr(_auth_mod, "SignupReq"):
+        if isinstance(payload_dict, dict) and hasattr(_auth_mod, "SignupReq"):
             try:
                 payload = _auth_mod.SignupReq(**payload_dict)
             except Exception as exc:
@@ -464,11 +499,11 @@ try:
         res = FastAPIResponse()
         result = _auth_mod.signup_api(payload, res)
 
-        # If the handler returned a dict[str, Any] (typical), wrap it in a JSONResponse
+        # If the handler returned a dict (typical), wrap it in a JSONResponse
         # and preserve any Set-Cookie header the handler added to `res`.
-        body = result if isinstance(result, dict[str, Any]) else {}
+        body = result if isinstance(result, dict) else {}
         # Legacy tests expect a response including 'email' and 'id'
-        if isinstance(result, dict[str, Any]) and "user" in result:
+        if isinstance(result, dict) and "user" in result:
             body = {"email": result["user"]["email"], "id": result["user"].get("id")}
         headers = {}
         cookie_hdr = res.headers.get("set-cookie")
@@ -556,16 +591,14 @@ try:
 
             # Normalize legacy field names
             if (
-                isinstance(payload_dict, dict[str, Any])
+                isinstance(payload_dict, dict)
                 and "username" in payload_dict
                 and "email" not in payload_dict
             ):
                 payload_dict["email"] = payload_dict.pop("username")
 
             payload = payload_dict
-            if isinstance(payload_dict, dict[str, Any]) and hasattr(
-                _auth_mod, "LoginReq"
-            ):
+            if isinstance(payload_dict, dict) and hasattr(_auth_mod, "LoginReq"):
                 try:
                     payload = _auth_mod.LoginReq(**payload_dict)
                 except Exception as exc:
@@ -579,7 +612,7 @@ try:
             res = FastAPIResponse()
             result = _auth_mod.login_api(payload, res)
 
-            body = result if isinstance(result, dict[str, Any]) else {}
+            body = result if isinstance(result, dict) else {}
             headers = {}
             cookie_hdr = res.headers.get("set-cookie")
             if cookie_hdr:
@@ -607,9 +640,7 @@ try:
         # `Response | None` type into a Pydantic field (which causes
         # registration to fail in some environments).
         @app.post("/auth/login_api", response_model=None)
-        def _legacy_login_api_forward(
-            payload: dict[str, Any], res: Response | None = None
-        ) -> Any:
+        def _legacy_login_api_forward(payload: dict, res=None):
             """Forwarder so older tests calling /auth/login_api still work.
 
             It coerces incoming dict[str, Any] to the auth.LoginReq model when available and
@@ -622,9 +653,7 @@ try:
 
             login_payload = payload
             try:
-                if isinstance(payload, dict[str, Any]) and hasattr(
-                    _auth_mod, "LoginReq"
-                ):
+                if isinstance(payload, dict) and hasattr(_auth_mod, "LoginReq"):
                     login_payload = _auth_mod.LoginReq(**payload)
             except Exception as exc:
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -702,6 +731,22 @@ except Exception:
     pass
 
 try:
+    # AI intelligence router
+    from . import ai_endpoints as _ai
+
+    try:
+        r = getattr(_ai, "router", None)
+        if r:
+            app.include_router(r)
+            print("[OK] AI router loaded")
+        else:
+            print("[WARN] AI router missing")
+    except Exception as e:
+        print(f"[WARN] AI router not included: {e}")
+except Exception:
+    pass
+
+try:
     from . import xrpl
 
     try:
@@ -739,8 +784,8 @@ async def analyze_sample(request: Request) -> dict[str, Any]:
         from .routes.analyze_tags import analyze_tx
 
         result = analyze_tx(payload)
-        # If result is a list[Any] of tags, wrap into a dict[str, Any]
-        if isinstance(result, list[Any]):
+        # If result is a list of tags, wrap into a dict
+        if isinstance(result, list):
             return {"items": result}
         return result
     except Exception:
@@ -750,21 +795,28 @@ async def analyze_sample(request: Request) -> dict[str, Any]:
 
 @app.get("/integrations/xrpl/fetch")
 async def integrations_xrpl_fetch(account: str, limit: int = 10) -> dict[str, Any]:
-    """Compatibility wrapper for top-level XRPL integration fetch used in tests."""
-    # Try multiple possible package locations for the integrations package
+    """Compatibility wrapper for XRPL integration fetch.
+
+    Always returns an object with an `items` list to satisfy response validation in tests.
+    """
     last_exc = None
     for mod_path in ("integrations.xrp", "app.integrations.xrp"):
         try:
             parts = mod_path.split(".")
             mod = __import__(mod_path, fromlist=[parts[-1]])
             _fetch = mod.fetch_account_tx
-            return _fetch(account, limit=limit)
+            data = _fetch(account, limit=limit)
+            if isinstance(data, list):
+                return {"items": data, "count": len(data)}
+            if isinstance(data, dict) and "items" in data:
+                return data  # already in expected shape
+            # Fallback: wrap arbitrary data
+            return {"items": data}
         except Exception as e:
             last_exc = e
             print(f"[DEBUG] failed to import {mod_path}: {e}")
             continue
 
-    # If we get here, both import attempts failed
     raise HTTPException(status_code=501, detail=str(last_exc))
 
 
@@ -790,11 +842,17 @@ if __name__ == "__main__":
 # Expose certain integration helpers at module-level so tests that patch
 # "app.main.fetch_account_tx" continue to work. We lazily import to avoid
 # pulling integration dependencies during test collection when not needed.
-fetch_account_tx: Any = None
+from typing import Optional
+
+# Use a broad callable type to avoid strict typing issues at import time.
+# Concrete signature is documented below and enforced at call sites.
+_fetch_account_tx: Optional[Callable[..., object]] = (
+    None  # uses collections.abc.Callable
+)
 for mod_path in ("integrations.xrp", "app.integrations.xrp"):
     try:
         mod = importlib.import_module(mod_path)
-        fetch_account_tx = mod.fetch_account_tx
+        _fetch_account_tx = mod.fetch_account_tx
         break
     except Exception:
         # Leave fetch_account_tx as-is (None) and continue searching other
@@ -802,12 +860,21 @@ for mod_path in ("integrations.xrp", "app.integrations.xrp"):
         # some checkers, so avoid reassigning.
         continue
 
-if fetch_account_tx is None:
+if _fetch_account_tx is None:
 
-    def fetch_account_tx(account: str, limit: int = 10) -> list[dict[str, Any]]:
+    def _fallback_fetch_account_tx(account: str, limit: int = 10) -> object:
         """Fallback stub used when the integrations package isn't available.
 
-        This matches the real function signature so runtime callers can import
-        the symbol even when the package is absent.
+        Parameters
+        - account: XRPL account address
+        - limit: number of transactions to fetch
+
+        Returns
+        - object: In real implementation, List[Dict[str, Any]]
         """
         raise RuntimeError("integrations.xrp.fetch_account_tx not available")
+
+    _fetch_account_tx = _fallback_fetch_account_tx
+
+# Public alias expected by tests and callers
+fetch_account_tx = _fetch_account_tx  # type: ignore[assignment]
