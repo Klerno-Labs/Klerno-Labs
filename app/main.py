@@ -218,6 +218,12 @@ async def dashboard_page(request: Request) -> Any:
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
+@app.get("/admin")
+async def admin_page(request: Request) -> Any:
+    """Admin panel."""
+    return templates.TemplateResponse("admin.html", {"request": request})
+
+
 @app.get("/")
 async def landing_page(request: Request) -> Any:
     """Unified landing page."""
