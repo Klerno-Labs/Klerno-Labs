@@ -16,7 +16,7 @@ import threading
 import time
 import traceback
 from collections import defaultdict, deque
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
@@ -96,7 +96,7 @@ class CircuitBreakerConfig:
 class CircuitBreaker:
     """Advanced circuit breaker implementation."""
 
-    def __init__(self, name: str, config: CircuitBreakerConfig):
+    def __init__(self, name: str, config: CircuitBreakerConfig) -> None:
         self.name = name
         self.config = config
         self.state = CircuitState.CLOSED
@@ -112,7 +112,7 @@ class CircuitBreaker:
         self.total_failures: int = 0
         self.state_transitions: list[dict[str, Any]] = []
 
-    def call(self, func: Callable[..., T], *args, **kwargs) -> T:
+    def call(self, func: Callable, *args, **kwargs) -> T:
         """Execute function with circuit breaker protection."""
         with self.lock:
             self.total_requests += 1
@@ -136,7 +136,7 @@ class CircuitBreaker:
                 self._on_failure(e)
                 raise
 
-    async def call_async(self, func: Callable[..., Awaitable[T]], *args, **kwargs) -> T:
+    async def call_async(self, func: Callable, *args, **kwargs) -> T:
         """Execute async function with circuit breaker protection."""
         with self.lock:
             self.total_requests += 1
@@ -263,8 +263,8 @@ class CircuitBreakerOpenError(Exception):
 class RetryManager:
     """Advanced retry mechanism with various strategies."""
 
-    def __init__(self):
-        # Map function name -> stats dict
+    def __init__(self) -> None:
+        # Map function name -> stats dict[str, Any]
         self.retry_stats: defaultdict[str, dict[str, int]] = defaultdict(
             lambda: {
                 "total_attempts": 0,
@@ -274,18 +274,18 @@ class RetryManager:
             }
         )
 
-    def retry(self, policy: RetryPolicy):
+    def retry(self, policy: RetryPolicy) -> None:
         """Decorator for automatic retry with backoff."""
 
         def decorator(func: Callable) -> Callable:
             @wraps(func)
-            async def async_wrapper(*args, **kwargs):
+            async def async_wrapper(*args, **kwargs) -> Any:
                 return await self._execute_with_retry_async(
                     func, policy, *args, **kwargs
                 )
 
             @wraps(func)
-            def sync_wrapper(*args, **kwargs):
+            def sync_wrapper(*args, **kwargs) -> None:
                 return self._execute_with_retry_sync(func, policy, *args, **kwargs)
 
             if asyncio.iscoroutinefunction(func):
@@ -296,7 +296,7 @@ class RetryManager:
         return decorator
 
     async def _execute_with_retry_async(
-        self, func: Callable[..., Awaitable[Any]], policy: RetryPolicy, *args, **kwargs
+        self, func: Callable, policy: RetryPolicy, *args, **kwargs
     ) -> Any:
         """Execute async function with retry logic."""
         func_name = func.__name__
@@ -397,19 +397,21 @@ class RetryManager:
             # used purely to avoid synchronized retries across processes; using
             # the standard random module is acceptable here (not security-sensitive).
             jitter_range = delay * 0.25
-            delay += random.uniform(-jitter_range, jitter_range)  # nosec: B311 - non-crypto jitter for backoff, cryptographic randomness not required
+            delay += random.uniform(
+                -jitter_range, jitter_range
+            )  # nosec: B311 - non-crypto jitter for backoff, cryptographic randomness not required
 
         return max(0, delay)
 
     def get_stats(self) -> dict[str, Any]:
         """Get retry statistics."""
-        return dict(self.retry_stats)
+        return dict[str, Any](self.retry_stats)
 
 
 class FailoverManager:
     """Manages service failover and redundancy."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.services = {}
         self.health_checks = {}
         self.failover_groups = {}
@@ -546,7 +548,7 @@ class FailoverManager:
                 return asyncio.run(self._perform_failover(service_name))
 
     def reset_failed_endpoints(self, service_name: str) -> None:
-        """Reset failed endpoints list (for recovery)."""
+        """Reset failed endpoints list[Any] (for recovery)."""
         with self.lock:
             if service_name in self.services:
                 self.services[service_name]["failed_endpoints"].clear()
@@ -559,7 +561,7 @@ class FailoverManager:
             for service_name, service_info in self.services.items():
                 stats[service_name] = {
                     "current_endpoint": service_info["current_endpoint"],
-                    "failed_endpoints": list(service_info["failed_endpoints"]),
+                    "failed_endpoints": list[Any](service_info["failed_endpoints"]),
                     "last_failover": service_info["last_failover"],
                     "backup_count": len(service_info["backups"]),
                     "is_on_primary": service_info["current_endpoint"]
@@ -571,7 +573,7 @@ class FailoverManager:
 class GracefulDegradationManager:
     """Manages graceful service degradation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.degradation_rules = {}
         self.current_degradations = {}
         self.feature_flags = {}
@@ -656,13 +658,13 @@ class GracefulDegradationManager:
     def get_degradation_status(self) -> dict[str, str]:
         """Get current degradation status for all services."""
         with self.lock:
-            return dict(self.current_degradations)
+            return dict[str, Any](self.current_degradations)
 
 
 class SelfHealingManager:
     """Manages self - healing capabilities."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.healing_rules = {}
         self.healing_history = []
         self.auto_healing_enabled = True
@@ -801,7 +803,7 @@ class SelfHealingManager:
 class ResilienceOrchestrator:
     """Main orchestrator for resilience features."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.circuit_breakers = {}
         self.retry_manager = RetryManager()
         self.failover_manager = FailoverManager()
@@ -957,7 +959,7 @@ class ResilienceOrchestrator:
                 cb_stats[name] = cb.get_stats()
 
             # Recent errors by severity
-            recent_errors: list[ErrorEvent] = list(self.error_events)[
+            recent_errors: list[ErrorEvent] = list[Any](self.error_events)[
                 -50:
             ]  # Last 50 errors
             error_counts: defaultdict[str, int] = defaultdict(int)
@@ -980,7 +982,7 @@ class ResilienceOrchestrator:
                 "error_summary": {
                     "total_errors": len(self.error_events),
                     "recent_errors": len(recent_errors),
-                    "error_counts_by_severity": dict(error_counts),
+                    "error_counts_by_severity": dict[str, Any](error_counts),
                     "auto_resolution_rate": resolution_rate,
                 },
                 "system_health": self._calculate_system_health(),
@@ -1005,7 +1007,7 @@ class ResilienceOrchestrator:
         health_factors.append(cb_health)
 
         # Error rate health
-        recent_errors = list(self.error_events)[-100:]  # Last 100 operations
+        recent_errors = list[Any](self.error_events)[-100:]  # Last 100 operations
         critical_errors = sum(
             1 for error in recent_errors if error.severity == ErrorSeverity.CRITICAL
         )
@@ -1053,7 +1055,7 @@ resilience_orchestrator = ResilienceOrchestrator()
 # Convenience decorators and functions
 
 
-def circuit_breaker(name: str, config: CircuitBreakerConfig | None = None):
+def circuit_breaker(name: str, config: CircuitBreakerConfig | None = None) -> None:
     """Circuit breaker decorator."""
     if config is None:
         config = CircuitBreakerConfig()
@@ -1062,11 +1064,11 @@ def circuit_breaker(name: str, config: CircuitBreakerConfig | None = None):
 
     def decorator(func: Callable) -> Callable:
         @wraps(func)
-        async def async_wrapper(*args, **kwargs):
+        async def async_wrapper(*args, **kwargs) -> Any:
             return await cb.call_async(func, *args, **kwargs)
 
         @wraps(func)
-        def sync_wrapper(*args, **kwargs):
+        def sync_wrapper(*args, **kwargs) -> None:
             return cb.call(func, *args, **kwargs)
 
         if asyncio.iscoroutinefunction(func):
@@ -1077,7 +1079,7 @@ def circuit_breaker(name: str, config: CircuitBreakerConfig | None = None):
     return decorator
 
 
-def retry_on_failure(policy: RetryPolicy | None = None):
+def retry_on_failure(policy: RetryPolicy | None = None) -> None:
     """Retry decorator."""
     if policy is None:
         policy = RetryPolicy()

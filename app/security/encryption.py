@@ -10,7 +10,7 @@ import json
 from typing import Any
 
 
-def encrypt_data(data: Any) -> str:
+def encrypt_data(data) -> str:
     """Encode input to a base64 string. Accepts str or JSON-serializable data."""
     if isinstance(data, str):
         raw = data.encode("utf-8")

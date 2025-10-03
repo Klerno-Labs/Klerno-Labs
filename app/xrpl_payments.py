@@ -17,7 +17,7 @@ def create_payment_request(*args, **kwargs) -> dict[str, Any]:
     """Create a simple payment request dictionary.
 
     Accepts either the old keyword args (amount, recipient, sender, memo)
-    or the newer-style (user_id, amount_xrp, description). Returns a dict
+    or the newer-style (user_id, amount_xrp, description). Returns a dict[str, Any]
     with both `id` and `request_id` for backwards compatibility.
     """
     now = datetime.now(UTC)
@@ -40,22 +40,22 @@ def create_payment_request(*args, **kwargs) -> dict[str, Any]:
     }
 
 
-def verify_payment(payment_request_or_id: Any, tx_hash: str | None = None) -> Any:
+def verify_payment(payment_request_or_id, tx_hash: str | None = None) -> Any:
     """Verify a payment.
 
     This function supports two calling conventions used in the codebase:
-    - verify_payment(payment_request: dict, tx_hash) -> (bool, message, details)
-    - verify_payment(request_id: str, tx_hash) -> dict with keys 'verified' etc.
+    - verify_payment(payment_request: dict[str, Any], tx_hash) -> (bool, message, details)
+    - verify_payment(request_id: str, tx_hash) -> dict[str, Any] with keys 'verified' etc.
 
     The default behavior is a no-op non-verified response. Tests or calling
     code can mock this function where a verified result is required.
     """
-    # If passed a dict-like payment request, return a tuple as older callers
+    # If passed a dict[str, Any]-like payment request, return a tuple[Any, ...] as older callers
     # expect (bool, message, details).
-    if isinstance(payment_request_or_id, dict):
+    if isinstance(payment_request_or_id, dict[str, Any]):
         return False, "No matching payment found", None
 
-    # Otherwise, caller passed an id; return a dict-shaped result used by
+    # Otherwise, caller passed an id; return a dict[str, Any]-shaped result used by
     # some endpoints.
     return {
         "verified": False,
@@ -65,7 +65,7 @@ def verify_payment(payment_request_or_id: Any, tx_hash: str | None = None) -> An
 
 
 def get_network_info() -> dict[str, Any]:
-    """Return a minimal network info dict used by admin endpoints/tests."""
+    """Return a minimal network info dict[str, Any] used by admin endpoints/tests."""
     return {
         "network": "testnet",
         "connected": False,

@@ -45,8 +45,8 @@ class AsyncTask:
 
     task_id: str
     function: Callable
-    args: tuple = field(default_factory=tuple)
-    kwargs: dict = field(default_factory=dict)
+    args: tuple[Any, ...] = field(default_factory=tuple[Any, ...])
+    kwargs: dict[str, Any] = field(default_factory=dict[str, Any])
     priority: int = 5  # 1=highest, 10=lowest
     retry_count: int = 0
     max_retries: int = 3
@@ -93,7 +93,7 @@ class DatabaseConnectionPool:
             f"[DB-POOL] Initialized with {pool_size} connections, max overflow: {max_overflow}"
         )
 
-    def _initialize_pool(self):
+    def _initialize_pool(self) -> None:
         """Initialize the connection pool"""
         try:
             # Ensure database directory exists
@@ -199,7 +199,7 @@ class DatabaseConnectionPool:
             if self._stats.active_connections > self._stats.peak_connections:
                 self._stats.peak_connections = self._stats.active_connections
 
-    def return_connection(self, conn: ISyncConnection):
+    def return_connection(self, conn: ISyncConnection) -> None:
         """Return a connection to the pool"""
         if not conn:
             return
@@ -228,7 +228,7 @@ class DatabaseConnectionPool:
         except Exception as e:
             logger.error(f"[DB-POOL] Error returning connection: {e}")
 
-    def _maintenance_worker(self):
+    def _maintenance_worker(self) -> None:
         """Background maintenance of connections"""
         while True:
             try:
@@ -279,7 +279,7 @@ class DatabaseConnectionPool:
             self._stats.idle_connections = self._pool.qsize()
             return self._stats
 
-    def close_all(self):
+    def close_all(self) -> None:
         """Close all connections"""
         with self._lock:
             # Close pool connections
@@ -383,7 +383,7 @@ class AsyncTaskProcessor:
             logger.error(f"[ASYNC] Error scheduling task: {e}")
             return None
 
-    def _scheduler_worker(self):
+    def _scheduler_worker(self) -> None:
         """Process scheduled tasks"""
         while self._running:
             try:
@@ -414,7 +414,7 @@ class AsyncTaskProcessor:
             except Exception as e:
                 logger.error(f"[ASYNC] Scheduler error: {e}")
 
-    def _processor_worker(self):
+    def _processor_worker(self) -> None:
         """Process tasks from queue"""
         while self._running:
             try:
@@ -478,7 +478,7 @@ class AsyncTaskProcessor:
 
     def _handle_task_completion(
         self, task: AsyncTask, result: Any, error: Exception | None
-    ):
+    ) -> None:
         """Handle task completion"""
         with self._lock:
             self._stats["processing_tasks"] -= 1
@@ -515,11 +515,11 @@ class AsyncTaskProcessor:
     from collections.abc import Sequence
 
     def get_failed_tasks(self) -> Sequence[tuple[object, Exception]]:
-        """Get list of failed tasks"""
+        """Get list[Any] of failed tasks"""
         with self._lock:
             return self._failed_tasks.copy()
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown the task processor"""
         self._running = False
         self._executor.shutdown(wait=True)
@@ -536,11 +536,11 @@ class AsyncDatabaseManager:
 
         logger.info("[ASYNC-DB] Async database manager initialized")
 
-    async def execute_query(self, query: str, params: tuple = ()) -> Any:
+    async def execute_query(self, query: str, params: tuple[Any, ...] = ()) -> Any:
         """Execute async database query"""
         loop = asyncio.get_event_loop()
 
-        def _execute():
+        def _execute() -> None:
             conn = self._pool.get_connection()
             if not conn:
                 raise Exception("No database connection available")
@@ -548,7 +548,7 @@ class AsyncDatabaseManager:
             try:
                 cursor = conn.execute(query, params)
                 if query.strip().upper().startswith("SELECT"):
-                    results = [dict(row) for row in cursor.fetchall()]
+                    results = [dict[str, Any](row) for row in cursor.fetchall()]
                     return results
                 else:
                     conn.commit()
@@ -558,11 +558,11 @@ class AsyncDatabaseManager:
 
         return await loop.run_in_executor(None, _execute)
 
-    async def execute_transaction(self, queries: list[tuple]) -> bool:
+    async def execute_transaction(self, queries: list[tuple[Any, ...]]) -> bool:
         """Execute multiple queries in a transaction"""
         loop = asyncio.get_event_loop()
 
-        def _execute():
+        def _execute() -> None:
             conn = self._pool.get_connection()
             if not conn:
                 raise Exception("No database connection available")
@@ -622,7 +622,7 @@ class AsyncDatabaseManager:
         """Backward-compatible alias for get_database_stats"""
         return self.get_database_stats()
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown the database manager"""
         self._task_processor.shutdown()
         self._pool.close_all()

@@ -1,4 +1,6 @@
-# Security package# Security package - import functions from the main security module
+# Security package - import functions from the main security module
+from typing import Any
+
 from ..security import (
     enforce_api_key,
     expected_api_key,

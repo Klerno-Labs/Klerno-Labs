@@ -1,5 +1,5 @@
 # Provide a getter for analytics_dashboard compatibility
-def get_security_middleware():
+def get_security_middleware() -> None:
     global security_middleware
     if not security_middleware:
         security_middleware = AdvancedSecurityMiddleware(None)
@@ -18,6 +18,7 @@ import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -37,18 +38,18 @@ class SecurityEvent:
     timestamp: float
     event_type: str
     threat_level: ThreatLevel
-    details: dict
+    details: dict[str, Any]
     blocked: bool = False
 
 
 class AdvancedRateLimiter:
     """Advanced rate limiting with different strategies"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.requests = defaultdict(deque)  # IP -> deque of timestamps
         self.blocked_ips = defaultdict(float)  # IP -> unblock_time
         self.failed_attempts = defaultdict(int)  # IP -> failed_count
-        self.suspicious_patterns = defaultdict(list)  # IP -> patterns
+        self.suspicious_patterns = defaultdict(list[Any])  # IP -> patterns
 
     def is_rate_limited(self, ip: str, endpoint: str, limit: int, window: int) -> bool:
         """Check if IP is rate limited for specific endpoint"""
@@ -74,7 +75,7 @@ class AdvancedRateLimiter:
         request_times.append(now)
         return False
 
-    def block_ip(self, ip: str, duration: int):
+    def block_ip(self, ip: str, duration: int) -> None:
         """Temporarily block an IP address"""
         self.blocked_ips[ip] = time.time() + duration
 
@@ -83,7 +84,7 @@ class AdvancedRateLimiter:
         self.failed_attempts[ip] += 1
         return self.failed_attempts[ip]
 
-    def clear_failed_attempts(self, ip: str):
+    def clear_failed_attempts(self, ip: str) -> None:
         """Clear failed attempts for successful login"""
         if ip in self.failed_attempts:
             del self.failed_attempts[ip]
@@ -92,7 +93,7 @@ class AdvancedRateLimiter:
 class IPWhitelist:
     """Advanced IP whitelisting with CIDR support"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.whitelist: set[str] = set()
         self.whitelist_networks: list[ipaddress.IPv4Network] = []
         self.admin_whitelist: set[str] = set()
@@ -104,7 +105,7 @@ class IPWhitelist:
         self.add_network("172.16.0.0/12")  # Private network
         self.add_network("192.168.0.0/16")  # Private network
 
-    def add_ip(self, ip: str, category: str = "general"):
+    def add_ip(self, ip: str, category: str = "general") -> None:
         """Add IP to whitelist"""
         if category == "admin":
             self.admin_whitelist.add(ip)
@@ -113,7 +114,7 @@ class IPWhitelist:
         else:
             self.whitelist.add(ip)
 
-    def add_network(self, network: str):
+    def add_network(self, network: str) -> None:
         """Add network CIDR to whitelist"""
         with contextlib.suppress(ValueError):
             self.whitelist_networks.append(ipaddress.IPv4Network(network))
@@ -143,7 +144,7 @@ class IPWhitelist:
 class ThreatDetector:
     """Advanced threat detection and analysis"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.malicious_ips: set[str] = set()
         self.suspicious_user_agents: list[str] = [
             "sqlmap",
@@ -238,8 +239,8 @@ class ThreatDetector:
         # Fallback to direct connection IP
         return request.client.host if request.client else "127.0.0.1"
 
-    def add_malicious_ip(self, ip: str):
-        """Add IP to malicious list"""
+    def add_malicious_ip(self, ip: str) -> None:
+        """Add IP to malicious list[Any]"""
         self.malicious_ips.add(ip)
 
     def get_recent_events(self, hours: int = 24) -> list[SecurityEvent]:
@@ -251,7 +252,7 @@ class ThreatDetector:
 class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
     """Comprehensive security middleware"""
 
-    def __init__(self, app):
+    def __init__(self, app) -> None:
         super().__init__(app)
         self.rate_limiter = AdvancedRateLimiter()
         self.ip_whitelist = IPWhitelist()
@@ -276,7 +277,7 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
             "/api/upload": {"limit": 5, "window": 300},  # 5 uploads per 5 minutes
         }
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next) -> Any:
         """Main security dispatch"""
         start_time = time.time()
         ip = self.threat_detector.get_client_ip(request)
@@ -404,7 +405,7 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
 
-def create_security_config():
+def create_security_config() -> None:
     """Create security configuration"""
     return {
         "rate_limiting": {
@@ -429,7 +430,7 @@ def create_security_config():
 security_middleware = None
 
 
-def initialize_security():
+def initialize_security() -> None:
     """Initialize security components"""
     global security_middleware
     if not security_middleware:

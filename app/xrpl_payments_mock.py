@@ -11,13 +11,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def create_payment_request(*args, **kwargs):
+def create_payment_request(*args, **kwargs) -> None:
     """Compatibility stub: return a deterministic dummy payment request."""
     logger.debug("xrpl_payments_mock.create_payment_request called (shim)")
     return {"id": "mock-payment", "address": "rMockAddress", "amount": 0}
 
 
-def verify_payment(*args, **kwargs):
+def verify_payment(*args, **kwargs) -> None:
     """Compatibility stub: always return False (no payment)."""
     logger.debug("xrpl_payments_mock.verify_payment called (shim)")
     return False

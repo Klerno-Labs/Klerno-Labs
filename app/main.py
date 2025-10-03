@@ -274,7 +274,7 @@ def compat_admin_users() -> Any:
         users = _list_users()
         return users
     except Exception:
-        # Fallback: empty list
+        # Fallback: empty list[Any]
         # Try a direct DB query against legacy schema as a last resort
         try:
             from . import store
@@ -286,7 +286,7 @@ def compat_admin_users() -> Any:
             con.close()
             out = []
             for r in rows:
-                if isinstance(r, dict):
+                if isinstance(r, dict[str, Any]):
                     out.append({"id": r.get("id"), "email": r.get("email")})
                 else:
                     out.append({"id": r[0], "email": r[1]})
@@ -342,8 +342,8 @@ with contextlib.suppress(Exception):
     _auth_mod = importlib.import_module("app.auth")
 
     @app.post("/auth/register")
-    def _legacy_register(payload: dict, res=None) -> Any:
-        """Compatibility alias: accept a JSON dict from older tests and delegate
+    def _legacy_register(payload: dict[str, Any], res: Response | None = None) -> Any:
+        """Compatibility alias: accept a JSON dict[str, Any] from older tests and delegate
         to auth.signup_api using the Pydantic model and a Response object.
         """
         if not hasattr(_auth_mod, "signup_api"):
@@ -352,21 +352,21 @@ with contextlib.suppress(Exception):
         # Ensure we pass a Pydantic SignupReq instance and a Response object
         signup_payload = payload
         try:
-            # If the module exposes the SignupReq model, coerce dict -> model
-            if isinstance(payload, dict) and hasattr(_auth_mod, "SignupReq"):
+            # If the module exposes the SignupReq model, coerce dict[str, Any] -> model
+            if isinstance(payload, dict[str, Any]) and hasattr(_auth_mod, "SignupReq"):
                 signup_payload = _auth_mod.SignupReq(**payload)
         except Exception as exc:  # invalid payload
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
         response = res or FastAPIResponse()
-        # Call the underlying handler. If it returns a dict (legacy behavior),
+        # Call the underlying handler. If it returns a dict[str, Any] (legacy behavior),
         # wrap it in a JSONResponse with status 201 to match the async forwarder
         # and preserve any Set-Cookie header the handler added to `response`.
         result = _auth_mod.signup_api(signup_payload, response)
         try:
             from fastapi.responses import JSONResponse
 
-            if isinstance(result, dict) and "user" in result:
+            if isinstance(result, dict[str, Any]) and "user" in result:
                 body = {
                     "email": result["user"]["email"],
                     "id": result["user"].get("id"),
@@ -383,7 +383,9 @@ with contextlib.suppress(Exception):
         return result
 
     @app.post("/auth/login")
-    def _legacy_login(payload: dict | None = None, res=None) -> Any:
+    def _legacy_login(
+        payload: dict[str, Any] | None = None, res: Response | None = None
+    ) -> Any:
         """Compatibility alias: accept JSON login payload and delegate to
         auth.login_api, coercing to the LoginReq model when available.
         """
@@ -392,7 +394,7 @@ with contextlib.suppress(Exception):
 
         login_payload = payload
         try:
-            if isinstance(payload, dict) and hasattr(_auth_mod, "LoginReq"):
+            if isinstance(payload, dict[str, Any]) and hasattr(_auth_mod, "LoginReq"):
                 login_payload = _auth_mod.LoginReq(**payload)
         except Exception as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -421,7 +423,7 @@ try:
             raise HTTPException(status_code=501, detail="Register not implemented")
 
         payload = payload_dict
-        if isinstance(payload_dict, dict) and hasattr(_auth_mod, "SignupReq"):
+        if isinstance(payload_dict, dict[str, Any]) and hasattr(_auth_mod, "SignupReq"):
             try:
                 payload = _auth_mod.SignupReq(**payload_dict)
             except Exception as exc:
@@ -435,11 +437,11 @@ try:
         res = FastAPIResponse()
         result = _auth_mod.signup_api(payload, res)
 
-        # If the handler returned a dict (typical), wrap it in a JSONResponse
+        # If the handler returned a dict[str, Any] (typical), wrap it in a JSONResponse
         # and preserve any Set-Cookie header the handler added to `res`.
-        body = result if isinstance(result, dict) else {}
+        body = result if isinstance(result, dict[str, Any]) else {}
         # Legacy tests expect a response including 'email' and 'id'
-        if isinstance(result, dict) and "user" in result:
+        if isinstance(result, dict[str, Any]) and "user" in result:
             body = {"email": result["user"]["email"], "id": result["user"].get("id")}
         headers = {}
         cookie_hdr = res.headers.get("set-cookie")
@@ -455,31 +457,31 @@ except Exception:
 
 
 @app.post("/iso20022/parse")
-async def iso20022_parse(payload: dict):
+async def iso20022_parse(payload: dict[str, Any]) -> dict[str, Any]:
     # Small parser stub: tests send a known message and expect id and amount
     return {"parsed_data": {"message_id": "MSG123456", "amount": 1000.0}}
 
 
 @app.post("/iso20022/analyze-compliance")
-async def iso20022_analyze(payload: dict):
-    # Return an empty list of compliance tags for compatibility
+async def iso20022_analyze(payload: dict[str, Any]) -> dict[str, Any]:
+    # Return an empty list[Any] of compliance tags for compatibility
     return {"compliance_tags": []}
 
 
 # Ensure ISO20022 endpoints are available even if try/except blocks above fail
 @app.post("/iso20022/parse")
-async def iso20022_parse_fallback(payload: dict):
+async def iso20022_parse_fallback(payload: dict[str, Any]) -> dict[str, Any]:
     return {"parsed_data": {"message_id": "MSG123456", "amount": 1000.0}}
 
 
 @app.post("/iso20022/analyze-compliance")
-async def iso20022_analyze_fallback(payload: dict):
+async def iso20022_analyze_fallback(payload: dict[str, Any]) -> dict[str, Any]:
     return {"compliance_tags": []}
 
 
 # Enterprise ISO20022 endpoints expected by tests
 @app.post("/enterprise/iso20022/build-message")
-async def enterprise_build_message(payload: dict):
+async def enterprise_build_message(payload: dict[str, Any]) -> dict[str, Any]:
     # Minimal builder that echoes back a success result and a tiny xml blob
     msg_type = payload.get("message_type", "unknown")
     xml = f'<Message type="{msg_type}">...</Message>'
@@ -487,7 +489,7 @@ async def enterprise_build_message(payload: dict):
 
 
 @app.post("/enterprise/iso20022/validate-xml")
-async def enterprise_validate_xml(request: Request):
+async def enterprise_validate_xml(request: Request) -> dict[str, Any]:
     # Accept raw XML content and return a simple validation response
     try:
         body = await request.body()
@@ -508,7 +510,7 @@ try:
     _auth_mod = importlib.import_module("app.auth")
 
     @app.post("/auth/login")
-    async def _legacy_login_forward(request: Request):
+    async def _legacy_login_forward(request: Request) -> Any:
         try:
             payload_dict = {}
             # Try JSON first
@@ -518,7 +520,7 @@ try:
                 # Fall back to form data
                 try:
                     form = await request.form()
-                    payload_dict = dict(form)
+                    payload_dict = dict[str, Any](form)
                 except Exception:
                     payload_dict = {}
 
@@ -527,14 +529,16 @@ try:
 
             # Normalize legacy field names
             if (
-                isinstance(payload_dict, dict)
+                isinstance(payload_dict, dict[str, Any])
                 and "username" in payload_dict
                 and "email" not in payload_dict
             ):
                 payload_dict["email"] = payload_dict.pop("username")
 
             payload = payload_dict
-            if isinstance(payload_dict, dict) and hasattr(_auth_mod, "LoginReq"):
+            if isinstance(payload_dict, dict[str, Any]) and hasattr(
+                _auth_mod, "LoginReq"
+            ):
                 try:
                     payload = _auth_mod.LoginReq(**payload_dict)
                 except Exception as exc:
@@ -548,7 +552,7 @@ try:
             res = FastAPIResponse()
             result = _auth_mod.login_api(payload, res)
 
-            body = result if isinstance(result, dict) else {}
+            body = result if isinstance(result, dict[str, Any]) else {}
             headers = {}
             cookie_hdr = res.headers.get("set-cookie")
             if cookie_hdr:
@@ -576,10 +580,12 @@ try:
         # `Response | None` type into a Pydantic field (which causes
         # registration to fail in some environments).
         @app.post("/auth/login_api", response_model=None)
-        def _legacy_login_api_forward(payload: dict, res=None):
+        def _legacy_login_api_forward(
+            payload: dict[str, Any], res: Response | None = None
+        ) -> Any:
             """Forwarder so older tests calling /auth/login_api still work.
 
-            It coerces incoming dict to the auth.LoginReq model when available and
+            It coerces incoming dict[str, Any] to the auth.LoginReq model when available and
             provides a Response object so that auth.login_api can set cookies.
             """
             if not hasattr(_auth_mod, "login_api"):
@@ -589,7 +595,9 @@ try:
 
             login_payload = payload
             try:
-                if isinstance(payload, dict) and hasattr(_auth_mod, "LoginReq"):
+                if isinstance(payload, dict[str, Any]) and hasattr(
+                    _auth_mod, "LoginReq"
+                ):
                     login_payload = _auth_mod.LoginReq(**payload)
             except Exception as exc:
                 raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -685,11 +693,11 @@ except Exception:
 
 
 @app.post("/analyze/sample")
-async def analyze_sample(request: Request):
+async def analyze_sample(request: Request) -> dict[str, Any]:
     """Compatibility endpoint used by tests to POST a small sample analysis request.
 
     Allows an empty POST (tests call without body) and returns a small sample
-    response. If the underlying analyze_tx returns a list, wrap it in a
+    response. If the underlying analyze_tx returns a list[Any], wrap it in a
     dictionary with an `items` key to match tests' expectations.
     """
     payload = {}
@@ -704,17 +712,17 @@ async def analyze_sample(request: Request):
         from .routes.analyze_tags import analyze_tx
 
         result = analyze_tx(payload)
-        # If result is a list of tags, wrap into a dict
-        if isinstance(result, list):
+        # If result is a list[Any] of tags, wrap into a dict[str, Any]
+        if isinstance(result, list[Any]):
             return {"items": result}
         return result
     except Exception:
-        # Fallback: return an empty items list so tests get a 200 with expected shape
+        # Fallback: return an empty items list[Any] so tests get a 200 with expected shape
         return {"items": []}
 
 
 @app.get("/integrations/xrpl/fetch")
-async def integrations_xrpl_fetch(account: str, limit: int = 10):
+async def integrations_xrpl_fetch(account: str, limit: int = 10) -> dict[str, Any]:
     """Compatibility wrapper for top-level XRPL integration fetch used in tests."""
     # Try multiple possible package locations for the integrations package
     last_exc = None
@@ -734,7 +742,7 @@ async def integrations_xrpl_fetch(account: str, limit: int = 10):
 
 
 @app.get("/premium/advanced-analytics")
-async def premium_advanced_analytics():
+async def premium_advanced_analytics() -> dict[str, Any]:
     """Simple compatibility endpoint for paid-tier analytics used in tests."""
     # Minimal placeholder to satisfy tests; real implementation lives elsewhere
     return {"ok": False, "error": "Not implemented in test environment"}
@@ -769,11 +777,10 @@ for mod_path in ("integrations.xrp", "app.integrations.xrp"):
 
 if fetch_account_tx is None:
 
-    def fetch_account_tx(account: str, limit: int = 10) -> list[dict]:
+    def fetch_account_tx(account: str, limit: int = 10) -> list[dict[str, Any]]:
         """Fallback stub used when the integrations package isn't available.
 
         This matches the real function signature so runtime callers can import
         the symbol even when the package is absent.
         """
-        raise RuntimeError("integrations.xrp.fetch_account_tx not available")
         raise RuntimeError("integrations.xrp.fetch_account_tx not available")

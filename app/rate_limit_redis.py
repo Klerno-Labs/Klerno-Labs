@@ -93,7 +93,7 @@ def _rate_limit_config() -> tuple[int, float, str]:
     return capacity, rate_per_sec, prefix
 
 
-def add_redis_rate_limiter(app: Any) -> None:
+def add_redis_rate_limiter(app) -> None:
     if os.getenv("ENABLE_RATE_LIMIT", "false").lower() not in {"1", "true", "yes"}:
         return
     if not os.getenv("REDIS_URL"):

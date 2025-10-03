@@ -10,7 +10,7 @@ Fail-safe: if Redis errors occur we fall back to in-memory ephemeral store.
 Security model:
 - Each refresh token is single-use; on refresh we revoke the old token and issue
   a new pair (access + refresh).
-- Revocation list keeps used tokens until natural TTL.
+- Revocation list[Any] keeps used tokens until natural TTL.
 - Access tokens remain short-lived (configured via existing ACCESS_TOKEN_EXPIRE_MINUTES).
 """
 
@@ -58,7 +58,7 @@ def _token_len() -> int:
     return int(os.getenv("REFRESH_TOKEN_LENGTH", "48"))
 
 
-def _redis_client():  # pragma: no cover
+def _redis_client() -> None:  # pragma: no cover
     if os.getenv("USE_REDIS_REFRESH", "false").lower() not in {"1", "true", "yes"}:
         return None
     url = os.getenv("REDIS_URL")

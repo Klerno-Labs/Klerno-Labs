@@ -14,7 +14,7 @@ from pythonjsonlogger.json import JsonFormatter
 from app.settings import get_settings
 
 
-def _to_iso(timestamp: Any) -> str:
+def _to_iso(timestamp) -> str:
     """Safely convert timestamp-like values to ISO string for logging."""
     try:
         if timestamp is None:
@@ -100,7 +100,7 @@ def configure_logging() -> None:
             structlog.processors.TimeStamper(fmt="iso"),
             (
                 # ConsoleRenderer returns an object that mypy may not infer as a Callable;
-                # use typing.cast to silence the list-item typing warning.
+                # use typing.cast to silence the list[Any]-item typing warning.
                 __import__("typing").cast(
                     __import__("typing").Any,
                     (
@@ -194,7 +194,7 @@ def log_security_event(
     if details:
         try:
             log_data["details"] = (
-                dict(details) if not isinstance(details, str) else details
+                dict[str, Any](details) if not isinstance(details, str) else details
             )
         except Exception:
             log_data["details"] = str(details)
@@ -240,7 +240,7 @@ def log_business_event(
     if details:
         try:
             log_data["details"] = (
-                dict(details) if not isinstance(details, str) else details
+                dict[str, Any](details) if not isinstance(details, str) else details
             )
         except Exception:
             log_data["details"] = str(details)
@@ -270,7 +270,7 @@ def log_performance_metric(
     if details:
         try:
             log_data["details"] = (
-                dict(details) if not isinstance(details, str) else details
+                dict[str, Any](details) if not isinstance(details, str) else details
             )
         except Exception:
             log_data["details"] = str(details)

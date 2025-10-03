@@ -25,6 +25,18 @@
     <!-- Performance Utilities -->
     <link rel="stylesheet" href="/static/css/performance-utils.css" />
 
+    <!-- Elite Visual Enhancements -->
+    <link rel="stylesheet" href="/static/css/elite-enhancements.css" />
+
+    <!-- Enhanced Typography -->
+    <link rel="stylesheet" href="/static/css/typography-enhanced.css" />
+
+    <!-- Elite Icon System -->
+    <link rel="stylesheet" href="/static/css/icons.css" />
+
+    <!-- Elite Page Transitions -->
+    <link rel="stylesheet" href="/static/css/transitions.css" />
+
     <!-- PWA Manifest -->
     <link rel="manifest" href="/static/manifest.json" />
     <meta name="theme-color" content="#667eea" />
@@ -36,6 +48,9 @@
     <!-- Favicon -->
     <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon" />
 
+    <!-- Elite Icon Sprite -->
+    <link rel="preload" href="/static/images/icon-sprite.svg" as="image" type="image/svg+xml" />
+
     <!-- Chart.js (from jsDelivr to match CSP) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
@@ -43,6 +58,11 @@
 </head>
 
 <body class="min-vh-100 d-flex flex-column">
+    <!-- Elite Icon Sprite -->
+    <div style="position: absolute; width: 0; height: 0; overflow: hidden;">
+        {% include 'partials/icon-sprite.html' %}
+    </div>
+
     <!-- Accessibility: Skip to content link -->
     <a href="#main" class="skip-to-content"
         style="position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden;">Skip to
@@ -242,6 +262,9 @@
             }
         }
     </script>
+
+    <!-- Elite JavaScript Enhancements -->
+    <script src="/static/js/elite-enhancements.js"></script>
 
     {% block scripts %}{% endblock %}
 </body>

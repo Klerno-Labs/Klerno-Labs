@@ -5,7 +5,7 @@ class SimpleCache:
     async def get(self, key: str) -> Any | None:
         return None
 
-    async def set(self, key: str, value: Any, ttl: int | None = None) -> None:
+    async def set(self, key: str, value, ttl: int | None = None) -> None:
         return None
 
 

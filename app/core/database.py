@@ -22,7 +22,7 @@ class DatabaseConnectionManager:
     Ensures all database connections are properly closed to prevent ResourceWarnings.
     """
 
-    def __init__(self, db_path: str | None = None):
+    def __init__(self, db_path: str | None = None) -> None:
         if db_path is None:
             # Default to Klerno database path
             db_path = str(Path(__file__).parent.parent / "data" / "klerno.db")
@@ -73,7 +73,7 @@ class DatabaseConnectionManager:
     def execute_query(
         self,
         query: str,
-        params: tuple = (),
+        params: tuple[Any, ...] = (),
         fetch_one: bool = False,
         fetch_all: bool = True,
     ) -> Any:
@@ -103,7 +103,7 @@ class DatabaseConnectionManager:
             else:
                 return None
 
-    def execute_transaction(self, queries: list) -> bool:
+    def execute_transaction(self, queries: list[Any]) -> bool:
         """
         Execute multiple queries in a transaction with proper cleanup.
 
@@ -152,7 +152,7 @@ def get_db_manager(db_path: str | None = None) -> DatabaseConnectionManager:
 
 
 # Convenience function for backward compatibility
-def get_db_connection(timeout: float = 30.0):
+def get_db_connection(timeout: float = 30.0) -> Any:
     """
     DEPRECATED: Use get_db_manager().get_connection() instead.
     This function is kept for backward compatibility but will be removed.
@@ -169,7 +169,7 @@ def get_db_connection(timeout: float = 30.0):
 
 # Context manager for legacy code migration
 @contextlib.contextmanager
-def safe_db_connection(db_path: str | None = None, timeout: float = 30.0):
+def safe_db_connection(db_path: str | None = None, timeout: float = 30.0) -> Any:
     """
     Safe database connection context manager for fixing legacy code.
 

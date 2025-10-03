@@ -34,7 +34,7 @@ class BuildArtifact:
     file_path: str
     checksum: str
     size_bytes: int
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict[str, Any])
 
 
 @dataclass
@@ -60,14 +60,14 @@ class PipelineStage:
     commands: list[str]
     timeout_seconds: int = 300
     continue_on_failure: bool = False
-    artifacts: list[str] = field(default_factory=list)
-    environment_vars: dict[str, str] = field(default_factory=dict)
+    artifacts: list[str] = field(default_factory=list[Any])
+    environment_vars: dict[str, str] = field(default_factory=dict[str, Any])
 
 
 class CICDPipeline:
     """Enterprise CI/CD Pipeline System"""
 
-    def __init__(self, config_path: str = "./cicd_config.yaml"):
+    def __init__(self, config_path: str = "./cicd_config.yaml") -> None:
         self.config_path = config_path
         self.workspace_path = Path("./").absolute()
         self.artifacts_path = self.workspace_path / "artifacts"
@@ -81,8 +81,8 @@ class CICDPipeline:
 
         # Pipeline state
         self.current_build: BuildArtifact | None = None
-        self.deployment_history: list[dict] = []
-        self.rollback_points: list[dict] = []
+        self.deployment_history: list[dict[str, Any]] = []
+        self.rollback_points: list[dict[str, Any]] = []
 
         # Load configuration
         self.config: dict[str, Any] = self._load_config()
@@ -201,7 +201,11 @@ class CICDPipeline:
             if Path(self.config_path).exists():
                 with Path(self.config_path).open() as f:
                     raw_config = yaml.safe_load(f)
-                    config = dict(raw_config) if isinstance(raw_config, dict) else {}
+                    config = (
+                        dict[str, Any](raw_config)
+                        if isinstance(raw_config, dict[str, Any])
+                        else {}
+                    )
                     # Merge with defaults
                     default_config.update(config)
             else:
@@ -348,14 +352,14 @@ class CICDPipeline:
                 logger.info(f"[CICD] Executing: {command}")
 
                 # Determine whether we can safely run without a shell.
-                # If `command` is a list/tuple, pass it directly (shell=False).
+                # If `command` is a list[Any]/tuple[Any, ...], pass it directly (shell=False).
                 # If it's a string, try to split it with shlex when it doesn't
                 # contain obvious shell metacharacters; otherwise fall back to
                 # passing the raw string and enabling shell mode at runtime.
                 shell_flag = False
                 proc_args = command
-                if isinstance(command, (list, tuple)):
-                    proc_args = list(command)
+                if isinstance(command, (list[Any], tuple[Any, ...])):
+                    proc_args = list[Any](command)
                     shell_flag = False
                 elif isinstance(command, str):
                     # simple heuristic: avoid shell when command doesn't include
@@ -394,9 +398,9 @@ class CICDPipeline:
                     stage_result["output"] += f"Command: {command}\n{stdout}\n"
 
                     if process.returncode != 0:
-                        stage_result["error"] += (
-                            f"Command failed: {command}\n{stderr}\n"
-                        )
+                        stage_result[
+                            "error"
+                        ] += f"Command failed: {command}\n{stderr}\n"
                         raise subprocess.CalledProcessError(
                             process.returncode, command, stderr
                         )
@@ -453,7 +457,7 @@ class CICDPipeline:
 
         return artifacts
 
-    def _run_quality_gates(self, pipeline_results: dict) -> dict[str, Any]:
+    def _run_quality_gates(self, pipeline_results: dict[str, Any]) -> dict[str, Any]:
         """Run quality gate checks"""
         quality_gates = self.config.get("quality_gates", {})
 
@@ -507,7 +511,7 @@ class CICDPipeline:
         )
         return gate_results
 
-    def _extract_code_coverage(self, pipeline_results: dict) -> float:
+    def _extract_code_coverage(self, pipeline_results: dict[str, Any]) -> float:
         """Extract code coverage from pipeline results"""
         try:
             # Look for coverage information in test stage output
@@ -525,7 +529,9 @@ class CICDPipeline:
 
         return 0.0
 
-    def _extract_security_issues(self, pipeline_results: dict) -> dict[str, int]:
+    def _extract_security_issues(
+        self, pipeline_results: dict[str, Any]
+    ) -> dict[str, int]:
         """Extract security issues from pipeline results"""
         issues = {"high": 0, "medium": 0, "low": 0}
 
@@ -545,7 +551,7 @@ class CICDPipeline:
 
         return issues
 
-    def _create_build_artifact(self, pipeline_results: dict) -> BuildArtifact:
+    def _create_build_artifact(self, pipeline_results: dict[str, Any]) -> BuildArtifact:
         """Create build artifact"""
         artifact_id = f"klerno-labs-{pipeline_results['commit_hash'][:8]}"
         version = f"1.0.{int(time.time())}"
@@ -612,7 +618,7 @@ class CICDPipeline:
             logger.warning(f"[CICD] Could not get git commit hash: {e}")
             return f"no-git-{int(time.time())}"
 
-    def _save_pipeline_results(self, results: dict):
+    def _save_pipeline_results(self, results: dict[str, Any]) -> None:
         """Save pipeline results to file"""
         try:
             results_file = self.logs_path / f"pipeline_{results['pipeline_id']}.json"
@@ -623,7 +629,7 @@ class CICDPipeline:
         except Exception as e:
             logger.error(f"[CICD] Failed to save results: {e}")
 
-    def _send_notifications(self, results: dict):
+    def _send_notifications(self, results: dict[str, Any]) -> None:
         """Send pipeline notifications"""
         try:
             notification_config = self.config.get("notifications", {})
@@ -646,7 +652,7 @@ class CICDPipeline:
         except Exception as e:
             logger.error(f"[CICD] Failed to send notifications: {e}")
 
-    def _format_notification_message(self, results: dict) -> str:
+    def _format_notification_message(self, results: dict[str, Any]) -> str:
         """Format notification message"""
         status = results["status"].upper()
         pipeline_id = results["pipeline_id"]
@@ -726,8 +732,8 @@ class CICDPipeline:
 
             for item in deploy_steps_raw:
                 name = cast(str, item[0])
-                func = cast(Callable[..., Any], item[1])
-                args_tuple: tuple[Any, ...] = tuple(item[2:])
+                func = cast(Callable, item[1])
+                args_tuple: tuple[Any, ...] = tuple[Any, ...](item[2:])
 
                 step_result = self._run_deployment_step(name, func, *args_tuple)
                 deployment_result["steps"].append(step_result)
@@ -807,7 +813,7 @@ class CICDPipeline:
 
         return f"Artifact validation passed: {artifact.artifact_id}"
 
-    def _prepare_deployment_environment(self, target_config: dict) -> str:
+    def _prepare_deployment_environment(self, target_config: dict[str, Any]) -> str:
         """Prepare deployment environment"""
         # Create deployment directories
         deployment_path = Path(target_config["deployment_path"])
@@ -818,7 +824,7 @@ class CICDPipeline:
 
         return f"Environment prepared: {deployment_path}"
 
-    def _stop_target_services(self, target_config: dict) -> str:
+    def _stop_target_services(self, target_config: dict[str, Any]) -> str:
         """Stop target services"""
         # In a real implementation, this would stop the actual services
         logger.info(f"[CICD] Stopping services for {target_config['name']}")
@@ -826,7 +832,7 @@ class CICDPipeline:
         return f"Services stopped for {target_config['name']}"
 
     def _deploy_artifact_to_target(
-        self, artifact: BuildArtifact, target_config: dict
+        self, artifact: BuildArtifact, target_config: dict[str, Any]
     ) -> str:
         """Deploy artifact to target"""
         deployment_path = Path(target_config["deployment_path"])
@@ -838,14 +844,14 @@ class CICDPipeline:
 
         return f"Artifact deployed to {deployment_path}"
 
-    def _start_target_services(self, target_config: dict) -> str:
+    def _start_target_services(self, target_config: dict[str, Any]) -> str:
         """Start target services"""
         # In a real implementation, this would start the actual services
         logger.info(f"[CICD] Starting services for {target_config['name']}")
         time.sleep(2)  # Simulate service start
         return f"Services started for {target_config['name']}"
 
-    def _verify_deployment_health(self, target_config: dict) -> str:
+    def _verify_deployment_health(self, target_config: dict[str, Any]) -> str:
         """Verify deployment health"""
         # In a real implementation, this would make HTTP health checks
         logger.info(f"[CICD] Checking health for {target_config['name']}")
@@ -859,13 +865,13 @@ class CICDPipeline:
 
         return f"Health check passed for {target_config['name']}"
 
-    def _run_smoke_tests(self, target_config: dict) -> str:
+    def _run_smoke_tests(self, target_config: dict[str, Any]) -> str:
         """Run smoke tests"""
         logger.info(f"[CICD] Running smoke tests for {target_config['name']}")
         time.sleep(1)  # Simulate smoke tests
         return f"Smoke tests passed for {target_config['name']}"
 
-    def _create_rollback_point(self, target_config: dict) -> dict[str, Any]:
+    def _create_rollback_point(self, target_config: dict[str, Any]) -> dict[str, Any]:
         """Create rollback point"""
         rollback_id = f"rollback_{int(time.time())}"
         rollback_path = Path(target_config["backup_path"]) / rollback_id
@@ -887,7 +893,7 @@ class CICDPipeline:
         return rollback_point
 
     def _perform_rollback(
-        self, rollback_point: dict, target_config: dict
+        self, rollback_point: dict[str, Any], target_config: dict[str, Any]
     ) -> dict[str, Any]:
         """Perform rollback to previous version"""
         logger.info(f"[CICD] Performing rollback: {rollback_point['rollback_id']}")
@@ -931,7 +937,7 @@ class CICDPipeline:
         return rollback_result
 
 
-def initialize_cicd_pipeline():
+def initialize_cicd_pipeline() -> None:
     """Initialize CI/CD pipeline system"""
     try:
         pipeline = CICDPipeline()

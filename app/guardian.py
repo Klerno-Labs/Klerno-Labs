@@ -19,7 +19,7 @@ SUSPICIOUS_WORDS = {
 }
 
 
-def _as_decimal(x: Any, default: str = "0") -> Decimal:
+def _as_decimal(x, default: str = "0") -> Decimal:
     if isinstance(x, Decimal):
         return x
     try:
@@ -32,15 +32,15 @@ def _norm(s: str | None) -> str:
     return (s or "").strip().lower()
 
 
-def _get(tx: Any, name: str, default=None):
+def _get(tx, name: str, default=None) -> None:
     if hasattr(tx, name):
         return getattr(tx, name)
-    if isinstance(tx, dict):
+    if isinstance(tx, dict[str, Any]):
         return tx.get(name, default)
     return default
 
 
-def score_risk(tx: Any) -> tuple[float, list[str]]:
+def score_risk(tx) -> tuple[float, list[str]]:
     """
     Returns (score, flags). Score is clamped to [0, 1].
     Flags explain which signals contributed; useful for tests & auditing.
@@ -118,7 +118,7 @@ def score_risk(tx: Any) -> tuple[float, list[str]]:
 # Back - compat: old callers that expect just a float can use this.
 
 
-def score_risk_value(tx: Any) -> float:
+def score_risk_value(tx) -> float:
     return score_risk(tx)[0]
 
 
@@ -129,16 +129,18 @@ class GuardianEngine:
     Provides async anomaly detection and simple pattern recognition.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    async def detect_anomalies(self, transactions: list[dict]) -> list[dict]:
+    async def detect_anomalies(
+        self, transactions: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         # Very small anomaly detector: flag txs with amount far above median
         amounts = [abs(Decimal(str(t.get("amount", 0)))) for t in transactions]
         if not amounts:
             return []
         median = sorted(amounts)[len(amounts) // 2]
-        anomalies: list[dict] = []
+        anomalies: list[dict[str, Any]] = []
         for t in transactions:
             try:
                 if Decimal(str(t.get("amount", 0))) > median * 10:
@@ -148,12 +150,14 @@ class GuardianEngine:
                 continue
         return anomalies
 
-    async def detect_patterns(self, transactions: list[dict]) -> list[dict]:
-        # Return a list of pattern dicts used by tests. Detect simple
+    async def detect_patterns(
+        self, transactions: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        # Return a list[Any] of pattern dicts used by tests. Detect simple
         # structured layering: repeated transfers of the same amount to
         # different accounts.
         total = sum(float(t.get("amount", 0)) for t in transactions)
-        patterns: list[dict] = []
+        patterns: list[dict[str, Any]] = []
 
         # naive detection: if multiple transactions have same amount and
         # different recipients, flag as structured_layering
@@ -178,12 +182,14 @@ class GuardianEngine:
         return patterns
 
     # Backwards-compatible instance method name expected by older code/tests
-    async def analyze_patterns(self, transactions: list[dict]) -> list[dict]:
+    async def analyze_patterns(
+        self, transactions: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         return await self.detect_patterns(transactions)
 
 
 # Backwards-compatible name expected by older tests
-async def analyze_patterns(transactions: list[dict]) -> list[dict]:
+async def analyze_patterns(transactions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     # Use a cached engine to avoid allocating an engine on each call.
     engine = _get_guardian_engine()
     return await engine.detect_patterns(transactions)

@@ -43,7 +43,7 @@ class SystemStatus:
     last_check: datetime
     health_score: float = 100.0
     error_message: str | None = None
-    metrics: dict[str, Any] = field(default_factory=dict)
+    metrics: dict[str, Any] = field(default_factory=dict[str, Any])
 
 
 @dataclass
@@ -71,7 +71,7 @@ class IntegrationConfig:
 class EnterpriseIntegrationHub:
     """Master orchestration system for all enterprise components"""
 
-    def __init__(self, config: IntegrationConfig | None = None):
+    def __init__(self, config: IntegrationConfig | None = None) -> None:
         self.config = config or IntegrationConfig()
         self.system_status: dict[str, SystemStatus] = {}
         self.is_running = False
@@ -291,7 +291,7 @@ class EnterpriseIntegrationHub:
                         db_stats = getattr(
                             self.database_manager, "get_database_stats", lambda: {}
                         )()
-                    if not isinstance(db_stats, dict):
+                    if not isinstance(db_stats, dict[str, Any]):
                         db_stats = {}
                     metrics["database"] = {
                         "active_connections": db_stats.get("active_connections", 0),
@@ -309,7 +309,7 @@ class EnterpriseIntegrationHub:
                         error_stats = error_stats_fn()
                     else:
                         # Fallback to summary
-                        def _default_error_summary(hours: int = 1) -> dict:
+                        def _default_error_summary(hours: int = 1) -> dict[str, Any]:
                             # Small named helper to avoid unused-lambda ARG005 lint
                             return {}
 
@@ -318,7 +318,7 @@ class EnterpriseIntegrationHub:
                             "get_error_summary",
                             _default_error_summary,
                         )()
-                    if not isinstance(error_stats, dict):
+                    if not isinstance(error_stats, dict[str, Any]):
                         error_stats = {}
                     metrics["error_handling"] = {
                         "total_errors": error_stats.get("total_errors", 0),
@@ -388,7 +388,7 @@ class EnterpriseIntegrationHub:
                     stats = getattr(
                         self.database_manager, "get_database_stats", lambda: {}
                     )()
-                if not isinstance(stats, dict):
+                if not isinstance(stats, dict[str, Any]):
                     stats = {}
                 utilization = stats.get("pool_utilization", 0)
                 if utilization > 90:
@@ -404,13 +404,13 @@ class EnterpriseIntegrationHub:
                     stats = stats_fn()
                 else:
 
-                    def _default_error_summary(hours: int = 1) -> dict:
+                    def _default_error_summary(hours: int = 1) -> dict[str, Any]:
                         return {}
 
                     stats = getattr(
                         self.error_handler, "get_error_summary", _default_error_summary
                     )()
-                if not isinstance(stats, dict):
+                if not isinstance(stats, dict[str, Any]):
                     stats = {}
                 error_rate = stats.get("error_rate", 0)
                 if error_rate > 10:

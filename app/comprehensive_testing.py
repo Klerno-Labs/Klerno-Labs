@@ -63,7 +63,7 @@ class TestSuite:
 class TestRunner:
     """Advanced test runner with comprehensive coverage."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.results: list[TestResult] = []
         self.coverage_data: dict[str, Any] = {}
         self.test_suites: list[TestSuite] = []
@@ -528,7 +528,7 @@ class TestRunner:
             # Simulate memory - intensive operations
             large_data = []
             for _i in range(1000):
-                large_data.append(list(range(1000)))
+                large_data.append(list[Any](range(1000)))
 
             peak_memory = cast(int, psutil.virtual_memory().used)
 
@@ -775,7 +775,7 @@ class TestRunner:
 class ContinuousTestingPipeline:
     """Continuous testing pipeline."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.test_runner = TestRunner()
         self.pipeline_running = False
         self.test_schedule = []
@@ -879,7 +879,7 @@ class ContinuousTestingPipeline:
 
         self.pipeline_running = True
 
-        def pipeline_loop():
+        def pipeline_loop() -> None:
             while self.pipeline_running:
                 try:
                     # Run quick tests more frequently

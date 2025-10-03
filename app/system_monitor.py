@@ -23,8 +23,7 @@ else:
     try:
         import psutil
     except Exception:
-        psutil = None  # type: ignore
-
+        psutil = None
 logger = logging.getLogger(__name__)
 
 
@@ -73,7 +72,7 @@ class SecurityMetrics:
 class SystemMonitor:
     def auto_block_suspicious_users(
         self, admin_manager, guardian_module, risk_threshold=0.9
-    ):
+    ) -> None:
         """Scan recent transactions, auto - block users with high risk, and log alerts."""
         try:
             import sqlite3
@@ -114,7 +113,7 @@ class SystemMonitor:
                         import importlib
 
                         models_mod = importlib.import_module("app.models")
-                        BlockUserRequestCls = getattr(models_mod, "BlockUserRequest")
+                        BlockUserRequestCls = models_mod.BlockUserRequest
 
                         req = BlockUserRequestCls(
                             target_email=user_email,
@@ -138,7 +137,7 @@ class SystemMonitor:
 
     """Comprehensive system monitoring for enterprise admin dashboard."""
 
-    def __init__(self, db_path: str = "data/klerno.db", init_db: bool = False):
+    def __init__(self, db_path: str = "data/klerno.db", init_db: bool = False) -> None:
         """Create a SystemMonitor instance.
 
         By default this constructor does not perform any filesystem or
@@ -159,7 +158,7 @@ class SystemMonitor:
         if init_db:
             self.init_monitoring_tables()
 
-    def init_monitoring_tables(self):
+    def init_monitoring_tables(self) -> None:
         """Initialize monitoring database tables."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -368,7 +367,7 @@ class SystemMonitor:
             logger.error("Error getting security metrics: %s", e)
             return None
 
-    def store_metrics(self):
+    def store_metrics(self) -> None:
         """Store current metrics in database."""
         try:
             system_metrics = self.get_system_metrics()
@@ -556,25 +555,28 @@ class SystemMonitor:
                 },
                 "historical_data": {
                     "system": [
-                        dict(zip(system_cols, row, strict=False)) for row in system_data
+                        dict[str, Any](zip(system_cols, row, strict=False))
+                        for row in system_data
                     ],
                     "application": [
-                        dict(zip(app_cols, row, strict=False)) for row in app_data
+                        dict[str, Any](zip(app_cols, row, strict=False))
+                        for row in app_data
                     ],
                     "security": [
-                        dict(zip(security_cols, row, strict=False))
+                        dict[str, Any](zip(security_cols, row, strict=False))
                         for row in security_data
                     ],
                 },
                 "alerts": [
-                    dict(zip(alert_cols, alert, strict=False)) for alert in alerts
+                    dict[str, Any](zip(alert_cols, alert, strict=False))
+                    for alert in alerts
                 ],
             }
         except Exception as e:
             logger.error("Error getting dashboard data: %s", e)
             return {"error": str(e)}
 
-    def add_alert(self, alert_type: str, severity: str, message: str):
+    def add_alert(self, alert_type: str, severity: str, message: str) -> None:
         """Add system alert."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -590,7 +592,7 @@ class SystemMonitor:
         except Exception as e:
             logger.error("Error adding alert: %s", e)
 
-    def record_request(self, response_time: float, is_error: bool = False):
+    def record_request(self, response_time: float, is_error: bool = False) -> None:
         """Record API request for metrics."""
         self.request_count += 1
         self.response_times.append(time.time())
@@ -601,19 +603,19 @@ class SystemMonitor:
         if len(self.response_times) > 1000:
             self.response_times = self.response_times[-1000:]
 
-    def add_session(self, session_id: str):
+    def add_session(self, session_id: str) -> None:
         """Add active session."""
         self.active_sessions.add(session_id)
 
-    def remove_session(self, session_id: str):
+    def remove_session(self, session_id: str) -> None:
         """Remove active session."""
         self.active_sessions.discard(session_id)
 
-    def record_failed_login(self):
+    def record_failed_login(self) -> None:
         """Record failed login attempt."""
         self.failed_logins += 1
 
-    async def start_monitoring(self, admin_manager=None, guardian_module=None):
+    async def start_monitoring(self, admin_manager=None, guardian_module=None) -> Any:
         """Start background monitoring task with automated incident response."""
         while True:
             try:

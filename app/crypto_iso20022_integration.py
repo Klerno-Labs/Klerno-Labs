@@ -60,7 +60,7 @@ class CryptoNetworkConfig:
 class CryptoISO20022Manager:
     """Manages ISO20022 compliance for all supported cryptocurrencies."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.iso_manager = ISO20022Manager()
         self.crypto_configs: dict[SupportedCryptos, CryptoNetworkConfig] = (
             self._initialize_crypto_configs()

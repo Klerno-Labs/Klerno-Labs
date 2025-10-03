@@ -364,7 +364,7 @@ class AdvancedAnalytics:
 class InsightsEngine:
     """AI - powered insights generator"""
 
-    def generate_insights(self, metrics: AnalyticsMetrics):
+    def generate_insights(self, metrics: AnalyticsMetrics) -> None:
         """Generate AI-powered insights from analytics data"""
         insights = []
 
@@ -463,19 +463,19 @@ class _LazyProxy:
     eager construction during import.
     """
 
-    def __init__(self, factory):
+    def __init__(self, factory) -> None:
         self._factory = factory
         self._obj = None
 
-    def _ensure(self):
+    def _ensure(self) -> None:
         if self._obj is None:
             self._obj = self._factory()
 
-    def __getattr__(self, name):
+    def __getattr__(self, name) -> None:
         self._ensure()
         return getattr(self._obj, name)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> None:
         self._ensure()
         # If the proxied object is callable, delegate the call. Otherwise,
         # raise a clear TypeError to match normal Python behavior.

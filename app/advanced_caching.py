@@ -8,6 +8,7 @@ import mimetypes
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from fastapi import Request, Response
 from fastapi.staticfiles import StaticFiles
@@ -17,12 +18,12 @@ from starlette.middleware.base import BaseHTTPMiddleware
 class AdvancedCachingMiddleware(BaseHTTPMiddleware):
     """Enhanced caching middleware with smart cache strategies"""
 
-    def __init__(self, app, cache_rules: dict | None = None):
+    def __init__(self, app, cache_rules: dict[str, Any] | None = None) -> None:
         super().__init__(app)
         self.cache_rules = cache_rules or self._default_cache_rules()
         self.etag_cache: dict[str, str] = {}  # Simple in-memory ETag cache
 
-    def _default_cache_rules(self) -> dict:
+    def _default_cache_rules(self) -> dict[str, Any]:
         """Default caching rules for different content types"""
         return {
             # Static assets - Long cache with versioning
@@ -114,7 +115,7 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
 
         return ", ".join(parts)
 
-    def _add_security_headers(self, response: Response, path: str):
+    def _add_security_headers(self, response: Response, path: str) -> None:
         """Add security-related caching headers"""
         # Prevent caching of sensitive pages
         if any(
@@ -124,7 +125,7 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
 
-    def _add_performance_headers(self, response: Response, content_type: str):
+    def _add_performance_headers(self, response: Response, content_type: str) -> None:
         """Add performance optimization headers"""
         # Enable compression hints
         if content_type.startswith("text/") or "json" in content_type:
@@ -137,7 +138,7 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
                 "<https://cdn.jsdelivr.net>; rel=dns-prefetch"
             )
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next) -> Any:
         """Main middleware dispatch method"""
         start_time = time.time()
 
@@ -207,7 +208,7 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
 class OptimizedStaticFiles(StaticFiles):
     """Enhanced static file serving with advanced caching"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.compression_types = {
             ".js": "gzip",
@@ -258,7 +259,7 @@ class OptimizedStaticFiles(StaticFiles):
         return headers
 
 
-def create_cache_optimization_config():
+def create_cache_optimization_config() -> None:
     """Create caching configuration for production deployment"""
     return {
         "static_files": {
@@ -285,14 +286,14 @@ def create_cache_optimization_config():
 
 
 # Cache warming utilities
-async def warm_cache_on_startup():
+async def warm_cache_on_startup() -> Any:
     """Warm up cache with frequently accessed resources"""
 
     # This would be implemented with actual HTTP requests in production
     print("🔥 Cache warming completed for critical resources")
 
 
-def generate_cache_manifest():
+def generate_cache_manifest() -> None:
     """Generate cache manifest for PWA"""
     manifest = {
         "version": "1.0.0",

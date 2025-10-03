@@ -165,7 +165,7 @@ def get_transaction(transaction_id: int, user=Depends(current_user)):
             con.close()
             if not r:
                 raise HTTPException(status_code=404, detail="transaction not found")
-            if isinstance(r, dict):
+            if isinstance(r, dict[str, Any]):
                 return r
             return {
                 "id": r[0],
@@ -195,7 +195,7 @@ def get_compliance_tags(transaction_id: int, user=Depends(current_user)):
     """Return compliance tags for a given legacy transaction id.
 
     This supports the legacy `compliance_tags` table used by compatibility
-    tests. If the table does not exist we return an empty list (200).
+    tests. If the table does not exist we return an empty list[Any] (200).
     """
     con = None
     try:
@@ -220,7 +220,7 @@ def get_compliance_tags(transaction_id: int, user=Depends(current_user)):
 
         out = []
         for r in rows:
-            if isinstance(r, dict):
+            if isinstance(r, dict[str, Any]):
                 out.append(r)
             else:
                 out.append(
@@ -242,7 +242,7 @@ def get_compliance_tags(transaction_id: int, user=Depends(current_user)):
 
 @router.get("/transactions")
 def list_transactions(user=Depends(current_user)):
-    """Return a list of legacy transactions for compatibility tests.
+    """Return a list[Any] of legacy transactions for compatibility tests.
 
     Returns rows from `transactions` table when present, otherwise falls
     back to `store.list_all()` if implemented.
@@ -268,7 +268,7 @@ def list_transactions(user=Depends(current_user)):
         con.close()
         out = []
         for r in rows:
-            if isinstance(r, dict):
+            if isinstance(r, dict[str, Any]):
                 out.append(r)
             else:
                 out.append(

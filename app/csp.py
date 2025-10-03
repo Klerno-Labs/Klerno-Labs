@@ -41,7 +41,7 @@ def base_policy() -> str:
     return os.getenv("CSP_BASE_POLICY", "default-src 'self'")
 
 
-def add_csp_middleware(app: Any) -> None:
+def add_csp_middleware(app) -> None:
     if not csp_enabled():
         return
 

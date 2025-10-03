@@ -433,7 +433,7 @@ class AuditLogger:
     @staticmethod
     def log_security_event(
         event_type: str, details: dict[str, Any], client_ip: str | None = None
-    ):
+    ) -> None:
         """Log security - related events for audit trail."""
         log_entry = {
             "timestamp": datetime.now(UTC).isoformat(),
@@ -447,7 +447,7 @@ class AuditLogger:
     @staticmethod
     def log_admin_action(
         admin_email: str, action: str, target: str, client_ip: str | None = None
-    ):
+    ) -> None:
         """Log administrative actions for compliance."""
         AuditLogger.log_security_event(
             "admin_action",
@@ -456,7 +456,9 @@ class AuditLogger:
         )
 
     @staticmethod
-    def log_authentication(email: str, success: bool, client_ip: str | None = None):
+    def log_authentication(
+        email: str, success: bool, client_ip: str | None = None
+    ) -> None:
         """Log authentication attempts."""
         AuditLogger.log_security_event(
             "authentication", {"email": email, "success": success}, client_ip

@@ -32,7 +32,7 @@ class PluginMetadata(BaseModel):
 class PluginHook:
     """Represents a hook point in the system"""
 
-    def __init__(self, name: str, description: str = ""):
+    def __init__(self, name: str, description: str = "") -> None:
         self.name = name
         self.description = description
         self.callbacks: list[Callable] = []
@@ -204,7 +204,7 @@ class PluginManager:
         """Get information about a specific plugin"""
         if plugin_name in self.plugins:
             plugin = self.plugins[plugin_name]
-            # Normalize metadata to a mapping so callers always receive a dict
+            # Normalize metadata to a mapping so callers always receive a dict[str, Any]
             metadata: dict[str, Any] | None = None
             if plugin.metadata is not None:
                 try:
@@ -212,8 +212,8 @@ class PluginManager:
                     metadata = plugin.metadata.model_dump()
                 except Exception:
                     try:
-                        # pydantic v1: dict()
-                        metadata = plugin.metadata.dict()
+                        # pydantic v1: dict[str, Any]()
+                        metadata = plugin.metadata.dict[str, Any]()
                     except Exception:
                         # Provide a consistent mapping fallback
                         metadata = {"info": str(plugin.metadata)}
@@ -246,7 +246,7 @@ class PluginManager:
                     metadata = plugin.metadata.model_dump()
                 except Exception:
                     try:
-                        metadata = plugin.metadata.dict()
+                        metadata = plugin.metadata.dict[str, Any]()
                     except Exception:
                         metadata = {"info": str(plugin.metadata)}
 

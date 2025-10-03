@@ -5,7 +5,6 @@ import hmac
 import os
 import secrets
 from collections.abc import Awaitable, Callable
-from typing import Any
 
 from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -94,7 +93,7 @@ async def csrf_guard(request: Request) -> bool:
     return True
 
 
-def install_security(app: Any) -> None:
+def install_security(app) -> None:
     """Attach security middlewares (single place, avoids duplication)."""
     app.add_middleware(RequestIDMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
@@ -103,7 +102,7 @@ def install_security(app: Any) -> None:
 # ---- Optional rate limiting (no warnings if library absent) ------------------
 
 
-def rate_limit(spec: str) -> Callable[..., Awaitable[bool]]:
+def rate_limit(spec: str) -> Callable:
     """
     Returns a dependency suitable for FastAPI route `dependencies=[Depends(rate_limit("10 / min"))]`.
     - If starlette - limiter is installed and REDIS_URL is set, uses it.

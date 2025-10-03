@@ -72,7 +72,7 @@ class Guide(BaseModel):
 class OnboardingManager:
     """Manages user onboarding and guides"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.guides = self._initialize_guides()
         self.user_progress: dict[int, OnboardingProgress] = {}
 
@@ -246,7 +246,7 @@ class OnboardingManager:
             progress.completed_steps.append(step)
 
         # Determine next step
-        all_steps = list(OnboardingStep)
+        all_steps = list[Any](OnboardingStep)
         current_index = all_steps.index(progress.current_step)
 
         if current_index < len(all_steps) - 1:
@@ -275,7 +275,7 @@ class OnboardingManager:
 
         return available
 
-    def mark_guide_completed(self, user_id: int, guide_id: str):
+    def mark_guide_completed(self, user_id: int, guide_id: str) -> None:
         """Mark a guide as completed for a user"""
         progress = self.user_progress.get(user_id)
         if not progress:
@@ -334,7 +334,7 @@ class OnboardingManager:
 class ContextualHelp:
     """Provides contextual help and tips throughout the application"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.tips = self._initialize_tips()
 
     def _initialize_tips(self) -> dict[str, dict[str, Any]]:

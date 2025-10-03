@@ -137,13 +137,13 @@ class MFAManager:
     Enterprise - grade MFA manager with comprehensive security features
     """
 
-    def __init__(self, encryption_key: bytes | None = None):
+    def __init__(self, encryption_key: bytes | None = None) -> None:
         """Initialize MFA manager with optional custom encryption key"""
         self.encryption_key = encryption_key or MFA_ENCRYPTION_KEY.encode()
         self.fernet = Fernet(self.encryption_key)
         self.recovery_codes_count = 10
 
-    def setup_user_mfa(self, user_id: str, email: str) -> dict:
+    def setup_user_mfa(self, user_id: str, email: str) -> dict[str, Any]:
         """
         Set up MFA for a new user
         Returns setup information including secret and QR code
@@ -181,10 +181,10 @@ class MFAManager:
             logger.error(f"MFA verification failed: {e}")
             return False
 
-    def generate_recovery_codes(self) -> list:
+    def generate_recovery_codes(self) -> list[Any]:
         """
         Generate backup recovery codes for MFA
-        Returns list of one - time use codes
+        Returns list[Any] of one - time use codes
         """
         codes = []
         for _ in range(self.recovery_codes_count):
@@ -195,7 +195,9 @@ class MFAManager:
             codes.append(code)
         return codes
 
-    def verify_recovery_code(self, provided_code: str, stored_codes: list) -> tuple:
+    def verify_recovery_code(
+        self, provided_code: str, stored_codes: list[Any]
+    ) -> tuple[Any, ...]:
         """
         Verify a recovery code and remove it from available codes
         Returns (is_valid, remaining_codes)
@@ -243,7 +245,7 @@ class MFAManager:
             logger.error(f"Failed to disable MFA for user {user_id}: {e}")
             return False
 
-    def reset_mfa(self, user_id: str, email: str) -> dict:
+    def reset_mfa(self, user_id: str, email: str) -> dict[str, Any]:
         """
         Reset MFA for a user (generates new secret)
         Returns new setup information

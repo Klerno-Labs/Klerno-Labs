@@ -54,7 +54,7 @@ class ErrorEvent:
     severity: ErrorSeverity
     service: str
     stack_trace: str = ""
-    context: dict[str, Any] = field(default_factory=dict)
+    context: dict[str, Any] = field(default_factory=dict[str, Any])
     resolved: bool = False
     resolution_time: datetime | None = None
 
@@ -73,7 +73,7 @@ class CircuitBreakerConfig:
 class EnterpriseCircuitBreaker:
     """Advanced circuit breaker with monitoring"""
 
-    def __init__(self, name: str, config: CircuitBreakerConfig):
+    def __init__(self, name: str, config: CircuitBreakerConfig) -> None:
         self.name = name
         self.config = config
         self.state = CircuitBreakerState.CLOSED
@@ -94,11 +94,11 @@ class EnterpriseCircuitBreaker:
             f"[CIRCUIT] Created circuit breaker '{name}' with threshold {config.failure_threshold}"
         )
 
-    def __call__(self, func: Callable) -> Callable[..., Any]:
+    def __call__(self, func: Callable) -> Callable:
         """Decorator for protecting functions with circuit breaker"""
 
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args, **kwargs: Any) -> Any:
             return self.call(func, *args, **kwargs)
 
         return wrapper
@@ -523,12 +523,12 @@ class EnterpriseErrorHandler:
 # Decorators for error handling
 def handle_errors(
     service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+) -> Callable[[Callable], Callable]:
     """Decorator for automatic error handling"""
 
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+    def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
             except Exception as e:
@@ -542,10 +542,10 @@ def handle_errors(
 
 def with_circuit_breaker(
     breaker_name: str, config: CircuitBreakerConfig | None = None
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+) -> Callable[[Callable], Callable]:
     """Decorator for circuit breaker protection"""
 
-    def decorator(func: Callable) -> Callable[..., Any]:
+    def decorator(func: Callable) -> Callable:
         # Create circuit breaker if it doesn't exist
         if config is not None:
             breaker = error_handler.create_circuit_breaker(breaker_name, config)
@@ -566,12 +566,12 @@ def with_circuit_breaker(
 
 def retry_on_failure(
     max_retries: int = 3, delay: float = 1.0, backoff: float = 2.0
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+) -> Callable[[Callable], Callable]:
     """Decorator for automatic retry with exponential backoff"""
 
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args, **kwargs: Any) -> Any:
             last_exception: Exception | None = None
             current_delay = delay
 

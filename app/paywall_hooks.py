@@ -24,7 +24,7 @@ def _stripe() -> Any | None:
 
 
 @router.post("/create-checkout-session")
-async def create_checkout_session(req: Request):
+async def create_checkout_session(req: Request) -> Any:
     stripe_sdk = _stripe()
     price_id = (os.getenv("STRIPE_PRICE_ID", "") or "").strip()
     if not stripe_sdk or not price_id:
@@ -47,7 +47,7 @@ async def create_checkout_session(req: Request):
 
 
 @router.post("/stripe/webhook")
-async def stripe_webhook(request: Request):
+async def stripe_webhook(request: Request) -> Any:
     stripe_sdk = _stripe()
     if not stripe_sdk:
         raise HTTPException(status_code=501, detail="Stripe not configured")

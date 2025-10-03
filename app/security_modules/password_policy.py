@@ -85,7 +85,7 @@ class PasswordSecurityPolicy:
     Exceeds enterprise security standards and compliance requirements
     """
 
-    def __init__(self, config: PasswordPolicyConfig | None = None):
+    def __init__(self, config: PasswordPolicyConfig | None = None) -> None:
         self.config = config or PasswordPolicyConfig()
         # When running under tests, disable external breach checks to keep
         # registration deterministic and offline-friendly.
@@ -180,7 +180,9 @@ class PasswordSecurityPolicy:
             # Create SHA-1 hash per HaveIBeenPwned k-anonymity protocol. This
             # usage is required by the external API and does not constitute a
             # cryptographic security primitive in our code. # nosec: B324
-            sha1_hash = hashlib.sha1(password.encode()).hexdigest().upper()  # nosec: B324
+            sha1_hash = (
+                hashlib.sha1(password.encode()).hexdigest().upper()
+            )  # nosec: B324
             prefix = sha1_hash[:5]
             suffix = sha1_hash[5:]
 

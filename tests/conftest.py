@@ -188,7 +188,7 @@ async def _async_client_impl(test_db: str) -> AsyncGenerator[AsyncClient, None]:
     # Use ASGITransport for compatibility with newer httpx versions
     # httpx typing can be strict about ASGI apps; ignore here for test harness
     async with AsyncClient(
-        transport=ASGITransport(app=app),
+        transport=ASGITransport(app=app),  # type: ignore
         base_url="http://test",
     ) as client:
         yield client

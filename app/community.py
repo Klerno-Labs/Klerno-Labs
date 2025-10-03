@@ -139,20 +139,20 @@ class UserContribution(BaseModel):
 class CommunityManager:
     """Manages community features and interactions"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.posts: dict[int, CommunityPost] = {}
         self.replies: dict[int, list[CommunityReply]] = {}
         self.knowledge_articles: dict[int, KnowledgeArticle] = {}
         self.tutorials: dict[int, Tutorial] = {}
         self.user_contributions: dict[int, UserContribution] = {}
-        self.votes: dict[
-            str, dict[int, VoteType]
-        ] = {}  # user_id -> {post_id: vote_type}
+        self.votes: dict[str, dict[int, VoteType]] = (
+            {}
+        )  # user_id -> {post_id: vote_type}
 
         # Initialize with sample content
         self._initialize_sample_content()
 
-    def _initialize_sample_content(self):
+    def _initialize_sample_content(self) -> None:
         """Initialize with sample community content"""
 
         # Sample knowledge articles
@@ -234,7 +234,7 @@ import time
 from requests.exceptions import HTTPError
 
 
-def analyze_with_retry(client, transaction):
+def analyze_with_retry(client, transaction) -> None:
     max_retries=3
     for attempt in range(max_retries):
         try:
@@ -258,7 +258,7 @@ app=Flask(__name__)
 @app.route('/klerno - webhook', methods=['POST'])
 
 
-def handle_webhook():
+def handle_webhook() -> None:
     signature=request.headers.get('X-Klerno-Signature')
     payload=request.get_data()
 
@@ -284,7 +284,7 @@ class KlernoAPIError(Exception):
     pass
 
 
-def safe_analyze(client, transaction):
+def safe_analyze(client, transaction) -> None:
     try:
         result=client.analyze_transaction(transaction)
         return result
@@ -499,7 +499,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
 
         return reply
 
-    def vote_on_post(self, user_id: int, post_id: int, vote_type: VoteType):
+    def vote_on_post(self, user_id: int, post_id: int, vote_type: VoteType) -> None:
         """Vote on a post"""
         if post_id not in self.posts:
             raise ValueError("Post not found")
@@ -554,7 +554,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
 class CollaborationFeatures:
     """Features for team collaboration and knowledge sharing"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.shared_workspaces: dict[int, dict[str, Any]] = {}
         self.team_annotations: dict[str, list[dict[str, Any]]] = {}
 

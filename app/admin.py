@@ -85,10 +85,10 @@ def _row_score(r: dict[str, Any]) -> float:
         return 0.0
 
 
-def _to_mapping(obj) -> dict:
-    """Convert mapping-like or row-like objects into a plain dict.
+def _to_mapping(obj) -> dict[str, Any]:
+    """Convert mapping-like or row-like objects into a plain dict[str, Any].
 
-    Returns an empty dict on failure. This centralizes the defensive logic
+    Returns an empty dict[str, Any] on failure. This centralizes the defensive logic
     used by admin endpoints and avoids repeated hasattr(..., 'keys') checks.
     """
     # Delegate to the shared to_mapping helper to centralize behavior and
@@ -194,7 +194,7 @@ def admin_stats(user=Depends(require_admin)) -> dict[str, Any]:
         GROUP BY risk_level
     """
     )
-    risk_distribution = dict(cur.fetchall())
+    risk_distribution = dict[str, Any](cur.fetchall())
 
     # Get recent activity trends (last 7 days)
     cur.execute(
@@ -269,15 +269,15 @@ def admin_realtime_analytics(user=Depends(require_admin)) -> dict[str, Any]:
     recent_transactions = []
     for row in cur.fetchall():
         try:
-            recent_transactions.append(dict(zip(columns, row, strict=False)))
+            recent_transactions.append(dict[str, Any](zip(columns, row, strict=False)))
         except Exception:
-            # Fallback: try converting via mapping or positional tuple
+            # Fallback: try converting via mapping or positional tuple[Any, ...]
             try:
                 mapped = _to_mapping(row)
                 if mapped:
                     recent_transactions.append(mapped)
                 else:
-                    mapped_row = dict(enumerate(row))
+                    mapped_row = dict[str, Any](enumerate(row))
                     recent_transactions.append(mapped_row)
             except Exception:
                 recent_transactions.append({})
@@ -362,7 +362,7 @@ def admin_user_analytics(user=Depends(require_admin)) -> dict[str, Any]:
         GROUP BY role
     """
     )
-    role_distribution = dict(cur.fetchall())
+    role_distribution = dict[str, Any](cur.fetchall())
 
     # Get subscription status
     cur.execute(
@@ -377,7 +377,7 @@ def admin_user_analytics(user=Depends(require_admin)) -> dict[str, Any]:
         GROUP BY subscription_active
     """
     )
-    subscription_status = dict(cur.fetchall())
+    subscription_status = dict[str, Any](cur.fetchall())
 
     con.close()
 
@@ -407,12 +407,12 @@ def _list_users() -> list[dict[str, Any]]:
 
     out: list[dict[str, Any]] = []
     for r in rows:
-        if isinstance(r, dict):
-            d = dict(r)
+        if isinstance(r, dict[str, Any]):
+            d = dict[str, Any](r)
         elif hasattr(r, "keys"):
             d = _to_mapping(r)
         else:
-            # Fallback to positional tuple order
+            # Fallback to positional tuple[Any, ...] order
             id_, email, password_hash, role, sub_active, created_at = r
             d = {
                 "id": id_,

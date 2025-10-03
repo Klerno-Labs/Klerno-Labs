@@ -7,6 +7,7 @@ import os
 import secrets
 import time
 from pathlib import Path
+from typing import Any
 
 from dotenv import find_dotenv, load_dotenv
 from fastapi import Header, HTTPException, Request, status
@@ -193,7 +194,7 @@ def rotate_api_key() -> str:
     return key
 
 
-def preview_api_key() -> dict:
+def preview_api_key() -> dict[str, Any]:
     """Return masked preview + metadata (never the full key)."""
     key = expected_api_key()
     if not key:

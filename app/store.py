@@ -53,7 +53,7 @@ def _safe_idx(seq: Sequence[Any] | Any, idx: int) -> Any:
         return None
 
 
-def _get_cache_key(*args: Any) -> str:
+def _get_cache_key(*args) -> str:
     """Generate cache key from arguments."""
     return "|".join(str(arg) for arg in args)
 
@@ -185,7 +185,7 @@ def _sqlite_conn() -> ISyncConnection:
     con = cast(
         ISyncConnection, sqlite3.connect(db_path, check_same_thread=False, timeout=5.0)
     )
-    con.row_factory = sqlite3.Row  # return dict - like rows to unify handling
+    con.row_factory = sqlite3.Row  # return dict[str, Any] - like rows to unify handling
     # Improve concurrency/performance for test and multi-request workloads:
     # - WAL reduces write lock contention allowing readers during writes
     # - synchronous=NORMAL gives good durability with better write throughput
@@ -265,7 +265,10 @@ def _ph() -> str:
 
 
 def wait_for_row(
-    select_sql: str, params: tuple = (), timeout: float = 1.0, poll: float = 0.05
+    select_sql: str,
+    params: tuple[Any, ...] = (),
+    timeout: float = 1.0,
+    poll: float = 0.05,
 ) -> list[Any]:
     """Wait for a row to become visible in the database.
 
@@ -515,7 +518,7 @@ def init_db() -> None:
                 ("has_hardware_key INTEGER NOT NULL DEFAULT 0",),
             ]:
                 with contextlib.suppress(sqlite3.OperationalError):
-                    # coldef values are from an internal hardcoded list above
+                    # coldef values are from an internal hardcoded list[Any] above
                     # (migration definitions). This is not user input; add a
                     # precise suppression so Bandit doesn't flag this dynamic
                     # DDL string as a false-positive for hardcoded SQL.
@@ -579,7 +582,7 @@ class UserDict(TypedDict):
     email: str
     role: str
     subscription_active: bool
-    # Normalized to a list during _row_to_user
+    # Normalized to a list[Any] during _row_to_user
     wallet_addresses: list[dict[str, Any]]
     mfa_enabled: bool
     recovery_codes: list[str]
@@ -599,10 +602,10 @@ class UserDict(TypedDict):
 def _rows_to_dicts(rows: Iterable[Any]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for r in rows:
-        # r can be psycopg2 RealDictRow (dict) or sqlite3.Row (mapping - like)
-        d = dict(r) if isinstance(r, dict) else {k: r[k] for k in r}
+        # r can be psycopg2 RealDictRow (dict[str, Any]) or sqlite3.Row (mapping - like)
+        d = dict[str, Any](r) if isinstance(r, dict[str, Any]) else {k: r[k] for k in r}
 
-        # normalize risk_flags to a list
+        # normalize risk_flags to a list[Any]
         raw = d.get("risk_flags")
         try:
             d["risk_flags"] = (
@@ -642,9 +645,9 @@ def _row_to_user(row: Any | None) -> UserDict | None:
         "has_hardware_key",
     ]
 
-    # Convert row to dict safely
-    if isinstance(row, dict):
-        d = dict(row)
+    # Convert row to dict[str, Any] safely
+    if isinstance(row, dict[str, Any]):
+        d = dict[str, Any](row)
     else:
         # SQLite Row object - convert using column positions
         d = {}
@@ -678,7 +681,7 @@ def _row_to_user(row: Any | None) -> UserDict | None:
     normalized_role = str(d.get("role") or "viewer")
     normalized_subscription_active = bool(d.get("subscription_active"))
     normalized_wallet_addresses: list[dict[str, Any]] = (
-        wallet_addresses if isinstance(wallet_addresses, list) else []
+        wallet_addresses if isinstance(wallet_addresses, list[Any]) else []
     )
     normalized_recovery_codes: list[str] = [str(c) for c in recovery_codes]
     normalized_mfa_enabled = bool(d.get("mfa_enabled", False))
@@ -712,7 +715,7 @@ def save_tagged(t: dict[str, Any]) -> int:
     con = _conn()
     cur = con.cursor()
     # SQL placeholder for current backend (inline {_ph()} is used)
-    # Parameterized query using _ph() placeholders and parameters tuple - safe from SQL injection
+    # Parameterized query using _ph() placeholders and parameters tuple[Any, ...] - safe from SQL injection
     sql = f"""
       INSERT INTO txs (
         tx_id, timestamp, chain, from_addr, to_addr, amount, symbol, direction,
@@ -772,7 +775,11 @@ def get_by_id(tx_id: int) -> dict[str, Any] | None:
         con.close()
         if not row:
             return None
-        return dict(row) if isinstance(row, dict) else {k: row[k] for k in row}
+        return (
+            dict[str, Any](row)
+            if isinstance(row, dict[str, Any])
+            else {k: row[k] for k in row}
+        )
     except Exception:
         with contextlib.suppress(Exception):
             con.close()
@@ -784,8 +791,8 @@ def list_by_wallet(wallet: str, limit: int = 100) -> list[dict[str, Any]]:
     cur = con.cursor()
     # placeholder not needed; using inline {_ph()} in query
     # Parameterized query using internal {_ph()} placeholder function and a
-    # separate parameters tuple. This is safe against SQL injection.
-    # Parameterized SELECT by wallet, safe: placeholders used in parameters tuple
+    # separate parameters tuple[Any, ...]. This is safe against SQL injection.
+    # Parameterized SELECT by wallet, safe: placeholders used in parameters tuple[Any, ...]
     sql = f"""
         SELECT
             tx_id, timestamp, chain, from_addr, to_addr, amount, symbol, direction,
@@ -808,7 +815,7 @@ def list_alerts(threshold: float = 0.75, limit: int = 100) -> list[dict[str, Any
     cur = con.cursor()
     # placeholder not needed; using inline {_ph()} in query
     # Parameterized query using internal {_ph()} placeholder function and a
-    # separate parameters tuple. This is safe against SQL injection.
+    # separate parameters tuple[Any, ...]. This is safe against SQL injection.
     # Parameterized SELECT by risk threshold - placeholders used
     sql = f"""
         SELECT
@@ -838,7 +845,7 @@ def list_all(limit: int = 1000) -> list[dict[str, Any]]:
     cur = con.cursor()
     # placeholder not needed; using inline {_ph()} in query
     # Parameterized query using internal {_ph()} placeholder function and a
-    # separate parameters tuple. This is safe against SQL injection.
+    # separate parameters tuple[Any, ...]. This is safe against SQL injection.
     # Parameterized SELECT all txs with limit
     sql = f"""
         SELECT
@@ -890,7 +897,7 @@ def users_count() -> int:
     cur.execute("SELECT COUNT(*) AS n FROM users")
     row = cur.fetchone()
     con.close()
-    if isinstance(row, dict):
+    if isinstance(row, dict[str, Any]):
         return int(row.get("n", 0))
     return int(row[0]) if row else 0
 
@@ -917,7 +924,7 @@ def get_user_by_email(email: str) -> UserDict | None:
     # placeholder not needed; using inline {_ph()} in query
     try:
         # Parameterized query using internal {_ph()} placeholder function and a
-        # separate parameters tuple. This is safe against SQL injection.
+        # separate parameters tuple[Any, ...]. This is safe against SQL injection.
         sql = f"""
             SELECT id, email, password_hash, role, subscription_active, created_at,
                    oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
@@ -937,14 +944,14 @@ def get_user_by_email(email: str) -> UserDict | None:
     except sqlite3.OperationalError:
         # Fallback for legacy / test DB schemas that use different column names
         try:
-            cur.execute(  # nosec: B608 - parameterized query using _ph() placeholders and parameters tuple
+            cur.execute(  # nosec: B608 - parameterized query using _ph() placeholders and parameters tuple[Any, ...]
                 "SELECT id, email, hashed_password, is_active, is_admin FROM users WHERE email=?",
                 (email,),
             )
             row = cur.fetchone()
             if row:
                 # Normalize to expected shape
-                if isinstance(row, dict):
+                if isinstance(row, dict[str, Any]):
                     hashed = row.get("hashed_password")
                     is_active = bool(row.get("is_active"))
                     is_admin = bool(row.get("is_admin"))
@@ -996,8 +1003,8 @@ def get_user_by_id(uid: int) -> UserDict | None:
     cur = con.cursor()
     try:
         # Parameterized query using internal {_ph()} placeholder function and a
-        # separate parameters tuple. This is safe against SQL injection.
-        # Parameterized query using _ph() placeholders and parameters tuple - safe from SQL injection
+        # separate parameters tuple[Any, ...]. This is safe against SQL injection.
+        # Parameterized query using _ph() placeholders and parameters tuple[Any, ...] - safe from SQL injection
         sql = f"""
         SELECT id, email, password_hash, role, subscription_active, created_at,
                oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
@@ -1015,7 +1022,7 @@ def get_user_by_id(uid: int) -> UserDict | None:
             )
             r = cur.fetchone()
             if r:
-                if isinstance(r, dict):
+                if isinstance(r, dict[str, Any]):
                     hashed = r.get("hashed_password")
                     is_active = bool(r.get("is_active"))
                     is_admin = bool(r.get("is_admin"))
@@ -1066,7 +1073,7 @@ def create_user(
     totp_secret: str | None = None,
     mfa_enabled: bool = False,
     mfa_type: str | None = None,
-    recovery_codes: list | None = None,
+    recovery_codes: list[Any] | None = None,
     has_hardware_key: bool = False,
 ) -> UserDict | None:
     """
@@ -1113,10 +1120,10 @@ def create_user(
             ),
         )
         _f = cur.fetchone()
-        # Normalize returned shape: psycopg2 may return a dict-like row, sqlite returns a sequence
+        # Normalize returned shape: psycopg2 may return a dict[str, Any]-like row, sqlite returns a sequence
         if _f is None:
             new_id = None
-        elif isinstance(_f, dict):
+        elif isinstance(_f, dict[str, Any]):
             new_id = _f.get("id")
         else:
             new_id = _safe_idx(_f, 0)
@@ -1265,7 +1272,7 @@ def update_user_subscription(user_id: int | str, active: bool = True) -> bool:
 def get_settings_for_user(user_id: int) -> dict[str, Any]:
     """
     Return user's saved settings or {} if none.
-    Keys: x_api_key (str), risk_threshold (float|None), time_range_days (int|None), ui_prefs (dict)
+    Keys: x_api_key (str), risk_threshold (float|None), time_range_days (int|None), ui_prefs (dict[str, Any])
     """
     try:
         con = _conn()
@@ -1280,7 +1287,7 @@ def get_settings_for_user(user_id: int) -> dict[str, Any]:
         con.close()
         if not row:
             return {}
-        if not isinstance(row, dict):
+        if not isinstance(row, dict[str, Any]):
             row = {k: row[k] for k in row}
         out: dict[str, Any] = {
             "x_api_key": row.get("x_api_key") or None,
@@ -1301,7 +1308,7 @@ def get_settings_for_user(user_id: int) -> dict[str, Any]:
             out["ui_prefs"] = (
                 json.loads(prefs_raw)
                 if isinstance(prefs_raw, (str, bytes))
-                else (prefs_raw if isinstance(prefs_raw, dict) else {})
+                else (prefs_raw if isinstance(prefs_raw, dict[str, Any]) else {})
             )
         except Exception:
             out["ui_prefs"] = {}
@@ -1320,14 +1327,14 @@ def get_settings_for_user(user_id: int) -> dict[str, Any]:
 def save_settings_for_user(user_id: int, patch: dict[str, Any]) -> dict[str, Any]:
     """
     Upsert user settings with provided keys only.
-    Accepts: x_api_key, risk_threshold, time_range_days, ui_prefs (dict)
+    Accepts: x_api_key, risk_threshold, time_range_days, ui_prefs (dict[str, Any])
     Returns the merged row.
     """
     # Load current
     current = get_settings_for_user(user_id)
 
     # Merge with light coercion
-    merged = dict(current)
+    merged = dict[str, Any](current)
     if "x_api_key" in patch:
         merged["x_api_key"] = (patch["x_api_key"] or "").strip() or None
     if "risk_threshold" in patch and patch["risk_threshold"] is not None:
@@ -1338,7 +1345,7 @@ def save_settings_for_user(user_id: int, patch: dict[str, Any]) -> dict[str, Any
             merged["time_range_days"] = int(patch["time_range_days"])
     if "ui_prefs" in patch and patch["ui_prefs"] is not None:
         prefs = patch["ui_prefs"]
-        if not isinstance(prefs, (dict, list)):
+        if not isinstance(prefs, (dict[str, Any], list[Any])):
             try:
                 prefs = json.loads(str(prefs))
             except Exception:
@@ -1451,7 +1458,7 @@ def update_user_wallet_addresses(
     cur = con.cursor()
     wallet_addresses_json = json.dumps(wallet_addresses)
     # Parameterized query using internal {_ph()} placeholder function and a
-    # separate parameters tuple. This is safe against SQL injection.
+    # separate parameters tuple[Any, ...]. This is safe against SQL injection.
     cur.execute(
         f"UPDATE users SET wallet_addresses={_ph()} WHERE id={_ph()}",  # nosec: B608
         (wallet_addresses_json, user_id),
@@ -1487,7 +1494,7 @@ def add_wallet_address(
         "label": label or f"{chain} Wallet",
         "added_at": datetime.now().isoformat(),
     }
-    wallet_addresses = list(wallet_addresses or [])
+    wallet_addresses = list[Any](wallet_addresses or [])
     wallet_addresses.append(new_wallet)
 
     update_user_wallet_addresses(user_id, wallet_addresses)
@@ -1498,7 +1505,7 @@ def update_user_mfa(
     mfa_enabled: bool | None = None,
     mfa_type: str | None = None,
     totp_secret: str | None = None,
-    recovery_codes: list | None = None,
+    recovery_codes: list[Any] | None = None,
     has_hardware_key: bool | None = None,
 ) -> None:
     """Update MFA settings for a user."""
@@ -1609,9 +1616,9 @@ def add_rotated_password(
 
 
 def get_rotated_passwords(user_id: int) -> list[str]:
-    """Return a list of rotated password hashes (most recent last).
+    """Return a list[Any] of rotated password hashes (most recent last).
 
-    Returns an empty list if none recorded.
+    Returns an empty list[Any] if none recorded.
     """
     lst = _rotated_passwords.get(user_id) or []
     return [ph for (_ts, ph) in lst]
@@ -1658,7 +1665,7 @@ def update_user_profile(
     if updates:
         params.append(user_id)
         # Constructed query uses internal {_ph()} placeholders and the
-        # accompanying `params` tuple below, so values are passed separately
+        # accompanying `params` tuple[Any, ...] below, so values are passed separately
         # to the DB API. Suppress Bandit B608 here with a short rationale.
         sql = f"UPDATE users SET {', '.join(updates)} WHERE id={_ph()}"  # nosec: B608
         cur.execute(sql, params)  # nosec: B608 - parameterized placeholders used

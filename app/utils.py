@@ -5,6 +5,7 @@ This is intentionally minimal: implement the few functions tests import.
 
 import re
 from decimal import Decimal
+from typing import Any
 
 
 def get_exchange_rate(from_currency: str, to_currency: str) -> float:
@@ -40,22 +41,22 @@ def validate_amount(amount: int | float | Decimal) -> bool:
 __all__ = ["convert_currency", "validate_email", "validate_amount"]
 
 
-def to_mapping(obj: object) -> dict:
-    """Safely convert mapping-like or row-like objects into a plain dict.
+def to_mapping(obj: object) -> dict[str, Any]:
+    """Safely convert mapping-like or row-like objects into a plain dict[str, Any].
 
-    Returns an empty dict on failure. This helper centralizes defensive
+    Returns an empty dict[str, Any] on failure. This helper centralizes defensive
     logic so callers can avoid repeated hasattr(..., 'keys') checks.
     """
     from collections.abc import Mapping
     from typing import Any, cast
 
     if isinstance(obj, Mapping):
-        return dict(obj)
+        return dict[str, Any](obj)
     keys = getattr(obj, "keys", None)
     if callable(keys):
         try:
             # keys() may return a dict_keys or other iterable; cast to Any
-            ks = list(cast(Any, keys()))
+            ks = list[Any](cast(Any, keys()))
             any_obj = cast(Any, obj)
             return {k: any_obj[k] for k in ks}
         except Exception:

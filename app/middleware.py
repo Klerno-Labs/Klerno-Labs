@@ -5,6 +5,7 @@ Middleware for request / response logging, metrics, and monitoring.
 import time
 import uuid
 from collections.abc import Callable
+from typing import Any
 
 import structlog
 from fastapi import Request, Response
@@ -203,10 +204,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Simple in-memory rate limiting middleware."""
 
-    def __init__(self, app, requests_per_minute: int = 60):
+    def __init__(self, app, requests_per_minute: int = 60) -> None:
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
-        self.requests: dict[str, list[float]] = {}  # ip -> list of timestamps
+        self.requests: dict[str, list[float]] = {}  # ip -> list[Any] of timestamps
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         # Skip rate limiting for health checks
@@ -255,7 +256,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         """Remove requests older than 1 minute."""
         cutoff_time = current_time - 60  # 1 minute ago
 
-        for ip in list(self.requests):
+        for ip in list[Any](self.requests):
             self.requests[ip] = [
                 timestamp for timestamp in self.requests[ip] if timestamp > cutoff_time
             ]

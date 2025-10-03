@@ -26,7 +26,7 @@ class KlernoException(Exception):
         error_code: str = "INTERNAL_ERROR",
         status_code: int = 500,
         details: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         self.message = message
         self.error_code = error_code
         self.status_code = status_code
@@ -42,7 +42,7 @@ class ValidationException(KlernoException):
         message: str,
         field: str | None = None,
         details: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         self.field = field
         super().__init__(
             message=message,
@@ -59,7 +59,7 @@ class AuthenticationException(KlernoException):
         self,
         message: str = "Authentication failed",
         details: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         super().__init__(
             message=message,
             error_code="AUTHENTICATION_ERROR",
@@ -73,7 +73,7 @@ class AuthorizationException(KlernoException):
 
     def __init__(
         self, message: str = "Access denied", details: dict[str, Any] | None = None
-    ):
+    ) -> None:
         super().__init__(
             message=message,
             error_code="AUTHORIZATION_ERROR",
@@ -90,7 +90,7 @@ class ResourceNotFoundException(KlernoException):
         resource: str,
         identifier: str | None = None,
         details: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         message = f"{resource} not found"
         if identifier:
             message += f": {identifier}"
@@ -108,7 +108,7 @@ class RateLimitException(KlernoException):
 
     def __init__(
         self, message: str = "Rate limit exceeded", retry_after: int | None = None
-    ):
+    ) -> None:
         details = {}
         if retry_after:
             details["retry_after"] = retry_after
@@ -129,7 +129,7 @@ class ExternalServiceException(KlernoException):
         service: str,
         message: str | None = None,
         details: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         msg = message or f"External service '{service}' unavailable"
 
         super().__init__(

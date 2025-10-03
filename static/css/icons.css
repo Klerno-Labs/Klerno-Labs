@@ -1,0 +1,359 @@
+/**
+ * KLERNO LABS - ELITE ICON SYSTEM
+ * Professional icon styling and animations
+ */
+
+/* ===== ICON BASE STYLES ===== */
+
+.icon {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    vertical-align: middle;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.icon-xs {
+    width: 16px;
+    height: 16px;
+}
+
+.icon-sm {
+    width: 20px;
+    height: 20px;
+}
+
+.icon-lg {
+    width: 32px;
+    height: 32px;
+}
+
+.icon-xl {
+    width: 48px;
+    height: 48px;
+}
+
+.icon-2xl {
+    width: 64px;
+    height: 64px;
+}
+
+/* Icon Colors */
+.icon-primary {
+    color: var(--color-primary);
+}
+
+.icon-secondary {
+    color: var(--color-secondary);
+}
+
+.icon-success {
+    color: var(--color-success);
+}
+
+.icon-warning {
+    color: var(--color-warning);
+}
+
+.icon-error {
+    color: var(--color-error);
+}
+
+.icon-info {
+    color: var(--color-info);
+}
+
+/* ===== ICON ANIMATIONS ===== */
+
+.icon-hover:hover {
+    transform: scale(1.1);
+    color: var(--color-primary);
+}
+
+.icon-spin {
+    animation: spin 2s linear infinite;
+}
+
+.icon-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.icon-bounce {
+    animation: bounce 1s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .5;
+    }
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(-25%);
+        animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+
+    50% {
+        transform: none;
+        animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+}
+
+/* ===== ICON BACKGROUNDS ===== */
+
+.icon-bg {
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-secondary);
+    border: 1px solid var(--glass-border);
+}
+
+.icon-bg-primary {
+    background: var(--color-primary-100);
+    color: var(--color-primary);
+}
+
+.icon-bg-success {
+    background: rgba(35, 134, 54, 0.1);
+    color: var(--color-success);
+}
+
+.icon-bg-warning {
+    background: rgba(210, 153, 34, 0.1);
+    color: var(--color-warning);
+}
+
+.icon-bg-error {
+    background: rgba(218, 54, 51, 0.1);
+    color: var(--color-error);
+}
+
+/* ===== ICON COMBINATIONS ===== */
+
+.icon-with-text {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2);
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.icon-button:hover {
+    background: var(--color-surface-secondary);
+    transform: translateY(-1px);
+}
+
+.icon-button:active {
+    transform: translateY(0);
+}
+
+/* ===== STATUS INDICATORS ===== */
+
+.status-indicator {
+    position: relative;
+    display: inline-block;
+}
+
+.status-indicator::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 2px solid var(--color-bg-primary);
+}
+
+.status-indicator.status-online::after {
+    background: var(--color-success);
+}
+
+.status-indicator.status-busy::after {
+    background: var(--color-warning);
+}
+
+.status-indicator.status-offline::after {
+    background: var(--color-text-quaternary);
+}
+
+.status-indicator.status-error::after {
+    background: var(--color-error);
+}
+
+/* ===== CRYPTO SPECIFIC STYLES ===== */
+
+.crypto-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-weight: var(--font-bold);
+    color: white;
+}
+
+.crypto-icon.bitcoin {
+    background: linear-gradient(135deg, #f7931a, #ff6b35);
+}
+
+.crypto-icon.ethereum {
+    background: linear-gradient(135deg, #627eea, #4267b2);
+}
+
+.crypto-icon.xrp {
+    background: linear-gradient(135deg, #23292f, #000000);
+}
+
+/* ===== FEATURE ICON GRID ===== */
+
+.feature-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-6);
+    margin: var(--space-8) 0;
+}
+
+.feature-icon-card {
+    text-align: center;
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.feature-icon-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--glass-shadow);
+    border-color: var(--color-primary);
+}
+
+.feature-icon-card .icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto var(--space-4);
+    color: var(--color-primary);
+}
+
+.feature-icon-card h3 {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+}
+
+.feature-icon-card p {
+    margin-bottom: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+}
+
+/* ===== LOADING STATES ===== */
+
+.icon-loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.icon-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: icon-shimmer 2s infinite;
+}
+
+@keyframes icon-shimmer {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+@media (max-width: 768px) {
+    .feature-icon-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+    }
+
+    .icon-xl {
+        width: 40px;
+        height: 40px;
+    }
+
+    .icon-2xl {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+/* ===== ACCESSIBILITY ===== */
+
+.icon[role="img"] {
+    /* For decorative icons used as images */
+    pointer-events: none;
+}
+
+.icon-button[aria-label] {
+    /* For interactive icon buttons */
+    position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .icon-spin,
+    .icon-pulse,
+    .icon-bounce {
+        animation: none;
+    }
+
+    .icon-hover:hover {
+        transform: none;
+    }
+}
+
+/* ===== UTILITY CLASSES ===== */
+
+.icon-inline {
+    vertical-align: text-top;
+    margin-right: var(--space-1);
+}
+
+.icon-end {
+    margin-left: var(--space-2);
+    margin-right: 0;
+}
+
+.icon-center {
+    display: block;
+    margin: 0 auto;
+}

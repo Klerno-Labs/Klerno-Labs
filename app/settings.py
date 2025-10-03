@@ -45,7 +45,7 @@ else:
             pass
 
         BaseSettings = _FallbackBaseSettings
-        SettingsConfigDict = dict
+        SettingsConfigDict = dict[str, Any]
 
 
 WEAK_SECRETS = {
@@ -128,7 +128,7 @@ class Settings(BaseSettings):
         return values
 
     @field_validator("jwt_secret", mode="after")
-    def _enforce_strong_secret(cls, v: str, info: ValidationInfo):  # noqa: D401
+    def _enforce_strong_secret(cls, v: str, info: ValidationInfo) -> None:  # noqa: D401
         env_eff = (
             info.data.get("environment") or info.data.get("app_env") or ""
         ).lower()
@@ -144,7 +144,7 @@ class Settings(BaseSettings):
         return v
 
     @model_validator(mode="after")
-    def _pytest_port_override(cls, model):
+    def _pytest_port_override(cls, model) -> None:
         """Under pytest ensure default port is stable (8000) to satisfy tests that
         instantiate Settings() directly. This avoids accidental overrides from a
         developer's environment (e.g. PORT=8002) leaking into test expectations.

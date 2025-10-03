@@ -18,7 +18,7 @@ from .subscriptions import get_db_connection
 from .utils import to_mapping
 
 
-def _to_iso(timestamp: Any) -> str:
+def _to_iso(timestamp) -> str:
     """Safely convert timestamp-like values to ISO string.
 
     Accepts datetime, str, epoch numbers, or objects with `isoformat`.
@@ -123,10 +123,10 @@ class ComplianceMetrics:
 class ComplianceReportingEngine:
     """Generates compliance reports for regulatory requirements."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._init_compliance_tables()
 
-    def _init_compliance_tables(self):
+    def _init_compliance_tables(self) -> None:
         """Initialize compliance reporting tables."""
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -391,7 +391,7 @@ class ComplianceReportingEngine:
         conn.close()
         return reports
 
-    def _save_report(self, report: ComplianceReport):
+    def _save_report(self, report: ComplianceReport) -> None:
         """Save report to database."""
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -418,7 +418,7 @@ class ComplianceReportingEngine:
         conn.commit()
         conn.close()
 
-    def _update_report(self, report: ComplianceReport):
+    def _update_report(self, report: ComplianceReport) -> None:
         """Update report in database."""
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -551,9 +551,9 @@ class ComplianceReportingEngine:
                     "alert_type": random.choice(
                         ["velocity", "amount", "pattern", "geographic"]
                     ),
-                            "status": random.choice(
-                                ["pending", "reviewed", "cleared", "flagged"]
-                            ),  # nosec: B311 - non-crypto randomness used for synthetic/test data
+                    "status": random.choice(
+                        ["pending", "reviewed", "cleared", "flagged"]
+                    ),  # nosec: B311 - non-crypto randomness used for synthetic/test data
                 }
             )
 
@@ -644,7 +644,7 @@ class ComplianceReportingEngine:
                 if "transactions" in data:
                     first = data["transactions"][0]
                     first_map = to_mapping(first)
-                    fieldnames = list(first_map.keys()) if first_map else []
+                    fieldnames = list[Any](first_map.keys()) if first_map else []
                     writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(data["transactions"])
@@ -673,7 +673,7 @@ class ComplianceReportingEngine:
             if data:
                 first = data[0]
                 first_map = to_mapping(first)
-                fieldnames = list(first_map.keys()) if first_map else []
+                fieldnames = list[Any](first_map.keys()) if first_map else []
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(data)

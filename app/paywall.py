@@ -1,5 +1,6 @@
 # app / paywall.py
 import os
+from typing import Any
 
 from fastapi import APIRouter, Body, Depends, Form, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -22,7 +23,7 @@ PAYWALL_CODE = os.getenv("PAYWALL_CODE", "Labs2025").strip()
 
 
 @router.get("/paywall", include_in_schema=False)
-def paywall(request: Request):
+def paywall(request: Request) -> None:
     err = request.query_params.get("err")
     return templates.TemplateResponse(
         "paywall_professional.html",
@@ -51,7 +52,7 @@ def paywall_verify(code: str = Form(...)):
 
 
 @router.get("/logout", include_in_schema=False)
-def logout():
+def logout() -> None:
     resp = RedirectResponse(url="/paywall", status_code=303)
     resp.delete_cookie("cw_paid")
     return resp
@@ -185,19 +186,19 @@ async def verify_payment_endpoint(
 
 # Backwards compatible PaywallManager used in unit tests
 class PaywallManager:
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def is_paid(self, user_id: int) -> bool:
         # In tests, assume unpaid unless explicitly mocked
         return False
 
-    def activate_subscription(self, user_id: int):
+    def activate_subscription(self, user_id: int) -> None:
         # No-op for tests
         return True
 
     # Compatibility helpers used by unit tests
-    def validate_subscription(self, user_data: dict) -> bool:
+    def validate_subscription(self, user_data: dict[str, Any]) -> bool:
         expires = user_data.get("subscription_expires")
         if not expires:
             return False
@@ -205,7 +206,7 @@ class PaywallManager:
 
         return expires > datetime.utcnow()
 
-    def calculate_trial_remaining(self, signup_date):
+    def calculate_trial_remaining(self, signup_date) -> None:
         from datetime import datetime
 
         TRIAL_DAYS = 30

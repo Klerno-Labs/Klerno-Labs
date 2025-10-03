@@ -100,8 +100,8 @@ class BehavioralAnalyzer:
     """Analyzes user behavior for anomaly detection."""
 
     def __init__(self) -> None:
-        self.user_profiles: dict[str, dict] = {}
-        self.session_data: dict[str, list] = defaultdict(list)
+        self.user_profiles: dict[str, dict[str, Any]] = {}
+        self.session_data: dict[str, list[Any]] = defaultdict(list[Any])
         self.anomaly_threshold = 0.7  # Anomaly score threshold
         self.lock = threading.Lock()
         self.monitoring_active = False
@@ -132,14 +132,14 @@ class BehavioralAnalyzer:
                 profile["ip_addresses"].add(activity["ip_address"])
                 # Keep only last 20 IP addresses
                 if len(profile["ip_addresses"]) > 20:
-                    tmp_ips = list(profile["ip_addresses"])[-20:]
+                    tmp_ips = list[Any](profile["ip_addresses"])[-20:]
                     profile["ip_addresses"] = set(tmp_ips)
 
             if "user_agent" in activity:
                 profile["user_agents"].add(activity["user_agent"])
                 # Keep only last 10 user agents
                 if len(profile["user_agents"]) > 10:
-                    tmp_agents = list(profile["user_agents"])[-10:]
+                    tmp_agents = list[Any](profile["user_agents"])[-10:]
                     profile["user_agents"] = set(tmp_agents)
 
             if "endpoint" in activity:
@@ -462,7 +462,7 @@ class AdvancedFirewall:
 
     def __init__(self) -> None:
         self.blocked_ips: set[str] = set()
-        self.rate_limits: dict[str, dict] = defaultdict(dict)
+        self.rate_limits: dict[str, dict[str, Any]] = defaultdict(dict[str, Any])
         self.dynamic_rules: list[SecurityRule] = []
         self.whitelist: set[str] = set()
         self.lock = threading.Lock()
@@ -629,7 +629,7 @@ class CryptographicManager:
 class SecurityOrchestrator:
     """Main security orchestration system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.behavioral_analyzer = BehavioralAnalyzer()
         self.threat_intelligence = ThreatIntelligence()
         self.firewall = AdvancedFirewall()
@@ -793,7 +793,9 @@ class SecurityOrchestrator:
             "behavioral_profiles": len(self.behavioral_analyzer.user_profiles),
         }
 
-    def _calculate_overall_threat_level(self, recent_threats: list[dict]) -> str:
+    def _calculate_overall_threat_level(
+        self, recent_threats: list[dict[str, Any]]
+    ) -> str:
         """Calculate overall threat level."""
         if not recent_threats:
             return "low"
@@ -817,19 +819,19 @@ class SecurityOrchestrator:
 class _LazySecurityOrchestrator:
     """Lazy proxy that creates a SecurityOrchestrator on first access."""
 
-    def __init__(self, factory):
+    def __init__(self, factory) -> None:
         self._factory = factory
         self._obj: SecurityOrchestrator | None = None
 
-    def _ensure(self):
+    def _ensure(self) -> None:
         if self._obj is None:
             self._obj = self._factory()
 
-    def __getattr__(self, name):
+    def __getattr__(self, name) -> None:
         self._ensure()
         return getattr(self._obj, name)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> None:
         self._ensure()
         if callable(self._obj):
             return self._obj(*args, **kwargs)
@@ -865,7 +867,7 @@ def decrypt_data(encrypted_data: str, key_id: str = "master") -> str:
 class AdvancedSecurityOrchestrator:
     """Advanced security orchestrator for enterprise operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.security_orchestrator = SecurityOrchestrator()
         self.initialized = False
 
@@ -907,7 +909,7 @@ class AdvancedSecurityOrchestrator:
         """Run comprehensive security assessment."""
         try:
             # Get recent threats and calculate security score
-            recent_threats = list(self.security_orchestrator.threat_history)[-100:]
+            recent_threats = list[Any](self.security_orchestrator.threat_history)[-100:]
 
             # Calculate security score based on various factors
             base_score = 95.0
@@ -940,7 +942,7 @@ class AdvancedSecurityOrchestrator:
 
     def get_threat_status(self) -> dict[str, Any]:
         """Get current threat status."""
-        recent_threats = list(self.security_orchestrator.threat_history)[-50:]
+        recent_threats = list[Any](self.security_orchestrator.threat_history)[-50:]
 
         return {
             "active_threats": len(recent_threats),

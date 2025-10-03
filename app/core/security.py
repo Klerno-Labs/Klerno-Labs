@@ -75,7 +75,7 @@ SECURITY_CONFIG = {
 }
 
 # In-memory security storage (fallback if Redis unavailable)
-_rate_limits: dict[str, list[float]] = defaultdict(list)
+_rate_limits: dict[str, list[float]] = defaultdict(list[Any])
 _security_events: list[dict[str, Any]] = []
 _blocked_ips: set[str] = cast(set[str], SECURITY_CONFIG.get("blocked_ips", set()))
 _suspicious_activity: dict[str, int] = defaultdict(int)
@@ -115,7 +115,7 @@ class AuditEvent:
         outcome: str = "success",
         details: dict[str, Any] | None = None,
         user_id: str | None = None,
-    ):
+    ) -> None:
         self.event_type = event_type
         self.outcome = outcome
         self.details = details or {}
@@ -422,7 +422,7 @@ class UnifiedSecurityMiddleware(BaseHTTPMiddleware):
 class AuditLogger:
     """Centralized audit logging for security events."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger("klerno.audit")
         self.logger.setLevel(logging.INFO)
 

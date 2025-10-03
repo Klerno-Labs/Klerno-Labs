@@ -10,6 +10,7 @@ from __future__ import annotations
 import contextlib
 import os
 from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
@@ -103,12 +104,12 @@ async def readiness() -> ReadyResponse | JSONResponse:
 
 
 @router.get("/favicon.ico")
-async def favicon():
+async def favicon() -> Any:
     return FileResponse("static/klerno-logo.png", media_type="image/png")
 
 
 @router.post("/dev/bootstrap", include_in_schema=False)
-async def dev_bootstrap():
+async def dev_bootstrap() -> Any:
     from .. import store
 
     if getattr(settings, "environment", "development") == "production":
@@ -144,7 +145,7 @@ async def dev_bootstrap():
 
 
 @router.post("/csp/report", include_in_schema=False)
-async def csp_report(report: dict | None = None):
+async def csp_report(report: dict[str, Any] | None = None) -> Any:
     """Receive CSP violation reports (report-only mode).
 
     For now we log and ack; future work could persist or aggregate metrics.

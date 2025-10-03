@@ -52,14 +52,14 @@ class ThreatIntelligence:
 class AdvancedSecurityHardening:
     """Advanced security hardening with real-time threat detection."""
 
-    def __init__(self, db_path: str = "./data/security.db"):
+    def __init__(self, db_path: str = "./data/security.db") -> None:
         self.db_path = db_path
         # rate_limits stores timestamps (floats) per IP
         self.rate_limits: dict[str, deque[float]] = defaultdict(deque)
         self.blocked_ips: set[str] = set()
         self.threat_intel: dict[str, ThreatIntelligence] = {}
         self.security_events: list[SecurityEvent] = []
-        self.failed_attempts: dict[str, list[datetime]] = defaultdict(list)
+        self.failed_attempts: dict[str, list[datetime]] = defaultdict(list[Any])
 
         # Security thresholds
         self.max_requests_per_minute = 100

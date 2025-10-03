@@ -1,10 +1,11 @@
 # app / notifications.py
 import os
+from typing import Any
 
 import httpx
 
 
-async def slack_notify(text: str) -> dict:
+async def slack_notify(text: str) -> dict[str, Any]:
     """Send a Slack notification if SLACK_WEBHOOK_URL is configured.
 
     The webhook URL is read at call time so importing this module doesn't

@@ -16,7 +16,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-def _to_iso(timestamp: Any) -> str:
+def _to_iso(timestamp) -> str:
     """Safely convert timestamp-like values to ISO string.
 
     Accepts datetime, str, epoch numbers, or objects with `isoformat`.
@@ -117,7 +117,7 @@ class MultiChainAnalytics:
 class MultiChainEngine:
     """Multi - blockchain support and analytics engine."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.chain_configs = self._initialize_chain_configs()
         self.rate_limiters = {}
         self._init_rate_limiting()
@@ -215,7 +215,7 @@ class MultiChainEngine:
             ),
         }
 
-    def _init_rate_limiting(self):
+    def _init_rate_limiting(self) -> None:
         """Initialize rate limiting for API calls."""
         for chain in SupportedChain:
             self.rate_limiters[chain] = {
@@ -349,7 +349,7 @@ class MultiChainEngine:
         )
 
     def get_supported_chains(self) -> list[dict[str, Any]]:
-        """Get list of all supported chains with their info."""
+        """Get list[Any] of all supported chains with their info."""
         chains = []
         for chain, info in self.chain_configs.items():
             chains.append(

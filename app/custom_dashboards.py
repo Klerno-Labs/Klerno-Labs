@@ -85,10 +85,10 @@ class Dashboard:
 class DashboardManager:
     """Manages custom dashboards for users."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._init_dashboard_tables()
 
-    def _init_dashboard_tables(self):
+    def _init_dashboard_tables(self) -> None:
         """Initialize dashboard database tables."""
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -451,8 +451,8 @@ class DashboardManager:
             data.append(
                 {
                     "timestamp": date.isoformat(),
-                        "risk_score": random.uniform(0.1, 0.9),
-                        # nosec: B311 - non-crypto randomness for demo/test data
+                    "risk_score": random.uniform(0.1, 0.9),
+                    # nosec: B311 - non-crypto randomness for demo/test data
                     "transaction_count": random.randint(10, 100),
                 }
             )

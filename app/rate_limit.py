@@ -11,7 +11,6 @@ import os
 import threading
 import time
 from collections.abc import Awaitable, Callable
-from typing import Any
 
 from fastapi import Request
 from fastapi.responses import JSONResponse, Response
@@ -20,7 +19,7 @@ from fastapi.responses import JSONResponse, Response
 class TokenBucket:
     __slots__ = ("capacity", "tokens", "refill_rate", "last_refill", "lock")
 
-    def __init__(self, capacity: int, refill_rate: float):
+    def __init__(self, capacity: int, refill_rate: float) -> None:
         self.capacity = capacity
         self.tokens = float(capacity)
         self.refill_rate = float(refill_rate)  # tokens per second
@@ -49,7 +48,7 @@ def _rate_limit_config() -> tuple[int, float]:
     return cap, rate_per_sec
 
 
-def add_rate_limiter(app: Any) -> None:
+def add_rate_limiter(app) -> None:
     if os.getenv("ENABLE_RATE_LIMIT", "false").lower() not in {"1", "true", "yes"}:
         return
 

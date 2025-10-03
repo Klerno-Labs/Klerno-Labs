@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 class _LazySettings:
     """Lazy proxy for settings that calls get_settings() on first access."""
 
-    def __init__(self, factory: Callable[[], Any]):
+    def __init__(self, factory: Callable[[], Any]) -> None:
         self._factory = factory
         self._obj: Any | None = None
 
@@ -52,7 +52,7 @@ S = _LazySettings(get_settings)
 # Backwards-compatible shims for tests / older code expecting these names
 
 
-def create_access_token(data: dict, expires_delta: int | None = None) -> str:
+def create_access_token(data: dict[str, Any], expires_delta: int | None = None) -> str:
     """Compatibility wrapper: delegate to security_session.issue_jwt.
 
     The tests call create_access_token(data=...), passing a payload with
@@ -85,7 +85,20 @@ def create_access_token(data: dict, expires_delta: int | None = None) -> str:
 
 
 # Compatibility alias for token verification
-def verify_token(token: str) -> dict:
+def verify_token(token: str) -> dict[str, Any]:
+    """Verify and decode a JWT token.
+
+    Args:
+        token: The JWT token string to verify and decode.
+
+    Returns:
+        dict[str, Any]: The decoded token payload containing user information.
+
+    Raises:
+        InvalidTokenError: If the token is invalid or malformed.
+        ExpiredSignatureError: If the token has expired.
+        DecodeError: If the token cannot be decoded.
+    """
     return security_session.decode_jwt(token)
 
 
@@ -227,7 +240,23 @@ def login_page(request: Request, error: str | None = None) -> Response:
 # API Routes
 @router.post("/signup/api", response_model=TokenAuthResponse, status_code=201)
 def signup_api(payload: SignupReq, res: Response) -> dict[str, Any]:
-    """API endpoint for programmatic signup."""
+    """API endpoint for programmatic user registration.
+
+    Creates a new user account with email and password authentication.
+    Automatically generates JWT token and refresh token for immediate login.
+
+    Args:
+        payload: SignupReq containing email and password for new account.
+        res: FastAPI Response object for setting authentication cookies.
+
+    Returns:
+        dict[str, Any]: Authentication response with user data, access token,
+        refresh token, and token expiration information.
+
+    Raises:
+        HTTPException: 409 if user already exists with provided email.
+        HTTPException: 422 if password doesn't meet security requirements.
+    """
     # policy imported at module scope; avoid re-importing here
 
     email = payload.email.lower().strip()
@@ -271,7 +300,7 @@ def signup_api(payload: SignupReq, res: Response) -> dict[str, Any]:
         has_hardware_key=False,
     )
     if not user:
-        # Defensive: ensure create_user returned a user dict-like object
+        # Defensive: ensure create_user returned a user dict[str, Any]-like object
         raise HTTPException(status_code=500, detail="User creation failed")
     token = issue_jwt(user["id"], user["email"], user["role"], minutes=15)
     refresh = issue_refresh(
@@ -297,7 +326,7 @@ def signup_api(payload: SignupReq, res: Response) -> dict[str, Any]:
 
 
 @router.get("/mfa/setup")
-def mfa_setup(user: dict = Depends(require_user)) -> MFASetupResponse:
+def mfa_setup(user: dict[str, Any] = Depends(require_user)) -> MFASetupResponse:
     """Get MFA setup information for current user."""
     user_data = store.get_user_by_id(user["id"])
     if not user_data or not user_data.get("totp_secret"):
@@ -320,7 +349,7 @@ def mfa_setup(user: dict = Depends(require_user)) -> MFASetupResponse:
 
 @router.post("/mfa/enable")
 def enable_mfa(
-    totp_code: str = Form(...), user: dict = Depends(require_user)
+    totp_code: str = Form(...), user: dict[str, Any] = Depends(require_user)
 ) -> dict[str, Any]:
     """Enable MFA after user provides valid TOTP code."""
     user_data = store.get_user_by_id(user["id"])
@@ -371,7 +400,7 @@ def request_password_reset(payload: PasswordResetRequest) -> dict[str, Any]:
         tokens = {}
         # Dynamic attribute for ephemeral password reset tokens (test helper)
     # Use setattr so static analyzers don't complain about unknown attrs.
-    setattr(store, "_reset_tokens", tokens)
+    store._reset_tokens = tokens
 
     tokens[reset_token] = {
         "user_id": user["id"],
@@ -864,14 +893,14 @@ def login_form(
 
 
 @router.post("/logout", status_code=204)
-def logout(res: Response, user: dict = Depends(require_user)) -> Response:
+def logout(res: Response, user: dict[str, Any] = Depends(require_user)) -> Response:
     res.delete_cookie("session", path="/")
     # 204 No Content
     return Response(status_code=204)
 
 
 @router.get("/me", response_model=UserOut)
-def me(user: dict = Depends(require_user)) -> dict[str, Any]:
+def me(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
     return {
         "email": user["email"],
         "role": user["role"],
@@ -881,7 +910,7 @@ def me(user: dict = Depends(require_user)) -> dict[str, Any]:
 
 # ---- DEV helpers while Stripe isn't live ----
 @router.post("/mock/activate")
-def mock_activate(user: dict = Depends(require_user)) -> dict[str, Any]:
+def mock_activate(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
     """Simulate a paid subscription for the current user."""
     if user["role"] == "admin":
         store.set_subscription_active(user["email"], True)

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 from re import Pattern
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 import yaml
 
@@ -219,19 +219,19 @@ class ComplianceTag:
     transaction_id: int
     tag_type: str
     confidence: float
-    details: dict
+    details: dict[str, Any]
 
 
 class ComplianceEngine:
     """Minimal compliance engine used by tests. This wraps simple heuristics
-    and returns a list of ComplianceTag instances.
+    and returns a list[Any] of ComplianceTag instances.
     """
 
-    def __init__(self, *, high_amount_threshold: Decimal | float = 100000):
+    def __init__(self, *, high_amount_threshold: Decimal | float = 100000) -> None:
         self.high_amount_threshold = _as_decimal(high_amount_threshold)
 
-    async def analyze_transaction(self, tx: dict) -> list[ComplianceTag]:
-        """Analyze a transaction dict and return a list of ComplianceTag.
+    async def analyze_transaction(self, tx: dict[str, Any]) -> list[ComplianceTag]:
+        """Analyze a transaction dict[str, Any] and return a list[Any] of ComplianceTag.
 
         This implementation is intentionally simple: it checks amount thresholds
         and returns tags with confidence scores that satisfy the unit tests.

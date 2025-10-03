@@ -33,7 +33,7 @@ class _NoopWebsocketManager:
         risk_score: float,
         risk_level: str,
         recommendations: list[str],
-    ):
+    ) -> Any:
         logger.debug(
             "websocket_alerts.send_risk_alert (noop) user=%s score=%s level=%s",
             user_id,
@@ -47,7 +47,7 @@ class _NoopWebsocketManager:
         compliance_issue: str,
         transaction_data: dict[str, Any],
         severity: AlertSeverity = AlertSeverity.WARNING,
-    ):
+    ) -> Any:
         logger.debug(
             "websocket_alerts.send_compliance_alert (noop) user=%s "
             "issue=%s severity=%s",
@@ -63,7 +63,7 @@ class _NoopWebsocketManager:
         current_value: float,
         threshold_value: float,
         severity: AlertSeverity = AlertSeverity.WARNING,
-    ):
+    ) -> Any:
         logger.debug(
             "websocket_alerts.send_threshold_alert (noop) user=%s "
             "type=%s current=%s threshold=%s severity=%s",
@@ -80,7 +80,7 @@ class _NoopWebsocketManager:
         message: str,
         severity: AlertSeverity = AlertSeverity.INFO,
         data: dict[str, Any] | None = None,
-    ):
+    ) -> Any:
         logger.debug(
             "websocket_alerts.broadcast_system_alert (noop) title=%s severity=%s",
             title,
@@ -98,7 +98,7 @@ async def send_risk_alert(
     risk_score: float,
     risk_level: str,
     recommendations: list[str],
-):
+) -> Any:
     """Send risk alert to user (noop shim)."""
     await websocket_manager.send_risk_alert(
         user_id,
@@ -114,7 +114,7 @@ async def send_compliance_alert(
     compliance_issue: str,
     transaction_data: dict[str, Any],
     severity: AlertSeverity = AlertSeverity.WARNING,
-):
+) -> Any:
     """Send compliance alert to user (noop shim)."""
     await websocket_manager.send_compliance_alert(
         user_id, compliance_issue, transaction_data, severity
@@ -127,7 +127,7 @@ async def send_threshold_alert(
     current_value: float,
     threshold_value: float,
     severity: AlertSeverity = AlertSeverity.WARNING,
-):
+) -> Any:
     """Send threshold alert to user (noop shim)."""
     await websocket_manager.send_threshold_alert(
         user_id, threshold_type, current_value, threshold_value, severity
@@ -139,7 +139,7 @@ async def broadcast_system_alert(
     message: str,
     severity: AlertSeverity = AlertSeverity.INFO,
     data: dict[str, Any] | None = None,
-):
+) -> Any:
     """Broadcast system alert to all users (noop shim)."""
     await websocket_manager.broadcast_system_alert(title, message, severity, data)
 

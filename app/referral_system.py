@@ -35,7 +35,7 @@ class ReferralEvent(BaseModel):
     referral_code: str
     event_type: str  # 'signup', 'upgrade', 'payment'
     timestamp: datetime
-    metadata: dict = {}
+    metadata: dict[str, Any] = {}
 
 
 class ReferralReward(BaseModel):
@@ -54,7 +54,7 @@ class ReferralReward(BaseModel):
 class ReferralManager:
     """Handles all referral system operations"""
 
-    def __init__(self, db: Session | None):
+    def __init__(self, db: Session | None) -> None:
         # Accept an optional Session for test/demo usage where a DB may not
         # be available. Callers in production should pass a real Session.
         self.db = db
@@ -161,7 +161,7 @@ class ReferralManager:
             },
         }
 
-        # Ensure the returned value is a dict for static type checkers
+        # Ensure the returned value is a dict[str, Any] for static type checkers
         val = templates.get(platform)
         if val is not None:
             return val
@@ -239,7 +239,7 @@ class ReferralManager:
 class ViralAnalytics:
     """Track and analyze viral growth metrics"""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def calculate_viral_coefficient(self, period_days: int = 30) -> float:
@@ -276,7 +276,9 @@ class ViralAnalytics:
             # ... more mock data
         ]
 
-    def track_sharing_event(self, user_id: str, platform: str, content_type: str):
+    def track_sharing_event(
+        self, user_id: str, platform: str, content_type: str
+    ) -> None:
         """Track when users share content"""
         event = {
             "user_id": user_id,
@@ -292,7 +294,9 @@ class ViralAnalytics:
 # Integration with existing auth system
 
 
-def integrate_referral_with_signup(signup_data: dict, referral_code: str | None = None):
+def integrate_referral_with_signup(
+    signup_data: dict[str, Any], referral_code: str | None = None
+) -> None:
     """Integrate referral tracking with user signup"""
     if referral_code:
         # Track the referral signup (defensive: only call when we have a user_id)

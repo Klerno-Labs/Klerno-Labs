@@ -40,9 +40,9 @@ class SecurityManager:
     """Central security management system"""
 
     def __init__(self) -> None:
-        self.failed_attempts: dict[str, list[datetime]] = defaultdict(list)
+        self.failed_attempts: dict[str, list[datetime]] = defaultdict(list[Any])
         self.blocked_ips: set[str] = set()
-        self.rate_limits: dict[str, list[datetime]] = defaultdict(list)
+        self.rate_limits: dict[str, list[datetime]] = defaultdict(list[Any])
         self.suspicious_patterns: list[str] = [
             # SQL injection patterns
             r"(?i)(union|select|insert|update|delete|drop|exec|script)",
@@ -55,7 +55,7 @@ class SecurityManager:
         ]
 
     def log_security_event(
-        self, event_type: str, details: dict, request: Request | None = None
+        self, event_type: str, details: dict[str, Any], request: Request | None = None
     ) -> None:
         """Log security events for monitoring"""
         event_data = {
@@ -274,7 +274,10 @@ class AdminAccessLogger:
 
     @staticmethod
     def log_admin_action(
-        user_email: str, action: str, details: dict, request: Request | None = None
+        user_email: str,
+        action: str,
+        details: dict[str, Any],
+        request: Request | None = None,
     ) -> None:
         """Log all admin actions for audit trail"""
         # request may be None in some call sites (e.g., background tasks)
@@ -287,12 +290,12 @@ class AdminAccessLogger:
 
 def admin_action_required(
     action_name: str,
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+) -> Callable[[Callable], Callable]:
     """Decorator to log admin actions"""
 
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+    def decorator(func: Callable) -> Callable:
         @wraps(func)
-        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+        async def wrapper(*args, **kwargs: Any) -> Any:
             # Extract user and request from function arguments
             user = None
             request = None
@@ -300,13 +303,17 @@ def admin_action_required(
             for arg in args:
                 if hasattr(arg, "method"):  # Likely a Request object
                     request = arg
-                elif isinstance(arg, dict) and "email" in arg:  # Likely user dict
+                elif (
+                    isinstance(arg, dict[str, Any]) and "email" in arg
+                ):  # Likely user dict[str, Any]
                     user = arg
 
             for value in kwargs.values():
                 if hasattr(value, "method"):  # Likely a Request object
                     request = value
-                elif isinstance(value, dict) and "email" in value:  # Likely user dict
+                elif (
+                    isinstance(value, dict[str, Any]) and "email" in value
+                ):  # Likely user dict[str, Any]
                     user = value
 
             if user:

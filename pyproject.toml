@@ -1,11 +1,28 @@
 [tool.black]
 line-length = 88
-target-version = ['py310']
+target-version = ['py311']
 include = '\.pyi?$'
 
 [tool.ruff]
 target-version = "py311"
 line-length = 88
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "build",
+    "dist",
+    "data",
+    "artifacts",
+    "backups",
+    "temp",
+    "logs",
+]
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -25,23 +42,8 @@ ignore = [
     "ARG002", # unused method argument
     "ARG001", # unused function argument
 ]
-exclude = [
-    ".git",
-    "__pycache__",
-    ".venv",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".ruff_cache",
-    "build",
-    "dist",
-    "data",
-    "artifacts",
-    "backups",
-    "temp",
-    "logs",
-]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*" = ["S101", "ARG", "SIM", "E402"]
 "CLEAN_APP/tests/*" = ["S101", "ARG", "SIM", "E402"]

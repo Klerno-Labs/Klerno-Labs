@@ -7,6 +7,7 @@ import asyncio
 import json
 import statistics
 import time
+from typing import Any
 
 from fastapi import APIRouter, Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
@@ -27,26 +28,26 @@ analytics_router = APIRouter(prefix="/analytics", tags=["analytics"])
 class WebSocketManager:
     """Manage WebSocket connections for real-time updates"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: list[WebSocket] = []
         self.analytics_data = {}
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket) -> Any:
         await websocket.accept()
         self.active_connections.append(websocket)
 
-    def disconnect(self, websocket: WebSocket):
+    def disconnect(self, websocket: WebSocket) -> None:
         if websocket in self.active_connections:
             self.active_connections.remove(websocket)
 
-    async def send_personal_message(self, message: str, websocket: WebSocket):
+    async def send_personal_message(self, message: str, websocket: WebSocket) -> Any:
         try:
             await websocket.send_text(message)
         except Exception:
             # If sending fails for any reason, disconnect to clean up
             self.disconnect(websocket)
 
-    async def broadcast(self, message: str):
+    async def broadcast(self, message: str) -> Any:
         disconnected = []
         for connection in self.active_connections:
             try:
@@ -78,7 +79,7 @@ async def analytics_dashboard(request: Request, user=Depends(current_user)):
 
 
 @analytics_router.get("/api/metrics")
-async def get_current_metrics():
+async def get_current_metrics() -> Any:
     """Get current performance and analytics metrics"""
     monitoring = get_monitoring_middleware()
 
@@ -98,7 +99,11 @@ async def get_current_metrics():
     response_time_trend = calculate_trend(
         performance["request_performance"]["avg_response_time"]
     )
-    error_rate_trend = calculate_trend(len(performance["error_rates"]))
+    # Fix: Pass the error_rates list[Any] directly, not its length
+    error_rate_trend = calculate_trend(
+        performance["error_rates"].get("current_rate", 0),
+        performance["error_rates"].get("historical", []),
+    )
 
     enhanced_metrics = {
         "timestamp": current_time,
@@ -130,7 +135,7 @@ async def get_current_metrics():
 
 
 @analytics_router.get("/api/performance-history")
-async def get_performance_history(hours: int = 24):
+async def get_performance_history(hours: int = 24) -> Any:
     """Get historical performance data"""
     monitoring = get_monitoring_middleware()
 
@@ -175,7 +180,7 @@ async def get_performance_history(hours: int = 24):
 
 
 @analytics_router.get("/api/user-analytics")
-async def get_user_analytics():
+async def get_user_analytics() -> Any:
     """Get detailed user analytics and behavior data"""
     monitoring = get_monitoring_middleware()
 
@@ -215,7 +220,7 @@ async def get_user_analytics():
 
 
 @analytics_router.get("/api/security-analytics")
-async def get_security_analytics():
+async def get_security_analytics() -> Any:
     """Get security-related analytics and threat information"""
     security = get_security_middleware()
 
@@ -249,7 +254,7 @@ async def get_security_analytics():
 
 
 @analytics_router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket) -> Any:
     """WebSocket endpoint for real-time analytics updates"""
     await websocket_manager.connect(websocket)
 
@@ -267,7 +272,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 # Background task to broadcast analytics updates
-async def analytics_broadcaster():
+async def analytics_broadcaster() -> Any:
     """Background task to broadcast analytics to all connected clients"""
     while True:
         try:
@@ -285,12 +290,18 @@ async def analytics_broadcaster():
 
 
 # Utility functions for analytics calculations
-def calculate_trend(current_value, historical_values=None):
+def calculate_trend(current_value, historical_values=None) -> None:
     """Calculate trend direction for a metric"""
     # Simplified trend calculation
-    if historical_values and len(historical_values) > 1:
+    if historical_values and len(historical_values) > 5:
         recent_avg = statistics.mean(historical_values[-5:])
-        older_avg = statistics.mean(historical_values[-10:-5])
+        # Only calculate older average if we have enough data points
+        if len(historical_values) >= 10:
+            older_avg = statistics.mean(historical_values[-10:-5])
+        else:
+            # Use first half vs second half for shorter data sets
+            mid_point = len(historical_values) // 2
+            older_avg = statistics.mean(historical_values[:mid_point])
 
         if recent_avg > older_avg * 1.1:
             return "up"
@@ -302,57 +313,64 @@ def calculate_trend(current_value, historical_values=None):
     return "stable"
 
 
-def get_uptime():
+def get_uptime() -> None:
     """Get application uptime in seconds"""
     # This would track actual uptime in production
     return 86400  # 24 hours for demo
 
 
-def get_requests_last_minute(performance_data):
+def get_requests_last_minute(performance_data) -> None:
     """Get number of requests in the last minute"""
     return performance_data["request_performance"].get("requests_per_minute", 0)
 
 
-def get_unique_visitors_today(analytics_data):
+def get_unique_visitors_today(analytics_data) -> None:
     """Calculate unique visitors today"""
-    return len(analytics_data.get("active_sessions", [])) * 3  # Estimate
+    active_sessions = analytics_data.get("active_sessions", [])
+    # Handle case where active_sessions might be an int instead of a list[Any]
+    if isinstance(active_sessions, int):
+        return active_sessions * 3  # Use the int directly
+    elif isinstance(active_sessions, list[Any]):
+        return len(active_sessions) * 3  # Estimate
+    else:
+        return 0  # Fallback
 
 
-def calculate_new_users(analytics):
+def calculate_new_users(analytics) -> None:
     """Calculate new users percentage"""
     total = analytics["total_sessions"]
     return {"count": total * 0.3, "percentage": 30.0}  # Simplified
 
 
-def calculate_returning_users(analytics):
+def calculate_returning_users(analytics) -> None:
     """Calculate returning users percentage"""
     total = analytics["total_sessions"]
     return {"count": total * 0.7, "percentage": 70.0}  # Simplified
 
 
-def calculate_power_users(analytics):
+def calculate_power_users(analytics) -> None:
     """Calculate power users (high engagement)"""
     total = analytics["total_sessions"]
     return {"count": total * 0.1, "percentage": 10.0}  # Simplified
 
 
-def calculate_bounce_rate(analytics):
+def calculate_bounce_rate(analytics) -> None:
     """Calculate bounce rate"""
     return 25.5  # Simplified demo value
 
 
-def calculate_avg_pages_per_session(analytics):
+def calculate_avg_pages_per_session(analytics) -> None:
     """Calculate average pages per session"""
     return 4.2  # Simplified demo value
 
 
-def get_popular_content(analytics):
+def get_popular_content(analytics) -> None:
     """Get most popular content pages"""
     page_views = analytics.get("page_views", {})
     return sorted(page_views.items(), key=lambda x: x[1], reverse=True)[:10]
 
 
-def get_traffic_sources():
+def get_traffic_sources() -> None:
     """Get traffic source analytics"""
     return {
         "direct": 45.2,
@@ -363,7 +381,7 @@ def get_traffic_sources():
     }
 
 
-def get_device_analytics():
+def get_device_analytics() -> None:
     """Get device and browser analytics"""
     return {
         "devices": {"desktop": 65.4, "mobile": 28.9, "tablet": 5.7},
@@ -377,7 +395,7 @@ def get_device_analytics():
     }
 
 
-def get_geographic_data():
+def get_geographic_data() -> None:
     """Get geographic analytics"""
     return {
         "countries": {
@@ -398,27 +416,27 @@ def get_geographic_data():
 
 
 # Security analytics helper functions
-def get_blocked_requests_count():
+def get_blocked_requests_count() -> None:
     """Get count of blocked requests in last 24 hours"""
     return 247  # Demo value
 
 
-def get_rate_limited_ips():
+def get_rate_limited_ips() -> None:
     """Get count of rate-limited IP addresses"""
     return 18  # Demo value
 
 
-def get_suspicious_patterns():
+def get_suspicious_patterns() -> None:
     """Get count of suspicious pattern detections"""
     return 12  # Demo value
 
 
-def get_geographic_threats():
+def get_geographic_threats() -> None:
     """Get geographic distribution of threats"""
     return {"Russia": 25, "China": 18, "Brazil": 12, "Unknown": 8}
 
 
-def get_attack_count(attack_type):
+def get_attack_count(attack_type) -> None:
     """Get count of specific attack type"""
     attack_counts = {
         "sql_injection": 15,
@@ -429,7 +447,7 @@ def get_attack_count(attack_type):
     return attack_counts.get(attack_type, 0)
 
 
-def get_top_threat_countries():
+def get_top_threat_countries() -> None:
     """Get top countries by threat count"""
     return [
         {"country": "Russia", "threats": 45, "percentage": 28.5},
@@ -440,7 +458,7 @@ def get_top_threat_countries():
     ]
 
 
-def get_recent_security_events():
+def get_recent_security_events() -> None:
     """Get recent security events"""
     return [
         {
@@ -464,7 +482,7 @@ def get_recent_security_events():
     ]
 
 
-def get_ip_reputation_stats():
+def get_ip_reputation_stats() -> None:
     """Get IP reputation statistics"""
     return {
         "clean_ips": 1250,
@@ -474,13 +492,13 @@ def get_ip_reputation_stats():
     }
 
 
-def get_failed_login_attempts():
+def get_failed_login_attempts() -> None:
     """Get failed login attempt statistics"""
     return {"last_hour": 8, "last_24_hours": 45, "last_week": 234}
 
 
 # Sample data generators for historical charts
-def generate_sample_response_time(timestamp):
+def generate_sample_response_time(timestamp) -> None:
     """Generate sample response time data"""
     import math
 
@@ -490,7 +508,7 @@ def generate_sample_response_time(timestamp):
     return max(0.1, base + variation + noise)
 
 
-def generate_sample_cpu(timestamp):
+def generate_sample_cpu(timestamp) -> None:
     """Generate sample CPU usage data"""
     import math
 
@@ -500,7 +518,7 @@ def generate_sample_cpu(timestamp):
     return max(0, min(100, base + variation + noise))
 
 
-def generate_sample_memory(timestamp):
+def generate_sample_memory(timestamp) -> None:
     """Generate sample memory usage data"""
     import math
 
@@ -510,7 +528,7 @@ def generate_sample_memory(timestamp):
     return max(0, min(100, base + variation + noise))
 
 
-def generate_sample_requests(timestamp):
+def generate_sample_requests(timestamp) -> None:
     """Generate sample requests per minute data"""
     import math
 
@@ -520,7 +538,7 @@ def generate_sample_requests(timestamp):
     return max(0, base + variation + noise)
 
 
-def generate_sample_errors(timestamp):
+def generate_sample_errors(timestamp) -> None:
     """Generate sample error count data"""
     import math
 

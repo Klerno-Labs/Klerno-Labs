@@ -70,7 +70,7 @@ class AuditEvent(BaseModel):
     resource: str | None = None
     action: str | None = None
     outcome: str = "success"  # success, failure, error
-    details: dict[str, Any] = Field(default_factory=dict)
+    details: dict[str, Any] = Field(default_factory=dict[str, Any])
     risk_score: float | None = None
 
 
@@ -79,7 +79,7 @@ class AuditLogger:
     Centralized audit logging system with structured logging and security focus.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = self._setup_logger()
 
     def _setup_logger(self) -> logging.Logger:
@@ -98,7 +98,7 @@ class AuditLogger:
         # JSON formatter for structured logging
 
         class JSONFormatter(logging.Formatter):
-            def format(self, record):
+            def format(self, record: logging.LogRecord) -> str:
                 log_entry = {
                     "timestamp": datetime.fromtimestamp(
                         record.created, tz=UTC
@@ -292,12 +292,12 @@ audit_logger = AuditLogger()
 
 def log_auth_success(
     user_id: str, user_email: str, user_role: str, request: Request | None = None
-):
+) -> None:
     """Convenience function for logging successful authentication."""
     audit_logger.log_auth_success(user_id, user_email, user_role, request)
 
 
-def log_auth_failure(email: str, reason: str, request: Request | None = None):
+def log_auth_failure(email: str, reason: str, request: Request | None = None) -> None:
     """Convenience function for logging failed authentication."""
     audit_logger.log_auth_failure(email, reason, request)
 
@@ -308,7 +308,7 @@ def log_api_access(
     user_id: str | None = None,
     api_key_used: bool = False,
     request: Request | None = None,
-):
+) -> None:
     """Convenience function for logging API access."""
     audit_logger.log_api_access(endpoint, method, user_id, api_key_used, request)
 
@@ -318,6 +318,6 @@ def log_security_event(
     details: dict[str, Any],
     request: Request | None = None,
     risk_score: float | None = None,
-):
+) -> None:
     """Convenience function for logging security events."""
     audit_logger.log_security_event(event_type, details, request, risk_score)

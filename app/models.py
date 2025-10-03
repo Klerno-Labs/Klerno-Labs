@@ -293,7 +293,7 @@ class TaggedTransaction(BaseModel):
     fee: Decimal = Decimal("0")
     memo: str | None = None
     notes: str | None = None
-    tags: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list[Any])
     is_internal: bool = False
 
     # Tagging outputs
@@ -305,7 +305,7 @@ class TaggedTransaction(BaseModel):
     )
     # Accept both 'risk_flags' and legacy 'flags' on input; serialize as 'risk_flags'
     risk_flags: list[str] = Field(
-        default_factory=list, validation_alias=AliasChoices("risk_flags", "flags")
+        default_factory=list[Any], validation_alias=AliasChoices("risk_flags", "flags")
     )
 
     # Convenience accessors so code can read .from_address/.to_address or .score/.flags too
@@ -343,7 +343,7 @@ class ReportRequest(BaseModel):
     min_amount: Decimal | None = None
     max_amount: Decimal | None = None
     wallet_addresses: list[str] = Field(
-        default_factory=list
+        default_factory=list[Any]
     )  # <─ used in /report / csv
 
 
@@ -371,7 +371,7 @@ class ReportSummary(BaseModel):
     net: Decimal = Decimal("0")
 
     # Optional breakdowns
-    categories: dict[str, int] = Field(default_factory=dict)
+    categories: dict[str, int] = Field(default_factory=dict[str, Any])
 
     # Backwards-compatible fields expected by older tests/code. Use distinct
     # alias fields so pydantic/mypy do not see duplicate class attributes.
@@ -394,9 +394,9 @@ class ReportSummary(BaseModel):
         if self.legacy_total_volume is not None:
             self.total_out = Decimal(self.legacy_total_volume)
         # Only populate the categories high_risk_count slot when the caller
-        # did not provide their own categories dict AND the legacy value is
+        # did not provide their own categories dict[str, Any] AND the legacy value is
         # a positive count. Tests expect an explicitly supplied categories
-        # dict (even if empty) to remain unchanged, and a zero legacy
+        # dict[str, Any] (even if empty) to remain unchanged, and a zero legacy
         # high_risk_count should not inject a key.
         if (
             self.legacy_high_risk_count is not None

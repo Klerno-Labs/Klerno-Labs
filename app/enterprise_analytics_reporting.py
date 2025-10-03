@@ -70,8 +70,8 @@ class AnalyticsEvent:
     timestamp: datetime
     user_id: str | None = None
     session_id: str | None = None
-    properties: dict[str, Any] = field(default_factory=dict)
-    metadata: dict[str, Any] = field(default_factory=dict)
+    properties: dict[str, Any] = field(default_factory=dict[str, Any])
+    metadata: dict[str, Any] = field(default_factory=dict[str, Any])
 
 
 @dataclass
@@ -82,10 +82,10 @@ class ReportConfig:
     report_name: str
     description: str
     query_template: str
-    parameters: dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict[str, Any])
     schedule: str | None = None  # cron-like schedule
     output_format: str = "json"  # json, csv, pdf, html
-    recipients: list[str] = field(default_factory=list)
+    recipients: list[str] = field(default_factory=list[Any])
 
 
 @dataclass
@@ -106,12 +106,12 @@ class BusinessMetric:
 class EnterpriseAnalytics:
     """Comprehensive enterprise analytics system"""
 
-    def __init__(self, database_path: str = "./data/klerno.db"):
+    def __init__(self, database_path: str = "./data/klerno.db") -> None:
         self.database_path = database_path
         self.events: list[AnalyticsEvent] = []
         self.reports: dict[str, ReportConfig] = {}
         self.metrics: dict[str, BusinessMetric] = {}
-        self.cached_results: dict[str, dict] = {}
+        self.cached_results: dict[str, dict[str, Any]] = {}
 
         # Configuration
         self.event_retention_days = 90
@@ -141,7 +141,7 @@ class EnterpriseAnalytics:
 
         logger.info("[ANALYTICS] Enterprise analytics system initialized")
 
-    def _init_database(self):
+    def _init_database(self) -> None:
         """Initialize analytics database"""
         try:
             Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
@@ -270,7 +270,7 @@ class EnterpriseAnalytics:
         logger.debug(f"[ANALYTICS] Tracked event: {event_type}")
         return event_id
 
-    def _store_event(self, event: AnalyticsEvent):
+    def _store_event(self, event: AnalyticsEvent) -> None:
         """Store event in database"""
         try:
             conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
@@ -299,19 +299,19 @@ class EnterpriseAnalytics:
         except Exception as e:
             logger.error(f"[ANALYTICS] Failed to store event: {e}")
 
-    def register_metric(self, metric: BusinessMetric):
+    def register_metric(self, metric: BusinessMetric) -> None:
         """Register a business metric"""
         with self._lock:
             self.metrics[metric.metric_id] = metric
             logger.info(f"[ANALYTICS] Registered metric: {metric.metric_name}")
 
-    def register_report(self, report: ReportConfig):
+    def register_report(self, report: ReportConfig) -> None:
         """Register a report configuration"""
         with self._lock:
             self.reports[report.report_id] = report
             logger.info(f"[ANALYTICS] Registered report: {report.report_name}")
 
-    def _register_default_metrics(self):
+    def _register_default_metrics(self) -> None:
         """Register default business metrics"""
 
         # User engagement metrics
@@ -373,7 +373,7 @@ class EnterpriseAnalytics:
             )
         )
 
-    def _register_default_reports(self):
+    def _register_default_reports(self) -> None:
         """Register default reports"""
 
         # Daily summary report
@@ -667,7 +667,7 @@ class EnterpriseAnalytics:
             )
             return 0.0
 
-    def _store_metric_value(self, metric_id: str, value: float):
+    def _store_metric_value(self, metric_id: str, value: float) -> None:
         """Store calculated metric value"""
         try:
             conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
@@ -780,7 +780,7 @@ class EnterpriseAnalytics:
         report_id: str,
         duration: float,
         status: str,
-        result_data: dict,
+        result_data: dict[str, Any],
         error: str | None = None,
     ) -> None:
         """Store report execution record"""
@@ -988,11 +988,11 @@ class EnterpriseAnalytics:
             conn.close()
 
             # Group by metric
-            trends = defaultdict(list)
+            trends = defaultdict(list[Any])
             for row in results:
                 trends[row[1]].append({"date": row[0], "value": row[2]})
 
-            return dict(trends)
+            return dict[str, Any](trends)
 
         except Exception as e:
             logger.error(f"[ANALYTICS] Failed to get performance trends: {e}")
@@ -1044,7 +1044,7 @@ class EnterpriseAnalytics:
             logger.error(f"[ANALYTICS] Failed to count active users today: {e}")
             return 0
 
-    def _analytics_worker(self):
+    def _analytics_worker(self) -> None:
         """Background analytics processing worker"""
         while self._running:
             try:
@@ -1065,7 +1065,7 @@ class EnterpriseAnalytics:
                 logger.error(f"[ANALYTICS] Analytics worker error: {e}")
                 time.sleep(3600)
 
-    def _cleanup_worker(self):
+    def _cleanup_worker(self) -> None:
         """Background cleanup worker"""
         while self._running:
             try:
@@ -1104,7 +1104,7 @@ class EnterpriseAnalytics:
                 logger.error(f"[ANALYTICS] Cleanup worker error: {e}")
                 time.sleep(86400)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown the analytics system"""
         self._running = False
         logger.info("[ANALYTICS] Analytics system shutdown")
@@ -1124,7 +1124,7 @@ def get_analytics_system() -> EnterpriseAnalytics:
     return analytics_system
 
 
-def initialize_enterprise_analytics():
+def initialize_enterprise_analytics() -> None:
     """Initialize enterprise analytics system"""
     try:
         analytics = get_analytics_system()

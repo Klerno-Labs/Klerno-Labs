@@ -7,12 +7,10 @@ unit tests in the test-suite and is intentionally small and safe.
 
 from __future__ import annotations
 
-from typing import Any
-
 from .settings import Settings
 
 
-def make_test_settings(**overrides: Any) -> Settings:
+def make_test_settings(**overrides) -> Settings:
     """Return a Settings instance suitable for tests. Any provided overrides
     will be forwarded to the Settings constructor.
     """

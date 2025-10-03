@@ -4,6 +4,8 @@ Provide a couple of tiny compatibility helpers expected by legacy
 modules (tests and paywall.py import expected_api_key).
 """
 
+from typing import Any
+
 from . import encryption  # re-export for convenience
 
 __all__ = ["encryption", "expected_api_key", "enforce_api_key"]
@@ -31,7 +33,7 @@ def enforce_api_key(header_value: str | None) -> bool:
     return header_value == expected
 
 
-def preview_api_key() -> dict:
+def preview_api_key() -> dict[str, Any]:
     """Return a minimal masked preview for an API key (compat shim).
 
     Tests and admin endpoints import preview_api_key from app.security; provide

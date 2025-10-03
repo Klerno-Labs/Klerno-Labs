@@ -27,7 +27,7 @@ _SECRET = os.getenv("JWT_SECRET", "test-secret-for-local-development-please-chan
 _ALGO = "HS256"
 
 
-def create_access_token(data: dict | Any, *a, **kw) -> str:
+def create_access_token(data: dict[str, Any] | Any, *a, **kw) -> str:
     """Return a predictable legacy token for tests.
 
     If the real auth implementation is present at runtime it will be used
@@ -101,11 +101,11 @@ def create_access_token(data: dict | Any, *a, **kw) -> str:
     return f"legacy-token-{uid}-{sub}"
 
 
-def verify_token(token: str) -> dict:
+def verify_token(token: str) -> dict[str, Any]:
     """Return a small payload for decoded tokens.
 
     Prefer the real auth.verify_token when available so tests that expect
-    specific behavior continue to work; otherwise return a stable dict.
+    specific behavior continue to work; otherwise return a stable dict[str, Any].
     """
     try:
         from app import auth as _auth

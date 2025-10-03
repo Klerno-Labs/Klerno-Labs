@@ -210,11 +210,11 @@ class ISO20022PaymentStatus:
 class ISO20022MessageBuilder:
     """Builds ISO20022 compliant XML messages."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.namespace = "urn:iso:std:iso:20022:tech:xsd"
 
     @staticmethod
-    def _to_datetime(dt: Any) -> datetime:
+    def _to_datetime(dt) -> datetime:
         """Coerce value to timezone - aware datetime (UTC) if it's an ISO string."""
         if isinstance(dt, datetime):
             # Ensure tz - aware
@@ -540,7 +540,7 @@ class ISO20022MessageBuilder:
 class ISO20022Validator:
     """Validates ISO20022 message compliance."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.error_codes = {
             "INVALID_BIC": "Invalid BIC code format",
             "INVALID_IBAN": "Invalid IBAN format",
@@ -1175,19 +1175,19 @@ def validate_payment_compliance(instruction: ISO20022PaymentInstruction) -> bool
 
 
 def get_supported_currencies() -> list[str]:
-    """Get list of supported ISO20022 currencies."""
+    """Get list[Any] of supported ISO20022 currencies."""
     return [currency.value for currency in CurrencyCode]
 
 
 def get_supported_payment_purposes() -> list[str]:
-    """Get list of supported payment purposes."""
+    """Get list[Any] of supported payment purposes."""
     return [purpose.value for purpose in PaymentPurpose]
 
 
 class ISO20022Manager:
     """Main manager class for ISO20022 compliance operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.message_builder = ISO20022MessageBuilder()
         self.validator = ISO20022Validator()
         self.parser = ISO20022Parser()
@@ -1212,7 +1212,7 @@ class ISO20022Manager:
             raise ValueError(f"Failed to create payment instruction: {str(e)}") from e
 
     def _dict_to_instruction(self, data: dict[str, Any]) -> ISO20022PaymentInstruction:
-        """Convert a loose dict into ISO20022PaymentInstruction instance."""
+        """Convert a loose dict[str, Any] into ISO20022PaymentInstruction instance."""
         amt_data = data.get("amount", {})
         amount = ISO20022Amount(
             currency=CurrencyCode(str(amt_data.get("currency", "USD"))),

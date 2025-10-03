@@ -80,14 +80,14 @@ class AdvancedRiskScore:
 class AdvancedAIRiskEngine:
     """AI - powered advanced risk scoring engine."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.isolation_forest = None
         self.risk_classifier = None
         self.scaler = None
         self.is_trained = False
         self._initialize_models()
 
-    def _initialize_models(self):
+    def _initialize_models(self) -> None:
         """Initialize AI models with synthetic training data."""
         # Import sklearn here to avoid heavy import at module import-time
         try:
@@ -116,7 +116,7 @@ class AdvancedAIRiskEngine:
 
         logger.info("Advanced AI risk models initialized and trained")
 
-    def _generate_training_data(self) -> tuple:
+    def _generate_training_data(self) -> tuple[Any, ...]:
         """Generate synthetic training data."""
         _ensure_numpy()
         np.random.seed(42)

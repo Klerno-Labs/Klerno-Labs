@@ -16,7 +16,7 @@ FROM_NAME = os.getenv("SENDGRID_NAME", "Klerno Labs")
 _cached_sg: Any = None
 
 
-def _get_sendgrid_client():
+def _get_sendgrid_client() -> None:
     """Create and cache a SendGrid client on first use.
 
     Import SendGrid lazily so importing this module doesn't fail when the
@@ -38,7 +38,7 @@ def _get_sendgrid_client():
     return _cached_sg
 
 
-def send_email(to_email: str, subject: str, content: str):
+def send_email(to_email: str, subject: str, content: str) -> None:
     """Send a simple email using SendGrid.
 
     This function validates that a sender address is configured and that a

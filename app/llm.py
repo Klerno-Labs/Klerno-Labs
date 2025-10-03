@@ -94,7 +94,7 @@ def _safe_llm(system: str, user: str, temperature: float = 0.2) -> str:
         return f"(LLM error: {e})"
 
 
-def _fmt_amount(v):
+def _fmt_amount(v) -> None:
     try:
         x = float(v)
         if abs(x) >= 1_000_000:
@@ -106,7 +106,7 @@ def _fmt_amount(v):
         return str(v)
 
 
-def _parse_iso(ts: Any) -> datetime | None:
+def _parse_iso(ts) -> datetime | None:
     try:
         return datetime.fromisoformat(str(ts))
     except Exception:
@@ -149,7 +149,7 @@ def explain_tx(tx: dict[str, Any]) -> str:
 
 def explain_batch(txs: list[dict[str, Any]]) -> dict[str, Any]:
     """
-    For a list of tx dicts, return:
+    For a list[Any] of tx dicts, return:
       { items: [ {tx_id, explanation}, ... ], summary: "..." }
     """
     items = []
@@ -210,8 +210,8 @@ def ask_to_filters(question: str) -> dict[str, Any]:
     raw = _safe_llm(system, user)
     try:
         spec = json.loads(raw)
-        if not isinstance(spec, dict):
-            raise ValueError("Spec was not a dict")
+        if not isinstance(spec, dict[str, Any]):
+            raise ValueError("Spec was not a dict[str, Any]")
         return spec
     except Exception:
         return {}

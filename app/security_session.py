@@ -1,6 +1,7 @@
 import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -153,7 +154,7 @@ def issue_jwt(uid: int, email: str, role: str, minutes: int | None = None) -> st
     return token
 
 
-def decode_jwt(token: str) -> dict:
+def decode_jwt(token: str) -> dict[str, Any]:
     return jwt.decode(token, str(SECRET_KEY), algorithms=[ALGO])
 
 

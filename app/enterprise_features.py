@@ -135,10 +135,10 @@ class SupportTicket:
 class EnterpriseManager:
     """Manages enterprise - grade features and services."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._init_enterprise_tables()
 
-    def _init_enterprise_tables(self):
+    def _init_enterprise_tables(self) -> None:
         """Initialize enterprise feature tables."""
         conn = get_db_connection()
         cursor = conn.cursor()

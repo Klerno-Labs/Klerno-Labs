@@ -143,7 +143,7 @@ DEFAULT_TIERS = {
 _tier_cache: dict[str, TierDetails] = {}
 
 
-def init_subscription_db():
+def init_subscription_db() -> None:
     """Initialize the subscription database."""
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -203,7 +203,7 @@ def init_subscription_db():
     conn.close()
 
 
-def get_db_connection():
+def get_db_connection() -> None:
     """Get a database connection."""
     if settings.USE_SQLITE:
         # Ensure directory exists using pathlib
@@ -312,9 +312,9 @@ def get_user_subscription(user_id: str) -> Subscription | None:
         # If already a Subscription instance, return as - is
         if isinstance(ret, Subscription):
             return ret
-        # If dict - like, construct Subscription
+        # If dict[str, Any] - like, construct Subscription
         try:
-            data = dict(ret)
+            data = dict[str, Any](ret)
         except Exception:
             # Assume attribute - style access
             data = ret.__dict__
@@ -681,7 +681,7 @@ def check_transaction_limit(user_id: str) -> tuple[bool, int, int]:
     )
 
 
-def record_transaction_usage(user_id: str, count: int = 1):
+def record_transaction_usage(user_id: str, count: int = 1) -> None:
     """Record transaction usage for billing."""
     conn = get_db_connection()
     cursor = conn.cursor()

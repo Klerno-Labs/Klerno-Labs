@@ -9,7 +9,7 @@ runtime behavior predictable.
 from typing import Any
 
 
-def safe_print(*args: Any, **kwargs: Any) -> None:
+def safe_print(*args, **kwargs: Any) -> None:
     """Print arguments but fall back to ASCII-safe output on encoding errors.
 
     All non-str arguments are stringified with str(). Strings are encoded to

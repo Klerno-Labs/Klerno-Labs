@@ -64,7 +64,7 @@ class MetricsResponse(BaseModel):
 class HealthChecker:
     """Comprehensive health checking for all services"""
 
-    def __init__(self, app: FastAPI):
+    def __init__(self, app: FastAPI) -> None:
         self.app = app
         self.start_time = time.time()
         self.version = "1.0.0"  # Should be loaded from environment
@@ -155,7 +155,7 @@ class HealthChecker:
             info = redis_client.info()
             # redis client implementations can return awaitable results in some environments
             info_obj = await info if asyncio.iscoroutine(info) else info
-            # Cast to a mapping for the type checker; runtime will still work with dict-like objects
+            # Cast to a mapping for the type checker; runtime will still work with dict[str, Any]-like objects
             info_obj = cast(Mapping[str, Any], info_obj)
 
             # Now use info_obj as a mapping safely
@@ -265,7 +265,7 @@ class HealthChecker:
             return_exceptions=True,
         )
 
-        # Each result may be a dict or an Exception when return_exceptions=True
+        # Each result may be a dict[str, Any] or an Exception when return_exceptions=True
         database_check: dict[str, Any] | BaseException = results[0]
         cache_check: dict[str, Any] | BaseException = results[1]
         external_checks: dict[str, Any] | BaseException = results[2]
@@ -294,7 +294,7 @@ class HealthChecker:
         all_healthy = all(
             check.get("status") == "healthy"
             for check in [database_check, cache_check]
-            if isinstance(check, dict)
+            if isinstance(check, dict[str, Any])
         )
 
         overall_status = "healthy" if all_healthy else "unhealthy"
