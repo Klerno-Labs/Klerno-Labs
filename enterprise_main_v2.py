@@ -436,6 +436,20 @@ async def offline_page():
     raise HTTPException(status_code=404, detail="offline.html not found")
 
 
+# User Dashboard route
+@app.get("/dashboard")
+async def dashboard_page(request: Request):
+    """User dashboard."""
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
+
+# Admin route (direct access, not prefixed)
+@app.get("/admin")
+async def admin_page(request: Request):
+    """Admin panel."""
+    return templates.TemplateResponse("admin.html", {"request": request})
+
+
 # Include auth + admin routes. Routers already define their own prefixes
 # (e.g. `auth.router` uses prefix="/auth"). If a module failed to import
 # (e.g. optional dependency missing) register a lightweight shim router
