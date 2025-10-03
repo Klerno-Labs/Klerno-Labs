@@ -571,6 +571,9 @@ try:
 
     _auth_mod = importlib.import_module("app.auth")
 
+    # Note: This form-friendly forwarder accepts either JSON or form payloads
+    # and normalizes legacy 'username' to 'email'. For pure JSON clients,
+    # prefer the explicit "/auth/login/api" endpoint below.
     @app.post("/auth/login")
     async def _legacy_login_forward(request: Request) -> Any:
         try:
@@ -639,6 +642,10 @@ try:
         # parameter annotations so FastAPI doesn't attempt to coerce the
         # `Response | None` type into a Pydantic field (which causes
         # registration to fail in some environments).
+
+        # Note: This endpoint explicitly expects a JSON payload matching
+        # the LoginReq model (email, password, optional totp_code). Use it
+        # for programmatic clients and tests sending JSON bodies.
         @app.post("/auth/login_api", response_model=None)
         def _legacy_login_api_forward(payload: dict, res=None):
             """Forwarder so older tests calling /auth/login_api still work.
