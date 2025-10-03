@@ -871,8 +871,8 @@ def login_form(
             )
 
         # Otherwise behave like a browser: redirect after setting cookie
-        admin_roles = ["admin", "owner", "manager"]
-        redirect_url = "/admin" if user.get("role") in admin_roles else "/"
+        # Redirect all users to the dashboard/root page after successful login
+        redirect_url = "/"
         response = RedirectResponse(url=redirect_url, status_code=302)
         _set_session_cookie(response, token)
         return response
