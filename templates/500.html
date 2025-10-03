@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Something Went Wrong | Klerno Labs</title>
+    <link rel="stylesheet" href="/static/css/premium.css">
+    <link rel="stylesheet" href="/static/css/error-pages.css">
+    <link rel="icon" href="/static/icons/favicon.ico">
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-content">
+            <div class="error-animation">
+                <div class="error-number">500</div>
+                <div class="error-icon">⚠️</div>
+            </div>
+            
+            <h1 class="error-title">Something Went Wrong</h1>
+            <p class="error-description">
+                We're experiencing some technical difficulties. Our team has been notified 
+                and is working to fix this issue.
+            </p>
+            
+            <div class="error-actions">
+                <button onclick="location.reload()" class="btn btn-primary">
+                    🔄 Try Again
+                </button>
+                <a href="/" class="btn btn-secondary">
+                    🏠 Home
+                </a>
+                <button onclick="reportIssue()" class="btn btn-accent">
+                    📧 Report Issue
+                </button>
+            </div>
+            
+            <div class="error-status">
+                <h3>System Status:</h3>
+                <div id="status-indicators">
+                    <div class="status-item">
+                        <span class="status-indicator checking"></span>
+                        Checking systems...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function reportIssue() {
+            const errorDetails = {
+                timestamp: new Date().toISOString(),
+                url: window.location.href,
+                userAgent: navigator.userAgent,
+                error: 'Internal Server Error'
+            };
+            
+            // In a real app, send this to your error reporting service
+            console.log('Error reported:', errorDetails);
+            alert('Thank you for reporting this issue. Our team will investigate.');
+        }
+        
+        // Simulate status checking
+        setTimeout(() => {
+            const statusDiv = document.getElementById('status-indicators');
+            statusDiv.innerHTML = `
+                <div class="status-item">
+                    <span class="status-indicator operational"></span>
+                    Database: Operational
+                </div>
+                <div class="status-item">
+                    <span class="status-indicator issue"></span>
+                    API Services: Investigating
+                </div>
+                <div class="status-item">
+                    <span class="status-indicator operational"></span>
+                    CDN: Operational
+                </div>
+            `;
+        }, 2000);
+    </script>
+</body>
+</html>

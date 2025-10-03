@@ -1,0 +1,356 @@
+
+/* ===================================================================
+   KLERNO LABS MICRO-INTERACTIONS ENGINE
+   Delightful Animations & Feedback Systems
+   ================================================================= */
+
+/* Performance-first animation setup */
+* {
+    will-change: auto;
+}
+
+.animate-on-scroll {
+    will-change: transform, opacity;
+}
+
+/* Button Micro-interactions */
+.btn-micro {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+.btn-micro::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-micro:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-micro:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.btn-micro:active {
+    transform: translateY(0);
+    transition: transform 0.1s;
+}
+
+/* Card Hover Effects */
+.card-micro {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+}
+
+.card-micro:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 
+        0 32px 64px rgba(0, 0, 0, 0.08),
+        0 16px 32px rgba(0, 0, 0, 0.04);
+}
+
+.card-micro:hover .card-content {
+    transform: translateY(-4px);
+}
+
+.card-content {
+    transition: transform 0.3s ease;
+}
+
+/* Input Focus Effects */
+.input-micro {
+    position: relative;
+    border: 2px solid transparent;
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(45deg, var(--klerno-primary), var(--klerno-accent)) border-box;
+    transition: all 0.3s ease;
+}
+
+.input-micro:focus {
+    outline: none;
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(45deg, var(--klerno-primary), var(--klerno-secondary)) border-box;
+    transform: scale(1.02);
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.2);
+}
+
+/* Loading Animations */
+.loading-dots {
+    display: inline-block;
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.loading-dots div {
+    position: absolute;
+    top: 33px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--klerno-primary);
+    animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+
+.loading-dots div:nth-child(1) {
+    left: 8px;
+    animation: loading-dots1 0.6s infinite;
+}
+
+.loading-dots div:nth-child(2) {
+    left: 8px;
+    animation: loading-dots2 0.6s infinite;
+}
+
+.loading-dots div:nth-child(3) {
+    left: 32px;
+    animation: loading-dots2 0.6s infinite;
+}
+
+.loading-dots div:nth-child(4) {
+    left: 56px;
+    animation: loading-dots3 0.6s infinite;
+}
+
+@keyframes loading-dots1 {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+}
+
+@keyframes loading-dots3 {
+    0% { transform: scale(1); }
+    100% { transform: scale(0); }
+}
+
+@keyframes loading-dots2 {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(24px, 0); }
+}
+
+/* Skeleton Loading */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Page Transitions */
+.page-transition {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.page-transition.loaded {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Scroll Animations */
+.fade-in-up {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-in-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.fade-in-left {
+    opacity: 0;
+    transform: translateX(-40px);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-in-left.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.fade-in-right {
+    opacity: 0;
+    transform: translateX(40px);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-in-right.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Scale on Scroll */
+.scale-in {
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scale-in.visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Progress Indicators */
+.progress-micro {
+    width: 100%;
+    height: 4px;
+    background: var(--klerno-gray-200);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-micro::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, var(--klerno-primary), var(--klerno-accent));
+    animation: progress-slide 2s infinite;
+}
+
+@keyframes progress-slide {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Notification Animations */
+.notification-slide-in {
+    transform: translateX(100%);
+    opacity: 0;
+    animation: slide-in-right 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slide-in-right {
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-slide-out {
+    animation: slide-out-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slide-out-right {
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Tooltip Animations */
+.tooltip-micro {
+    position: relative;
+    cursor: pointer;
+}
+
+.tooltip-micro::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 150%;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--klerno-gray-900);
+    color: white;
+    padding: 8px 12px;
+    border-radius: var(--klerno-radius-md);
+    font-size: 14px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+}
+
+.tooltip-micro::before {
+    content: '';
+    position: absolute;
+    bottom: 135%;
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    border: 5px solid transparent;
+    border-top-color: var(--klerno-gray-900);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1001;
+}
+
+.tooltip-micro:hover::after,
+.tooltip-micro:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Menu Animations */
+.menu-item {
+    transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+    background: linear-gradient(45deg, var(--klerno-primary), var(--klerno-accent));
+    color: white;
+    transform: translateX(8px);
+}
+
+/* Form Validation Feedback */
+.input-success {
+    border-color: var(--klerno-success);
+    animation: success-pulse 0.6s ease;
+}
+
+.input-error {
+    border-color: var(--klerno-error);
+    animation: error-shake 0.6s ease;
+}
+
+@keyframes success-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes error-shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+    20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+/* Responsive Design */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .btn-micro:hover {
+        border: 2px solid;
+    }
+}

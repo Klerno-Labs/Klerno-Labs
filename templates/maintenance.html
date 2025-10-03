@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduled Maintenance | Klerno Labs</title>
+    <link rel="stylesheet" href="/static/css/premium.css">
+    <link rel="stylesheet" href="/static/css/error-pages.css">
+    <link rel="icon" href="/static/icons/favicon.ico">
+</head>
+<body>
+    <div class="error-container maintenance-bg">
+        <div class="error-content">
+            <div class="error-animation">
+                <div class="maintenance-icon">🔧</div>
+            </div>
+            
+            <h1 class="error-title">Scheduled Maintenance</h1>
+            <p class="error-description">
+                We're currently performing scheduled maintenance to improve your experience. 
+                We'll be back online shortly!
+            </p>
+            
+            <div class="countdown-timer">
+                <h3>Estimated completion:</h3>
+                <div id="countdown">
+                    <span id="hours">00</span>:
+                    <span id="minutes">00</span>:
+                    <span id="seconds">00</span>
+                </div>
+            </div>
+            
+            <div class="maintenance-updates">
+                <h3>What we're working on:</h3>
+                <ul>
+                    <li>✅ Database optimization</li>
+                    <li>🔄 Security updates</li>
+                    <li>⏳ Performance improvements</li>
+                    <li>⏳ New feature deployment</li>
+                </ul>
+            </div>
+            
+            <div class="error-contact">
+                <p>For urgent matters: <a href="mailto:support@klernolabs.com">support@klernolabs.com</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Countdown timer (example: 2 hours from now)
+        const endTime = new Date().getTime() + (2 * 60 * 60 * 1000);
+        
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = endTime - now;
+            
+            if (distance > 0) {
+                const hours = Math.floor(distance / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+                document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+                document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+            } else {
+                document.getElementById('countdown').innerHTML = '<span class="completed">Maintenance Complete!</span>';
+                setTimeout(() => location.reload(), 3000);
+            }
+        }
+        
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    </script>
+</body>
+</html>

@@ -1,31 +1,19 @@
-"""Test all routes using TestClient to identify 404 and 302 errors."""
-
-import importlib
-import sys
-
-from fastapi.testclient import TestClient
-
-# Import the enterprise app
-sys.path.insert(0, ".")
-enterprise_module = importlib.import_module("enterprise_main_v2")
-app = enterprise_module.app
-client = TestClient(app)
+import requests
 
 print("Testing basic routes for errors")
 
 paths = [
-    "/",
-    "/dashboard",
-    "/admin",
-    "/signup",
-    "/login",
+    "/admin/",
     "/auth/login",
     "/auth/signup",
-    "/admin/",
     "/admin/users",
     "/admin/api/stats",
+    "/signup",
+    "/login",
     "/logout",
     "/paywall",
+    "/dashboard",
+    "/admin",
     "/health",
     "/healthz",
     "/status",
@@ -59,41 +47,29 @@ paths = [
 errors_404 = []
 errors_302 = []
 success_200 = []
-other_codes = []
 
-for path in paths:
+for p in paths:
     try:
-        response = client.get(path)
-        status_code = response.status_code
-
-        if status_code == 404:
-            errors_404.append(path)
-        elif status_code == 302:
-            errors_302.append(path)
-        elif status_code == 200:
-            success_200.append(path)
-        else:
-            other_codes.append((path, status_code))
-
-        print(f"{path}: {status_code}")
-
+        r = requests.get(f"http://localhost:8002{p}")
+        if r.status_code == 404:
+            errors_404.append(p)
+        elif r.status_code == 302:
+            errors_302.append(p)
+        elif r.status_code == 200:
+            success_200.append(p)
+        print(f"{p}: {r.status_code}")
     except Exception as e:
-        print(f"{path}: ERROR - {e}")
+        print(f"{p}: ERROR - {e}")
 
 print("\n=== 404 ERRORS ===")
-for path in errors_404:
-    print(f"404: {path}")
+for p in errors_404:
+    print(f"404: {p}")
 
 print("\n=== 302 REDIRECTS ===")
-for path in errors_302:
-    print(f"302: {path}")
-
-print("\n=== OTHER STATUS CODES ===")
-for path, code in other_codes:
-    print(f"{code}: {path}")
+for p in errors_302:
+    print(f"302: {p}")
 
 print("\n=== SUMMARY ===")
 print(f"Total 404 errors: {len(errors_404)}")
 print(f"Total 302 redirects: {len(errors_302)}")
 print(f"Total 200 success: {len(success_200)}")
-print(f"Total other codes: {len(other_codes)}")

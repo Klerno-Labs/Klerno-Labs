@@ -1,0 +1,291 @@
+{
+  "revenue_data": {
+    "monthly": {
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ],
+      "datasets": [
+        {
+          "label": "Monthly Revenue",
+          "data": [
+            50507,
+            62216,
+            65597,
+            66611,
+            76087,
+            65827,
+            69588,
+            56983,
+            57348,
+            63370,
+            61638,
+            73340
+          ],
+          "borderColor": "#6366f1",
+          "backgroundColor": "rgba(99, 102, 241, 0.1)",
+          "tension": 0.4
+        }
+      ]
+    },
+    "quarterly": {
+      "labels": [
+        "Q1 2024",
+        "Q2 2024",
+        "Q3 2024",
+        "Q4 2024"
+      ],
+      "datasets": [
+        {
+          "label": "Revenue",
+          "data": [
+            450000,
+            520000,
+            610000,
+            580000
+          ],
+          "backgroundColor": "#6366f1"
+        },
+        {
+          "label": "Profit",
+          "data": [
+            180000,
+            220000,
+            280000,
+            260000
+          ],
+          "backgroundColor": "#10b981"
+        }
+      ]
+    },
+    "yearly": {
+      "labels": [
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024"
+      ],
+      "datasets": [
+        {
+          "label": "Annual Growth %",
+          "data": [
+            15,
+            28,
+            42,
+            35,
+            48
+          ],
+          "borderColor": "#8b5cf6",
+          "backgroundColor": "rgba(139, 92, 246, 0.1)",
+          "fill": true
+        }
+      ]
+    }
+  },
+  "user_analytics": {
+    "growth": {
+      "labels": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun"
+      ],
+      "datasets": [
+        {
+          "label": "Total Users",
+          "data": [
+            1251,
+            1449,
+            1718,
+            1972,
+            2264,
+            2528
+          ],
+          "borderColor": "#06b6d4",
+          "backgroundColor": "rgba(6, 182, 212, 0.1)",
+          "fill": true
+        }
+      ]
+    },
+    "demographics": {
+      "labels": [
+        "18-25",
+        "26-35",
+        "36-45",
+        "46-55",
+        "55+"
+      ],
+      "values": [
+        1250,
+        2800,
+        2100,
+        1500,
+        850
+      ],
+      "colors": [
+        "#6366f1",
+        "#8b5cf6",
+        "#06b6d4",
+        "#10b981",
+        "#f59e0b"
+      ]
+    },
+    "engagement": {
+      "daily_active": 4200,
+      "session_duration": 12.5,
+      "bounce_rate": 24.3,
+      "page_views": 18500,
+      "conversion_rate": 3.2
+    }
+  },
+  "performance_metrics": {
+    "system": {
+      "cpu_usage": 37.83754129734578,
+      "memory_usage": 42.858415271263546,
+      "disk_usage": 31.309784788575744,
+      "network_io": 246.31698830894547,
+      "uptime": 99.7,
+      "response_time": 176.39806176446126
+    },
+    "application": {
+      "requests_per_second": 591,
+      "error_rate": 0.31745231029184295,
+      "cache_hit_rate": 88.03128633700777,
+      "database_connections": 21,
+      "queue_size": 11
+    },
+    "business": {
+      "customer_satisfaction": 4.718488776515062,
+      "net_promoter_score": 69,
+      "customer_lifetime_value": 4805,
+      "churn_rate": 3.5916392648057487,
+      "acquisition_cost": 99
+    }
+  },
+  "dashboard_config": {
+    "widgets": [
+      {
+        "type": "chart",
+        "chartType": "line",
+        "title": "Revenue Trend",
+        "size": "large",
+        "data": {
+          "labels": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec"
+          ],
+          "datasets": [
+            {
+              "label": "Monthly Revenue",
+              "data": [
+                51691,
+                53798,
+                70929,
+                75042,
+                71162,
+                62483,
+                68971,
+                66630,
+                59618,
+                62628,
+                57858,
+                65454
+              ],
+              "borderColor": "#6366f1",
+              "backgroundColor": "rgba(99, 102, 241, 0.1)",
+              "tension": 0.4
+            }
+          ]
+        }
+      },
+      {
+        "type": "chart",
+        "chartType": "pie",
+        "title": "User Demographics",
+        "size": "medium",
+        "data": {
+          "labels": [
+            "18-25",
+            "26-35",
+            "36-45",
+            "46-55",
+            "55+"
+          ],
+          "values": [
+            1250,
+            2800,
+            2100,
+            1500,
+            850
+          ],
+          "colors": [
+            "#6366f1",
+            "#8b5cf6",
+            "#06b6d4",
+            "#10b981",
+            "#f59e0b"
+          ]
+        }
+      },
+      {
+        "type": "chart",
+        "chartType": "bar",
+        "title": "Quarterly Performance",
+        "size": "medium",
+        "data": {
+          "labels": [
+            "Q1 2024",
+            "Q2 2024",
+            "Q3 2024",
+            "Q4 2024"
+          ],
+          "datasets": [
+            {
+              "label": "Revenue",
+              "data": [
+                450000,
+                520000,
+                610000,
+                580000
+              ],
+              "backgroundColor": "#6366f1"
+            },
+            {
+              "label": "Profit",
+              "data": [
+                180000,
+                220000,
+                280000,
+                260000
+              ],
+              "backgroundColor": "#10b981"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

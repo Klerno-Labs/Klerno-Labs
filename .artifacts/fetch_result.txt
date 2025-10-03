@@ -1,2 +1,0 @@
-﻿SAVED_RUN_LOG: run=18149513191 path=C:\Users\Somli\OneDrive\Desktop\Klerno Labs\.artifacts\run-18149513191.log
-SAVED_SNIPPET: run=18149513191 snippet=C:\Users\Somli\OneDrive\Desktop\Klerno Labs\.artifacts\run-18149513191-alembic-snippet.log

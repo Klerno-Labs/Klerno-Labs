@@ -1,0 +1,66 @@
+{
+  "brand_name": "Klerno Labs",
+  "tagline": "Enterprise Innovation Platform",
+  "mission": "Empowering enterprises with cutting-edge technology solutions",
+  "values": [
+    "Innovation",
+    "Excellence",
+    "Reliability",
+    "Security"
+  ],
+  "primary_colors": {
+    "klerno_blue": "#6366f1",
+    "klerno_purple": "#8b5cf6",
+    "klerno_cyan": "#06b6d4",
+    "klerno_emerald": "#10b981"
+  },
+  "secondary_colors": {
+    "slate": "#64748b",
+    "zinc": "#71717a",
+    "stone": "#78716c",
+    "red": "#ef4444",
+    "orange": "#f97316",
+    "amber": "#f59e0b",
+    "yellow": "#eab308",
+    "lime": "#84cc16",
+    "green": "#22c55e",
+    "teal": "#14b8a6",
+    "sky": "#0ea5e9",
+    "blue": "#3b82f6",
+    "indigo": "#6366f1",
+    "violet": "#8b5cf6",
+    "purple": "#a855f7",
+    "fuchsia": "#d946ef",
+    "pink": "#ec4899",
+    "rose": "#f43f5e"
+  },
+  "typography": {
+    "primary_font": "Inter",
+    "secondary_font": "JetBrains Mono",
+    "font_weights": {
+      "light": 300,
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700,
+      "extrabold": 800
+    }
+  },
+  "spacing": {
+    "xs": "0.25rem",
+    "sm": "0.5rem",
+    "md": "1rem",
+    "lg": "1.5rem",
+    "xl": "2rem",
+    "2xl": "3rem",
+    "3xl": "4rem"
+  },
+  "border_radius": {
+    "sm": "0.25rem",
+    "md": "0.5rem",
+    "lg": "0.75rem",
+    "xl": "1rem",
+    "2xl": "1.5rem",
+    "full": "9999px"
+  }
+}
