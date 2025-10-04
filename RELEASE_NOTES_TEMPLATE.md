@@ -1,4 +1,4 @@
- # Release notes
+# Release notes
 
 Version: vX.Y.Z
 Date: YYYY-MM-DD
