@@ -1,5 +1,4 @@
-"""
-Safe Auto - Improver (proposal - only).
+"""Safe Auto - Improver (proposal - only).
 """
 
 from __future__ import annotations
@@ -39,8 +38,7 @@ def load_policy() -> dict[str, Any]:
 
 
 def _insert_future_annotations(content: str) -> str:
-    """
-    Insert 'from __future__ import annotations' at a safe position:
+    """Insert 'from __future__ import annotations' at a safe position:
     - after shebang / encoding lines
     - after a leading module docstring (if present)
     """
@@ -89,7 +87,7 @@ def llm_suggest(file_path: Path, content: str) -> list[Suggestion]:
                         "Enable postponed evaluation of annotations for forward references "
                         "on Python < 3.11."
                     ),
-                )
+                ),
             )
 
     return suggestions

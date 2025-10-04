@@ -1,5 +1,4 @@
-"""
-Unit tests for data models and validation.
+"""Unit tests for data models and validation.
 """
 
 from datetime import datetime
@@ -32,7 +31,7 @@ class TestTransaction:
         tx = Transaction()
         assert tx.tx_id == ""
         assert tx.chain == "XRP"
-        assert tx.amount == Decimal("0")
+        assert tx.amount == Decimal(0)
         assert tx.direction == "out"
 
     def test_transaction_negative_amount(self):
@@ -56,9 +55,9 @@ class TestTransaction:
             to_addr="rTestTo",
             amount=Decimal("100.5"),
             memo="test memo",
-            fee=Decimal("0"),
+            fee=Decimal(0),
         )
-        assert tx.fee == Decimal("0")
+        assert tx.fee == Decimal(0)
 
     def test_transaction_address_properties(self):
         """Test address property aliases."""
@@ -202,7 +201,7 @@ class TestReportSummary:
         """Test report summary with empty categories."""
         summary = ReportSummary(
             total_transactions=0,
-            total_volume=Decimal("0"),
+            total_volume=Decimal(0),
             high_risk_count=0,
             categories={},
         )

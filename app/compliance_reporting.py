@@ -1,5 +1,4 @@
-"""
-Compliance Reporting Module for Klerno Labs.
+"""Compliance Reporting Module for Klerno Labs.
 
 Provides comprehensive compliance reporting for Professional and Enterprise tiers.
 """
@@ -147,7 +146,7 @@ class ComplianceReportingEngine:
                 created_at TEXT NOT NULL,
                 completed_at TEXT
         )
-        """
+        """,
         )
 
         # Compliance events table for tracking
@@ -164,7 +163,7 @@ class ComplianceReportingEngine:
                 created_at TEXT NOT NULL,
                 resolved_at TEXT
         )
-        """
+        """,
         )
 
         conn.commit()
@@ -178,7 +177,6 @@ class ComplianceReportingEngine:
         output_format: ReportFormat = ReportFormat.PDF,
     ) -> ComplianceReport:
         """Generate AML (Anti - Money Laundering) compliance report."""
-
         report_id = str(uuid.uuid4())
 
         date_range_str = (
@@ -232,7 +230,6 @@ class ComplianceReportingEngine:
         risk_threshold: float = 0.5,
     ) -> ComplianceReport:
         """Generate transaction monitoring report."""
-
         report_id = str(uuid.uuid4())
 
         date_range_str = (
@@ -261,7 +258,7 @@ class ComplianceReportingEngine:
 
         # Generate monitoring data
         monitoring_data = self._generate_monitoring_data(
-            user_id, start_date, end_date, risk_threshold
+            user_id, start_date, end_date, risk_threshold,
         )
 
         # Create CSV report
@@ -276,10 +273,9 @@ class ComplianceReportingEngine:
         return report
 
     def generate_suspicious_activity_report(
-        self, user_id: str, start_date: datetime, end_date: datetime
+        self, user_id: str, start_date: datetime, end_date: datetime,
     ) -> ComplianceReport:
         """Generate Suspicious Activity Report (SAR)."""
-
         report_id = str(uuid.uuid4())
 
         date_range_str = (
@@ -321,10 +317,9 @@ class ComplianceReportingEngine:
         return report
 
     def get_compliance_metrics(
-        self, user_id: str, start_date: datetime, end_date: datetime
+        self, user_id: str, start_date: datetime, end_date: datetime,
     ) -> ComplianceMetrics:
         """Get compliance metrics for a date range."""
-
         # Mock implementation - replace with real data queries
         import random
 
@@ -441,17 +436,16 @@ class ComplianceReportingEngine:
         conn.close()
 
     def _generate_aml_data(
-        self, user_id: str, start_date: datetime, end_date: datetime
+        self, user_id: str, start_date: datetime, end_date: datetime,
     ) -> dict[str, Any]:
         """Generate AML report data."""
-
         # Mock AML data - replace with real queries
         import random
 
         transactions: list[dict[str, Any]] = []
         for i in range(100):
             tx_date = start_date + timedelta(
-                days=random.randint(0, (end_date - start_date).days)
+                days=random.randint(0, (end_date - start_date).days),
             )
             transactions.append(
                 {
@@ -467,9 +461,9 @@ class ComplianceReportingEngine:
                             ["high_amount"],
                             ["unusual_pattern"],
                             ["high_amount", "unusual_pattern"],
-                        ]
+                        ],
                     ),
-                }
+                },
             )
 
         return {
@@ -481,10 +475,10 @@ class ComplianceReportingEngine:
                         tx
                         for tx in transactions
                         if float(tx.get("risk_score", 0.0)) > 0.7
-                    ]
+                    ],
                 ),
                 "flagged_count": len(
-                    [tx for tx in transactions if bool(tx.get("flags"))]
+                    [tx for tx in transactions if bool(tx.get("flags"))],
                 ),
             },
             "transactions": transactions,
@@ -501,21 +495,21 @@ class ComplianceReportingEngine:
                             tx
                             for tx in transactions
                             if float(tx.get("risk_score", 0.0)) < 0.3
-                        ]
+                        ],
                     ),
                     "medium": len(
                         [
                             tx
                             for tx in transactions
                             if 0.3 <= float(tx.get("risk_score", 0.0)) < 0.7
-                        ]
+                        ],
                     ),
                     "high": len(
                         [
                             tx
                             for tx in transactions
                             if float(tx.get("risk_score", 0.0)) >= 0.7
-                        ]
+                        ],
                     ),
                 },
             },
@@ -529,7 +523,6 @@ class ComplianceReportingEngine:
         risk_threshold: float,
     ) -> list[dict[str, Any]]:
         """Generate transaction monitoring data."""
-
         # Mock monitoring data
         import random
 
@@ -542,28 +535,27 @@ class ComplianceReportingEngine:
                     "timestamp": _to_iso(
                         start_date
                         + timedelta(
-                            days=random.randint(0, (end_date - start_date).days)
-                        )
+                            days=random.randint(0, (end_date - start_date).days),
+                        ),
                     ),
                     "amount": random.uniform(1000, 100000),
                     "risk_score": risk_score,
                     "risk_level": "HIGH" if risk_score > 0.7 else "MEDIUM",
                     "alert_type": random.choice(
-                        ["velocity", "amount", "pattern", "geographic"]
+                        ["velocity", "amount", "pattern", "geographic"],
                     ),
                     "status": random.choice(
-                        ["pending", "reviewed", "cleared", "flagged"]
+                        ["pending", "reviewed", "cleared", "flagged"],
                     ),  # nosec: B311 - non-crypto randomness used for synthetic/test data
-                }
+                },
             )
 
         return data
 
     def _generate_sar_data(
-        self, user_id: str, start_date: datetime, end_date: datetime
+        self, user_id: str, start_date: datetime, end_date: datetime,
     ) -> dict[str, Any]:
         """Generate Suspicious Activity Report data."""
-
         # Mock SAR data
         import random
 
@@ -575,8 +567,8 @@ class ComplianceReportingEngine:
                     "date": _to_iso(
                         start_date
                         + timedelta(
-                            days=random.randint(0, (end_date - start_date).days)
-                        )
+                            days=random.randint(0, (end_date - start_date).days),
+                        ),
                     ),
                     "amount": random.uniform(10000, 500000),
                     "risk_score": random.uniform(0.8, 1.0),
@@ -586,7 +578,7 @@ class ComplianceReportingEngine:
                             ["rapid_movement", "high_risk_jurisdiction"],
                             ["smurfing", "round_amounts"],
                             ["velocity", "pattern_matching"],
-                        ]
+                        ],
                     ),
                     "recommendation": random.choice(
                         [
@@ -594,9 +586,9 @@ class ComplianceReportingEngine:
                             "Enhanced monitoring",
                             "Account restriction",
                             "Investigation required",
-                        ]
+                        ],
                     ),
-                }
+                },
             )
 
         return {
@@ -624,7 +616,6 @@ class ComplianceReportingEngine:
         output_format: ReportFormat,
     ) -> str:
         """Create report file in specified format."""
-
         from pathlib import Path
 
         # Create reports directory if it doesn't exist
@@ -644,7 +635,7 @@ class ComplianceReportingEngine:
                 if "transactions" in data:
                     first = data["transactions"][0]
                     first_map = to_mapping(first)
-                    fieldnames = list[Any](first_map.keys()) if first_map else []
+                    fieldnames = list(first_map.keys()) if first_map else []
                     writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(data["transactions"])
@@ -658,7 +649,7 @@ class ComplianceReportingEngine:
         return str(file_path)
 
     def _create_monitoring_csv(
-        self, report: ComplianceReport, data: list[dict[str, Any]]
+        self, report: ComplianceReport, data: list[dict[str, Any]],
     ) -> str:
         """Create CSV file for monitoring report."""
         from pathlib import Path
@@ -673,7 +664,7 @@ class ComplianceReportingEngine:
             if data:
                 first = data[0]
                 first_map = to_mapping(first)
-                fieldnames = list[Any](first_map.keys()) if first_map else []
+                fieldnames = list(first_map.keys()) if first_map else []
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(data)
@@ -701,23 +692,23 @@ compliance_engine = ComplianceReportingEngine()
 
 
 def generate_aml_report(
-    user_id: str, start_date: datetime, end_date: datetime
+    user_id: str, start_date: datetime, end_date: datetime,
 ) -> ComplianceReport:
     """Generate AML compliance report."""
     return compliance_engine.generate_aml_report(user_id, start_date, end_date)
 
 
 def generate_transaction_monitoring_report(
-    user_id: str, start_date: datetime, end_date: datetime
+    user_id: str, start_date: datetime, end_date: datetime,
 ) -> ComplianceReport:
     """Generate transaction monitoring report."""
     return compliance_engine.generate_transaction_monitoring_report(
-        user_id, start_date, end_date
+        user_id, start_date, end_date,
     )
 
 
 def get_compliance_metrics(
-    user_id: str, start_date: datetime, end_date: datetime
+    user_id: str, start_date: datetime, end_date: datetime,
 ) -> ComplianceMetrics:
     """Get compliance metrics."""
     return compliance_engine.get_compliance_metrics(user_id, start_date, end_date)

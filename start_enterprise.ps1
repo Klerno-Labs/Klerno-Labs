@@ -47,7 +47,7 @@ Write-Host "=" * 80 -ForegroundColor Cyan
 Write-Host ""
 
 # Environment check
-if (!(Test-Path ".venv\Scripts\python.exe") -and !(Get-Command python.exe -ErrorAction SilentlyContinue)) {
+if (!(Test-Path ".venv\Scripts\python.exe")) {
     Write-Host "❌ Virtual environment not found. Please run from main project directory." -ForegroundColor Red
     Write-Host "   Expected: .venv\Scripts\python.exe" -ForegroundColor Yellow
     exit 1
@@ -85,7 +85,7 @@ Write-Host "🔧 Starting application..." -ForegroundColor Cyan
 try {
     if ($Mode -eq "enterprise") {
         # Start enterprise application
-        & "python.exe" "enterprise_main_v2.py" --host "127.0.0.1" --port $Port
+        & "..\..\.venv\Scripts\python.exe" "enterprise_main_v2.py" --host "127.0.0.1" --port $Port
     }
     else {
         # Start simple application

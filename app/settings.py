@@ -42,10 +42,9 @@ else:
             external package. It is intentionally minimal.
             """
 
-            pass
 
         BaseSettings = _FallbackBaseSettings
-        SettingsConfigDict = dict[str, Any]
+        SettingsConfigDict = dict
 
 
 WEAK_SECRETS = {
@@ -99,11 +98,11 @@ class Settings(BaseSettings):
     admin_email: str = Field("")
 
     model_config = SettingsConfigDict(
-        env_file=".env", case_sensitive=False, extra="ignore"
+        env_file=".env", case_sensitive=False, extra="ignore",
     )
 
     @field_validator("cors_origins", mode="before")
-    def _split_origins(cls, v: Any) -> list[str]:  # noqa: D401
+    def _split_origins(cls, v: Any) -> list[str]:
         if isinstance(v, str):
             return [o for o in (item.strip() for item in v.split(",")) if o]
         return v
@@ -128,7 +127,7 @@ class Settings(BaseSettings):
         return values
 
     @field_validator("jwt_secret", mode="after")
-    def _enforce_strong_secret(cls, v: str, info: ValidationInfo) -> None:  # noqa: D401
+    def _enforce_strong_secret(cls, v: str, info: ValidationInfo):
         env_eff = (
             info.data.get("environment") or info.data.get("app_env") or ""
         ).lower()
@@ -139,12 +138,12 @@ class Settings(BaseSettings):
             and (len(v) < 16 or v.lower() in WEAK_SECRETS)
         ):
             raise ValueError(
-                "Weak jwt_secret configured for non-development environment"
+                "Weak jwt_secret configured for non-development environment",
             )
         return v
 
     @model_validator(mode="after")
-    def _pytest_port_override(cls, model) -> None:
+    def _pytest_port_override(cls, model):
         """Under pytest ensure default port is stable (8000) to satisfy tests that
         instantiate Settings() directly. This avoids accidental overrides from a
         developer's environment (e.g. PORT=8002) leaking into test expectations.

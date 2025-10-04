@@ -1,5 +1,4 @@
-"""
-Advanced AI Risk Scoring Module for Klerno Labs.
+"""Advanced AI Risk Scoring Module for Klerno Labs.
 
 Implements sophisticated AI - powered risk analysis for Professional tier features.
 """
@@ -80,14 +79,14 @@ class AdvancedRiskScore:
 class AdvancedAIRiskEngine:
     """AI - powered advanced risk scoring engine."""
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.isolation_forest = None
         self.risk_classifier = None
         self.scaler = None
         self.is_trained = False
         self._initialize_models()
 
-    def _initialize_models(self) -> None:
+    def _initialize_models(self):
         """Initialize AI models with synthetic training data."""
         # Import sklearn here to avoid heavy import at module import-time
         try:
@@ -116,7 +115,7 @@ class AdvancedAIRiskEngine:
 
         logger.info("Advanced AI risk models initialized and trained")
 
-    def _generate_training_data(self) -> tuple[Any, ...]:
+    def _generate_training_data(self) -> tuple:
         """Generate synthetic training data."""
         _ensure_numpy()
         np.random.seed(42)
@@ -175,7 +174,6 @@ class AdvancedAIRiskEngine:
         user_history: list[dict[str, Any]] | None = None,
     ) -> AdvancedRiskScore:
         """Perform advanced AI risk analysis on a transaction."""
-
         _ensure_numpy()
 
         if (
@@ -207,7 +205,7 @@ class AdvancedAIRiskEngine:
 
         # Calculate overall risk score
         overall_score = self._calculate_overall_score(
-            anomaly_score, risk_proba, features, transaction_data
+            anomaly_score, risk_proba, features, transaction_data,
         )
 
         # Determine risk level
@@ -215,12 +213,12 @@ class AdvancedAIRiskEngine:
 
         # Extract detailed risk factors
         risk_factors = self._analyze_risk_factors(
-            features, transaction_data, user_history or []
+            features, transaction_data, user_history or [],
         )
 
         # Generate AI insights and recommendations
         insights = self._generate_ai_insights(
-            transaction_data, risk_factors, anomaly_score, is_anomaly
+            transaction_data, risk_factors, anomaly_score, is_anomaly,
         )
         recommendations = self._generate_recommendations(risk_level, risk_factors)
 
@@ -235,10 +233,9 @@ class AdvancedAIRiskEngine:
         )
 
     def _extract_features(
-        self, transaction: dict[str, Any], history: list[dict[str, Any]]
+        self, transaction: dict[str, Any], history: list[dict[str, Any]],
     ) -> list[float]:
         """Extract numerical features for AI analysis."""
-
         # Transaction amount (log - scaled for better distribution)
         amount = float(transaction.get("amount", 0))
         log_amount = np.log1p(amount)
@@ -271,7 +268,6 @@ class AdvancedAIRiskEngine:
         transaction: dict[str, Any],
     ) -> float:
         """Calculate weighted overall risk score."""
-
         # Normalize anomaly score to 0 - 1 range
         normalized_anomaly = max(0, min(1, (1 - anomaly_score) / 2))
 
@@ -288,7 +284,7 @@ class AdvancedAIRiskEngine:
         return min(1.0, max(0.0, overall))
 
     def _calculate_rule_based_score(
-        self, features: list[float], transaction: dict[str, Any]
+        self, features: list[float], transaction: dict[str, Any],
     ) -> float:
         """Calculate rule - based risk component."""
         score = 0.0
@@ -324,12 +320,11 @@ class AdvancedAIRiskEngine:
         """Determine risk level from numerical score."""
         if score >= 0.8:
             return "CRITICAL"
-        elif score >= 0.6:
+        if score >= 0.6:
             return "HIGH"
-        elif score >= 0.3:
+        if score >= 0.3:
             return "MEDIUM"
-        else:
-            return "LOW"
+        return "LOW"
 
     def _analyze_risk_factors(
         self,
@@ -361,51 +356,51 @@ class AdvancedAIRiskEngine:
 
         if is_anomaly:
             insights.append(
-                "🤖 AI detected this transaction as anomalous compared to normal patterns"
+                "🤖 AI detected this transaction as anomalous compared to normal patterns",
             )
 
         if factors.transaction_frequency > 0.7:
             insights.append(
-                "🔄 High transaction frequency detected - possible automated trading"
+                "🔄 High transaction frequency detected - possible automated trading",
             )
 
         if factors.amount_anomaly > 0.8:
             insights.append(
-                "💰 Unusually large transaction amount compared to typical patterns"
+                "💰 Unusually large transaction amount compared to typical patterns",
             )
 
         if factors.time_pattern > 0.5:
             insights.append(
-                "⏰ Transaction occurred during unusual hours - potential suspicious activity"
+                "⏰ Transaction occurred during unusual hours - potential suspicious activity",
             )
 
         if factors.geographical_risk > 0.6:
             insights.append(
-                "🌍 Geographic risk factors detected - location - based risk assessment triggered"
+                "🌍 Geographic risk factors detected - location - based risk assessment triggered",
             )
 
         if factors.behavioral_pattern > 0.7:
             insights.append(
-                "🧠 Behavioral analysis indicates deviation from normal user patterns"
+                "🧠 Behavioral analysis indicates deviation from normal user patterns",
             )
 
         # Advanced ML insights
         if anomaly_score < -0.5:
             insights.append(
-                "[ALERT] Machine learning models flag this as highly unusual transaction"
+                "[ALERT] Machine learning models flag this as highly unusual transaction",
             )
 
         return insights
 
     def _generate_recommendations(
-        self, risk_level: str, factors: RiskFactors
+        self, risk_level: str, factors: RiskFactors,
     ) -> list[str]:
         """Generate actionable recommendations."""
         recommendations = []
 
         if risk_level in ["HIGH", "CRITICAL"]:
             recommendations.append(
-                "[ACTION] Consider requiring additional verification"
+                "[ACTION] Consider requiring additional verification",
             )
             recommendations.append("👀 Manual review recommended")
 
@@ -417,7 +412,7 @@ class AdvancedAIRiskEngine:
 
         if factors.geographical_risk > 0.5:
             recommendations.append(
-                "🔍 Enhanced due diligence for high - risk jurisdictions"
+                "🔍 Enhanced due diligence for high - risk jurisdictions",
             )
 
         if risk_level == "CRITICAL":
@@ -455,7 +450,7 @@ class AdvancedAIRiskEngine:
         return (hash(address + "centrality") % 100) / 100.0
 
     def _analyze_behavioral_pattern(
-        self, transaction: dict[str, Any], history: list[dict[str, Any]]
+        self, transaction: dict[str, Any], history: list[dict[str, Any]],
     ) -> float:
         """Analyze behavioral patterns."""
         if len(history) < 5:
@@ -486,7 +481,7 @@ def _get_advanced_ai_engine() -> AdvancedAIRiskEngine:
 
 
 def get_advanced_risk_score(
-    transaction_data: dict[str, Any], user_history: list[dict[str, Any]] | None = None
+    transaction_data: dict[str, Any], user_history: list[dict[str, Any]] | None = None,
 ) -> AdvancedRiskScore:
     """Get advanced AI risk score for a transaction."""
     engine = _get_advanced_ai_engine()

@@ -55,7 +55,7 @@ def test_db() -> Generator[str, None, None]:
         db_path = tmp_file.name
 
     # Initialize test database
-    conn = cast(ISyncConnection, sqlite3.connect(db_path))
+    conn = cast("ISyncConnection", sqlite3.connect(db_path))
     conn.execute(
         """
         CREATE TABLE users (
@@ -67,7 +67,7 @@ def test_db() -> Generator[str, None, None]:
             subscription_status TEXT DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-    """
+    """,
     )
     conn.execute(
         """
@@ -80,7 +80,7 @@ def test_db() -> Generator[str, None, None]:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
-    """
+    """,
     )
     conn.execute(
         """
@@ -92,7 +92,7 @@ def test_db() -> Generator[str, None, None]:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (transaction_id) REFERENCES transactions (id)
         )
-    """
+    """,
     )
     conn.commit()
     conn.close()
@@ -159,7 +159,7 @@ def ensure_test_db_initialized(test_db: str) -> Generator[None, None, None]:
         # Best-effort: don't fail test collection if initializer can't run.
         # Tests will surface schema-related errors themselves.
         pass
-    yield
+    return
 
 
 @pytest.fixture
@@ -188,7 +188,7 @@ async def _async_client_impl(test_db: str) -> AsyncGenerator[AsyncClient, None]:
     # Use ASGITransport for compatibility with newer httpx versions
     # httpx typing can be strict about ASGI apps; ignore here for test harness
     async with AsyncClient(
-        transport=ASGITransport(app=app),  # type: ignore
+        transport=ASGITransport(app=app),
         base_url="http://test",
     ) as client:
         yield client
@@ -244,7 +244,7 @@ def mock_xrpl_client() -> Mock:
     mock_client = Mock()
     mock_client.is_connected.return_value = True
     mock_client.get_account_info = AsyncMock(
-        return_value={"account_data": {"Account": "rTest123", "Balance": "1000000000"}}
+        return_value={"account_data": {"Account": "rTest123", "Balance": "1000000000"}},
     )
     return mock_client
 
@@ -286,7 +286,7 @@ class DatabaseTestUtils:
     @staticmethod
     def create_test_user(db_path: str, user_data: dict[str, Any]) -> int:
         """Create a test user in the database."""
-        conn = cast(ISyncConnection, sqlite3.connect(db_path, timeout=5.0))
+        conn = cast("ISyncConnection", sqlite3.connect(db_path, timeout=5.0))
         cursor = conn.cursor()
 
         # Try to insert; if the email already exists, return existing id.
@@ -324,7 +324,7 @@ class DatabaseTestUtils:
     @staticmethod
     def create_test_transaction(db_path: str, transaction_data: dict[str, Any]) -> int:
         """Create a test transaction in the database."""
-        conn = cast(ISyncConnection, sqlite3.connect(db_path))
+        conn = cast("ISyncConnection", sqlite3.connect(db_path))
         cursor = conn.cursor()
         cursor.execute(
             "INSERT INTO transactions (user_id, amount, currency, status) VALUES (?, ?, ?, ?)",
@@ -351,11 +351,11 @@ class APITestUtils:
     def authenticate_user(client: TestClient, email: str, password: str) -> str:
         """Authenticate user and return access token."""
         response = client.post(
-            "/auth/login", data={"username": email, "password": password}
+            "/auth/login", data={"username": email, "password": password},
         )
         assert response.status_code == 200
         # Cast to str to satisfy strict typing (response.json() is Any at runtime)
-        return cast(str, response.json()["access_token"])
+        return cast("str", response.json()["access_token"])
 
     @staticmethod
     def get_auth_headers(token: str) -> dict[str, str]:

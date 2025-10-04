@@ -1,4 +1,3 @@
-#
 from __future__ import annotations
 
 # Dummy db for test patching
@@ -10,13 +9,12 @@ from datetime import UTC, datetime, timedelta
 
 def is_subscription_active(user_id: str) -> bool:
     """Return True if the user's subscription is active, False otherwise."""
-
     sub = get_subscription_for_user(user_id)
     return bool(
         sub is not None
         and getattr(sub, "active", False)
         and getattr(sub, "expires_at", None)
-        and sub.expires_at > datetime.now(UTC)
+        and sub.expires_at > datetime.now(UTC),
     )
 
 
@@ -164,7 +162,7 @@ def init_subscription_db() -> None:
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
     )
-    """
+    """,
     )
 
     # Create tiers table
@@ -178,7 +176,7 @@ def init_subscription_db() -> None:
             duration_days INTEGER NOT NULL,
             features TEXT NOT NULL
     )
-    """
+    """,
     )
 
     # Insert default tiers if not exist
@@ -208,13 +206,12 @@ def get_db_connection() -> None:
     if settings.USE_SQLITE:
         # Ensure directory exists using pathlib
         Path(settings.SQLITE_PATH).resolve().parent.mkdir(parents=True, exist_ok=True)
-        conn = cast(ISyncConnection, sqlite3.connect(settings.SQLITE_PATH))
+        conn = cast("ISyncConnection", sqlite3.connect(settings.SQLITE_PATH))
         conn.row_factory = sqlite3.Row
         return conn
-    else:
-        # Use PostgreSQL instead (not implemented in this example)
-        # In a real application, you'd use SQLAlchemy or another ORM
-        raise NotImplementedError("PostgreSQL support not implemented")
+    # Use PostgreSQL instead (not implemented in this example)
+    # In a real application, you'd use SQLAlchemy or another ORM
+    raise NotImplementedError("PostgreSQL support not implemented")
 
 
 # import typing helpers at module top; duplicate removed
@@ -280,7 +277,7 @@ def get_all_tiers() -> list[TierDetails]:
     cursor = conn.cursor()
     cursor.execute(
         "SELECT id, name, description, price_xrp, duration_days, features "
-        "FROM subscription_tiers"
+        "FROM subscription_tiers",
     )
     rows = cursor.fetchall()
     conn.close()
@@ -314,7 +311,7 @@ def get_user_subscription(user_id: str) -> Subscription | None:
             return ret
         # If dict[str, Any] - like, construct Subscription
         try:
-            data = dict[str, Any](ret)
+            data = dict(ret)
         except Exception:
             # Assume attribute - style access
             data = ret.__dict__
@@ -627,8 +624,7 @@ async def require_active_subscription(
 
 
 def check_transaction_limit(user_id: str) -> tuple[bool, int, int]:
-    """
-    Check if user has exceeded transaction limit.
+    """Check if user has exceeded transaction limit.
     Returns: (allowed, used_count, limit)
     """
     subscription = get_user_subscription(user_id)
@@ -655,7 +651,7 @@ def check_transaction_limit(user_id: str) -> tuple[bool, int, int]:
             count INTEGER DEFAULT 1,
             PRIMARY KEY (user_id, transaction_date)
     )
-    """
+    """,
     )
 
     # Get current month usage

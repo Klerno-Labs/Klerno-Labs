@@ -1,5 +1,4 @@
-"""
-Custom Dashboards Module for Klerno Labs.
+"""Custom Dashboards Module for Klerno Labs.
 
 Provides customizable dashboard functionality for Professional and Enterprise tiers.
 """
@@ -106,7 +105,7 @@ class DashboardManager:
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
         )
-        """
+        """,
         )
 
         # Dashboard widgets table
@@ -124,7 +123,7 @@ class DashboardManager:
                 filters TEXT,
                 FOREIGN KEY (dashboard_id) REFERENCES dashboards (id) ON DELETE CASCADE
         )
-        """
+        """,
         )
 
         conn.commit()
@@ -218,7 +217,7 @@ class DashboardManager:
         return dashboards
 
     def get_dashboard(
-        self, dashboard_id: str, user_id: str | None = None
+        self, dashboard_id: str, user_id: str | None = None,
     ) -> Dashboard | None:
         """Get specific dashboard by ID."""
         conn = get_db_connection()
@@ -428,14 +427,13 @@ class DashboardManager:
 
         if widget.type == WidgetType.CHART:
             return self._get_chart_data(widget, user_id)
-        elif widget.type == WidgetType.METRIC:
+        if widget.type == WidgetType.METRIC:
             return self._get_metric_data(widget, user_id)
-        elif widget.type == WidgetType.ALERT_LIST:
+        if widget.type == WidgetType.ALERT_LIST:
             return self._get_alert_data(widget, user_id)
-        elif widget.type == WidgetType.TABLE:
+        if widget.type == WidgetType.TABLE:
             return self._get_table_data(widget, user_id)
-        else:
-            return {"data": [], "timestamp": datetime.utcnow().isoformat()}
+        return {"data": [], "timestamp": datetime.utcnow().isoformat()}
 
     def _get_chart_data(self, widget: DashboardWidget, user_id: str) -> dict[str, Any]:
         """Get chart data."""
@@ -454,7 +452,7 @@ class DashboardManager:
                     "risk_score": random.uniform(0.1, 0.9),
                     # nosec: B311 - non-crypto randomness for demo/test data
                     "transaction_count": random.randint(10, 100),
-                }
+                },
             )
 
         return {"data": data, "timestamp": now.isoformat(), "widget_id": widget.id}
@@ -508,7 +506,7 @@ class DashboardManager:
                     "amount": random.uniform(100, 10000),
                     "risk_score": random.uniform(0.1, 0.9),
                     "status": random.choice(["approved", "flagged", "pending"]),
-                }
+                },
             )
 
         return {

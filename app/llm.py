@@ -5,7 +5,7 @@ import math
 import os
 import statistics as stats
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from dotenv import load_dotenv
 
@@ -20,9 +20,6 @@ _client_v1: Any = None
 _openai_mod: Any = None
 _openai_legacy: Any = None
 
-if TYPE_CHECKING:
-    # Type-only import to satisfy static analyzers when stubs are present
-    pass
 
 # Try the modern SDK first (v1+) using importlib to avoid static import errors
 try:
@@ -53,8 +50,7 @@ if not _use_v1:
 
 
 def _safe_llm(system: str, user: str, temperature: float = 0.2) -> str:
-    """
-    Ask the LLM safely. If anything fails, return a graceful fallback string.
+    """Ask the LLM safely. If anything fails, return a graceful fallback string.
     Works with both OpenAI SDK v1+ and legacy 0.28.x.
     """
     if not OPENAI_API_KEY:
@@ -94,7 +90,7 @@ def _safe_llm(system: str, user: str, temperature: float = 0.2) -> str:
         return f"(LLM error: {e})"
 
 
-def _fmt_amount(v) -> None:
+def _fmt_amount(v):
     try:
         x = float(v)
         if abs(x) >= 1_000_000:
@@ -106,7 +102,7 @@ def _fmt_amount(v) -> None:
         return str(v)
 
 
-def _parse_iso(ts) -> datetime | None:
+def _parse_iso(ts: Any) -> datetime | None:
     try:
         return datetime.fromisoformat(str(ts))
     except Exception:
@@ -119,8 +115,7 @@ def _parse_iso(ts) -> datetime | None:
 
 
 def explain_tx(tx: dict[str, Any]) -> str:
-    """
-    Return a natural - language explanation of a single transaction.
+    """Return a natural - language explanation of a single transaction.
     """
     pre = [
         f"Transaction {tx.get('tx_id', '—')} on {tx.get('chain', 'unknown')}:",
@@ -136,7 +131,7 @@ def explain_tx(tx: dict[str, Any]) -> str:
         "direction, counterparties, and any anomalies. Avoid hedging."
     )
     user = "Explain this JSON transaction for a compliance analyst:\n" + json.dumps(
-        tx, ensure_ascii=False, indent=2
+        tx, ensure_ascii=False, indent=2,
     )
     llm = _safe_llm(system, user)
     return preface + "\n\n" + llm
@@ -148,9 +143,8 @@ def explain_tx(tx: dict[str, Any]) -> str:
 
 
 def explain_batch(txs: list[dict[str, Any]]) -> dict[str, Any]:
-    """
-    For a list[Any] of tx dicts, return:
-      { items: [ {tx_id, explanation}, ... ], summary: "..." }
+    """For a list of tx dicts, return:
+    { items: [ {tx_id, explanation}, ... ], summary: "..." }
     """
     items = []
     for t in txs:
@@ -197,8 +191,7 @@ def explain_batch(txs: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def ask_to_filters(question: str) -> dict[str, Any]:
-    """
-    Convert a question into a JSON filter spec.
+    """Convert a question into a JSON filter spec.
     Keys: date_from, date_to, min_risk, max_risk, categories, include_wallets, exclude_wallets.
     """
     system = (
@@ -210,8 +203,8 @@ def ask_to_filters(question: str) -> dict[str, Any]:
     raw = _safe_llm(system, user)
     try:
         spec = json.loads(raw)
-        if not isinstance(spec, dict[str, Any]):
-            raise ValueError("Spec was not a dict[str, Any]")
+        if not isinstance(spec, dict):
+            raise ValueError("Spec was not a dict")
         return spec
     except Exception:
         return {}
@@ -223,7 +216,7 @@ def ask_to_filters(question: str) -> dict[str, Any]:
 
 
 def apply_filters(
-    rows: list[dict[str, Any]], spec: dict[str, Any]
+    rows: list[dict[str, Any]], spec: dict[str, Any],
 ) -> list[dict[str, Any]]:
     if not rows:
         return []
@@ -325,7 +318,7 @@ def explain_selection(question: str, rows: list[dict[str, Any]]) -> str:
 
 
 def summarize_rows(
-    rows: list[dict[str, Any]], title: str = "Summary"
+    rows: list[dict[str, Any]], title: str = "Summary",
 ) -> dict[str, Any]:
     n = len(rows)
     if n == 0:

@@ -75,13 +75,13 @@ def check_bind_port() -> None:
     port = int(os.getenv("PORT", "8000"))
     if port < 1024:
         warn(
-            f"PORT {port} is a privileged port; prefer >=1024 in container unless root."
+            f"PORT {port} is a privileged port; prefer >=1024 in container unless root.",
         )
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             if s.connect_ex(("127.0.0.1", port)) == 0:
                 warn(
-                    f"Port {port} appears in use locally; ensure unique port per instance."
+                    f"Port {port} appears in use locally; ensure unique port per instance.",
                 )
     except Exception:
         # Non-fatal; some CI/persistent environments restrict socket ops

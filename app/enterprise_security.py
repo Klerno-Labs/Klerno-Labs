@@ -1,5 +1,4 @@
-"""
-Enterprise Security Module for Klerno Labs
+"""Enterprise Security Module for Klerno Labs
 Comprehensive security hardening and protection against unauthorized access.
 """
 
@@ -55,7 +54,7 @@ class SecurityManager:
         ]
 
     def log_security_event(
-        self, event_type: str, details: dict[str, Any], request: Request | None = None
+        self, event_type: str, details: dict[str, Any], request: Request | None = None,
     ) -> None:
         """Log security events for monitoring"""
         event_data = {
@@ -71,7 +70,7 @@ class SecurityManager:
                     "user_agent": request.headers.get("user - agent", ""),
                     "path": str(request.url.path),
                     "method": request.method,
-                }
+                },
             )
 
         security_logger.warning(f"SECURITY_EVENT: {event_data}")
@@ -90,7 +89,7 @@ class SecurityManager:
         return request.client.host if request.client else "unknown"
 
     def is_brute_force(
-        self, identifier: str, window_minutes: int = 15, max_attempts: int = 5
+        self, identifier: str, window_minutes: int = 15, max_attempts: int = 5,
     ) -> bool:
         """Check for brute force attempts"""
         now = datetime.now(UTC)
@@ -108,7 +107,7 @@ class SecurityManager:
         self.failed_attempts[identifier].append(datetime.now(UTC))
 
     def is_rate_limited(
-        self, identifier: str, window_minutes: int = 1, max_requests: int = 60
+        self, identifier: str, window_minutes: int = 1, max_requests: int = 60,
     ) -> bool:
         """Check rate limiting"""
         now = datetime.now(UTC)
@@ -147,9 +146,8 @@ class SecurityManager:
                 if "/" in allowed:  # CIDR notation
                     if client_ip in ipaddress.ip_network(allowed):
                         return True
-                else:  # Single IP
-                    if client_ip == ipaddress.ip_address(allowed):
-                        return True
+                elif client_ip == ipaddress.ip_address(allowed):
+                    return True
             return False
         except ValueError:
             return False  # Invalid IP format
@@ -163,7 +161,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     """Security middleware for request filtering and monitoring"""
 
     async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         start_time = time.time()
         client_ip = security_manager.get_client_ip(request)
@@ -176,13 +174,13 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 request,
             )
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied",
             )
 
         # Rate limiting
         if security_manager.is_rate_limited(client_ip):
             security_manager.log_security_event(
-                SECURITY_EVENTS["RATE_LIMIT_EXCEEDED"], {"ip": client_ip}, request
+                SECURITY_EVENTS["RATE_LIMIT_EXCEEDED"], {"ip": client_ip}, request,
             )
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -197,7 +195,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 request,
             )
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied",
             )
 
         # Input validation for suspicious patterns
@@ -205,7 +203,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             try:
                 body = await request.body()
                 if body and security_manager.check_suspicious_input(
-                    body.decode("utf-8", errors="ignore")
+                    body.decode("utf-8", errors="ignore"),
                 ):
                     security_manager.log_security_event(
                         SECURITY_EVENTS["INJECTION_ATTEMPT"],
@@ -347,7 +345,7 @@ def validate_production_environment() -> bool:
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     if missing_vars:
         print(
-            f"🚨 SECURITY ERROR: Missing required environment variables: {missing_vars}"
+            f"🚨 SECURITY ERROR: Missing required environment variables: {missing_vars}",
         )
         return False
 

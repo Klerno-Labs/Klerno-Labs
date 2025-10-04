@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Klerno Labs Premium Branding & Theme System
+"""Klerno Labs Premium Branding & Theme System
 ===========================================
 
 Professional branding, custom themes, and enterprise-grade visual elements
@@ -18,11 +17,9 @@ Author: Klerno Labs Enterprise Team
 Version: 1.0.0-premium-brand
 """
 
-import base64
 import json
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 
 class PremiumBrandingSystem:
@@ -36,9 +33,8 @@ class PremiumBrandingSystem:
         self.css_dir = self.static_dir / "css"
         self.branding_dir = self.static_dir / "branding"
 
-    def create_brand_identity(self) -> Dict[str, Any]:
+    def create_brand_identity(self) -> dict[str, Any]:
         """Create comprehensive brand identity system"""
-
         # Ensure directories exist
         self.branding_dir.mkdir(parents=True, exist_ok=True)
         self.images_dir.mkdir(parents=True, exist_ok=True)
@@ -110,7 +106,7 @@ class PremiumBrandingSystem:
         # Save brand configuration
         brand_config_path = self.branding_dir / "brand-config.json"
         brand_config_path.write_text(
-            json.dumps(brand_config, indent=2), encoding="utf-8"
+            json.dumps(brand_config, indent=2), encoding="utf-8",
         )
 
         return {
@@ -119,9 +115,8 @@ class PremiumBrandingSystem:
             "brand_elements": list(brand_config.keys()),
         }
 
-    def create_premium_themes(self) -> Dict[str, Any]:
+    def create_premium_themes(self) -> dict[str, Any]:
         """Create multiple premium themes"""
-
         # Premium Theme CSS
         themes_css = """
 /* ===================================================================
@@ -771,9 +766,8 @@ if (typeof module !== 'undefined' && module.exports) {
             ],
         }
 
-    def create_professional_assets(self) -> Dict[str, Any]:
+    def create_professional_assets(self) -> dict[str, Any]:
         """Create professional visual assets and branding elements"""
-
         # Create SVG logo
         logo_svg = """<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -855,7 +849,6 @@ if (typeof module !== 'undefined' && module.exports) {
 
     def generate_report(self) -> str:
         """Generate branding system implementation report"""
-
         brand_results = self.create_brand_identity()
         theme_results = self.create_premium_themes()
         asset_results = self.create_professional_assets()

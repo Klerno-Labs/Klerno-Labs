@@ -1,6 +1,5 @@
 # app / crypto_iso20022_integration.py
-"""
-Comprehensive cryptocurrency ISO20022 compliance integration.
+"""Comprehensive cryptocurrency ISO20022 compliance integration.
 Supports all major cryptocurrencies with proper ISO20022 message formatting.
 """
 
@@ -9,11 +8,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
-from .iso20022_compliance import (
-    ISO20022Manager,
-    MessageType,
-    PaymentPurpose,
-)
+from .iso20022_compliance import ISO20022Manager, MessageType, PaymentPurpose
 
 
 class SupportedCryptos(str, Enum):
@@ -60,7 +55,7 @@ class CryptoNetworkConfig:
 class CryptoISO20022Manager:
     """Manages ISO20022 compliance for all supported cryptocurrencies."""
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.iso_manager = ISO20022Manager()
         self.crypto_configs: dict[SupportedCryptos, CryptoNetworkConfig] = (
             self._initialize_crypto_configs()
@@ -198,10 +193,9 @@ class CryptoISO20022Manager:
         return configs
 
     def _add_remaining_crypto_configs(
-        self, configs: dict[SupportedCryptos, CryptoNetworkConfig]
+        self, configs: dict[SupportedCryptos, CryptoNetworkConfig],
     ) -> None:
         """Add configurations for remaining cryptocurrencies."""
-
         # Cardano (ADA)
         configs[SupportedCryptos.ADA] = CryptoNetworkConfig(
             symbol="ADA",
@@ -302,12 +296,12 @@ class CryptoISO20022Manager:
 
         if not config.regulatory_compliance.get("FATF_TRAVEL_RULE", False):
             recommendations.append(
-                "Comply with FATF Travel Rule for transactions > $1000"
+                "Comply with FATF Travel Rule for transactions > $1000",
             )
 
         if not config.regulatory_compliance.get("MiCA_COMPLIANT", False):
             recommendations.append(
-                "Ensure MiCA (Markets in Crypto - Assets) compliance"
+                "Ensure MiCA (Markets in Crypto - Assets) compliance",
             )
 
         return recommendations
@@ -321,7 +315,6 @@ class CryptoISO20022Manager:
         purpose: PaymentPurpose = PaymentPurpose.OTHR,
     ) -> dict[str, Any]:
         """Generate ISO20022 compliant payment message for cryptocurrency."""
-
         if crypto not in self.crypto_configs:
             raise ValueError(f"Unsupported cryptocurrency: {crypto}")
 
@@ -330,11 +323,11 @@ class CryptoISO20022Manager:
         # Validate amount
         if amount < config.minimum_amount:
             raise ValueError(
-                f"Amount below minimum for {crypto}: {config.minimum_amount}"
+                f"Amount below minimum for {crypto}: {config.minimum_amount}",
             )
         if amount > config.maximum_amount:
             raise ValueError(
-                f"Amount exceeds maximum for {crypto}: {config.maximum_amount}"
+                f"Amount exceeds maximum for {crypto}: {config.maximum_amount}",
             )
 
         # Create ISO20022 payment instruction

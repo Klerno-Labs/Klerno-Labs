@@ -1,5 +1,3 @@
-from typing import Any
-
 from fastapi import Depends, HTTPException, Request, status
 from jwt import DecodeError, ExpiredSignatureError, InvalidTokenError
 
@@ -12,15 +10,15 @@ from .store import UserDict
 # Lazy settings proxy so importing this module doesn't eagerly initialize
 # the app settings at import time.
 class _LazySettings:
-    def __init__(self, factory: Any) -> None:
+    def __init__(self, factory):
         self._factory = factory
         self._obj = None
 
-    def _ensure(self) -> None:
+    def _ensure(self):
         if self._obj is None:
             self._obj = self._factory()
 
-    def __getattr__(self, name: str) -> Any:
+    def __getattr__(self, name):
         self._ensure()
         return getattr(self._obj, name)
 
@@ -28,9 +26,8 @@ class _LazySettings:
 S = _LazySettings(get_settings)
 
 
-def _lookup_user_by_sub(sub: str) -> UserDict | dict[str, Any] | None:
-    """
-    `sub` may be a numeric user id OR an email. Try both.
+def _lookup_user_by_sub(sub: str) -> UserDict | dict | None:
+    """`sub` may be a numeric user id OR an email. Try both.
     """
     # 1) try numeric id
     try:
@@ -50,10 +47,9 @@ def _lookup_user_by_sub(sub: str) -> UserDict | dict[str, Any] | None:
     return None
 
 
-def current_user(request: Request) -> UserDict | dict[str, Any] | None:
-    """
-    Reads JWT from cookie 'session' or Authorization: Bearer <jwt>.
-    Returns a user dict[str, Any] or None.
+def current_user(request: Request) -> UserDict | dict | None:
+    """Reads JWT from cookie 'session' or Authorization: Bearer <jwt>.
+    Returns a user dict or None.
     """
     token: str | None = request.cookies.get("session")
 
@@ -66,7 +62,7 @@ def current_user(request: Request) -> UserDict | dict[str, Any] | None:
         return None
 
     try:
-        payload = decode_jwt(token)  # dict[str, Any] with "sub"
+        payload = decode_jwt(token)  # dict with "sub"
         sub = payload.get("sub")
         if not sub:
             return None
@@ -77,8 +73,8 @@ def current_user(request: Request) -> UserDict | dict[str, Any] | None:
 
 
 def require_user(
-    user: UserDict | dict[str, Any] | None = Depends(current_user),
-) -> UserDict | dict[str, Any]:
+    user: UserDict | dict | None = Depends(current_user),
+) -> UserDict | dict:
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -88,8 +84,8 @@ def require_user(
 
 
 def require_paid_or_admin(
-    user: UserDict | dict[str, Any] | None = Depends(current_user),
-) -> UserDict | dict[str, Any]:
+    user: UserDict | dict | None = Depends(current_user),
+) -> UserDict | dict:
     # If no user (anonymous), treat as payment required to match tests' expectations
     if not user:
         raise HTTPException(
@@ -115,7 +111,7 @@ def require_paid_or_admin(
         if is_active:
             # Add subscription info to a shallow copy to avoid modifying
             # the TypedDict in-place (TypedDicts are static view types).
-            augmented = dict[str, Any](user)
+            augmented = dict(user)
             augmented["xrpl_subscription"] = {
                 "tier": subscription.tier.value,
                 "expires_at": (
@@ -132,9 +128,7 @@ def require_paid_or_admin(
     )
 
 
-def require_admin(
-    user: UserDict | dict[str, Any] = Depends(require_user),
-) -> UserDict | dict[str, Any]:
+def require_admin(user: UserDict | dict = Depends(require_user)) -> UserDict | dict:
     if user.get("role") != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

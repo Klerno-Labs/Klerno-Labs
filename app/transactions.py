@@ -71,7 +71,7 @@ def create_transaction(payload: dict[str, Any] = Body(...), user=Depends(current
                         "id INTEGER PRIMARY KEY, transaction_id INTEGER NOT NULL, "
                         "tag_type TEXT NOT NULL, confidence REAL NOT NULL, "
                         "created_at TEXT DEFAULT (datetime('now'))"
-                        ")"
+                        ")",
                     )
                 with contextlib.suppress(Exception):
                     cur.execute(
@@ -105,28 +105,6 @@ def create_transaction(payload: dict[str, Any] = Body(...), user=Depends(current
             "risk_flags": payload.get("risk_flags", []),
         }
         new_id = store.save_tagged(tx)
-
-        # Even when using the canonical storage, tests expect compliance tags to
-        # be available via the legacy compliance_tags table for high-value txs.
-        if amount >= 50000:
-            with contextlib.suppress(Exception):
-                # Create legacy compliance_tags table if missing
-                con2 = store._conn()
-                cur2 = con2.cursor()
-                cur2.execute(
-                    "CREATE TABLE IF NOT EXISTS compliance_tags ("
-                    "id INTEGER PRIMARY KEY, transaction_id INTEGER NOT NULL, "
-                    "tag_type TEXT NOT NULL, confidence REAL NOT NULL, "
-                    "created_at TEXT DEFAULT (datetime('now'))"
-                    ")"
-                )
-                cur2.execute(
-                    "INSERT INTO compliance_tags (transaction_id, tag_type, confidence) VALUES (?, ?, ?)",
-                    (new_id, "HIGH_AMOUNT", 0.95),
-                )
-                con2.commit()
-                con2.close()
-
         return {"id": new_id, "amount": amount, "currency": currency, "status": status}
 
     except Exception:
@@ -151,7 +129,7 @@ def create_transaction(payload: dict[str, Any] = Body(...), user=Depends(current
                     "category": payload.get("category", "unknown"),
                     "risk_score": payload.get("risk_score", 0.0),
                     "risk_flags": payload.get("risk_flags", []),
-                }
+                },
             )
             return {
                 "id": new_id,
@@ -161,7 +139,7 @@ def create_transaction(payload: dict[str, Any] = Body(...), user=Depends(current
             }
         except Exception as e:
             raise HTTPException(
-                status_code=500, detail="Failed to save transaction"
+                status_code=500, detail="Failed to save transaction",
             ) from e
     finally:
         with contextlib.suppress(Exception):
@@ -217,7 +195,7 @@ def get_compliance_tags(transaction_id: int, user=Depends(current_user)):
     """Return compliance tags for a given legacy transaction id.
 
     This supports the legacy `compliance_tags` table used by compatibility
-    tests. If the table does not exist we return an empty list[Any] (200).
+    tests. If the table does not exist we return an empty list (200).
     """
     con = None
     try:
@@ -226,7 +204,7 @@ def get_compliance_tags(transaction_id: int, user=Depends(current_user)):
         exists = False
         with contextlib.suppress(Exception):
             cur.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='compliance_tags'"
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='compliance_tags'",
             )
             exists = cur.fetchone() is not None
 
@@ -252,7 +230,7 @@ def get_compliance_tags(transaction_id: int, user=Depends(current_user)):
                         "tag_type": r[2],
                         "confidence": float(r[3]) if r[3] is not None else None,
                         "created_at": r[4],
-                    }
+                    },
                 )
         return out
     except Exception:
@@ -264,7 +242,7 @@ def get_compliance_tags(transaction_id: int, user=Depends(current_user)):
 
 @router.get("/transactions")
 def list_transactions(user=Depends(current_user)):
-    """Return a list[Any] of legacy transactions for compatibility tests.
+    """Return a list of legacy transactions for compatibility tests.
 
     Returns rows from `transactions` table when present, otherwise falls
     back to `store.list_all()` if implemented.
@@ -284,7 +262,7 @@ def list_transactions(user=Depends(current_user)):
 
         cur.execute(
             "SELECT id, user_id, amount, currency, status, created_at"
-            " FROM transactions ORDER BY created_at DESC LIMIT 1000"
+            " FROM transactions ORDER BY created_at DESC LIMIT 1000",
         )
         rows = cur.fetchall()
         con.close()
@@ -301,7 +279,7 @@ def list_transactions(user=Depends(current_user)):
                         "currency": r[3],
                         "status": r[4],
                         "created_at": r[5],
-                    }
+                    },
                 )
         return out
     except Exception:

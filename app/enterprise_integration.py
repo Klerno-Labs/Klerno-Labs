@@ -1,5 +1,4 @@
-"""
-Enterprise Integration Orchestrator
+"""Enterprise Integration Orchestrator
 
 Comprehensive integration and verification system for all enterprise - grade features.
 Ensures ISO20022 compliance, top 0.01% quality standards, and maximum security.
@@ -16,11 +15,11 @@ from typing import Any, cast
 
 from .advanced_security import AdvancedSecurityOrchestrator
 from .comprehensive_testing import TestRunner
+from .enterprise_monitoring import MonitoringOrchestrator
 
 # Import all enterprise modules
 from .iso20022_compliance import ISO20022Manager, MessageType
-from .monitoring_consolidated import monitoring_manager
-from .performance_consolidated import performance_manager
+from .performance_optimization import PerformanceOptimizer
 from .resilience_system import CircuitBreakerConfig, ResilienceOrchestrator
 
 logger = logging.getLogger(__name__)
@@ -54,11 +53,11 @@ class QualityMetrics:
 class EnterpriseIntegrationOrchestrator:
     """Main orchestrator for enterprise integration and verification."""
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.iso20022_manager = ISO20022Manager()
-        self.monitoring = monitoring_manager
+        self.monitoring = MonitoringOrchestrator()
         self.security = AdvancedSecurityOrchestrator()
-        self.performance = performance_manager
+        self.performance = PerformanceOptimizer()
         self.test_runner = TestRunner()
         self.resilience = ResilienceOrchestrator()
 
@@ -154,7 +153,7 @@ class EnterpriseIntegrationOrchestrator:
             }
 
             pain001_message = self.iso20022_manager.create_payment_instruction(
-                MessageType.PAIN_001, test_payment
+                MessageType.PAIN_001, test_payment,
             )
 
             # Validate generated message
@@ -182,41 +181,27 @@ class EnterpriseIntegrationOrchestrator:
     async def _initialize_monitoring(self) -> dict[str, Any]:
         """Initialize enterprise monitoring system."""
         try:
-            # Start monitoring services if available
-            if hasattr(self.monitoring, "start_monitoring"):
-                (
-                    await self.monitoring.start_monitoring()
-                    if hasattr(self.monitoring, "start_monitoring")
-                    else None
+            # Start monitoring services
+            await self.monitoring.start_monitoring()
+
+            # Setup alerting
+            alert_rules = [
+                {"metric": "error_rate", "threshold": 1.0, "severity": "high"},
+                {"metric": "response_time", "threshold": 1000, "severity": "medium"},
+                {"metric": "cpu_usage", "threshold": 80, "severity": "medium"},
+                {"metric": "memory_usage", "threshold": 85, "severity": "high"},
+            ]
+
+            for rule in alert_rules:
+                # pass explicitly-typed args to satisfy static type checks
+                self.monitoring.create_alert_rule(
+                    cast("str", rule.get("metric", "")),
+                    float(str(rule.get("threshold", 0.0))),
+                    cast("str", rule.get("severity", "medium")),
                 )
 
-            # Setup alerting if available
-            if hasattr(self.monitoring, "create_alert_rule"):
-                alert_rules = [
-                    {"metric": "error_rate", "threshold": 1.0, "severity": "high"},
-                    {
-                        "metric": "response_time",
-                        "threshold": 1000,
-                        "severity": "medium",
-                    },
-                    {"metric": "cpu_usage", "threshold": 80, "severity": "medium"},
-                    {"metric": "memory_usage", "threshold": 85, "severity": "high"},
-                ]
-
-                for rule in alert_rules:
-                    # pass explicitly-typed args to satisfy static type checks
-                    self.monitoring.create_alert_rule(
-                        cast(str, rule.get("metric", "")),
-                        float(str(rule.get("threshold", 0.0))),
-                        cast(str, rule.get("severity", "medium")),
-                    )
-
             # Get initial metrics
-            metrics = (
-                await self.monitoring.get_current_metrics()
-                if hasattr(self.monitoring, "get_current_metrics")
-                else {}
-            )
+            metrics = await self.monitoring.get_current_metrics()
 
             return {
                 "status": "initialized",
@@ -274,25 +259,16 @@ class EnterpriseIntegrationOrchestrator:
         """Initialize performance optimization system."""
         try:
             # Initialize caching layers
-            if hasattr(self.performance, "initialize_cache_layers"):
-                await self.performance.initialize_cache_layers()
+            await self.performance.initialize_cache_layers()
+
             # Setup database optimization
-            if hasattr(self.performance, "optimize_database_connections"):
-                db_optimization = await self.performance.optimize_database_connections()
-            else:
-                db_optimization = {}
+            db_optimization = await self.performance.optimize_database_connections()
 
             # Configure load balancing
-            if hasattr(self.performance, "setup_load_balancer"):
-                load_balancer = await self.performance.setup_load_balancer()
-            else:
-                load_balancer = {}
+            load_balancer = await self.performance.setup_load_balancer()
 
             # Get performance baseline
-            if hasattr(self.performance, "get_performance_baseline"):
-                baseline = await self.performance.get_performance_baseline()
-            else:
-                baseline = {}
+            baseline = await self.performance.get_performance_baseline()
 
             return {
                 "status": "initialized",
@@ -409,7 +385,7 @@ class EnterpriseIntegrationOrchestrator:
             for msg_type in MessageType:
                 try:
                     message = self.iso20022_manager.create_payment_instruction(
-                        msg_type, test_data
+                        msg_type, test_data,
                     )
                     validation = self.iso20022_manager.validate_message(message)
                     message_tests[msg_type.value] = {
@@ -454,25 +430,13 @@ class EnterpriseIntegrationOrchestrator:
         """Check monitoring integration."""
         try:
             # Test metrics collection
-            metrics = (
-                await self.monitoring.get_current_metrics()
-                if hasattr(self.monitoring, "get_current_metrics")
-                else {}
-            )
+            metrics = await self.monitoring.get_current_metrics()
 
             # Test alerting system
-            alert_status = (
-                self.monitoring.get_alert_status()
-                if hasattr(self.monitoring, "get_alert_status")
-                else {}
-            )
+            alert_status = self.monitoring.get_alert_status()
 
             # Test health checks
-            health_checks = (
-                await self.monitoring.run_health_checks()
-                if hasattr(self.monitoring, "run_health_checks")
-                else {}
-            )
+            health_checks = await self.monitoring.run_health_checks()
 
             # Calculate health score
             health_score = 0
@@ -546,18 +510,18 @@ class EnterpriseIntegrationOrchestrator:
         try:
             # Test performance metrics
             # performance interface may vary; call via dynamic dispatch
-            from typing import Any, cast
+            from typing import cast
 
             performance_metrics = await cast(
-                Any, self.performance
+                "Any", self.performance,
             ).get_performance_metrics()
 
             # Test caching
-            cache_status = await cast(Any, self.performance).get_cache_status()
+            cache_status = await cast("Any", self.performance).get_cache_status()
 
             # Test load balancer
             load_balancer_status = await cast(
-                Any, self.performance
+                "Any", self.performance,
             ).get_load_balancer_status()
 
             # Calculate health score based on performance
@@ -598,10 +562,10 @@ class EnterpriseIntegrationOrchestrator:
         """Check testing integration."""
         try:
             # Run quick test suite
-            test_results = await cast(Any, self.test_runner).run_quick_test_suite()
+            test_results = await cast("Any", self.test_runner).run_quick_test_suite()
 
             # Get coverage metrics
-            coverage_report = await cast(Any, self.test_runner).get_coverage_report()
+            coverage_report = await cast("Any", self.test_runner).get_coverage_report()
 
             # Calculate health score
             passing_rate = test_results.get("passing_rate", 0)
@@ -654,10 +618,10 @@ class EnterpriseIntegrationOrchestrator:
                 "health_score": health_score,
                 "circuit_breakers_active": len(cb_stats),
                 "auto_healing_enabled": healing_stats.get(
-                    "auto_healing_enabled", False
+                    "auto_healing_enabled", False,
                 ),
                 "recent_healing_attempts": len(
-                    healing_stats.get("recent_attempts", [])
+                    healing_stats.get("recent_attempts", []),
                 ),
                 "dependencies_met": True,
                 "issues": (
@@ -675,7 +639,7 @@ class EnterpriseIntegrationOrchestrator:
             }
 
     def _calculate_integration_score(
-        self, verification_results: dict[str, Any]
+        self, verification_results: dict[str, Any],
     ) -> float:
         """Calculate overall integration score."""
         total_score = 0
@@ -695,12 +659,12 @@ class EnterpriseIntegrationOrchestrator:
         try:
             # Performance validation (sub - second response times)
             performance_metrics = await cast(
-                Any, self.performance
+                "Any", self.performance,
             ).get_performance_metrics()
             response_time = performance_metrics.get("avg_response_time", 1000)
             throughput = performance_metrics.get("requests_per_second", 0)
             performance_score = min(
-                100, max(0, 100 - (response_time / 10) + (throughput / 10))
+                100, max(0, 100 - (response_time / 10) + (throughput / 10)),
             )
 
             # Security validation (99.9%+ security score)
@@ -717,8 +681,8 @@ class EnterpriseIntegrationOrchestrator:
             compliance_score = iso_status.get("health_score", 0)
 
             # Test coverage validation (99.9%+ coverage)
-            await cast(Any, self.test_runner).run_comprehensive_test_suite()
-            coverage_report = await cast(Any, self.test_runner).get_coverage_report()
+            await cast("Any", self.test_runner).run_comprehensive_test_suite()
+            coverage_report = await cast("Any", self.test_runner).get_coverage_report()
             test_coverage = coverage_report.get("coverage_percentage", 0)
 
             # Code quality validation
@@ -745,7 +709,7 @@ class EnterpriseIntegrationOrchestrator:
             )
 
             logger.info(
-                f"Quality validation complete. Overall score: {overall_score:.2f}"
+                f"Quality validation complete. Overall score: {overall_score:.2f}",
             )
 
             return self.quality_metrics
@@ -792,14 +756,10 @@ class EnterpriseIntegrationOrchestrator:
             security_audit = await self.security.run_comprehensive_security_audit()
 
             # Run performance benchmarks
-            performance_benchmarks = (
-                await self.performance.run_performance_benchmarks()
-                if hasattr(self.performance, "run_performance_benchmarks")
-                else {}
-            )
+            performance_benchmarks = await self.performance.run_performance_benchmarks()
 
             # Run full test suite
-            full_test_results = await cast(Any, self.test_runner).run_full_test_suite()
+            full_test_results = await cast("Any", self.test_runner).run_full_test_suite()
 
             # Generate compliance report
             compliance_report = await self.iso20022_manager.generate_compliance_report()
@@ -815,7 +775,7 @@ class EnterpriseIntegrationOrchestrator:
                     security_audit.get("score", 0) >= 99.0,
                     performance_benchmarks.get("score", 0) >= 95.0,
                     full_test_results.get("passing_rate", 0) >= 99.9,
-                ]
+                ],
             )
 
             final_result = {
@@ -846,10 +806,10 @@ class EnterpriseIntegrationOrchestrator:
 
             if verification_passed:
                 logger.info(
-                    "🎉 Final verification PASSED! Enterprise system ready for production."
+                    "🎉 Final verification PASSED! Enterprise system ready for production.",
                 )
                 logger.info(
-                    f"Overall quality score: {quality_metrics.overall_score:.2f}%"
+                    f"Overall quality score: {quality_metrics.overall_score:.2f}%",
                 )
                 logger.info("[OK] ISO20022 compliant")
                 logger.info("[OK] Top 0.01% quality standards")
@@ -857,7 +817,7 @@ class EnterpriseIntegrationOrchestrator:
                 logger.info("[OK] Enterprise - grade reliability")
             else:
                 logger.warning(
-                    "❌ Final verification FAILED. Review results and address issues."
+                    "❌ Final verification FAILED. Review results and address issues.",
                 )
 
             return final_result
@@ -945,7 +905,7 @@ __all__ = [
     "EnterpriseIntegrationOrchestrator",
     "IntegrationStatus",
     "QualityMetrics",
+    "get_enterprise_dashboard",
     "initialize_enterprise_system",
     "run_enterprise_verification",
-    "get_enterprise_dashboard",
 ]

@@ -28,4 +28,4 @@ def decrypt_data(encoded: str) -> Any:
         return raw
 
 
-__all__ = ["encrypt_data", "decrypt_data"]
+__all__ = ["decrypt_data", "encrypt_data"]

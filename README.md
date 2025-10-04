@@ -75,8 +75,8 @@ Klerno Labs uses short-lived access tokens (default 15 minutes) and long-lived r
 - **Refresh token lifetime**: Configurable via `REFRESH_TOKEN_EXPIRE_DAYS` (default: 7)
 - **Redis support**: If `USE_REDIS_REFRESH=true` and `REDIS_URL` is set, refresh tokens are stored in Redis for distributed deployments; otherwise, in-memory fallback is used.
 - **Endpoints**:
-   - `/auth/token/refresh`: Exchange a valid refresh token for a new access+refresh token pair (rotates refresh token)
-   - `/auth/token/revoke`: Revoke a refresh token (logout)
+  - `/auth/token/refresh`: Exchange a valid refresh token for a new access+refresh token pair (rotates refresh token)
+  - `/auth/token/revoke`: Revoke a refresh token (logout)
 
 **Environment variables:**
 
@@ -248,9 +248,66 @@ The application now exposes several operational/observability endpoints:
 - `GET /health` or `/healthz` – Basic liveness (always returns 200 if process is running)
 - `GET /status` – Returns JSON with `{"status": "running", "version": <app_version>}`
 - `GET /ready` – Readiness probe that verifies datastore connectivity and returns uptime seconds. Returns 503 if the database layer is not ready.
-- `GET /metrics` – Prometheus metrics (request count & latency histogram) if `prometheus_client` is installed. Omitted silently if the library is not present.
+- `GET /metrics` – Prometheus metrics (request count & latency histogram) if `prometheus_client` is installed. If not installed, a minimal text payload is still served with HTTP 200 to ensure consistent observability.
+- `GET /status/details` – Extended status with runtime toggles:
+   - `strict_auth_transactions`: boolean reflecting STRICT_AUTH_TRANSACTIONS
+   - `rate_limit_enabled`: boolean reflecting ENABLE_RATE_LIMIT
+   - `metrics_mode`: `prometheus` when Prometheus is available, otherwise `fallback`
+   - `request_id_enabled`: always `true` in this build
+   - `request_id_header`: currently `X-Request-ID`
+
+Additionally, responses include lightweight diagnostics headers:
+
+- `Server-Timing`: includes `app;dur=<ms>` for request duration
+- `X-Response-Time`: human-friendly duration string like `12.34ms`
+- When rate limiting is enabled: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, and `Retry-After` on 429 responses
 
 Logging is structured and can emit JSON when `LOG_FORMAT=json` is set in the environment. This improves ingestion into log aggregation systems.
+
+### Request correlation (X-Request-ID)
+
+Every HTTP response now includes an `X-Request-ID` header. If the client supplies
+`X-Request-ID` on the incoming request, that value is echoed back; otherwise a
+UUID4 is generated. The request id is also attached to `request.state.request_id`
+for use by loggers and handlers. This enables end-to-end correlation across load
+balancers, the app, and external systems.
+
+### Response timing & rate limit headers
+
+The app emits standard timing and rate limit headers to help clients and SREs:
+
+- `Server-Timing: app;dur=<ms>` and `X-Response-Time: <ms>ms` on all responses
+- If `ENABLE_RATE_LIMIT=true`:
+   - `X-RateLimit-Limit`: burst capacity
+   - `X-RateLimit-Remaining`: remaining tokens at time of response
+   - `X-RateLimit-Reset`: coarse seconds until bucket is replenished
+   - `Retry-After`: present on 429 responses
+
+### Auth requirement toggle for transactions
+
+By default, for backward compatibility with legacy tests and sample clients, the `POST /transactions` endpoint accepts unauthenticated requests. You can enable a stricter mode that requires authentication and returns HTTP 401 for anonymous writes by setting an environment toggle:
+
+Environment variable:
+
+```
+STRICT_AUTH_TRANSACTIONS=1
+```
+
+When this is set to `1`, anonymous `POST /transactions` requests will be rejected with `{"detail": "Login required"}` (or `Not authenticated`). This mode is designed for production-like environments, while keeping defaults relaxed for existing demos/tests.
+
+Tip: In pytest, prefer isolating this flag per-test to avoid cross-test leakage. See the isolated DB testing note below.
+
+### Isolated DB testing pattern (pytest)
+
+Some tests in this repo use an isolated SQLite database per-test to avoid cross-test contamination and to exercise the canonical storage path. The typical pattern is:
+
+1. Create a temporary file path for a SQLite DB
+2. Set `DATABASE_URL=sqlite:///absolute/path/to/tmp.db` in `os.environ`
+3. Call `from app import store; store.init_db()` to initialize schema
+4. Construct an `AsyncClient` with `ASGITransport(app=app)` and run requests
+5. Clean up env vars and delete the temp file at the end of the test
+
+This ensures tests don't mutate a shared session DB and remain deterministic.
 
 ### Optional Rate Limiting
 

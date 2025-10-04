@@ -15,14 +15,12 @@ from .audit_logger import (
     log_api_access_denied,
     log_auth_failure,
     log_auth_success,
-)
-from .audit_logger import log_logout as audit_log_logout
-from .audit_logger import log_mfa_enabled as audit_log_mfa_enabled
-from .audit_logger import (
     log_password_reset_confirmed,
     log_password_reset_requested,
     log_user_created,
 )
+from .audit_logger import log_logout as audit_log_logout
+from .audit_logger import log_mfa_enabled as audit_log_mfa_enabled
 from .deps import require_user
 from .refresh_tokens import (
     issue_refresh,
@@ -111,6 +109,7 @@ def verify_token(token: str) -> dict[str, Any]:
         InvalidTokenError: If the token is invalid or malformed.
         ExpiredSignatureError: If the token has expired.
         DecodeError: If the token cannot be decoded.
+
     """
     return security_session.decode_jwt(token)
 
@@ -269,6 +268,7 @@ def signup_api(payload: SignupReq, res: Response) -> dict[str, Any]:
     Raises:
         HTTPException: 409 if user already exists with provided email.
         HTTPException: 422 if password doesn't meet security requirements.
+
     """
     # policy imported at module scope; avoid re-importing here
 
@@ -335,7 +335,7 @@ def signup_api(payload: SignupReq, res: Response) -> dict[str, Any]:
         log_auth_success(str(user["id"]), user["email"], user["role"])
         # Access logging also handled by middleware; this is a direct event for traceability
         log_api_access(
-            endpoint="/auth/signup/api", method="POST", user_id=str(user["id"])
+            endpoint="/auth/signup/api", method="POST", user_id=str(user["id"]),
         )
     return {
         "ok": True,
@@ -401,7 +401,7 @@ def enable_mfa(
 
 @router.post("/password-reset/request")
 def request_password_reset(
-    payload: PasswordResetRequest, request: Request
+    payload: PasswordResetRequest, request: Request,
 ) -> dict[str, Any]:
     """Initiate password reset process."""
     email = payload.email.lower().strip()
@@ -435,7 +435,7 @@ def request_password_reset(
         tokens = {}
         # Dynamic attribute for ephemeral password reset tokens (test helper)
     # Use setattr so static analyzers don't complain about unknown attrs.
-    setattr(store, "_reset_tokens", tokens)
+    store._reset_tokens = tokens
 
     tokens[reset_token] = {
         "user_id": user["id"],
@@ -455,7 +455,7 @@ def request_password_reset(
 
 @router.post("/password-reset/confirm")
 def confirm_password_reset(
-    payload: PasswordResetConfirm, request: Request
+    payload: PasswordResetConfirm, request: Request,
 ) -> dict[str, Any]:
     """Complete password reset with new password."""
     # Validate reset token
@@ -495,12 +495,12 @@ def confirm_password_reset(
     if user.get("mfa_enabled", False):
         if not payload.totp_code:
             raise HTTPException(
-                status_code=422, detail="TOTP code required for password reset"
+                status_code=422, detail="TOTP code required for password reset",
             )
 
         if not user.get("totp_secret"):
             raise HTTPException(
-                status_code=500, detail="MFA enabled but no secret found"
+                status_code=500, detail="MFA enabled but no secret found",
             )
 
         totp_secret_val = user.get("totp_secret")
@@ -536,7 +536,7 @@ def confirm_password_reset(
         store.update_user_password(user["id"], new_password_hash)
     except Exception:
         logger.exception(
-            "Failed to update password for user %s during reset", user.get("id")
+            "Failed to update password for user %s during reset", user.get("id"),
         )
 
     # Invalidate reset token
@@ -711,13 +711,13 @@ def login_api(payload: LoginReq, res: Response) -> dict:
             except Exception:
                 # Non-fatal if rotated storage fails
                 logger.debug(
-                    "Failed to record rotated password for user %s", user.get("id")
+                    "Failed to record rotated password for user %s", user.get("id"),
                 )
             store.update_user_password(user["id"], new_hash)
         except Exception:
             # Don't fail login due to persistence issues; log and continue
             logger.exception(
-                "Failed to persist rotated password hash for user %s", user.get("id")
+                "Failed to persist rotated password hash for user %s", user.get("id"),
             )
 
     # Check if MFA is enabled for user
@@ -727,7 +727,7 @@ def login_api(payload: LoginReq, res: Response) -> dict:
 
         if not user.get("totp_secret"):
             raise HTTPException(
-                status_code=500, detail="MFA enabled but no secret found"
+                status_code=500, detail="MFA enabled but no secret found",
             )
 
         totp_secret_val = user.get("totp_secret")
@@ -771,8 +771,8 @@ class RefreshResponse(BaseModel):
 
 @router.post("/token/refresh", response_model=RefreshResponse)
 def refresh_token(
-    payload: RefreshRequest, request: Request
-) -> RefreshResponse:  # noqa: D401
+    payload: RefreshRequest, request: Request,
+) -> RefreshResponse:
     rec = validate_refresh(payload.refresh_token)
     if not rec:
         with contextlib.suppress(Exception):
@@ -785,7 +785,7 @@ def refresh_token(
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     # rotate (single use)
     new_refresh = rotate_refresh(
-        payload.refresh_token, rec.user_id, rec.email, rec.role
+        payload.refresh_token, rec.user_id, rec.email, rec.role,
     )
     access = issue_jwt(rec.user_id, rec.email, rec.role, minutes=15)
     with contextlib.suppress(Exception):
@@ -803,7 +803,7 @@ class RevokeRequest(BaseModel):
 
 
 @router.post("/token/revoke", status_code=204)
-def revoke_token(payload: RevokeRequest, request: Request) -> Response:  # noqa: D401
+def revoke_token(payload: RevokeRequest, request: Request) -> Response:
     revoke_refresh(payload.refresh_token)
     with contextlib.suppress(Exception):
         log_api_access(endpoint="/auth/token/revoke", method="POST", request=request)
@@ -1012,7 +1012,7 @@ def oauth_google(request: Request) -> Response:
     # For now, redirect to regular login with a message
     # This can be expanded to implement actual OAuth flow later
     return RedirectResponse(
-        url="/auth/login?error=OAuth+authentication+coming+soon", status_code=302
+        url="/auth/login?error=OAuth+authentication+coming+soon", status_code=302,
     )
 
 
@@ -1022,7 +1022,7 @@ def oauth_microsoft(request: Request) -> Response:
     # For now, redirect to regular login with a message
     # This can be expanded to implement actual OAuth flow later
     return RedirectResponse(
-        url="/auth/login?error=OAuth+authentication+coming+soon", status_code=302
+        url="/auth/login?error=OAuth+authentication+coming+soon", status_code=302,
     )
 
 

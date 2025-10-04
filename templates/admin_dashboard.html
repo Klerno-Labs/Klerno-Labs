@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,12 +13,14 @@
         .dashboard-card {
             border: 1px solid #e0e0e0;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
         }
+
         .dashboard-card:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
+
         .metric-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -25,6 +28,7 @@
             padding: 20px;
             margin-bottom: 20px;
         }
+
         .status-indicator {
             width: 12px;
             height: 12px;
@@ -32,56 +36,102 @@
             display: inline-block;
             margin-right: 8px;
         }
-        .status-online { background-color: #28a745; }
-        .status-warning { background-color: #ffc107; }
-        .status-offline { background-color: #dc3545; }
+
+        .status-online {
+            background-color: #28a745;
+        }
+
+        .status-warning {
+            background-color: #ffc107;
+        }
+
+        .status-offline {
+            background-color: #dc3545;
+        }
+
         .chart-container {
             position: relative;
             height: 300px;
             margin-bottom: 30px;
         }
+
         .admin-table {
             background: white;
             border-radius: 8px;
             overflow: hidden;
         }
+
         .role-badge {
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.85em;
             font-weight: 500;
         }
-        .role-owner { background-color: #dc3545; color: white; }
-        .role-admin { background-color: #fd7e14; color: white; }
-        .role-manager { background-color: #20c997; color: white; }
-        .role-user { background-color: #6c757d; color: white; }
-        .status-active { background-color: #28a745; color: white; }
-        .status-temp_blocked { background-color: #ffc107; color: black; }
-        .status-perm_blocked { background-color: #dc3545; color: white; }
+
+        .role-owner {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .role-admin {
+            background-color: #fd7e14;
+            color: white;
+        }
+
+        .role-manager {
+            background-color: #20c997;
+            color: white;
+        }
+
+        .role-user {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .status-active {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .status-temp_blocked {
+            background-color: #ffc107;
+            color: black;
+        }
+
+        .status-perm_blocked {
+            background-color: #dc3545;
+            color: white;
+        }
+
         .sidebar {
             min-height: 100vh;
             background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
             color: white;
         }
+
         .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
+            color: rgba(255, 255, 255, 0.8);
             border-radius: 5px;
             margin: 2px 0;
         }
+
         .sidebar .nav-link:hover,
         .sidebar .nav-link.active {
-            background-color: rgba(255,255,255,0.1);
+            background-color: rgba(255, 255, 255, 0.1);
             color: white;
         }
+
         .main-content {
             background-color: #f8f9fa;
             min-height: 100vh;
         }
+
         .confirmation-modal {
             backdrop-filter: blur(5px);
         }
     </style>
 </head>
+
 <body>
     <div class="container-fluid">
         <div class="row">
@@ -134,7 +184,8 @@
                             <span class="status-indicator status-online"></span>
                             <small>System Online</small>
                             <br>
-                            <small class="text-muted">Last updated: <span id="last-update">{{ dashboard_data.status.last_update }}</span></small>
+                            <small class="text-muted">Last updated: <span id="last-update">{{
+                                    dashboard_data.status.last_update }}</span></small>
                         </div>
                     </div>
 
@@ -254,11 +305,13 @@
                                         <tbody>
                                             {% for action in recent_actions %}
                                             <tr>
-                                                <td><small>{{ action.timestamp.strftime('%Y-%m-%d %H:%M') }}</small></td>
+                                                <td><small>{{ action.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                                                </td>
                                                 <td>{{ action.admin_email }}</td>
                                                 <td><span class="badge bg-primary">{{ action.action.value }}</span></td>
                                                 <td>{{ action.target_email }}</td>
-                                                <td><small>{{ action.reason[:50] }}{% if action.reason|length > 50 %}...{% endif %}</small></td>
+                                                <td><small>{{ action.reason[:50] }}{% if action.reason|length > 50
+                                                        %}...{% endif %}</small></td>
                                             </tr>
                                             {% endfor %}
                                         </tbody>
@@ -297,18 +350,24 @@
                                     {% for user_item in users %}
                                     <tr data-email="{{ user_item.email }}">
                                         <td>{{ user_item.email }}</td>
-                                        <td><span class="role-badge role-{{ user_item.role }}">{{ user_item.role.title() }}</span></td>
-                                        <td><span class="role-badge status-{{ user_item.status }}">{{ user_item.status.title() }}</span></td>
-                                        <td><small>{{ user_item.created_at[:10] if user_item.created_at else 'N/A' }}</small></td>
-                                        <td><small>{{ user_item.last_login[:10] if user_item.last_login else 'Never' }}</small></td>
+                                        <td><span class="role-badge role-{{ user_item.role }}">{{ user_item.role.title()
+                                                }}</span></td>
+                                        <td><span class="role-badge status-{{ user_item.status }}">{{
+                                                user_item.status.title() }}</span></td>
+                                        <td><small>{{ user_item.created_at[:10] if user_item.created_at else 'N/A'
+                                                }}</small></td>
+                                        <td><small>{{ user_item.last_login[:10] if user_item.last_login else 'Never'
+                                                }}</small></td>
                                         <td>
                                             {% if user.can_edit_role(user_item.role) %}
                                             <div class="btn-group btn-group-sm">
-                                                <button class="btn btn-outline-primary" onclick="editUser('{{ user_item.email }}')">
+                                                <button class="btn btn-outline-primary"
+                                                    onclick="editUser('{{ user_item.email }}')">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 {% if user.can_block_users() and user_item.email != user.email %}
-                                                <button class="btn btn-outline-warning" onclick="blockUser('{{ user_item.email }}')">
+                                                <button class="btn btn-outline-warning"
+                                                    onclick="blockUser('{{ user_item.email }}')">
                                                     <i class="fas fa-ban"></i>
                                                 </button>
                                                 {% endif %}
@@ -415,7 +474,7 @@
         let currentBlockUser = null;
 
         // Initialize dashboard
-        $(document).ready(function() {
+        $(document).ready(function () {
             initializeCharts();
             setupNavigation();
             startRealTimeUpdates();
@@ -423,7 +482,7 @@
 
         // Navigation
         function setupNavigation() {
-            $('.sidebar .nav-link').click(function(e) {
+            $('.sidebar .nav-link').click(function (e) {
                 e.preventDefault();
                 const section = $(this).data('section');
 
@@ -478,7 +537,7 @@
         // Load chart data
         function loadChartData() {
             $.get('/admin/api/charts/system-performance')
-                .done(function(data) {
+                .done(function (data) {
                     if (systemChart && data.labels) {
                         systemChart.data.labels = data.labels;
                         systemChart.data.datasets = data.datasets;
@@ -489,7 +548,7 @@
 
         // Real-time updates
         function startRealTimeUpdates() {
-            setInterval(function() {
+            setInterval(function () {
                 updateDashboardMetrics();
                 loadChartData();
                 updateAlertWidget();
@@ -499,7 +558,7 @@
 
         function updateDashboardMetrics() {
             $.get('/admin/api/live-status')
-                .done(function(data) {
+                .done(function (data) {
                     $('#last-update').text(new Date().toLocaleString());
 
                     if (data.metrics.application) {
@@ -511,7 +570,7 @@
         // Real-time alert widget
         function updateAlertWidget() {
             $.get('/admin/api/live-status')
-                .done(function(data) {
+                .done(function (data) {
                     let alerts = [];
                     if (data.metrics.security) {
                         if (data.metrics.security.threat_level && data.metrics.security.threat_level !== 'LOW') {
@@ -572,12 +631,12 @@
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(blockData),
-                success: function(response) {
+                success: function (response) {
                     $('#finalConfirmModal').modal('hide');
                     alert('User blocked successfully.');
                     location.reload(); // Refresh the page
                 },
-                error: function(xhr) {
+                error: function (xhr) {
                     const error = xhr.responseJSON?.detail || 'Error blocking user';
                     alert(error);
                 }
@@ -595,4 +654,5 @@
         }
     </script>
 </body>
+
 </html>

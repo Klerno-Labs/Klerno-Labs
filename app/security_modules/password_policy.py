@@ -1,5 +1,4 @@
-"""
-Enterprise - Grade Password Security Policy Implementation
+"""Enterprise - Grade Password Security Policy Implementation
 NIST SP 800 - 63B Compliant Password Management System
 """
 
@@ -42,7 +41,7 @@ except Exception:
 
         def hash(self, password: str) -> str:
             return hashlib.pbkdf2_hmac(
-                "sha256", password.encode(), b"salt", 100000
+                "sha256", password.encode(), b"salt", 100000,
             ).hex()
 
         def verify(self, hash_val: str, password: str) -> bool:
@@ -80,8 +79,7 @@ class PasswordPolicyConfig:
 
 
 class PasswordSecurityPolicy:
-    """
-    World - class password security policy implementation
+    """World - class password security policy implementation
     Exceeds enterprise security standards and compliance requirements
     """
 
@@ -106,10 +104,9 @@ class PasswordSecurityPolicy:
         self.failed_attempts: dict[str, int] = {}
 
     def validate(
-        self, password: str, username: str | None = None
+        self, password: str, username: str | None = None,
     ) -> tuple[bool, list[str]]:
-        """
-        Comprehensive password validation
+        """Comprehensive password validation
         Returns: (is_valid, list_of_errors)
         """
         errors = []
@@ -117,12 +114,12 @@ class PasswordSecurityPolicy:
         # Length validation
         if len(password) < self.config.min_length:
             errors.append(
-                f"Password must be at least {self.config.min_length} characters long"
+                f"Password must be at least {self.config.min_length} characters long",
             )
 
         if len(password) > self.config.max_length:
             errors.append(
-                f"Password must not exceed {self.config.max_length} characters"
+                f"Password must not exceed {self.config.max_length} characters",
             )
 
         # Character complexity requirements
@@ -136,7 +133,7 @@ class PasswordSecurityPolicy:
             errors.append("Password must contain at least one number")
 
         if self.config.require_symbols and not re.search(
-            r'[!@#$%^&*(),.?" :{}|<>]', password
+            r'[!@#$%^&*(),.?" :{}|<>]', password,
         ):
             errors.append("Password must contain at least one special character")
 
@@ -153,7 +150,7 @@ class PasswordSecurityPolicy:
             try:
                 if self.check_breached(password):
                     errors.append(
-                        "This password has been found in data breaches and cannot be used"
+                        "This password has been found in data breaches and cannot be used",
                     )
             except Exception as e:
                 logger.warning(f"Breach check failed: {e}")
@@ -161,8 +158,7 @@ class PasswordSecurityPolicy:
         return len(errors) == 0, errors
 
     def check_breached(self, password: str) -> bool:
-        """
-        Check if password has been breached using Have I Been Pwned API
+        """Check if password has been breached using Have I Been Pwned API
         Uses k - anonymity model for privacy protection
         """
         try:
@@ -181,7 +177,7 @@ class PasswordSecurityPolicy:
             # usage is required by the external API and does not constitute a
             # cryptographic security primitive in our code. # nosec: B324
             sha1_hash = (
-                hashlib.sha1(password.encode()).hexdigest().upper()
+                hashlib.sha1(password.encode(), usedforsecurity=False).hexdigest().upper()
             )  # nosec: B324
             prefix = sha1_hash[:5]
             suffix = sha1_hash[5:]
@@ -238,8 +234,7 @@ class PasswordSecurityPolicy:
 
     def generate_secure_password(self, length: int = 16) -> str:
         """Generate a cryptographically secure password"""
-        if length < self.config.min_length:
-            length = self.config.min_length
+        length = max(length, self.config.min_length)
 
         # Character sets
         uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -282,4 +277,6 @@ class PasswordSecurityPolicy:
 policy = PasswordSecurityPolicy()
 
 # Export key functions
-__all__ = ["PasswordSecurityPolicy", "PasswordPolicyConfig", "policy"]
+__all__ = ["PasswordPolicyConfig", "PasswordSecurityPolicy", "policy"]
+
+

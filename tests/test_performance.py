@@ -1,5 +1,4 @@
-"""
-Test cases for performance optimization components.
+"""Test cases for performance optimization components.
 """
 
 import asyncio

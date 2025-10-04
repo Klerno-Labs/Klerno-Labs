@@ -100,6 +100,7 @@
             opacity: 0;
             transform: translateY(30px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
@@ -107,12 +108,16 @@
     }
 
     @keyframes shake {
-        0%, 100% {
+
+        0%,
+        100% {
             transform: translateX(0);
         }
+
         25% {
             transform: translateX(-2px);
         }
+
         75% {
             transform: translateX(2px);
         }
@@ -175,17 +180,17 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Update the error time
-    const now = new Date();
-    document.getElementById('error-time').textContent = now.toISOString().slice(0, 19).replace('T', ' ');
+    document.addEventListener('DOMContentLoaded', function () {
+        // Update the error time
+        const now = new Date();
+        document.getElementById('error-time').textContent = now.toISOString().slice(0, 19).replace('T', ' ');
 
-    // Add glitch effect particles
-    const container = document.querySelector('.error-container');
+        // Add glitch effect particles
+        const container = document.querySelector('.error-container');
 
-    for (let i = 0; i < 15; i++) {
-        const particle = document.createElement('div');
-        particle.style.cssText = `
+        for (let i = 0; i < 15; i++) {
+            const particle = document.createElement('div');
+            particle.style.cssText = `
             position: absolute;
             width: 2px;
             height: 20px;
@@ -195,12 +200,12 @@ document.addEventListener('DOMContentLoaded', function() {
             animation: glitch ${1 + Math.random() * 2}s ease-in-out infinite;
             animation-delay: ${Math.random() * 3}s;
         `;
-        container.appendChild(particle);
-    }
+            container.appendChild(particle);
+        }
 
-    // Add glitch animation
-    const style = document.createElement('style');
-    style.textContent = `
+        // Add glitch animation
+        const style = document.createElement('style');
+        style.textContent = `
         @keyframes glitch {
             0%, 100% {
                 transform: translateX(0) scaleY(1);
@@ -228,24 +233,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     `;
-    document.head.appendChild(style);
+        document.head.appendChild(style);
 
-    // Auto-retry functionality
-    setTimeout(() => {
-        const retryBtn = document.querySelector('.btn-secondary');
-        if (retryBtn) {
-            retryBtn.innerHTML = '<i class="fas fa-redo"></i> Auto-Retry in 10s';
-            let countdown = 10;
-            const interval = setInterval(() => {
-                countdown--;
-                if (countdown > 0) {
-                    retryBtn.innerHTML = `<i class="fas fa-redo"></i> Auto-Retry in ${countdown}s`;
-                } else {
-                    location.reload();
-                }
-            }, 1000);
-        }
-    }, 5000);
-});
+        // Auto-retry functionality
+        setTimeout(() => {
+            const retryBtn = document.querySelector('.btn-secondary');
+            if (retryBtn) {
+                retryBtn.innerHTML = '<i class="fas fa-redo"></i> Auto-Retry in 10s';
+                let countdown = 10;
+                const interval = setInterval(() => {
+                    countdown--;
+                    if (countdown > 0) {
+                        retryBtn.innerHTML = `<i class="fas fa-redo"></i> Auto-Retry in ${countdown}s`;
+                    } else {
+                        location.reload();
+                    }
+                }, 1000);
+            }
+        }, 5000);
+    });
 </script>
 {% endblock %}

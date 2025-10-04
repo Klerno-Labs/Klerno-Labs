@@ -1,5 +1,4 @@
-"""
-Klerno Labs Enterprise Integration Hub
+"""Klerno Labs Enterprise Integration Hub
 Master orchestration system for all enterprise components
 """
 
@@ -43,7 +42,7 @@ class SystemStatus:
     last_check: datetime
     health_score: float = 100.0
     error_message: str | None = None
-    metrics: dict[str, Any] = field(default_factory=dict[str, Any])
+    metrics: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -71,7 +70,7 @@ class IntegrationConfig:
 class EnterpriseIntegrationHub:
     """Master orchestration system for all enterprise components"""
 
-    def __init__(self, config: IntegrationConfig | None = None) -> None:
+    def __init__(self, config: IntegrationConfig | None = None):
         self.config = config or IntegrationConfig()
         self.system_status: dict[str, SystemStatus] = {}
         self.is_running = False
@@ -105,7 +104,7 @@ class EnterpriseIntegrationHub:
             # Initialize database system
             if self.config.enable_database_pooling:
                 logger.info("[ENTERPRISE] Initializing database system...")
-                self.database_manager = cast(IDatabaseManager, get_database_manager())
+                self.database_manager = cast("IDatabaseManager", get_database_manager())
                 # Some managers may expose an initialize() method (sync or async)
                 init_fn = getattr(self.database_manager, "initialize", None)
                 if callable(init_fn):
@@ -122,9 +121,9 @@ class EnterpriseIntegrationHub:
             # Initialize error handling
             if self.config.enable_error_handling:
                 logger.info("[ENTERPRISE] Initializing error handling...")
-                self.error_handler = cast(IErrorHandler, get_error_handler())
+                self.error_handler = cast("IErrorHandler", get_error_handler())
                 self._update_system_status(
-                    "error_handling", "running", {"circuit_breaker_state": "CLOSED"}
+                    "error_handling", "running", {"circuit_breaker_state": "CLOSED"},
                 )
                 success_count += 1
                 logger.info("[ENTERPRISE] [OK] Error handling initialized")
@@ -132,9 +131,9 @@ class EnterpriseIntegrationHub:
             # Initialize CI/CD pipeline
             if self.config.enable_cicd_pipeline:
                 logger.info("[ENTERPRISE] Initializing CI/CD pipeline...")
-                self.cicd_pipeline = cast(ICICDPipeline, CICDPipeline())
+                self.cicd_pipeline = cast("ICICDPipeline", CICDPipeline())
                 self._update_system_status(
-                    "cicd_pipeline", "running", {"pipeline_stages": 7}
+                    "cicd_pipeline", "running", {"pipeline_stages": 7},
                 )
                 success_count += 1
                 logger.info("[ENTERPRISE] [OK] CI/CD pipeline initialized")
@@ -142,9 +141,9 @@ class EnterpriseIntegrationHub:
             # Initialize health monitoring
             if self.config.enable_health_monitoring:
                 logger.info("[ENTERPRISE] Initializing health monitoring...")
-                self.health_monitor = cast(IHealthMonitor, get_health_monitor())
+                self.health_monitor = cast("IHealthMonitor", get_health_monitor())
                 self._update_system_status(
-                    "health_monitoring", "running", {"checks_registered": 5}
+                    "health_monitoring", "running", {"checks_registered": 5},
                 )
                 success_count += 1
                 logger.info("[ENTERPRISE] [OK] Health monitoring initialized")
@@ -152,9 +151,9 @@ class EnterpriseIntegrationHub:
             # Initialize analytics
             if self.config.enable_analytics:
                 logger.info("[ENTERPRISE] Initializing analytics system...")
-                self.analytics_system = cast(IAnalytics, get_analytics_system())
+                self.analytics_system = cast("IAnalytics", get_analytics_system())
                 self._update_system_status(
-                    "analytics", "running", {"metrics_registered": 4}
+                    "analytics", "running", {"metrics_registered": 4},
                 )
                 success_count += 1
                 logger.info("[ENTERPRISE] [OK] Analytics system initialized")
@@ -165,7 +164,7 @@ class EnterpriseIntegrationHub:
             self.is_running = True
 
             logger.info(
-                f"[ENTERPRISE] [OK] Enterprise initialization complete: {success_count}/{total_systems} systems online"
+                f"[ENTERPRISE] [OK] Enterprise initialization complete: {success_count}/{total_systems} systems online",
             )
 
             # Track initialization event
@@ -190,7 +189,7 @@ class EnterpriseIntegrationHub:
             return False
 
     def _update_system_status(
-        self, component: str, status: str, metrics: dict[str, Any] | None = None
+        self, component: str, status: str, metrics: dict[str, Any] | None = None,
     ) -> None:
         """Update system component status"""
         self.system_status[component] = SystemStatus(
@@ -202,7 +201,6 @@ class EnterpriseIntegrationHub:
 
     def _start_background_workers(self) -> None:
         """Start background monitoring workers"""
-
         # Health monitoring worker
         health_worker = threading.Thread(
             target=self._health_monitoring_worker,
@@ -240,7 +238,7 @@ class EnterpriseIntegrationHub:
                     # Get overall system health
                     health_data = self.health_monitor.get_dashboard_data()
                     overall_health = health_data.get("overall_status", {}).get(
-                        "health_score", 100
+                        "health_score", 100,
                     )
 
                     # Update performance metrics
@@ -249,11 +247,11 @@ class EnterpriseIntegrationHub:
                     # Check for alerts
                     if overall_health < self.config.alert_threshold_critical:
                         self._trigger_alert(
-                            "CRITICAL", f"System health critical: {overall_health}%"
+                            "CRITICAL", f"System health critical: {overall_health}%",
                         )
                     elif overall_health < self.config.alert_threshold_warning:
                         self._trigger_alert(
-                            "WARNING", f"System health degraded: {overall_health}%"
+                            "WARNING", f"System health degraded: {overall_health}%",
                         )
 
                     # Track analytics
@@ -283,15 +281,15 @@ class EnterpriseIntegrationHub:
                 if self.database_manager:
                     # Use compatibility shim if available
                     db_stats = getattr(
-                        self.database_manager, "get_performance_stats", None
+                        self.database_manager, "get_performance_stats", None,
                     )
                     if callable(db_stats):
                         db_stats = db_stats()
                     else:
                         db_stats = getattr(
-                            self.database_manager, "get_database_stats", lambda: {}
+                            self.database_manager, "get_database_stats", dict,
                         )()
-                    if not isinstance(db_stats, dict[str, Any]):
+                    if not isinstance(db_stats, dict):
                         db_stats = {}
                     metrics["database"] = {
                         "active_connections": db_stats.get("active_connections", 0),
@@ -303,13 +301,13 @@ class EnterpriseIntegrationHub:
                 if self.error_handler:
                     # Use compatibility shim if available
                     error_stats_fn = getattr(
-                        self.error_handler, "get_error_statistics", None
+                        self.error_handler, "get_error_statistics", None,
                     )
                     if callable(error_stats_fn):
                         error_stats = error_stats_fn()
                     else:
                         # Fallback to summary
-                        def _default_error_summary(hours: int = 1) -> dict[str, Any]:
+                        def _default_error_summary(hours: int = 1) -> dict:
                             # Small named helper to avoid unused-lambda ARG005 lint
                             return {}
 
@@ -318,13 +316,13 @@ class EnterpriseIntegrationHub:
                             "get_error_summary",
                             _default_error_summary,
                         )()
-                    if not isinstance(error_stats, dict[str, Any]):
+                    if not isinstance(error_stats, dict):
                         error_stats = {}
                     metrics["error_handling"] = {
                         "total_errors": error_stats.get("total_errors", 0),
                         "error_rate": error_stats.get("error_rate", 0),
                         "circuit_breaker_state": error_stats.get(
-                            "circuit_breaker_state", "UNKNOWN"
+                            "circuit_breaker_state", "UNKNOWN",
                         ),
                     }
 
@@ -386,48 +384,48 @@ class EnterpriseIntegrationHub:
                     stats = perf_fn()
                 else:
                     stats = getattr(
-                        self.database_manager, "get_database_stats", lambda: {}
+                        self.database_manager, "get_database_stats", dict,
                     )()
-                if not isinstance(stats, dict[str, Any]):
+                if not isinstance(stats, dict):
                     stats = {}
                 utilization = stats.get("pool_utilization", 0)
                 if utilization > 90:
                     return 50.0  # Critical
-                elif utilization > 70:
+                if utilization > 70:
                     return 80.0  # Warning
                 return 100.0
 
-            elif component == "error_handling" and self.error_handler:
+            if component == "error_handling" and self.error_handler:
                 # Check error rates
                 stats_fn = getattr(self.error_handler, "get_error_statistics", None)
                 if callable(stats_fn):
                     stats = stats_fn()
                 else:
 
-                    def _default_error_summary(hours: int = 1) -> dict[str, Any]:
+                    def _default_error_summary(hours: int = 1) -> dict:
                         return {}
 
                     stats = getattr(
-                        self.error_handler, "get_error_summary", _default_error_summary
+                        self.error_handler, "get_error_summary", _default_error_summary,
                     )()
-                if not isinstance(stats, dict[str, Any]):
+                if not isinstance(stats, dict):
                     stats = {}
                 error_rate = stats.get("error_rate", 0)
                 if error_rate > 10:
                     return 30.0  # Critical
-                elif error_rate > 5:
+                if error_rate > 5:
                     return 70.0  # Warning
                 return 100.0
 
-            elif component == "health_monitoring" and self.health_monitor:
+            if component == "health_monitoring" and self.health_monitor:
                 # Health monitor is self-reporting
                 return 100.0
 
-            elif component == "analytics" and self.analytics_system:
+            if component == "analytics" and self.analytics_system:
                 # Analytics system health
                 return 100.0
 
-            elif component == "cicd_pipeline" and self.cicd_pipeline:
+            if component == "cicd_pipeline" and self.cicd_pipeline:
                 # CI/CD pipeline health
                 return 100.0
 
@@ -516,7 +514,7 @@ class EnterpriseIntegrationHub:
         return dashboard
 
     async def execute_enterprise_operation(
-        self, operation_type: str, operation_data: dict[str, Any]
+        self, operation_type: str, operation_data: dict[str, Any],
     ) -> dict[str, Any]:
         """Execute enterprise operation with full monitoring"""
         operation_id = f"{operation_type}_{int(time.time() * 1000)}"
@@ -538,17 +536,17 @@ class EnterpriseIntegrationHub:
             if self.error_handler:
 
                 @self.error_handler.circuit_breaker(
-                    f"enterprise_operation_{operation_type}"
+                    f"enterprise_operation_{operation_type}",
                 )
                 async def execute_with_protection() -> Any:
                     return await self._execute_operation_internal(
-                        operation_type, operation_data
+                        operation_type, operation_data,
                     )
 
                 result = await execute_with_protection()
             else:
                 result = await self._execute_operation_internal(
-                    operation_type, operation_data
+                    operation_type, operation_data,
                 )
 
             execution_time = time.time() - start_time
@@ -595,7 +593,7 @@ class EnterpriseIntegrationHub:
             # Handle error
             if self.error_handler:
                 self.error_handler.handle_error(
-                    e, f"enterprise_operation_{operation_type}"
+                    e, f"enterprise_operation_{operation_type}",
                 )
 
             logger.error(f"[ENTERPRISE] Operation {operation_id} failed: {e}")
@@ -608,10 +606,9 @@ class EnterpriseIntegrationHub:
             }
 
     async def _execute_operation_internal(
-        self, operation_type: str, operation_data: dict[str, Any]
+        self, operation_type: str, operation_data: dict[str, Any],
     ) -> Any:
         """Internal operation execution"""
-
         if operation_type == "database_query":
             if self.database_manager:
                 query = operation_data.get("query")
@@ -722,9 +719,8 @@ async def initialize_enterprise() -> EnterpriseIntegrationHub | None:
         if success:
             logger.info("[ENTERPRISE] Enterprise system fully operational!")
             return hub
-        else:
-            logger.error("[ENTERPRISE] ❌ Enterprise initialization failed")
-            return None
+        logger.error("[ENTERPRISE] ❌ Enterprise initialization failed")
+        return None
 
     except Exception as e:
         logger.error(f"[ENTERPRISE] Enterprise initialization error: {e}")

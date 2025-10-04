@@ -1,5 +1,4 @@
-"""
-Klerno Labs - Consolidated Monitoring System
+"""Klerno Labs - Consolidated Monitoring System
 Enterprise-grade monitoring, alerting, and observability
 """
 
@@ -108,7 +107,7 @@ class EnhancedMonitor:
                     tags TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
+            """,
             )
 
             # Alerts table
@@ -124,7 +123,7 @@ class EnhancedMonitor:
                     resolved_at TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
+            """,
             )
 
             # Alert rules table
@@ -141,18 +140,18 @@ class EnhancedMonitor:
                     enabled INTEGER DEFAULT 1,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """
+            """,
             )
 
             # Indexes
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_metrics_name ON metrics(metric_name)"
+                "CREATE INDEX IF NOT EXISTS idx_metrics_name ON metrics(metric_name)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON metrics(timestamp)"
+                "CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON metrics(timestamp)",
             )
             conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_alerts_timestamp ON alerts(timestamp)"
+                "CREATE INDEX IF NOT EXISTS idx_alerts_timestamp ON alerts(timestamp)",
             )
 
     def _load_default_rules(self) -> None:
@@ -222,11 +221,11 @@ class EnhancedMonitor:
             )
 
     def record_metric(
-        self, name: str, value: float, tags: dict[str, str] | None = None
+        self, name: str, value: float, tags: dict[str, str] | None = None,
     ) -> None:
         """Record a metric point."""
         metric = MetricPoint(
-            timestamp=datetime.now(UTC), metric_name=name, value=value, tags=tags or {}
+            timestamp=datetime.now(UTC), metric_name=name, value=value, tags=tags or {},
         )
 
         with self._lock:
@@ -349,10 +348,9 @@ class EnhancedMonitor:
 
         if critical_alerts:
             return MonitoringStatus.CRITICAL
-        elif high_alerts:
+        if high_alerts:
             return MonitoringStatus.WARNING
-        else:
-            return MonitoringStatus.WARNING
+        return MonitoringStatus.WARNING
 
     def get_metrics_summary(self, hours: int = 24) -> dict[str, Any]:
         """Get metrics summary for specified time period."""

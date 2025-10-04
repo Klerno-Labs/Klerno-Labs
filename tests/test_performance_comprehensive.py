@@ -1,5 +1,4 @@
-"""
-Performance and Load Tests
+"""Performance and Load Tests
 Tests application performance under various load conditions
 """
 
@@ -187,7 +186,7 @@ class TestConcurrencyAndScaling:
 
                 # Read transaction back (database read)
                 read_response = await async_client.get(
-                    f"/transactions/{transaction_id}"
+                    f"/transactions/{transaction_id}",
                 )
 
                 end_time = time.time()
@@ -258,7 +257,6 @@ class TestMemoryAndResourceUsage:
 
     def test_cpu_usage_monitoring(self):
         """Test CPU usage during intensive operations."""
-
         import psutil
 
         # Monitor CPU usage
@@ -303,7 +301,7 @@ class TestScalabilityLimits:
             try:
                 start_time = time.time()
                 response = await asyncio.wait_for(
-                    async_client.get("/health"), timeout=request_timeout
+                    async_client.get("/health"), timeout=request_timeout,
                 )
                 end_time = time.time()
 

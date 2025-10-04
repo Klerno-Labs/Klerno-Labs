@@ -28,7 +28,7 @@ def _get_sendgrid_client() -> None:
         key = os.getenv("SENDGRID_API_KEY") or _SENDGRID_KEY
         if not key:
             raise RuntimeError(
-                "SendGrid API key not configured. Set SENDGRID_API_KEY to use mailer"
+                "SendGrid API key not configured. Set SENDGRID_API_KEY to use mailer",
             )
     # Import lazily to avoid import-time dependency on sendgrid
     import importlib
@@ -47,7 +47,7 @@ def send_email(to_email: str, subject: str, content: str) -> None:
     """
     if not FROM_EMAIL:
         raise RuntimeError(
-            "Sender address not configured. Set SENDGRID_FROM to use mailer"
+            "Sender address not configured. Set SENDGRID_FROM to use mailer",
         )
 
     sg = _get_sendgrid_client()

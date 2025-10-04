@@ -47,7 +47,6 @@ def main(save_token: bool = False, use_keyring: bool = False) -> int:
     Tries JSON first then form-encoded payload if JSON fails. Prints the first successful
     response and optionally saves tokens to `.run/dev_tokens.json`.
     """
-
     ports = [8000, 9000, 9001]
     paths = ["/auth/login_api", "/auth/login", "/auth/login/api"]
     payload = {"email": "dev@example.com", "password": "anything"}
@@ -64,7 +63,7 @@ def main(save_token: bool = False, use_keyring: bool = False) -> int:
                     r = requests.post(url, data=payload, timeout=2)
                 except Exception as e_form:
                     print(
-                        f"{url} -> connection error (json:{e_json!r} / form:{e_form!r})"
+                        f"{url} -> connection error (json:{e_json!r} / form:{e_form!r})",
                     )
                     continue
 
@@ -97,7 +96,7 @@ def main(save_token: bool = False, use_keyring: bool = False) -> int:
                             exp_ts = _parse_jwt_exp(at)
                             if exp_ts:
                                 saved["access_token_expiry"] = datetime.fromtimestamp(
-                                    exp_ts, tz=UTC
+                                    exp_ts, tz=UTC,
                                 ).isoformat()
 
                         if use_keyring and keyring:
@@ -108,7 +107,7 @@ def main(save_token: bool = False, use_keyring: bool = False) -> int:
                                     json.dumps(saved),
                                 )
                                 print(
-                                    "Saved tokens to OS keyring (service=klerno.dev.tokens)"
+                                    "Saved tokens to OS keyring (service=klerno.dev.tokens)",
                                 )
                                 return 0
                             except Exception as e:

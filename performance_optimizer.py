@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
-"""
-KLERNO LABS ENTERPRISE PLATFORM - PERFORMANCE OPTIMIZATION SUITE
+"""KLERNO LABS ENTERPRISE PLATFORM - PERFORMANCE OPTIMIZATION SUITE
 ===============================================================
 
 Advanced performance benchmarking and optimization tools for enterprise deployment.
 """
 
-import asyncio
+import contextlib
 import gc
 import statistics
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import psutil
 import requests
@@ -24,7 +22,7 @@ class PerformanceMetrics:
     """Container for performance measurement data"""
 
     endpoint: str
-    response_times: List[float]
+    response_times: list[float]
     success_count: int
     error_count: int
     throughput: float
@@ -37,7 +35,7 @@ class PerformanceOptimizer:
 
     def __init__(self, base_url: str = "http://localhost:8000"):
         self.base_url = base_url
-        self.metrics: Dict[str, PerformanceMetrics] = {}
+        self.metrics: dict[str, PerformanceMetrics] = {}
 
     def measure_memory_usage(self) -> float:
         """Get current memory usage in MB"""
@@ -49,7 +47,7 @@ class PerformanceOptimizer:
         return psutil.cpu_percent(interval=0.1)
 
     def benchmark_endpoint(
-        self, endpoint: str, num_requests: int = 100, concurrent_requests: int = 10
+        self, endpoint: str, num_requests: int = 100, concurrent_requests: int = 10,
     ) -> PerformanceMetrics:
         """Benchmark a specific endpoint with concurrent requests"""
         print(f"🔬 Benchmarking {endpoint} with {num_requests} requests...")
@@ -67,8 +65,7 @@ class PerformanceOptimizer:
 
                 if response.status_code == 200:
                     return request_time, True
-                else:
-                    return request_time, False
+                return request_time, False
             except Exception:
                 return time.time() - request_start, False
 
@@ -101,7 +98,7 @@ class PerformanceOptimizer:
         self.metrics[endpoint] = metrics
         return metrics
 
-    def memory_leak_test(self, endpoint: str, iterations: int = 100) -> Dict[str, Any]:
+    def memory_leak_test(self, endpoint: str, iterations: int = 100) -> dict[str, Any]:
         """Test for memory leaks by making repeated requests"""
         print(f"🧪 Testing {endpoint} for memory leaks over {iterations} iterations...")
 
@@ -112,13 +109,11 @@ class PerformanceOptimizer:
             gc.collect()
 
             # Measure memory before request
-            memory_before = self.measure_memory_usage()
+            self.measure_memory_usage()
 
             # Make request
-            try:
+            with contextlib.suppress(Exception):
                 requests.get(f"{self.base_url}{endpoint}", timeout=10)
-            except Exception:
-                pass
 
             # Force garbage collection after request
             gc.collect()
@@ -151,7 +146,7 @@ class PerformanceOptimizer:
             "memory_usage_trend": memory_usage,
         }
 
-    def stress_test_enterprise(self, duration_seconds: int = 60) -> Dict[str, Any]:
+    def stress_test_enterprise(self, duration_seconds: int = 60) -> dict[str, Any]:
         """Comprehensive stress test of enterprise endpoints"""
         print(f"🚀 Running enterprise stress test for {duration_seconds} seconds...")
 
@@ -211,13 +206,13 @@ class PerformanceOptimizer:
                 # Calculate statistics
                 if endpoint_results["response_times"]:
                     endpoint_results["avg_response_time"] = statistics.mean(
-                        endpoint_results["response_times"]
+                        endpoint_results["response_times"],
                     )
                     endpoint_results["min_response_time"] = min(
-                        endpoint_results["response_times"]
+                        endpoint_results["response_times"],
                     )
                     endpoint_results["max_response_time"] = max(
-                        endpoint_results["response_times"]
+                        endpoint_results["response_times"],
                     )
                     endpoint_results["success_rate"] = (
                         endpoint_results["successes"] / endpoint_results["requests"]
@@ -254,10 +249,10 @@ class PerformanceOptimizer:
                 ]
 
                 print(
-                    f"✅ Success Rate: {(metrics.success_count / (metrics.success_count + metrics.error_count)) * 100:.1f}%"
+                    f"✅ Success Rate: {(metrics.success_count / (metrics.success_count + metrics.error_count)) * 100:.1f}%",
                 )
                 print(f"⚡ Throughput: {metrics.throughput:.1f} requests/second")
-                print(f"📈 Response Times:")
+                print("📈 Response Times:")
                 print(f"   Average: {avg_time:.3f}s")
                 print(f"   Min: {min_time:.3f}s")
                 print(f"   Max: {max_time:.3f}s")
@@ -312,7 +307,7 @@ def main():
     for endpoint in core_endpoints:
         try:
             optimizer.benchmark_endpoint(
-                endpoint, num_requests=50, concurrent_requests=5
+                endpoint, num_requests=50, concurrent_requests=5,
             )
             time.sleep(1)  # Brief pause between benchmarks
         except Exception as e:
@@ -328,7 +323,7 @@ def main():
                 "❌ LEAK DETECTED" if leak_results["leak_detected"] else "✅ NO LEAKS"
             )
             print(
-                f"{endpoint}: {leak_status} (Change: {leak_results['memory_increase_mb']:.2f}MB)"
+                f"{endpoint}: {leak_status} (Change: {leak_results['memory_increase_mb']:.2f}MB)",
             )
         except Exception as e:
             print(f"❌ Failed to test {endpoint} for leaks: {e}")

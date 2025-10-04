@@ -1,5 +1,4 @@
-"""
-Klerno Labs Referral System
+"""Klerno Labs Referral System
 Handles referral tracking, rewards, and viral growth mechanics
 """
 
@@ -35,7 +34,7 @@ class ReferralEvent(BaseModel):
     referral_code: str
     event_type: str  # 'signup', 'upgrade', 'payment'
     timestamp: datetime
-    metadata: dict[str, Any] = {}
+    metadata: dict = {}
 
 
 class ReferralReward(BaseModel):
@@ -54,7 +53,7 @@ class ReferralReward(BaseModel):
 class ReferralManager:
     """Handles all referral system operations"""
 
-    def __init__(self, db: Session | None) -> None:
+    def __init__(self, db: Session | None):
         # Accept an optional Session for test/demo usage where a DB may not
         # be available. Callers in production should pass a real Session.
         self.db = db
@@ -98,7 +97,7 @@ class ReferralManager:
         return self._store_referral_event(event)
 
     def track_referral_conversion(
-        self, user_id: str, plan_type: str, amount: float
+        self, user_id: str, plan_type: str, amount: float,
     ) -> bool:
         """Track when a referred user converts to paid"""
         # Find referral event for this user
@@ -130,7 +129,7 @@ class ReferralManager:
         }
 
     def generate_social_share_content(
-        self, user_id: str, platform: str
+        self, user_id: str, platform: str,
     ) -> dict[str, Any]:
         """Generate platform - specific sharing content"""
         referral_link = self.create_referral_link(user_id, f"social_{platform}")
@@ -161,7 +160,7 @@ class ReferralManager:
             },
         }
 
-        # Ensure the returned value is a dict[str, Any] for static type checkers
+        # Ensure the returned value is a dict for static type checkers
         val = templates.get(platform)
         if val is not None:
             return val
@@ -239,7 +238,7 @@ class ReferralManager:
 class ViralAnalytics:
     """Track and analyze viral growth metrics"""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session):
         self.db = db
 
     def calculate_viral_coefficient(self, period_days: int = 30) -> float:
@@ -276,9 +275,7 @@ class ViralAnalytics:
             # ... more mock data
         ]
 
-    def track_sharing_event(
-        self, user_id: str, platform: str, content_type: str
-    ) -> None:
+    def track_sharing_event(self, user_id: str, platform: str, content_type: str):
         """Track when users share content"""
         event = {
             "user_id": user_id,
@@ -294,16 +291,14 @@ class ViralAnalytics:
 # Integration with existing auth system
 
 
-def integrate_referral_with_signup(
-    signup_data: dict[str, Any], referral_code: str | None = None
-) -> None:
+def integrate_referral_with_signup(signup_data: dict, referral_code: str | None = None):
     """Integrate referral tracking with user signup"""
     if referral_code:
         # Track the referral signup (defensive: only call when we have a user_id)
         new_user_id = signup_data.get("user_id")
         if new_user_id:
             referral_manager = ReferralManager(
-                db=None
+                db=None,
             )  # Would pass actual DB session in production
             referral_manager.track_referral_signup(referral_code, str(new_user_id))
 

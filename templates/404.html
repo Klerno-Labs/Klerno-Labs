@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,9 +9,9 @@
     <link rel="stylesheet" href="/static/css/error-pages.css">
     <link rel="icon" href="/static/icons/favicon.ico">
     <style>
-        body { 
-            margin: 0; 
-            padding: 0; 
+        body {
+            margin: 0;
+            padding: 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
@@ -20,6 +21,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="error-container">
         <div class="error-content">
@@ -27,13 +29,13 @@
                 <div class="error-number">404</div>
                 <div class="error-icon">🔍</div>
             </div>
-            
+
             <h1 class="error-title">Oops! Page Not Found</h1>
             <p class="error-description">
-                The page you're looking for seems to have wandered off into the digital void. 
+                The page you're looking for seems to have wandered off into the digital void.
                 Don't worry, it happens to the best of us!
             </p>
-            
+
             <div class="error-actions">
                 <button onclick="history.back()" class="btn btn-primary">
                     ← Go Back
@@ -45,7 +47,7 @@
                     🔍 Search
                 </button>
             </div>
-            
+
             <div class="error-suggestions">
                 <h3>You might be looking for:</h3>
                 <ul>
@@ -55,13 +57,13 @@
                     <li><a href="/help">❓ Help Center</a></li>
                 </ul>
             </div>
-            
+
             <div class="error-contact">
                 <p>Still lost? <a href="/contact">Contact our support team</a></p>
             </div>
         </div>
     </div>
-    
+
     <script>
         function searchSite() {
             const query = prompt('What are you looking for?');
@@ -69,11 +71,12 @@
                 window.location.href = `/search?q=${encodeURIComponent(query)}`;
             }
         }
-        
+
         // Add some delightful animations
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.error-content').style.animation = 'fadeInUp 0.8s ease';
         });
     </script>
 </body>
+
 </html>

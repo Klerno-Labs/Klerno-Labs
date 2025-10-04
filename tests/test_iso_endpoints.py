@@ -27,12 +27,12 @@ def test_build_message_endpoint_pain001():
                     "creditor": {"name": "Bob"},
                     "debtor_account": "DE89370400440532013000",
                     "creditor_account": "GB29NWBK60161331926819",
-                }
+                },
             ],
         },
     }
     r = client.post(
-        "/enterprise/iso20022/build-message", json=payload, headers=_headers()
+        "/enterprise/iso20022/build-message", json=payload, headers=_headers(),
     )
     assert r.status_code == 200
     j = r.json()
@@ -58,18 +58,18 @@ def test_validate_xml_endpoint_pain001():
                     "creditor": {"name": "Bob"},
                     "debtor_account": "DE89370400440532013000",
                     "creditor_account": "GB29NWBK60161331926819",
-                }
+                },
             ],
         },
     }
     r1 = client.post(
-        "/enterprise/iso20022/build-message", json=payload, headers=_headers()
+        "/enterprise/iso20022/build-message", json=payload, headers=_headers(),
     )
     assert r1.status_code == 200
     xml = r1.json().get("xml", "").encode("utf-8")
 
     r2 = client.post(
-        "/enterprise/iso20022/validate-xml", content=xml, headers=_headers()
+        "/enterprise/iso20022/validate-xml", content=xml, headers=_headers(),
     )
     assert r2.status_code == 200
     j2 = r2.json()

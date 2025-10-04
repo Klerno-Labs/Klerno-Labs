@@ -1,5 +1,4 @@
-"""
-Onboarding and User Experience Module for Klerno Labs
+"""Onboarding and User Experience Module for Klerno Labs
 Provides guided onboarding, in - app tutorials, and user experience enhancements
 """
 
@@ -233,7 +232,7 @@ class OnboardingManager:
         return progress
 
     def advance_step(
-        self, user_id: int, step: OnboardingStep, skipped: bool = False
+        self, user_id: int, step: OnboardingStep, skipped: bool = False,
     ) -> OnboardingProgress:
         """Advance user to the next onboarding step"""
         progress = self.user_progress.get(user_id)

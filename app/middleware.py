@@ -1,11 +1,9 @@
-"""
-Middleware for request / response logging, metrics, and monitoring.
+"""Middleware for request / response logging, metrics, and monitoring.
 """
 
 import time
 import uuid
 from collections.abc import Callable
-from typing import Any
 
 import structlog
 from fastapi import Request, Response
@@ -20,7 +18,7 @@ logger = structlog.get_logger("middleware")
 
 # Prometheus metrics
 REQUEST_COUNT = Counter(
-    "http_requests_total", "Total HTTP requests", ["method", "endpoint", "status_code"]
+    "http_requests_total", "Total HTTP requests", ["method", "endpoint", "status_code"],
 )
 
 REQUEST_DURATION = Histogram(
@@ -111,11 +109,11 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             endpoint = self._get_endpoint_path(request)
 
             REQUEST_COUNT.labels(
-                method=request.method, endpoint=endpoint, status_code=500
+                method=request.method, endpoint=endpoint, status_code=500,
             ).inc()
 
             REQUEST_DURATION.labels(
-                method=request.method, endpoint=endpoint, status_code=500
+                method=request.method, endpoint=endpoint, status_code=500,
             ).observe(duration)
 
             ACTIVE_REQUESTS.dec()
@@ -127,11 +125,11 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
         # Record metrics
         REQUEST_COUNT.labels(
-            method=request.method, endpoint=endpoint, status_code=response.status_code
+            method=request.method, endpoint=endpoint, status_code=response.status_code,
         ).inc()
 
         REQUEST_DURATION.labels(
-            method=request.method, endpoint=endpoint, status_code=response.status_code
+            method=request.method, endpoint=endpoint, status_code=response.status_code,
         ).observe(duration)
 
         # Decrement active requests
@@ -195,7 +193,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                     "gyroscope=(), "
                     "speaker=()"
                 ),
-            }
+            },
         )
 
         return response
@@ -255,8 +253,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def _clean_old_requests(self, current_time: float) -> None:
         """Remove requests older than 1 minute."""
         cutoff_time = current_time - 60  # 1 minute ago
-
-        for ip in list[Any](self.requests):
+        for ip in list(self.requests):
             self.requests[ip] = [
                 timestamp for timestamp in self.requests[ip] if timestamp > cutoff_time
             ]
@@ -283,5 +280,5 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 def metrics_endpoint() -> PlainTextResponse:
     """Prometheus metrics endpoint."""
     return PlainTextResponse(
-        generate_latest(), media_type="text/plain; version=0.0.4; charset=utf-8"
+        generate_latest(), media_type="text/plain; version=0.0.4; charset=utf-8",
     )

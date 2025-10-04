@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Klerno Labs Real-Time Features Engine
+"""Klerno Labs Real-Time Features Engine
 =====================================
 
 WebSocket connections, live updates, real-time collaboration, and dynamic content
@@ -21,13 +20,9 @@ Author: Klerno Labs Enterprise Team
 Version: 1.0.0-realtime-elite
 """
 
-import asyncio
 import json
-import time
-import uuid
-from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any
 
 
 class RealTimeFeaturesEngine:
@@ -40,9 +35,8 @@ class RealTimeFeaturesEngine:
         self.css_dir = self.static_dir / "css"
         self.templates_dir = self.workspace_path / "templates"
 
-    def create_realtime_framework(self) -> Dict[str, Any]:
+    def create_realtime_framework(self) -> dict[str, Any]:
         """Create comprehensive real-time features framework"""
-
         # Ensure directories exist
         self.js_dir.mkdir(parents=True, exist_ok=True)
         self.css_dir.mkdir(parents=True, exist_ok=True)
@@ -1318,9 +1312,8 @@ if (typeof module !== 'undefined' && module.exports) {
             ],
         }
 
-    def create_realtime_templates(self) -> Dict[str, Any]:
+    def create_realtime_templates(self) -> dict[str, Any]:
         """Create HTML templates for real-time features"""
-
         # Real-time dashboard template
         dashboard_template = """
 <!DOCTYPE html>
@@ -1469,9 +1462,8 @@ if (typeof module !== 'undefined' && module.exports) {
 
         return {"templates_created": True, "dashboard_template": str(template_path)}
 
-    def generate_integration_code(self) -> Dict[str, Any]:
+    def generate_integration_code(self) -> dict[str, Any]:
         """Generate FastAPI integration code"""
-
         integration_code = '''
 # ===================================================================
 # KLERNO LABS REAL-TIME FASTAPI INTEGRATION
@@ -1632,7 +1624,6 @@ class NotificationManager:
 
     def generate_report(self) -> str:
         """Generate real-time features implementation report"""
-
         framework_results = self.create_realtime_framework()
         template_results = self.create_realtime_templates()
         integration_results = self.generate_integration_code()
@@ -1685,7 +1676,7 @@ class NotificationManager:
         print("🔔 Push notifications and alerts")
         print("📱 Mobile-responsive real-time UI")
         print(
-            f"🏆 Real-Time Score: {report['top_01_percent_status']['real_time_score']}"
+            f"🏆 Real-Time Score: {report['top_01_percent_status']['real_time_score']}",
         )
         print(f"🌟 Status: {report['top_01_percent_status']['collaboration_level']}")
         print("🎯 TOP 0.01% WEB APPLICATION STATUS ACHIEVED!")

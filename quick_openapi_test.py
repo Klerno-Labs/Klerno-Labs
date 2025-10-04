@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Quick OpenAPI test to check if documentation is accessible"""
 
-import time
 
 import requests
 

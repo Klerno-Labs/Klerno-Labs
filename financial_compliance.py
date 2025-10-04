@@ -1,5 +1,4 @@
-"""
-ISO20022 Compliance Module for Klerno Labs
+"""ISO20022 Compliance Module for Klerno Labs
 
 Implements full ISO20022 standard compliance for financial messaging
 including payment initiation, status reporting, and compliance validation.
@@ -219,7 +218,6 @@ class ISO20022MessageBuilder:
         payment_instructions: list[ISO20022PaymentInstruction],
     ) -> str:
         """Create pain.001 CustomerCreditTransferInitiation message."""
-
         root = ET.Element("Document")
         root.set("xmlns", f"{self.namespace}:pain.001.001.11")
 
@@ -307,7 +305,6 @@ class ISO20022MessageBuilder:
         payment_statuses: list[ISO20022PaymentStatus],
     ) -> str:
         """Create pain.002 PaymentStatusReport message."""
-
         root = ET.Element("Document")
         root.set("xmlns", f"{self.namespace}:pain.002.001.12")
 
@@ -349,7 +346,6 @@ class ISO20022MessageBuilder:
         transactions: list[dict[str, Any]],
     ) -> str:
         """Create camt.053 BankToCustomerStatement message."""
-
         root = ET.Element("Document")
         root.set("xmlns", f"{self.namespace}:camt.053.001.10")
 
@@ -402,7 +398,7 @@ class ISO20022MessageBuilder:
         default_msg_id = f"MSG-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
         message_id = payment_data.get("message_id", default_msg_id)
         creation_datetime = self._to_datetime(
-            payment_data.get("creation_datetime", datetime.now(UTC))
+            payment_data.get("creation_datetime", datetime.now(UTC)),
         )
 
         # Extract initiating party
@@ -453,7 +449,7 @@ class ISO20022MessageBuilder:
                 debtor_account=instr_data.get("debtor_account", ""),
                 creditor_account=instr_data.get("creditor_account", ""),
                 payment_purpose=PaymentPurpose(
-                    instr_data.get("payment_purpose", "OTHR")
+                    instr_data.get("payment_purpose", "OTHR"),
                 ),
                 execution_date=exec_dt,
                 remittance_info=instr_data.get("remittance_info"),
@@ -472,7 +468,7 @@ class ISO20022MessageBuilder:
         default_msg_id = f"MSG-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
         message_id = status_data.get("message_id", default_msg_id)
         creation_datetime = self._to_datetime(
-            status_data.get("creation_datetime", datetime.now(UTC))
+            status_data.get("creation_datetime", datetime.now(UTC)),
         )
         original_message_id = status_data.get("original_message_id", "")
 
@@ -485,7 +481,7 @@ class ISO20022MessageBuilder:
             status = ISO20022PaymentStatus(
                 status_id=status_data_item.get("status_id", f"STS-{idx}"),
                 original_instruction_id=status_data_item.get(
-                    "original_instruction_id", ""
+                    "original_instruction_id", "",
                 ),
                 status_code=status_data_item.get("status_code", "ACSC"),
                 status_reason=status_data_item.get("status_reason"),
@@ -505,13 +501,13 @@ class ISO20022MessageBuilder:
         default_msg_id = f"MSG-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
         message_id = statement_data.get("message_id", default_msg_id)
         creation_datetime = self._to_datetime(
-            statement_data.get("creation_datetime", datetime.now(UTC))
+            statement_data.get("creation_datetime", datetime.now(UTC)),
         )
         account_id = statement_data.get("account_id", "")
         transactions = statement_data.get("transactions", [])
 
         return self.create_camt053_message(
-            message_id, creation_datetime, account_id, transactions
+            message_id, creation_datetime, account_id, transactions,
         )
 
 
@@ -653,7 +649,7 @@ class ISO20022Validator:
             return False
 
     def validate_payment_instruction(
-        self, instruction: ISO20022PaymentInstruction
+        self, instruction: ISO20022PaymentInstruction,
     ) -> list[str]:
         """Validate payment instruction compliance."""
         errors = []
@@ -756,7 +752,7 @@ class ISO20022Parser:
                     "message_id": self._get_text(grp_hdr, "MsgId", namespace),
                     "creation_datetime": self._get_text(grp_hdr, "CreDtTm", namespace),
                     "number_of_transactions": self._get_text(
-                        grp_hdr, "NbOfTxs", namespace
+                        grp_hdr, "NbOfTxs", namespace,
                     ),
                     "control_sum": self._get_text(grp_hdr, "CtrlSum", namespace),
                 }
@@ -772,7 +768,7 @@ class ISO20022Parser:
                 cdt_path = ".//ns:CdtTrfTxInf" if namespace else ".//CdtTrfTxInf"
                 for cdt_trf in pmt_inf.findall(cdt_path, namespace):
                     instruction = self._parse_credit_transfer_instruction(
-                        cdt_trf, namespace
+                        cdt_trf, namespace,
                     )
                     parsed_instructions.append(instruction)
 
@@ -851,7 +847,7 @@ class ISO20022Parser:
                 result["original_message"] = {
                     "original_message_id": self._get_text(org, "OrgnlMsgId", namespace),
                     "original_message_name": self._get_text(
-                        org, "OrgnlMsgNmId", namespace
+                        org, "OrgnlMsgNmId", namespace,
                     ),
                 }
 
@@ -867,12 +863,12 @@ class ISO20022Parser:
                     "additional_info": additional_info_list,
                 }
                 sts_rsn = tx.find(
-                    ".//ns:StsRsnInf" if namespace else ".//StsRsnInf", namespace
+                    ".//ns:StsRsnInf" if namespace else ".//StsRsnInf", namespace,
                 )
                 if sts_rsn is not None:
                     # Try nested code and proprietary fields
                     rsn = sts_rsn.find(
-                        ".//ns:Rsn" if namespace else ".//Rsn", namespace
+                        ".//ns:Rsn" if namespace else ".//Rsn", namespace,
                     )
                     if rsn is not None:
                         cd = (
@@ -909,7 +905,7 @@ class ISO20022Parser:
                 entry = {
                     "status_id": self._get_text(tx, "StsId", namespace),
                     "original_instruction_id": self._get_text(
-                        tx, "OrgnlInstrId", namespace
+                        tx, "OrgnlInstrId", namespace,
                     ),
                     "status": self._get_text(tx, "TxSts", namespace),
                     # Back - compat simple reason text if present
@@ -964,12 +960,12 @@ class ISO20022Parser:
                 acct = stmt.find(".//ns:Acct" if namespace else ".//Acct", namespace)
                 if acct is not None:
                     result["statement"]["account"] = self._get_text(
-                        acct, "IBAN", namespace
+                        acct, "IBAN", namespace,
                     )
 
                 # Balances
                 for bal in stmt.findall(
-                    ".//ns:Bal" if namespace else ".//Bal", namespace
+                    ".//ns:Bal" if namespace else ".//Bal", namespace,
                 ):
                     # Type may be in simple Tp or nested CdOrPrtry
                     tp = bal.find("ns:Tp", namespace) if namespace else bal.find("Tp")
@@ -1019,15 +1015,15 @@ class ISO20022Parser:
                             "amount": bal_amt,
                             "currency": bal_ccy,
                             "date": bal_date,
-                        }
+                        },
                     )
 
                 # Entries
                 for ntry in stmt.findall(
-                    ".//ns:Ntry" if namespace else ".//Ntry", namespace
+                    ".//ns:Ntry" if namespace else ".//Ntry", namespace,
                 ):
                     amt_el = ntry.find(
-                        ".//ns:Amt" if namespace else ".//Amt", namespace
+                        ".//ns:Amt" if namespace else ".//Amt", namespace,
                     )
                     currency = amt_el.get("Ccy", "") if amt_el is not None else ""
                     amount_val = (
@@ -1109,7 +1105,7 @@ def create_payment_message(
 
     # Default initiating party (should be configured)
     initiating_party = ISO20022PartyIdentification(
-        name="Klerno Labs Platform", identification="KLERNO001", country="US"
+        name="Klerno Labs Platform", identification="KLERNO001", country="US",
     )
 
     return iso20022_builder.create_pain001_message(
@@ -1169,15 +1165,14 @@ class ISO20022Manager:
         try:
             if message_type == MessageType.PAIN_001:
                 return self.message_builder.build_pain001_message(payment_data)
-            elif message_type == MessageType.PAIN_002:
+            if message_type == MessageType.PAIN_002:
                 return self.message_builder.build_pain002_message(payment_data)
-            elif message_type == MessageType.CAMT_053:
+            if message_type == MessageType.CAMT_053:
                 return self.message_builder.build_camt053_message(payment_data)
-            else:
-                # For other message types, use a generic builder
-                return self.message_builder.build_pain001_message(payment_data)
+            # For other message types, use a generic builder
+            return self.message_builder.build_pain001_message(payment_data)
         except Exception as e:
-            raise ValueError(f"Failed to create payment instruction: {str(e)}") from e
+            raise ValueError(f"Failed to create payment instruction: {e!s}") from e
 
     def _dict_to_instruction(self, data: dict[str, Any]) -> ISO20022PaymentInstruction:
         """Convert a loose dict into ISO20022PaymentInstruction instance."""
@@ -1190,7 +1185,7 @@ class ISO20022Manager:
         creditor_data = data.get("creditor", {})
         debtor = ISO20022PartyIdentification(name=debtor_data.get("name", "Debtor"))
         creditor = ISO20022PartyIdentification(
-            name=creditor_data.get("name", "Creditor")
+            name=creditor_data.get("name", "Creditor"),
         )
         return ISO20022PaymentInstruction(
             instruction_id=data.get("instruction_id", "INSTR - 1"),
@@ -1201,7 +1196,7 @@ class ISO20022Manager:
             debtor_account=data.get("debtor_account", ""),
             creditor_account=data.get("creditor_account", ""),
             payment_purpose=PaymentPurpose(
-                data.get("payment_purpose", PaymentPurpose.OTHR.value)
+                data.get("payment_purpose", PaymentPurpose.OTHR.value),
             ),
             execution_date=data.get("execution_date"),
         )
@@ -1213,19 +1208,18 @@ class ISO20022Manager:
                 # Parse XML message
                 parsed_data = self.parser.parse_xml_message(message_data)
                 return {"valid": True, "parsed_data": parsed_data}
+            # Validate dictionary data
+            errors: list[str] = []
+            if "payment_instructions" in message_data:
+                for item in message_data.get("payment_instructions", []):
+                    instr = self._dict_to_instruction(item)
+                    errors.extend(
+                        self.validator.validate_payment_instruction(instr),
+                    )
             else:
-                # Validate dictionary data
-                errors: list[str] = []
-                if "payment_instructions" in message_data:
-                    for item in message_data.get("payment_instructions", []):
-                        instr = self._dict_to_instruction(item)
-                        errors.extend(
-                            self.validator.validate_payment_instruction(instr)
-                        )
-                else:
-                    instr = self._dict_to_instruction(message_data)
-                    errors.extend(self.validator.validate_payment_instruction(instr))
-                return {"valid": len(errors) == 0, "errors": errors}
+                instr = self._dict_to_instruction(message_data)
+                errors.extend(self.validator.validate_payment_instruction(instr))
+            return {"valid": len(errors) == 0, "errors": errors}
         except Exception as e:
             return {"valid": False, "errors": [str(e)]}
 
@@ -1247,12 +1241,12 @@ class ISO20022Manager:
                         "debtor_account": "DE89370400440532013000",
                         "creditor_account": "GB29NWBK60161331926819",
                         "payment_purpose": PaymentPurpose.OTHR.value,
-                    }
+                    },
                 ],
             }
 
             message = self.create_payment_instruction(
-                MessageType.PAIN_001, payment_data
+                MessageType.PAIN_001, payment_data,
             )
             validation = self.validate_message(message)
             return bool(validation.get("valid", False))

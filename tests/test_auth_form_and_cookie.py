@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 def setup_temp_db():
     tmp = tempfile.NamedTemporaryFile(
-        prefix="klerno_test_pytest_", suffix=".db", delete=False
+        prefix="klerno_test_pytest_", suffix=".db", delete=False,
     )
     db_path = tmp.name
     tmp.close()
@@ -30,7 +30,7 @@ def test_form_login_and_cookie():
     import app.main as main_mod
 
     importlib.reload(main_mod)
-    import app.store as store
+    from app import store
 
     importlib.reload(store)
     import app.security_session as sec
@@ -52,7 +52,7 @@ def test_form_login_and_cookie():
 
     # Simulate form login which sets a session cookie
     resp = client.post(
-        "/auth/login", data={"email": "form_user@example.com", "password": pw}
+        "/auth/login", data={"email": "form_user@example.com", "password": pw},
     )
     assert resp.status_code == 200
     # Ensure cookie set

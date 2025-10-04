@@ -1,7 +1,6 @@
 # app / system_monitor.py
-"""
-Advanced system monitoring for admin dashboard with real - time metrics,
-    health checks, and professional charts.
+"""Advanced system monitoring for admin dashboard with real - time metrics,
+health checks, and professional charts.
 """
 
 import asyncio
@@ -23,7 +22,8 @@ else:
     try:
         import psutil
     except Exception:
-        psutil = None
+        psutil = None  # type: ignore
+
 logger = logging.getLogger(__name__)
 
 
@@ -71,8 +71,8 @@ class SecurityMetrics:
 
 class SystemMonitor:
     def auto_block_suspicious_users(
-        self, admin_manager, guardian_module, risk_threshold=0.9
-    ) -> None:
+        self, admin_manager, guardian_module, risk_threshold=0.9,
+    ):
         """Scan recent transactions, auto - block users with high risk, and log alerts."""
         try:
             import sqlite3
@@ -81,7 +81,7 @@ class SystemMonitor:
             # Scan last 10 minutes of transactions
             cutoff = datetime.now(UTC) - timedelta(minutes=10)
             with sqlite3.connect(self.db_path) as conn:
-                typed_conn = cast(ISyncConnection, conn)
+                typed_conn = cast("ISyncConnection", conn)
                 cursor = typed_conn.cursor()
                 cursor.execute(
                     """
@@ -137,7 +137,7 @@ class SystemMonitor:
 
     """Comprehensive system monitoring for enterprise admin dashboard."""
 
-    def __init__(self, db_path: str = "data/klerno.db", init_db: bool = False) -> None:
+    def __init__(self, db_path: str = "data/klerno.db", init_db: bool = False):
         """Create a SystemMonitor instance.
 
         By default this constructor does not perform any filesystem or
@@ -158,11 +158,11 @@ class SystemMonitor:
         if init_db:
             self.init_monitoring_tables()
 
-    def init_monitoring_tables(self) -> None:
+    def init_monitoring_tables(self):
         """Initialize monitoring database tables."""
         try:
             with sqlite3.connect(self.db_path) as conn:
-                typed_conn = cast(ISyncConnection, conn)
+                typed_conn = cast("ISyncConnection", conn)
                 cursor = typed_conn.cursor()
 
                 # System metrics table
@@ -181,7 +181,7 @@ class SystemMonitor:
                             active_connections INTEGER,
                             uptime_seconds INTEGER
                     )
-                """
+                """,
                 )
 
                 # Application metrics table
@@ -198,7 +198,7 @@ class SystemMonitor:
                             database_connections INTEGER,
                             cache_hit_rate REAL
                     )
-                """
+                """,
                 )
 
                 # Security metrics table
@@ -213,7 +213,7 @@ class SystemMonitor:
                             threat_level TEXT,
                             last_security_scan TIMESTAMP
                     )
-                """
+                """,
                 )
 
                 # Real - time alerts table
@@ -228,7 +228,7 @@ class SystemMonitor:
                             resolved BOOLEAN DEFAULT 0,
                             resolved_at TIMESTAMP
                     )
-                """
+                """,
                 )
 
                 conn.commit()
@@ -292,7 +292,7 @@ class SystemMonitor:
         try:
             # Count total users
             with sqlite3.connect(self.db_path) as conn:
-                typed_conn = cast(ISyncConnection, conn)
+                typed_conn = cast("ISyncConnection", conn)
                 cursor = typed_conn.cursor()
                 cursor.execute("SELECT COUNT(*) FROM users_enhanced")
                 total_users = cursor.fetchone()[0]
@@ -301,7 +301,7 @@ class SystemMonitor:
             current_time = time.time()
             minute_ago = current_time - 60
             requests_per_minute = len(
-                [t for t in self.response_times if t > minute_ago]
+                [t for t in self.response_times if t > minute_ago],
             )
 
             # Calculate average response time
@@ -337,7 +337,7 @@ class SystemMonitor:
             hour_ago = datetime.now(UTC) - timedelta(hours=1)
 
             with sqlite3.connect(self.db_path) as conn:
-                typed_conn = cast(ISyncConnection, conn)
+                typed_conn = cast("ISyncConnection", conn)
                 cursor = typed_conn.cursor()
                 cursor.execute(
                     """
@@ -367,7 +367,7 @@ class SystemMonitor:
             logger.error("Error getting security metrics: %s", e)
             return None
 
-    def store_metrics(self) -> None:
+    def store_metrics(self):
         """Store current metrics in database."""
         try:
             system_metrics = self.get_system_metrics()
@@ -375,7 +375,7 @@ class SystemMonitor:
             security_metrics = self.get_security_metrics()
 
             with sqlite3.connect(self.db_path) as conn:
-                typed_conn = cast(ISyncConnection, conn)
+                typed_conn = cast("ISyncConnection", conn)
                 cursor = typed_conn.cursor()
 
                 if system_metrics:
@@ -447,7 +447,7 @@ class SystemMonitor:
             cutoff_time = datetime.now(UTC) - timedelta(hours=hours)
 
             with sqlite3.connect(self.db_path) as conn:
-                typed_conn = cast(ISyncConnection, conn)
+                typed_conn = cast("ISyncConnection", conn)
                 cursor = typed_conn.cursor()
 
                 # Get recent system metrics
@@ -489,7 +489,7 @@ class SystemMonitor:
                     SELECT * FROM system_alerts
                     WHERE resolved=0
                     ORDER BY timestamp DESC
-                """
+                """,
                 )
                 alerts = cursor.fetchall()
 
@@ -555,28 +555,25 @@ class SystemMonitor:
                 },
                 "historical_data": {
                     "system": [
-                        dict[str, Any](zip(system_cols, row, strict=False))
-                        for row in system_data
+                        dict(zip(system_cols, row, strict=False)) for row in system_data
                     ],
                     "application": [
-                        dict[str, Any](zip(app_cols, row, strict=False))
-                        for row in app_data
+                        dict(zip(app_cols, row, strict=False)) for row in app_data
                     ],
                     "security": [
-                        dict[str, Any](zip(security_cols, row, strict=False))
+                        dict(zip(security_cols, row, strict=False))
                         for row in security_data
                     ],
                 },
                 "alerts": [
-                    dict[str, Any](zip(alert_cols, alert, strict=False))
-                    for alert in alerts
+                    dict(zip(alert_cols, alert, strict=False)) for alert in alerts
                 ],
             }
         except Exception as e:
             logger.error("Error getting dashboard data: %s", e)
             return {"error": str(e)}
 
-    def add_alert(self, alert_type: str, severity: str, message: str) -> None:
+    def add_alert(self, alert_type: str, severity: str, message: str):
         """Add system alert."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -592,7 +589,7 @@ class SystemMonitor:
         except Exception as e:
             logger.error("Error adding alert: %s", e)
 
-    def record_request(self, response_time: float, is_error: bool = False) -> None:
+    def record_request(self, response_time: float, is_error: bool = False):
         """Record API request for metrics."""
         self.request_count += 1
         self.response_times.append(time.time())
@@ -603,19 +600,19 @@ class SystemMonitor:
         if len(self.response_times) > 1000:
             self.response_times = self.response_times[-1000:]
 
-    def add_session(self, session_id: str) -> None:
+    def add_session(self, session_id: str):
         """Add active session."""
         self.active_sessions.add(session_id)
 
-    def remove_session(self, session_id: str) -> None:
+    def remove_session(self, session_id: str):
         """Remove active session."""
         self.active_sessions.discard(session_id)
 
-    def record_failed_login(self) -> None:
+    def record_failed_login(self):
         """Record failed login attempt."""
         self.failed_logins += 1
 
-    async def start_monitoring(self, admin_manager=None, guardian_module=None) -> Any:
+    async def start_monitoring(self, admin_manager=None, guardian_module=None):
         """Start background monitoring task with automated incident response."""
         while True:
             try:

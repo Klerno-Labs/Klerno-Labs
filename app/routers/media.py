@@ -1,0 +1,57 @@
+from __future__ import annotations
+
+import hashlib
+from pathlib import Path
+
+from fastapi import APIRouter, Request, Response
+
+router = APIRouter()
+
+
+def _choose_hero_variant(accept: str) -> tuple[str, str]:
+    base = Path("static") / "images" / "hero-bg"
+    # Order by client support preference then fallback
+    candidates: list[tuple[str, str]] = []
+    acc = accept.lower()
+    if "image/avif" in acc:
+        candidates.append((str(base.with_suffix(".avif")), "image/avif"))
+    if "image/webp" in acc:
+        candidates.append((str(base.with_suffix(".webp")), "image/webp"))
+    # Always include JPEG fallback last
+    candidates.append((str(base.with_suffix(".jpg")), "image/jpeg"))
+
+    for path, mime in candidates:
+        if Path(path).exists():
+            return path, mime
+    # Last resort: JPEG path (may 404 if missing)
+    return str(base.with_suffix(".jpg")), "image/jpeg"
+
+
+@router.get("/images/hero-bg", include_in_schema=False)
+async def hero_bg(request: Request) -> Response:
+    try:
+        accept = request.headers.get("accept", "")
+        path, mime = _choose_hero_variant(accept)
+        # Read file
+        with Path(path).open("rb") as f:
+            data = f.read()
+        # Compute a weak ETag from content bytes
+        etag = 'W/"' + hashlib.sha1(data, usedforsecurity=False).hexdigest()[:16] + '"'  # nosec: B324 - ETag generation only
+
+        # Handle conditional request
+        inm = request.headers.get("if-none-match")
+        headers = {
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "ETag": etag,
+        }
+        if inm and inm == etag:
+            return Response(status_code=304, headers=headers)
+        return Response(content=data, media_type=mime, headers=headers)
+    except Exception:
+        # Fail-open to a 1x1 transparent PNG to avoid layout shifts if the file is missing in rare cases
+        tiny_png = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+            b"\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\x0d\n\x2d\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        headers = {"Cache-Control": "no-store"}
+        return Response(content=tiny_png, media_type="image/png", headers=headers)

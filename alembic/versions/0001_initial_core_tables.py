@@ -18,7 +18,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():  # noqa: D401
+def upgrade():
     op.create_table(
         "users",
         sa.Column("id", sa.Integer, primary_key=True),
@@ -53,11 +53,11 @@ def upgrade():  # noqa: D401
         ),
     )
     op.create_index(
-        "idx_transactions_created_at", "transactions", ["created_at"]
-    )  # noqa: E501
+        "idx_transactions_created_at", "transactions", ["created_at"],
+    )
 
 
-def downgrade():  # noqa: D401
+def downgrade():
     with op.batch_alter_table("transactions"):
         op.drop_index("idx_transactions_created_at")
     op.drop_table("transactions")

@@ -51,10 +51,9 @@ def _ensure_data_dir() -> None:
 
 
 def expected_api_key() -> str:
-    """
-    Priority:
-      1) ENV: X_API_KEY (or API_KEY)
-      2) File: data / api_key.secret (written by admin rotation)
+    """Priority:
+    1) ENV: X_API_KEY (or API_KEY)
+    2) File: data / api_key.secret (written by admin rotation)
     """
     # ensure env vars are loaded (deferred)
     _ensure_env_loaded()
@@ -97,8 +96,7 @@ async def enforce_api_key(
     request: Request,
     x_api_key: str | None = Header(default=None),
 ) -> bool:
-    """
-    Authorize EITHER:
+    """Authorize EITHER:
       • x - api - key header that matches the expected key, OR
       • a valid session (so the web dashboard works without pasting a key)
 
@@ -188,7 +186,7 @@ def rotate_api_key() -> str:
                     key[:4] + "..." + key[-4:] if len(key) >= 8 else "***"
                 ),
             },
-        )
+        ),
     )
 
     return key

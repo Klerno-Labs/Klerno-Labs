@@ -1,5 +1,4 @@
-"""
-Enterprise Multi - Factor Authentication (MFA) Implementation
+"""Enterprise Multi - Factor Authentication (MFA) Implementation
 Multi - Factor Authentication (MFA) core logic for Klerno Labs.
 
 TOTP - based authentication with encrypted storage and recovery codes
@@ -83,7 +82,7 @@ except Exception:
                 return None
 
             def make_image(
-                self, fill_color: str = "black", back_color: str = "white"
+                self, fill_color: str = "black", back_color: str = "white",
             ) -> "_FallbackQRCode._MockImage":
                 return _FallbackQRCode._MockImage()
 
@@ -133,19 +132,17 @@ def decrypt_seed(token: str) -> str:
 
 
 class MFAManager:
-    """
-    Enterprise - grade MFA manager with comprehensive security features
+    """Enterprise - grade MFA manager with comprehensive security features
     """
 
-    def __init__(self, encryption_key: bytes | None = None) -> None:
+    def __init__(self, encryption_key: bytes | None = None):
         """Initialize MFA manager with optional custom encryption key"""
         self.encryption_key = encryption_key or MFA_ENCRYPTION_KEY.encode()
         self.fernet = Fernet(self.encryption_key)
         self.recovery_codes_count = 10
 
-    def setup_user_mfa(self, user_id: str, email: str) -> dict[str, Any]:
-        """
-        Set up MFA for a new user
+    def setup_user_mfa(self, user_id: str, email: str) -> dict:
+        """Set up MFA for a new user
         Returns setup information including secret and QR code
         """
         secret = generate_totp_secret()
@@ -170,8 +167,7 @@ class MFAManager:
         return self.fernet.decrypt(encrypted_secret.encode()).decode()
 
     def verify_token(self, token: str, encrypted_secret: str) -> bool:
-        """
-        Verify MFA token against encrypted secret
+        """Verify MFA token against encrypted secret
         Returns True if token is valid
         """
         try:
@@ -181,10 +177,9 @@ class MFAManager:
             logger.error(f"MFA verification failed: {e}")
             return False
 
-    def generate_recovery_codes(self) -> list[Any]:
-        """
-        Generate backup recovery codes for MFA
-        Returns list[Any] of one - time use codes
+    def generate_recovery_codes(self) -> list:
+        """Generate backup recovery codes for MFA
+        Returns list of one - time use codes
         """
         codes = []
         for _ in range(self.recovery_codes_count):
@@ -195,11 +190,8 @@ class MFAManager:
             codes.append(code)
         return codes
 
-    def verify_recovery_code(
-        self, provided_code: str, stored_codes: list[Any]
-    ) -> tuple[Any, ...]:
-        """
-        Verify a recovery code and remove it from available codes
+    def verify_recovery_code(self, provided_code: str, stored_codes: list) -> tuple:
+        """Verify a recovery code and remove it from available codes
         Returns (is_valid, remaining_codes)
         """
         provided_code = provided_code.upper().strip()
@@ -209,8 +201,7 @@ class MFAManager:
         return False, stored_codes
 
     def generate_qr_code_image(self, qr_uri: str) -> bytes:
-        """
-        Generate QR code image from URI
+        """Generate QR code image from URI
         Returns PNG image as bytes
         """
         qr = qrcode.QRCode(
@@ -232,8 +223,7 @@ class MFAManager:
         return bool(encrypted_secret and len(encrypted_secret) > 0)
 
     def disable_mfa(self, user_id: str) -> bool:
-        """
-        Disable MFA for a user (admin function)
+        """Disable MFA for a user (admin function)
         Returns True if successful
         """
         try:
@@ -245,9 +235,8 @@ class MFAManager:
             logger.error(f"Failed to disable MFA for user {user_id}: {e}")
             return False
 
-    def reset_mfa(self, user_id: str, email: str) -> dict[str, Any]:
-        """
-        Reset MFA for a user (generates new secret)
+    def reset_mfa(self, user_id: str, email: str) -> dict:
+        """Reset MFA for a user (generates new secret)
         Returns new setup information
         """
         logger.warning(f"MFA reset requested for user {user_id}")
@@ -260,10 +249,10 @@ mfa_manager = MFAManager()
 # Export key functions and classes
 __all__ = [
     "MFAManager",
-    "mfa_manager",
-    "generate_totp_secret",
-    "verify_totp",
-    "generate_qr_code_uri",
-    "encrypt_seed",
     "decrypt_seed",
+    "encrypt_seed",
+    "generate_qr_code_uri",
+    "generate_totp_secret",
+    "mfa_manager",
+    "verify_totp",
 ]

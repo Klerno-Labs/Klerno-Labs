@@ -20,7 +20,7 @@ def _ensure_pandas() -> None:
         globals()["pd"] = pd
     except ImportError as e:
         raise ImportError(
-            "pandas is required to convert transactions to DataFrame"
+            "pandas is required to convert transactions to DataFrame",
         ) from e
 
 
@@ -38,9 +38,9 @@ def summary(txs: list[TaggedTransaction]) -> ReportSummary:
     from decimal import Decimal
 
     # Ensure sums produce Decimal when no items present by providing Decimal start
-    total_in = sum((t.amount for t in txs if t.direction == "in"), Decimal("0"))
-    total_out = sum((t.amount for t in txs if t.direction == "out"), Decimal("0"))
-    fees = sum((t.fee or Decimal("0") for t in txs), Decimal("0"))
+    total_in = sum((t.amount for t in txs if t.direction == "in"), Decimal(0))
+    total_out = sum((t.amount for t in txs if t.direction == "out"), Decimal(0))
+    fees = sum((t.fee or Decimal(0) for t in txs), Decimal(0))
 
     # Counts
     count_in = sum(1 for t in txs if t.direction == "in")

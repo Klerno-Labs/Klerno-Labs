@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-KLERNO LABS ENTERPRISE PLATFORM - QUICK API LOAD TEST
+"""KLERNO LABS ENTERPRISE PLATFORM - QUICK API LOAD TEST
 ======================================================
 
 Simplified but comprehensive API load testing with stability focus.
@@ -8,10 +7,10 @@ Simplified but comprehensive API load testing with stability focus.
 
 import asyncio
 import json
-import logging
 import time
 from datetime import datetime
-from typing import Any, Dict, List
+from pathlib import Path
+from typing import Any
 
 import aiohttp
 
@@ -33,8 +32,8 @@ class QuickLoadTester:
         ]
 
     async def test_endpoint(
-        self, session: aiohttp.ClientSession, endpoint: str
-    ) -> Dict[str, Any]:
+        self, session: aiohttp.ClientSession, endpoint: str,
+    ) -> dict[str, Any]:
         """Test a single endpoint and return results"""
         url = f"{self.base_url}{endpoint}"
         start_time = time.time()
@@ -67,7 +66,7 @@ class QuickLoadTester:
         session: aiohttp.ClientSession,
         user_id: int,
         requests_per_endpoint: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Run test for a single simulated user"""
         user_results = []
 
@@ -83,11 +82,11 @@ class QuickLoadTester:
         return user_results
 
     async def run_load_test(
-        self, concurrent_users: int = 10, requests_per_endpoint: int = 3
-    ) -> Dict[str, Any]:
+        self, concurrent_users: int = 10, requests_per_endpoint: int = 3,
+    ) -> dict[str, Any]:
         """Run load test with specified parameters"""
         print(
-            f"🚀 Starting load test with {concurrent_users} users, {requests_per_endpoint} requests per endpoint"
+            f"🚀 Starting load test with {concurrent_users} users, {requests_per_endpoint} requests per endpoint",
         )
 
         all_results = []
@@ -101,7 +100,7 @@ class QuickLoadTester:
             tasks = []
             for user_id in range(concurrent_users):
                 task = asyncio.create_task(
-                    self.run_single_user_test(session, user_id, requests_per_endpoint)
+                    self.run_single_user_test(session, user_id, requests_per_endpoint),
                 )
                 tasks.append(task)
 
@@ -119,11 +118,11 @@ class QuickLoadTester:
 
     def analyze_results(
         self,
-        results: List[Dict[str, Any]],
+        results: list[dict[str, Any]],
         start_time: datetime,
         end_time: datetime,
         users: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Analyze load test results"""
         if not results:
             return {"error": "No results to analyze"}
@@ -165,14 +164,14 @@ class QuickLoadTester:
 
             if "response_time" in result:
                 endpoint_stats[endpoint]["response_times"].append(
-                    result["response_time"]
+                    result["response_time"],
                 )
 
         # Calculate endpoint averages
-        for endpoint, stats in endpoint_stats.items():
+        for _endpoint, stats in endpoint_stats.items():
             if stats["response_times"]:
                 stats["avg_response_time"] = sum(stats["response_times"]) / len(
-                    stats["response_times"]
+                    stats["response_times"],
                 )
                 stats["max_response_time"] = max(stats["response_times"])
             stats["success_rate"] = (
@@ -203,7 +202,7 @@ class QuickLoadTester:
             "raw_results": results,
         }
 
-    def generate_report(self, analysis: Dict[str, Any]):
+    def generate_report(self, analysis: dict[str, Any]):
         """Generate a comprehensive test report"""
         if "error" in analysis:
             print(f"❌ {analysis['error']}")
@@ -213,11 +212,11 @@ class QuickLoadTester:
         metrics = analysis["performance_metrics"]
         endpoints = analysis["endpoint_analysis"]
 
-        print(f"\n📊 KLERNO LABS QUICK API LOAD TEST REPORT")
+        print("\n📊 KLERNO LABS QUICK API LOAD TEST REPORT")
         print("=" * 55)
 
         # Test Summary
-        print(f"\n⚙️  TEST SUMMARY")
+        print("\n⚙️  TEST SUMMARY")
         print("-" * 25)
         print(f"Duration: {summary['duration_seconds']:.1f} seconds")
         print(f"Concurrent Users: {summary['concurrent_users']}")
@@ -228,14 +227,14 @@ class QuickLoadTester:
         print(f"Throughput: {summary['requests_per_second']:.1f} requests/second")
 
         # Performance Metrics
-        print(f"\n⚡ PERFORMANCE METRICS")
+        print("\n⚡ PERFORMANCE METRICS")
         print("-" * 25)
         print(f"Average Response Time: {metrics['average_response_time']:.3f}s")
         print(f"Minimum Response Time: {metrics['min_response_time']:.3f}s")
         print(f"Maximum Response Time: {metrics['max_response_time']:.3f}s")
 
         # Endpoint Analysis
-        print(f"\n🎯 ENDPOINT PERFORMANCE")
+        print("\n🎯 ENDPOINT PERFORMANCE")
         print("-" * 35)
         for endpoint, stats in endpoints.items():
             status_icon = (
@@ -245,15 +244,15 @@ class QuickLoadTester:
             )
             print(f"{status_icon} {endpoint}")
             print(
-                f"   Requests: {stats['total']} | Success Rate: {stats['success_rate']:.1f}%"
+                f"   Requests: {stats['total']} | Success Rate: {stats['success_rate']:.1f}%",
             )
             if "avg_response_time" in stats:
                 print(
-                    f"   Avg Time: {stats['avg_response_time']:.3f}s | Max Time: {stats['max_response_time']:.3f}s"
+                    f"   Avg Time: {stats['avg_response_time']:.3f}s | Max Time: {stats['max_response_time']:.3f}s",
                 )
 
         # Overall Assessment
-        print(f"\n🎯 PERFORMANCE ASSESSMENT")
+        print("\n🎯 PERFORMANCE ASSESSMENT")
         print("-" * 30)
 
         if summary["success_rate"] >= 99:
@@ -297,7 +296,7 @@ async def main():
     for i, scenario in enumerate(scenarios, 1):
         print(f"\n🎯 Test {i}/3: {scenario['name']}")
         print(
-            f"   Users: {scenario['users']}, Requests per endpoint: {scenario['requests']}"
+            f"   Users: {scenario['users']}, Requests per endpoint: {scenario['requests']}",
         )
         print("-" * 40)
 
@@ -315,7 +314,7 @@ async def main():
             filename = (
                 f"quick_load_test_{i}_{scenario['name'].lower().replace(' ', '_')}.json"
             )
-            with open(filename, "w") as f:
+            with Path(filename).open("w") as f:
                 json.dump(analysis, f, indent=2)
 
             all_results.append(analysis)
@@ -325,25 +324,26 @@ async def main():
 
         # Brief pause between tests
         if i < len(scenarios):
-            print(f"\n⏳ Waiting 5 seconds before next test...")
+            print("\n⏳ Waiting 5 seconds before next test...")
             await asyncio.sleep(5)
 
     # Summary
-    print(f"\n📋 COMPREHENSIVE TEST SUMMARY")
+    print("\n📋 COMPREHENSIVE TEST SUMMARY")
     print("=" * 40)
 
-    for i, (scenario, analysis) in enumerate(zip(scenarios, all_results), 1):
+    for i, (scenario, analysis) in enumerate(zip(scenarios, all_results, strict=False), 1):
         if "test_summary" in analysis:
             summary = analysis["test_summary"]
             print(f"\n{i}. {scenario['name']}:")
             print(f"   Success Rate: {summary['success_rate']:.1f}%")
             print(
-                f"   Avg Response Time: {analysis['performance_metrics']['average_response_time']:.3f}s"
+                f"   Avg Response Time: {analysis['performance_metrics']['average_response_time']:.3f}s",
             )
             print(f"   Throughput: {summary['requests_per_second']:.1f} RPS")
 
-    print(f"\n✅ Quick load testing completed!")
+    print("\n✅ Quick load testing completed!")
 
 
 if __name__ == "__main__":
     asyncio.run(main())
+

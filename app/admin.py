@@ -135,7 +135,7 @@ def _send_email(subject: str, text: str, to_email: str | None = None) -> dict[st
 # ---------- UI ----------
 def admin_home(request: Request, user=Depends(require_admin)) -> Any:
     return templates.TemplateResponse(
-        "admin.html", {"request": request, "title": "Admin"}
+        "admin.html", {"request": request, "title": "Admin"},
     )
 
 
@@ -164,7 +164,7 @@ def admin_stats(user=Depends(require_admin)) -> dict[str, Any]:
         """
         SELECT SUM(amount) FROM txs
         WHERE timestamp > datetime('now', '-24 hours')
-    """
+    """,
     )
     volume_24h_result = cur.fetchone()
     volume_24h = float(volume_24h_result[0] or 0) if volume_24h_result else 0
@@ -192,9 +192,9 @@ def admin_stats(user=Depends(require_admin)) -> dict[str, Any]:
         FROM txs
         WHERE risk_score IS NOT NULL
         GROUP BY risk_level
-    """
+    """,
     )
-    risk_distribution = dict[str, Any](cur.fetchall())
+    risk_distribution = dict(cur.fetchall())
 
     # Get recent activity trends (last 7 days)
     cur.execute(
@@ -208,7 +208,7 @@ def admin_stats(user=Depends(require_admin)) -> dict[str, Any]:
         WHERE timestamp > datetime('now', '-7 days')
         GROUP BY DATE(timestamp)
         ORDER BY date DESC
-    """
+    """,
     )
     trends = []
     for row in cur.fetchall():
@@ -218,7 +218,7 @@ def admin_stats(user=Depends(require_admin)) -> dict[str, Any]:
                 "count": row[1],
                 "avg_risk": float(row[2] or 0),
                 "volume": float(row[3] or 0),
-            }
+            },
         )
 
     con.close()
@@ -261,7 +261,7 @@ def admin_realtime_analytics(user=Depends(require_admin)) -> dict[str, Any]:
         WHERE timestamp > datetime('now', '-1 hour')
         ORDER BY timestamp DESC
         LIMIT 50
-    """
+    """,
     )
 
     # cur.description may be None in some sqlite wrappers; guard it
@@ -269,7 +269,7 @@ def admin_realtime_analytics(user=Depends(require_admin)) -> dict[str, Any]:
     recent_transactions = []
     for row in cur.fetchall():
         try:
-            recent_transactions.append(dict[str, Any](zip(columns, row, strict=False)))
+            recent_transactions.append(dict(zip(columns, row, strict=False)))
         except Exception:
             # Fallback: try converting via mapping or positional tuple[Any, ...]
             try:
@@ -277,7 +277,7 @@ def admin_realtime_analytics(user=Depends(require_admin)) -> dict[str, Any]:
                 if mapped:
                     recent_transactions.append(mapped)
                 else:
-                    mapped_row = dict[str, Any](enumerate(row))
+                    mapped_row = dict(enumerate(row))
                     recent_transactions.append(mapped_row)
             except Exception:
                 recent_transactions.append({})
@@ -312,13 +312,13 @@ def admin_realtime_analytics(user=Depends(require_admin)) -> dict[str, Any]:
         WHERE timestamp > datetime('now', '-24 hours')
         GROUP BY strftime('%H', timestamp)
         ORDER BY hour
-    """
+    """,
     )
 
     hourly_stats = []
     for row in cur.fetchall():
         hourly_stats.append(
-            {"hour": row[0], "count": row[1], "avg_risk": float(row[2] or 0)}
+            {"hour": row[0], "count": row[1], "avg_risk": float(row[2] or 0)},
         )
 
     con.close()
@@ -348,7 +348,7 @@ def admin_user_analytics(user=Depends(require_admin)) -> dict[str, Any]:
         WHERE created_at > datetime('now', '-30 days')
         GROUP BY DATE(created_at)
         ORDER BY date DESC
-    """
+    """,
     )
     registration_trends = [{"date": row[0], "count": row[1]} for row in cur.fetchall()]
 
@@ -360,9 +360,9 @@ def admin_user_analytics(user=Depends(require_admin)) -> dict[str, Any]:
                 COUNT(*) as count
         FROM users
         GROUP BY role
-    """
+    """,
     )
-    role_distribution = dict[str, Any](cur.fetchall())
+    role_distribution = dict(cur.fetchall())
 
     # Get subscription status
     cur.execute(
@@ -375,9 +375,9 @@ def admin_user_analytics(user=Depends(require_admin)) -> dict[str, Any]:
             COUNT(*) as count
         FROM users
         GROUP BY subscription_active
-    """
+    """,
     )
-    subscription_status = dict[str, Any](cur.fetchall())
+    subscription_status = dict(cur.fetchall())
 
     con.close()
 
@@ -400,7 +400,7 @@ def _list_users() -> list[dict[str, Any]]:
         SELECT id, email, password_hash, role, subscription_active, created_at
         FROM users
         ORDER BY created_at DESC
-    """
+    """,
     )
     rows = cur.fetchall()
     con.close()
@@ -408,7 +408,7 @@ def _list_users() -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for r in rows:
         if isinstance(r, dict[str, Any]):
-            d = dict[str, Any](r)
+            d = dict(r)
         elif hasattr(r, "keys"):
             d = _to_mapping(r)
         else:
@@ -443,7 +443,7 @@ class UpdateSubPayload(BaseModel):
 
 @router.post("/api/users/{user_id}/role")
 def admin_set_role(
-    user_id: int, payload: UpdateRolePayload, user=Depends(require_admin)
+    user_id: int, payload: UpdateRolePayload, user=Depends(require_admin),
 ):
     u = store.get_user_by_id(user_id)
     if not u:
@@ -457,7 +457,7 @@ def admin_set_role(
 
 @router.post("/api/users/{user_id}/subscription")
 def admin_set_subscription(
-    user_id: int, payload: UpdateSubPayload, user=Depends(require_admin)
+    user_id: int, payload: UpdateSubPayload, user=Depends(require_admin),
 ):
     u = store.get_user_by_id(user_id)
     if not u:
@@ -475,7 +475,7 @@ class SeedDemoPayload(BaseModel):
 
 @router.post("/api/data/seed_demo")
 def admin_seed_demo(
-    payload: SeedDemoPayload = Body(default=None), user=Depends(require_admin)
+    payload: SeedDemoPayload = Body(default=None), user=Depends(require_admin),
 ):
     data_path = (BASE_DIR / ".." / "data" / "sample_transactions.csv").resolve()
     if not data_path.exists():
@@ -561,7 +561,7 @@ class TestEmailPayload(BaseModel):
 
 @router.post("/api/email/test")
 def admin_email_test(
-    payload: TestEmailPayload = Body(default=None), user=Depends(require_admin)
+    payload: TestEmailPayload = Body(default=None), user=Depends(require_admin),
 ):
     to_addr = payload.email if payload and payload.email else DEFAULT_TO
     subject = "Klerno Admin Test"
@@ -706,7 +706,7 @@ def update_fund_config(config: FundDistributionConfig, user=Depends(require_admi
 
 @router.get("/api/fund-management/transactions")
 def get_fund_transactions(
-    limit: int = 50, offset: int = 0, user=Depends(require_admin)
+    limit: int = 50, offset: int = 0, user=Depends(require_admin),
 ):
     """Get recent fund transactions and distributions."""
     # Mock data for now - in production, query actual transactions
@@ -885,7 +885,7 @@ def update_security_policy(config: SecurityPolicyConfig, admin=Depends(require_a
             # Clear blacklist set
             cfg.common_passwords = set()
         elif len(getattr(cfg, "common_passwords", [])) == 0 and hasattr(
-            cfg, "_load_common_passwords"
+            cfg, "_load_common_passwords",
         ):
             # Reload default blacklist if it was cleared
             cfg._load_common_passwords()
@@ -938,7 +938,7 @@ def get_users_security_status(admin=Depends(require_admin)) -> dict[str, Any] | 
                 "has_hardware_key": False,
                 "last_login": "2025 - 09 - 16T10:30:00Z",
                 "password_last_changed": "2025 - 09 - 01T14:20:00Z",
-            }
+            },
         ],
         "summary": {
             "total_users": 1,

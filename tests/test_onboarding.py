@@ -1,5 +1,4 @@
-"""
-Tests for onboarding and user experience features
+"""Tests for onboarding and user experience features
 """
 
 import pytest

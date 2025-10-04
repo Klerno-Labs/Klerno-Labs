@@ -31,8 +31,8 @@ from typing import Any
 # object (avoids assigning None to a variable that later holds ModuleType).
 integrations: Any = types.ModuleType("integrations")
 auth: Any = None
-create_access_token: Callable | None = None
-verify_token: Callable | None = None
+create_access_token: Callable[..., str] | None = None
+verify_token: Callable[..., dict[Any, Any]] | None = None
 ACCESS_TOKEN_EXPIRE_MINUTES: int | None = None
 try:
     from . import integrations as integrations
@@ -64,10 +64,10 @@ except Exception:
 
             if _sub == "xrp":
 
-                def _stub_get_xrpl_client(*args, **kwargs: Any) -> None:
+                def _stub_get_xrpl_client(*args, **kwargs):
                     return None
 
-                def _stub_fetch_account_tx(account: str, limit: int = 10) -> list[Any]:
+                def _stub_fetch_account_tx(account: str, limit: int = 10):
                     return []
 
                 for m in (submod, app_sub):
@@ -104,7 +104,7 @@ except Exception:
 
             for _sub in ("xrp", "bsc", "bscscan"):
                 mod = _sys.modules.get(f"app.integrations.{_sub}") or _sys.modules.get(
-                    f"integrations.{_sub}"
+                    f"integrations.{_sub}",
                 )
                 if mod is not None:
                     setattr(integrations, _sub, mod)
@@ -142,13 +142,13 @@ except Exception:
     class _AuthShim:
         """Lightweight auth shim exposing a minimal API used by tests."""
 
-        def __init__(self) -> None:
+        def __init__(self):
             # Try to bind to the real security/session values if available
             try:
                 from . import security_session as _ss
 
                 self.ACCESS_TOKEN_EXPIRE_MINUTES = getattr(
-                    _ss, "ACCESS_TOKEN_EXPIRE_MINUTES", None
+                    _ss, "ACCESS_TOKEN_EXPIRE_MINUTES", None,
                 )
             except Exception:
                 self.ACCESS_TOKEN_EXPIRE_MINUTES = None
@@ -159,7 +159,7 @@ except Exception:
                 self.verify_token = _legacy.verify_token
             else:
 
-                def _create_access_token_stub(*_args, **_kwargs: Any) -> str:
+                def _create_access_token_stub(*_args, **_kwargs) -> str:
                     return ""
 
                 def _verify_token_stub(_t: str) -> dict[str, str]:
@@ -173,7 +173,7 @@ except Exception:
     verify_token = auth.verify_token
     ACCESS_TOKEN_EXPIRE_MINUTES = getattr(auth, "ACCESS_TOKEN_EXPIRE_MINUTES", None)
 
-__all__ = ["integrations", "auth", "create_access_token", "verify_token"]
+__all__ = ["auth", "create_access_token", "integrations", "verify_token"]
 
 # For some legacy tests that call create_access_token/verify_token unqualified,
 # inject them into builtins if they are available. This is a minimal shim to
@@ -219,7 +219,7 @@ try:
     if real_xrp is not None:
         try:
             # Ensure both top-level and app-level references point to the real module
-            integrations.xrp = real_xrp  # Use setattr for dynamic assignment
+            integrations.xrp = real_xrp
             _sys.modules["integrations.xrp"] = real_xrp
             _sys.modules["app.integrations.xrp"] = real_xrp
         except Exception:

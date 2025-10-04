@@ -126,7 +126,7 @@ class User:
     def can_edit_role(self, target_role: UserRole) -> bool:
         if self.role == UserRole.OWNER:
             return True
-        elif self.role == UserRole.ADMIN:
+        if self.role == UserRole.ADMIN:
             return target_role in [UserRole.MANAGER, UserRole.USER]
         return False
 
@@ -204,7 +204,7 @@ class Transaction:
         id: int | None = None,
         tx_id: str | None = None,
         user_id: int | None = None,
-        amount: Decimal | float | str = Decimal("0"),
+        amount: Decimal | float | str = Decimal(0),
         currency: str | None = None,
         status: str | None = None,
         **kwargs,
@@ -269,8 +269,7 @@ class Transaction:
 
 
 class TaggedTransaction(BaseModel):
-    """
-    Transaction + tagging results for API responses.
+    """Transaction + tagging results for API responses.
     Accepts inputs with either 'from_addr'/'to_addr' or 'from_address'/'to_address'.
     Also accepts old 'score'/'flags' but serializes as 'risk_score'/'risk_flags'.
     """
@@ -290,7 +289,7 @@ class TaggedTransaction(BaseModel):
     symbol: str = "XRP"
     direction: str
 
-    fee: Decimal = Decimal("0")
+    fee: Decimal = Decimal(0)
     memo: str | None = None
     notes: str | None = None
     tags: list[str] = Field(default_factory=list[Any])
@@ -301,11 +300,11 @@ class TaggedTransaction(BaseModel):
 
     # Accept both 'risk_score' and legacy 'score' on input; serialize as 'risk_score'
     risk_score: float | None = Field(
-        default=None, validation_alias=AliasChoices("risk_score", "score")
+        default=None, validation_alias=AliasChoices("risk_score", "score"),
     )
     # Accept both 'risk_flags' and legacy 'flags' on input; serialize as 'risk_flags'
     risk_flags: list[str] = Field(
-        default_factory=list[Any], validation_alias=AliasChoices("risk_flags", "flags")
+        default_factory=list[Any], validation_alias=AliasChoices("risk_flags", "flags"),
     )
 
     # Convenience accessors so code can read .from_address/.to_address or .score/.flags too
@@ -343,18 +342,17 @@ class ReportRequest(BaseModel):
     min_amount: Decimal | None = None
     max_amount: Decimal | None = None
     wallet_addresses: list[str] = Field(
-        default_factory=list[Any]
+        default_factory=list[Any],
     )  # <─ used in /report / csv
 
 
 class ReportSummary(BaseModel):
-    """
-    Output model for summary endpoints / exports.
+    """Output model for summary endpoints / exports.
     Flexible defaults so reporter code can set more fields if needed.
     """
 
     model_config = ConfigDict(
-        extra="allow"
+        extra="allow",
     )  # tolerate extra fields if reporter adds them
 
     address: str | None = None
@@ -365,10 +363,10 @@ class ReportSummary(BaseModel):
     # Totals & counts
     count_in: int = 0
     count_out: int = 0
-    total_in: Decimal = Decimal("0")
-    total_out: Decimal = Decimal("0")
-    total_fees: Decimal = Decimal("0")
-    net: Decimal = Decimal("0")
+    total_in: Decimal = Decimal(0)
+    total_out: Decimal = Decimal(0)
+    total_fees: Decimal = Decimal(0)
+    net: Decimal = Decimal(0)
 
     # Optional breakdowns
     categories: dict[str, int] = Field(default_factory=dict[str, Any])
@@ -376,7 +374,7 @@ class ReportSummary(BaseModel):
     # Backwards-compatible fields expected by older tests/code. Use distinct
     # alias fields so pydantic/mypy do not see duplicate class attributes.
     legacy_total_transactions: int | None = Field(
-        default=None, alias="total_transactions"
+        default=None, alias="total_transactions",
     )
     legacy_total_volume: Decimal | None = Field(default=None, alias="total_volume")
     legacy_high_risk_count: int | None = Field(default=None, alias="high_risk_count")

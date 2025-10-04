@@ -1,5 +1,4 @@
-"""
-Small helper to run pytest from inside the CLEAN_APP directory.
+"""Small helper to run pytest from inside the CLEAN_APP directory.
 
 Keep helper scripts inside CLEAN_APP so the project is self-contained.
 """

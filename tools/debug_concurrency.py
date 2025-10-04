@@ -1,12 +1,10 @@
-"""
-Small helper to exercise concurrency against the FastAPI app.
+"""Small helper to exercise concurrency against the FastAPI app.
 
 This file intentionally performs environment and sys.path setup before
 importing `app` so it triggers ruff E402. Add `# ruff: noqa: E402` to
 silence that specific lint in this helper.
 """
 
-# ruff: noqa: E402
 import asyncio
 import os
 import sqlite3
@@ -23,7 +21,7 @@ from app._typing_shims import ISyncConnection
 with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
     db_path = f.name
 
-conn = cast(ISyncConnection, sqlite3.connect(db_path))
+conn = cast("ISyncConnection", sqlite3.connect(db_path))
 conn.execute(
     """
     CREATE TABLE users (
@@ -35,7 +33,7 @@ conn.execute(
         subscription_status TEXT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-    """
+    """,
 )
 conn.execute(
     """
@@ -48,7 +46,7 @@ conn.execute(
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (id)
     );
-    """
+    """,
 )
 conn.execute(
     """
@@ -60,7 +58,7 @@ conn.execute(
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (transaction_id) REFERENCES transactions (id)
     );
-    """
+    """,
 )
 conn.commit()
 conn.close()
@@ -82,7 +80,7 @@ async def run_test(concurrent=20):
 
         async def op(i):
             resp = await client.post(
-                "/transactions", json={"amount": float(i), "currency": "USD"}
+                "/transactions", json={"amount": float(i), "currency": "USD"},
             )
             try:
                 data = resp.json()
@@ -94,11 +92,11 @@ async def run_test(concurrent=20):
                 # Verify directly on disk that the transaction exists
                 try:
                     check_con = cast(
-                        ISyncConnection, sqlite3.connect(db_path, timeout=5.0)
+                        "ISyncConnection", sqlite3.connect(db_path, timeout=5.0),
                     )
                     cur = check_con.cursor()
                     cur.execute(
-                        "SELECT id, amount FROM transactions WHERE id=?", (txid,)
+                        "SELECT id, amount FROM transactions WHERE id=?", (txid,),
                     )
                     rr = cur.fetchone()
                     check_con.close()

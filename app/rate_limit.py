@@ -7,6 +7,7 @@ with a distributed limiter (Redis, Memcached, etc.).
 
 from __future__ import annotations
 
+import contextlib
 import os
 import threading
 import time
@@ -15,9 +16,20 @@ from collections.abc import Awaitable, Callable
 from fastapi import Request
 from fastapi.responses import JSONResponse, Response
 
+# Optional metrics helpers; safe to import even if metrics unavailable
+try:  # pragma: no cover - import side effects tested elsewhere
+    from .metrics import inc_rate_limit_allowed, inc_rate_limit_denied
+except Exception:  # pragma: no cover
+
+    def inc_rate_limit_allowed(backend: str = "memory") -> None:  # type: ignore[no-redef]
+        return
+
+    def inc_rate_limit_denied(backend: str = "memory") -> None:  # type: ignore[no-redef]
+        return
+
 
 class TokenBucket:
-    __slots__ = ("capacity", "tokens", "refill_rate", "last_refill", "lock")
+    __slots__ = ("capacity", "last_refill", "lock", "refill_rate", "tokens")
 
     def __init__(self, capacity: int, refill_rate: float) -> None:
         self.capacity = capacity
@@ -68,18 +80,46 @@ def add_rate_limiter(app) -> None:
 
     @app.middleware("http")
     async def _apply_rate_limit(
-        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+        request: Request, call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
+        # Never rate-limit metrics endpoint to keep observability reliable
+        try:
+            if request.url.path in ("/metrics", "/csp/report"):
+                return await call_next(request)
+        except Exception:
+            pass
         # Simple key: remote IP (fall back to 'unknown')
         client_host = request.client.host if request.client else "unknown"
         bucket = get_bucket(client_host)
-        if not bucket.consume(1.0):
+        allowed = bucket.consume(1.0)
+        # Compute simple header values
+        remaining = int(max(bucket.tokens, 0)) if allowed else 0
+        reset_sec = 1  # coarse estimate; precise reset depends on token math
+        base_headers = {
+            "X-RateLimit-Limit": str(int(bucket.capacity)),
+            "X-RateLimit-Remaining": str(remaining),
+            "X-RateLimit-Reset": str(reset_sec),
+        }
+
+        if not allowed:
+            # Metrics: record denied
+            with contextlib.suppress(Exception):
+                inc_rate_limit_denied("memory")
             return JSONResponse(
                 status_code=429,
                 content={
                     "error": "rate_limited",
                     "detail": "Too many requests; please slow down.",
                 },
-                headers={"Retry-After": "1"},
+                headers={"Retry-After": str(reset_sec), **base_headers},
             )
-        return await call_next(request)
+        resp = await call_next(request)
+        # Metrics: record allowed
+        with contextlib.suppress(Exception):
+            inc_rate_limit_allowed("memory")
+        try:
+            for k, v in base_headers.items():
+                resp.headers.setdefault(k, v)
+        except Exception:
+            pass
+        return resp

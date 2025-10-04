@@ -68,8 +68,7 @@ def fetch_account_tx_bscscan(
     limit: int = DEFAULT_LIMIT,
     api_key: str | None = None,
 ) -> dict[str, Any]:
-    """
-    Fetch recent normal, token, and internal transactions for an address.
+    """Fetch recent normal, token, and internal transactions for an address.
     Returns raw payloads as dict: {
         "normal": [...], "token": [...], "internal": [...]
     }
@@ -86,7 +85,7 @@ def fetch_account_tx_bscscan(
 
     normal = (
         _get({"module": "account", "action": "txlist", **common}, api_key).get(
-            "result", []
+            "result", [],
         )
         or []
     )
@@ -103,8 +102,7 @@ def bscscan_json_to_transactions(
     account: str,
     payload: dict[str, Any],
 ):
-    """
-    Normalize BscScan payloads into a List[Transaction].
+    """Normalize BscScan payloads into a List[Transaction].
     Handles native BNB sends, token transfers, and internal txs.
     """
     acct = (account or "").lower().strip()
@@ -150,7 +148,7 @@ def bscscan_json_to_transactions(
                     direction=direction,
                     memo=(it.get("functionName") or "").strip() or "",
                     fee=fee,
-                )
+                ),
             )
         except Exception:
             continue
@@ -187,7 +185,7 @@ def bscscan_json_to_transactions(
                     direction=direction,
                     memo=f"{it.get('tokenName') or ''} ({symbol})",
                     fee=0.0,  # fee is on the parent tx; accounted in "normal"
-                )
+                ),
             )
         except Exception:
             continue
@@ -221,7 +219,7 @@ def bscscan_json_to_transactions(
                     direction=direction,
                     memo="internal",
                     fee=0.0,
-                )
+                ),
             )
         except Exception:
             continue

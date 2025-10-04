@@ -1,5 +1,4 @@
-"""
-Structured logging configuration for Klerno Labs.
+"""Structured logging configuration for Klerno Labs.
 Provides consistent, structured logging throughout the application.
 """
 
@@ -14,7 +13,7 @@ from pythonjsonlogger.json import JsonFormatter
 from app.settings import get_settings
 
 
-def _to_iso(timestamp) -> str:
+def _to_iso(timestamp: Any) -> str:
     """Safely convert timestamp-like values to ISO string for logging."""
     try:
         if timestamp is None:
@@ -71,7 +70,7 @@ def configure_logging() -> None:
         logs_path.mkdir(parents=True, exist_ok=True)
 
     file_handler = logging.FileHandler(
-        str(logs_path / "app.log"), mode="a", encoding="utf-8"
+        str(logs_path / "app.log"), mode="a", encoding="utf-8",
     )
 
     if settings.app_env == "production":
@@ -80,14 +79,14 @@ def configure_logging() -> None:
     else:
         # Human-readable format for development
         formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S"
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S",
         )
         console_handler.setFormatter(formatter)
         file_handler.setFormatter(json_formatter)
 
     # Configure root logger
     logging.basicConfig(
-        level=log_level, handlers=[console_handler, file_handler], force=True
+        level=log_level, handlers=[console_handler, file_handler], force=True,
     )
 
     # Configure structlog
@@ -100,7 +99,7 @@ def configure_logging() -> None:
             structlog.processors.TimeStamper(fmt="iso"),
             (
                 # ConsoleRenderer returns an object that mypy may not infer as a Callable;
-                # use typing.cast to silence the list[Any]-item typing warning.
+                # use typing.cast to silence the list-item typing warning.
                 __import__("typing").cast(
                     __import__("typing").Any,
                     (
@@ -194,7 +193,7 @@ def log_security_event(
     if details:
         try:
             log_data["details"] = (
-                dict[str, Any](details) if not isinstance(details, str) else details
+                dict(details) if not isinstance(details, str) else details
             )
         except Exception:
             log_data["details"] = str(details)
@@ -240,7 +239,7 @@ def log_business_event(
     if details:
         try:
             log_data["details"] = (
-                dict[str, Any](details) if not isinstance(details, str) else details
+                dict(details) if not isinstance(details, str) else details
             )
         except Exception:
             log_data["details"] = str(details)
@@ -270,7 +269,7 @@ def log_performance_metric(
     if details:
         try:
             log_data["details"] = (
-                dict[str, Any](details) if not isinstance(details, str) else details
+                dict(details) if not isinstance(details, str) else details
             )
         except Exception:
             log_data["details"] = str(details)

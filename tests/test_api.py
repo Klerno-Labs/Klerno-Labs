@@ -1,5 +1,4 @@
-"""
-Integration tests for API endpoints.
+"""Integration tests for API endpoints.
 """
 
 # Import app after setting test environment
@@ -124,7 +123,7 @@ class TestRequestResponseFlow:
     def test_get_sample_data(self, client, mock_enforce_api_key):
         """Test getting sample data."""
         response = client.post(
-            "/analyze/sample", headers={"X-API-Key": "test-key"}
+            "/analyze/sample", headers={"X-API-Key": "test-key"},
         )  # Use POST, fix URL
         assert response.status_code == 200
 
@@ -166,7 +165,7 @@ class TestDataValidation:
     def test_missing_required_parameters(self, client, mock_enforce_api_key):
         """Test handling of missing required parameters."""
         response = client.get(
-            "/integrations/xrpl/fetch", headers={"X-API-Key": "test-key"}
+            "/integrations/xrpl/fetch", headers={"X-API-Key": "test-key"},
         )
 
         # Should handle missing parameters

@@ -1,5 +1,4 @@
-"""
-Klerno Labs Enterprise Error Handling & Circuit Breaker System
+"""Klerno Labs Enterprise Error Handling & Circuit Breaker System
 Advanced error handling, circuit breakers, and failover mechanisms
 """
 
@@ -54,7 +53,7 @@ class ErrorEvent:
     severity: ErrorSeverity
     service: str
     stack_trace: str = ""
-    context: dict[str, Any] = field(default_factory=dict[str, Any])
+    context: dict[str, Any] = field(default_factory=dict)
     resolved: bool = False
     resolution_time: datetime | None = None
 
@@ -73,7 +72,7 @@ class CircuitBreakerConfig:
 class EnterpriseCircuitBreaker:
     """Advanced circuit breaker with monitoring"""
 
-    def __init__(self, name: str, config: CircuitBreakerConfig) -> None:
+    def __init__(self, name: str, config: CircuitBreakerConfig):
         self.name = name
         self.config = config
         self.state = CircuitBreakerState.CLOSED
@@ -91,14 +90,14 @@ class EnterpriseCircuitBreaker:
         self._lock = threading.RLock()
 
         logger.info(
-            f"[CIRCUIT] Created circuit breaker '{name}' with threshold {config.failure_threshold}"
+            f"[CIRCUIT] Created circuit breaker '{name}' with threshold {config.failure_threshold}",
         )
 
-    def __call__(self, func: Callable) -> Callable:
+    def __call__(self, func: Callable) -> Callable[..., Any]:
         """Decorator for protecting functions with circuit breaker"""
 
         @functools.wraps(func)
-        def wrapper(*args, **kwargs: Any) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             return self.call(func, *args, **kwargs)
 
         return wrapper
@@ -115,7 +114,7 @@ class EnterpriseCircuitBreaker:
                     logger.info(f"[CIRCUIT] {self.name} transitioning to HALF_OPEN")
                 else:
                     raise CircuitBreakerOpenError(
-                        f"Circuit breaker {self.name} is OPEN"
+                        f"Circuit breaker {self.name} is OPEN",
                     )
 
             # Execute function
@@ -151,7 +150,7 @@ class EnterpriseCircuitBreaker:
 
         # Update average response time safely
         total_calls = int(self.stats["successful_calls"]) + int(
-            self.stats["failed_calls"]
+            self.stats["failed_calls"],
         )
         if total_calls <= 0:
             self.stats["avg_response_time"] = float(execution_time)
@@ -177,7 +176,7 @@ class EnterpriseCircuitBreaker:
         self.last_failure_time = float(time.time())
 
         total_calls = int(self.stats.get("successful_calls", 0)) + int(
-            self.stats.get("failed_calls", 0)
+            self.stats.get("failed_calls", 0),
         )
         prev_avg = float(self.stats.get("avg_response_time", 0.0))
         if total_calls <= 0:
@@ -194,7 +193,7 @@ class EnterpriseCircuitBreaker:
             self._open_circuit()
 
         logger.warning(
-            f"[CIRCUIT] {self.name} failure {self.failure_count}/{self.config.failure_threshold}: {exception}"
+            f"[CIRCUIT] {self.name} failure {self.failure_count}/{self.config.failure_threshold}: {exception}",
         )
 
     def _open_circuit(self) -> None:
@@ -203,7 +202,7 @@ class EnterpriseCircuitBreaker:
         self.stats["circuit_opened_count"] += 1
         self.stats["last_opened"] = datetime.now().isoformat()
         logger.error(
-            f"[CIRCUIT] {self.name} OPENED after {self.failure_count} failures"
+            f"[CIRCUIT] {self.name} OPENED after {self.failure_count} failures",
         )
 
     def _close_circuit(self) -> None:
@@ -232,7 +231,6 @@ class EnterpriseCircuitBreaker:
 class CircuitBreakerOpenError(Exception):
     """Exception raised when circuit breaker is open"""
 
-    pass
 
 
 class EnterpriseErrorHandler:
@@ -250,7 +248,7 @@ class EnterpriseErrorHandler:
 
         # Start error monitoring thread
         self._monitoring_thread = threading.Thread(
-            target=self._monitor_errors, daemon=True
+            target=self._monitor_errors, daemon=True,
         )
         self._monitoring_thread.start()
 
@@ -264,7 +262,7 @@ class EnterpriseErrorHandler:
         try:
             Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
 
-            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             # Create error events table
@@ -282,7 +280,7 @@ class EnterpriseErrorHandler:
                     resolved BOOLEAN DEFAULT FALSE,
                     resolution_time TEXT
                 )
-            """
+            """,
             )
 
             # Create circuit breaker events table
@@ -295,7 +293,7 @@ class EnterpriseErrorHandler:
                     event_type TEXT NOT NULL,
                     details TEXT
                 )
-            """
+            """,
             )
 
             conn.commit()
@@ -307,7 +305,7 @@ class EnterpriseErrorHandler:
             logger.error(f"[ERROR-HANDLER] Database initialization failed: {e}")
 
     def create_circuit_breaker(
-        self, name: str, config: CircuitBreakerConfig
+        self, name: str, config: CircuitBreakerConfig,
     ) -> EnterpriseCircuitBreaker:
         """Create a new circuit breaker"""
         with self._lock:
@@ -342,7 +340,6 @@ class EnterpriseErrorHandler:
         context: dict[str, Any] | None = None,
     ) -> ErrorEvent:
         """Handle and record error event"""
-
         error_event = ErrorEvent(
             timestamp=datetime.now(),
             error_type=type(error).__name__,
@@ -372,11 +369,11 @@ class EnterpriseErrorHandler:
                 try:
                     self.auto_recovery_handlers[service](error_event)
                     logger.info(
-                        f"[ERROR-HANDLER] Auto-recovery triggered for {service}"
+                        f"[ERROR-HANDLER] Auto-recovery triggered for {service}",
                     )
                 except Exception as recovery_error:
                     logger.error(
-                        f"[ERROR-HANDLER] Auto-recovery failed: {recovery_error}"
+                        f"[ERROR-HANDLER] Auto-recovery failed: {recovery_error}",
                     )
 
             # Log error based on severity
@@ -394,7 +391,7 @@ class EnterpriseErrorHandler:
     def _store_error_event(self, event: ErrorEvent) -> None:
         """Store error event in database"""
         try:
-            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -437,7 +434,7 @@ class EnterpriseErrorHandler:
 
                     if len(recent_errors) > 10:  # More than 10 errors in 5 minutes
                         logger.warning(
-                            f"[ERROR-HANDLER] High error rate: {len(recent_errors)} errors in 5 minutes"
+                            f"[ERROR-HANDLER] High error rate: {len(recent_errors)} errors in 5 minutes",
                         )
 
                     # Check for critical errors
@@ -449,7 +446,7 @@ class EnterpriseErrorHandler:
 
                     if critical_errors:
                         logger.critical(
-                            f"[ERROR-HANDLER] {len(critical_errors)} unresolved critical errors"
+                            f"[ERROR-HANDLER] {len(critical_errors)} unresolved critical errors",
                         )
 
             except Exception as e:
@@ -491,7 +488,7 @@ class EnterpriseErrorHandler:
                         e
                         for e in recent_errors
                         if e.severity == ErrorSeverity.CRITICAL and not e.resolved
-                    ]
+                    ],
                 ),
             }
 
@@ -510,7 +507,7 @@ class EnterpriseErrorHandler:
 
     @contextmanager
     def error_context(
-        self, service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM
+        self, service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM,
     ) -> Any:
         """Context manager for automatic error handling"""
         try:
@@ -522,13 +519,13 @@ class EnterpriseErrorHandler:
 
 # Decorators for error handling
 def handle_errors(
-    service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM
-) -> Callable[[Callable], Callable]:
+    service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for automatic error handling"""
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs: Any) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
             except Exception as e:
@@ -541,11 +538,11 @@ def handle_errors(
 
 
 def with_circuit_breaker(
-    breaker_name: str, config: CircuitBreakerConfig | None = None
-) -> Callable[[Callable], Callable]:
+    breaker_name: str, config: CircuitBreakerConfig | None = None,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for circuit breaker protection"""
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable) -> Callable[..., Any]:
         # Create circuit breaker if it doesn't exist
         if config is not None:
             breaker = error_handler.create_circuit_breaker(breaker_name, config)
@@ -556,7 +553,7 @@ def with_circuit_breaker(
             else:
                 default_config = CircuitBreakerConfig()
                 breaker = error_handler.create_circuit_breaker(
-                    breaker_name, default_config
+                    breaker_name, default_config,
                 )
 
         return breaker(func)
@@ -565,13 +562,13 @@ def with_circuit_breaker(
 
 
 def retry_on_failure(
-    max_retries: int = 3, delay: float = 1.0, backoff: float = 2.0
-) -> Callable[[Callable], Callable]:
+    max_retries: int = 3, delay: float = 1.0, backoff: float = 2.0,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for automatic retry with exponential backoff"""
 
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs: Any) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             last_exception: Exception | None = None
             current_delay = delay
 
@@ -583,7 +580,7 @@ def retry_on_failure(
 
                     if attempt < max_retries:
                         logger.warning(
-                            f"[RETRY] Attempt {attempt + 1} failed, retrying in {current_delay}s: {e}"
+                            f"[RETRY] Attempt {attempt + 1} failed, retrying in {current_delay}s: {e}",
                         )
                         time.sleep(current_delay)
                         current_delay *= backoff
@@ -613,15 +610,15 @@ def initialize_error_handling() -> EnterpriseErrorHandler:
     try:
         # Create default circuit breakers
         database_config = CircuitBreakerConfig(
-            failure_threshold=5, recovery_timeout=30, expected_exception=Exception
+            failure_threshold=5, recovery_timeout=30, expected_exception=Exception,
         )
 
         payment_config = CircuitBreakerConfig(
-            failure_threshold=3, recovery_timeout=60, expected_exception=Exception
+            failure_threshold=3, recovery_timeout=60, expected_exception=Exception,
         )
 
         api_config = CircuitBreakerConfig(
-            failure_threshold=10, recovery_timeout=30, expected_exception=Exception
+            failure_threshold=10, recovery_timeout=30, expected_exception=Exception,
         )
 
         error_handler.create_circuit_breaker("database", database_config)
@@ -629,7 +626,7 @@ def initialize_error_handling() -> EnterpriseErrorHandler:
         error_handler.create_circuit_breaker("external_api", api_config)
 
         logger.info(
-            "[ERROR-HANDLER] Enterprise error handling initialized with default circuit breakers"
+            "[ERROR-HANDLER] Enterprise error handling initialized with default circuit breakers",
         )
         return error_handler
 

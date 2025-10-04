@@ -1,5 +1,4 @@
-"""
-Guardian Protection System Wrapper
+"""Guardian Protection System Wrapper
 Provides enterprise-grade protection capabilities for the TOP 0.1% application
 """
 

@@ -1,5 +1,4 @@
-"""
-Enterprise Monitoring System Wrapper
+"""Enterprise Monitoring System Wrapper
 Provides enterprise-grade monitoring capabilities for the TOP 0.1% application
 """
 
@@ -16,6 +15,6 @@ try:
     record_metric = getattr(_em, "record_metric", None)
     MonitoringClient = getattr(_em, "MonitoringClient", None)
 
-    __all__ = ["get_monitoring_client", "record_metric", "MonitoringClient"]
+    __all__ = ["MonitoringClient", "get_monitoring_client", "record_metric"]
 except Exception:  # pragma: no cover - optional enterprise module
     __all__ = []

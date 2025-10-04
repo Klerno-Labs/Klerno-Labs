@@ -25,7 +25,7 @@ def _build_sample_pain001_xml():
         execution_date=datetime.now(UTC),
     )
     return b.create_pain001_message(
-        "M1", datetime.now(UTC), ISO20022PartyIdentification(name="K"), [instr]
+        "M1", datetime.now(UTC), ISO20022PartyIdentification(name="K"), [instr],
     )
 
 

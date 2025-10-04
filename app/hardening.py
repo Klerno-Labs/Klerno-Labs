@@ -5,6 +5,7 @@ import hmac
 import os
 import secrets
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -19,7 +20,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Sets a strict, but UI - friendly baseline of security headers."""
 
     async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         resp: Response = await call_next(request)
         csp = (
@@ -35,7 +36,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         resp.headers.setdefault("X-Frame-Options", "DENY")
         resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         resp.headers.setdefault(
-            "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
+            "Permissions-Policy", "camera=(), microphone=(), geolocation=()",
         )
         if (
             os.getenv("ENABLE_HSTS", "true").lower() == "true"
@@ -51,7 +52,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
     """Adds / propagates a stable request id for traceability."""
 
     async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         rid = request.headers.get(REQ_ID_HEADER) or secrets.token_hex(8)
         request.state.request_id = rid
@@ -93,7 +94,7 @@ async def csrf_guard(request: Request) -> bool:
     return True
 
 
-def install_security(app) -> None:
+def install_security(app: Any) -> None:
     """Attach security middlewares (single place, avoids duplication)."""
     app.add_middleware(RequestIDMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
@@ -102,9 +103,8 @@ def install_security(app) -> None:
 # ---- Optional rate limiting (no warnings if library absent) ------------------
 
 
-def rate_limit(spec: str) -> Callable:
-    """
-    Returns a dependency suitable for FastAPI route `dependencies=[Depends(rate_limit("10 / min"))]`.
+def rate_limit(spec: str) -> Callable[..., Awaitable[bool]]:
+    """Returns a dependency suitable for FastAPI route `dependencies=[Depends(rate_limit("10 / min"))]`.
     - If starlette - limiter is installed and REDIS_URL is set, uses it.
     - Otherwise, returns a no - op dependency (clean, no linter warnings).
     """

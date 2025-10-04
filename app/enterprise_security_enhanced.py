@@ -1,5 +1,4 @@
-"""
-Enterprise Security Module for Klerno Labs.
+"""Enterprise Security Module for Klerno Labs.
 
 Comprehensive security hardening including:
 - Anti - theft protection
@@ -171,10 +170,10 @@ class AntiTheftProtection:
                     return True
                 # Safely coerce Redis return value to int
                 try:
-                    curr_val = int(cast(Any, current))
+                    curr_val = int(cast("Any", current))
                 except Exception:
                     try:
-                        curr_val = int(str(cast(Any, current)))
+                        curr_val = int(str(cast("Any", current)))
                     except Exception:
                         # Unknown type from Redis client; increment and allow
                         with contextlib.suppress(Exception):
@@ -183,9 +182,8 @@ class AntiTheftProtection:
 
                 if curr_val >= limit:
                     return False
-                else:
-                    redis_client.incr(key)
-                    return True
+                redis_client.incr(key)
+                return True
             except Exception:
                 # Fall back to in - memory if Redis fails
                 pass
@@ -230,7 +228,7 @@ class InputSanitizer:
             for pattern in patterns:
                 if pattern in value_lower:
                     security_logger.warning(
-                        f"Suspicious {pattern_type} pattern detected: {pattern}"
+                        f"Suspicious {pattern_type} pattern detected: {pattern}",
                     )
                     # Don't reject, just log for monitoring
 
@@ -274,7 +272,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     WHITELISTED_PATHS = ["/health", "/healthz", "/metrics", "/status", "/ping"]
 
     async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         start_time = time.time()
         client_ip = self._get_client_ip(request)
@@ -301,19 +299,19 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                     response.headers[header] = value
                 response.headers["X-Request-ID"] = self._generate_request_id()
                 response.headers["X-Response-Time"] = str(
-                    round((time.time() - start_time) * 1000, 2)
+                    round((time.time() - start_time) * 1000, 2),
                 )
                 self._log_request(
-                    request, response, client_ip, time.time() - start_time
+                    request, response, client_ip, time.time() - start_time,
                 )
                 return response
 
             # Anti - theft protection (skip for whitelisted paths)
             if not is_whitelisted and not AntiTheftProtection.verify_request_integrity(
-                request
+                request,
             ):
                 security_logger.warning(
-                    f"Request integrity check failed for {client_ip}"
+                    f"Request integrity check failed for {client_ip}",
                 )
                 return JSONResponse(status_code=403, content={"error": "Access denied"})
 
@@ -327,10 +325,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 and not AntiTheftProtection.check_rate_limits(client_ip, endpoint_type)
             ):
                 security_logger.warning(
-                    f"Rate limit exceeded for {client_ip} on {endpoint_type}"
+                    f"Rate limit exceeded for {client_ip} on {endpoint_type}",
                 )
                 return JSONResponse(
-                    status_code=429, content={"error": "Rate limit exceeded"}
+                    status_code=429, content={"error": "Rate limit exceeded"},
                 )
 
             # Process request
@@ -347,7 +345,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             # Add custom security headers
             response.headers["X-Request-ID"] = self._generate_request_id()
             response.headers["X-Response-Time"] = str(
-                round((time.time() - start_time) * 1000, 2)
+                round((time.time() - start_time) * 1000, 2),
             )
 
             # Log successful request
@@ -357,10 +355,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             security_logger.error(
-                f"Security middleware error for {client_ip}: {str(e)}"
+                f"Security middleware error for {client_ip}: {e!s}",
             )
             return JSONResponse(
-                status_code=500, content={"error": "Internal server error"}
+                status_code=500, content={"error": "Internal server error"},
             )
 
     def _get_client_ip(self, request: Request) -> str:
@@ -393,14 +391,13 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         """Determine endpoint type for rate limiting."""
         if path.startswith("/auth/"):
             return "auth"
-        elif path.startswith("/admin/"):
+        if path.startswith("/admin/"):
             return "admin"
-        elif path.startswith("/api/payment") or path.startswith("/paywall"):
+        if path.startswith("/api/payment") or path.startswith("/paywall"):
             return "payment"
-        elif path.startswith("/api/"):
+        if path.startswith("/api/"):
             return "api"
-        else:
-            return "general"
+        return "general"
 
     def _generate_request_id(self) -> str:
         """Generate unique request ID for tracking."""
@@ -409,7 +406,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         return str(uuid.uuid4())[:8]
 
     def _log_request(
-        self, request: Request, response: Response, client_ip: str, duration: float
+        self, request: Request, response: Response, client_ip: str, duration: float,
     ) -> None:
         """Log request for security monitoring."""
         log_data = {
@@ -432,8 +429,8 @@ class AuditLogger:
 
     @staticmethod
     def log_security_event(
-        event_type: str, details: dict[str, Any], client_ip: str | None = None
-    ) -> None:
+        event_type: str, details: dict[str, Any], client_ip: str | None = None,
+    ):
         """Log security - related events for audit trail."""
         log_entry = {
             "timestamp": datetime.now(UTC).isoformat(),
@@ -446,8 +443,8 @@ class AuditLogger:
 
     @staticmethod
     def log_admin_action(
-        admin_email: str, action: str, target: str, client_ip: str | None = None
-    ) -> None:
+        admin_email: str, action: str, target: str, client_ip: str | None = None,
+    ):
         """Log administrative actions for compliance."""
         AuditLogger.log_security_event(
             "admin_action",
@@ -456,20 +453,18 @@ class AuditLogger:
         )
 
     @staticmethod
-    def log_authentication(
-        email: str, success: bool, client_ip: str | None = None
-    ) -> None:
+    def log_authentication(email: str, success: bool, client_ip: str | None = None):
         """Log authentication attempts."""
         AuditLogger.log_security_event(
-            "authentication", {"email": email, "success": success}, client_ip
+            "authentication", {"email": email, "success": success}, client_ip,
         )
 
 
 # Export main components
 __all__ = [
-    "SecurityMiddleware",
-    "InputSanitizer",
     "AntiTheftProtection",
     "AuditLogger",
+    "InputSanitizer",
     "SecurityConfig",
+    "SecurityMiddleware",
 ]

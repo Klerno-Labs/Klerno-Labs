@@ -6,8 +6,8 @@ from app.compliance import AddressBook, tag_categories, tag_category
 class T:
     def __init__(self, **kw):
         self.memo = kw.get("memo", "")
-        self.fee = kw.get("fee", Decimal("0"))
-        self.amount = kw.get("amount", Decimal("0"))
+        self.fee = kw.get("fee", Decimal(0))
+        self.amount = kw.get("amount", Decimal(0))
         self.direction = kw.get("direction", "out")
         self.from_address = kw.get("from_address")
         self.to_address = kw.get("to_address")
@@ -15,13 +15,13 @@ class T:
 
 def test_fee_detection():
     tx = T(
-        memo="network fee", amount=Decimal("-1"), fee=Decimal("0.1"), direction="out"
+        memo="network fee", amount=Decimal(-1), fee=Decimal("0.1"), direction="out",
     )
     assert tag_category(tx) == "fee"
 
 
 def test_keyword_boundary():
-    tx = T(memo="gasoline purchase", amount=Decimal("-10"), fee=Decimal("0"))
+    tx = T(memo="gasoline purchase", amount=Decimal(-10), fee=Decimal(0))
     assert tag_category(tx) != "fee"
 
 

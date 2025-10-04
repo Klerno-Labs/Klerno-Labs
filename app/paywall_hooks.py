@@ -11,12 +11,11 @@ router = APIRouter(prefix="/paywall", tags=["paywall"])
 
 
 def _stripe() -> Any | None:
-    """
-    Lazy loader for the Stripe SDK that won't trigger static 'missing import'
+    """Lazy loader for the Stripe SDK that won't trigger static 'missing import'
     warnings if stripe isn't installed yet.
     """
     try:
-        stripe_sdk = cast(Any, importlib.import_module("stripe"))
+        stripe_sdk = cast("Any", importlib.import_module("stripe"))
         stripe_sdk.api_key = (os.getenv("STRIPE_SECRET_KEY", "") or "").strip()
         return stripe_sdk
     except Exception:
@@ -24,7 +23,7 @@ def _stripe() -> Any | None:
 
 
 @router.post("/create-checkout-session")
-async def create_checkout_session(req: Request) -> Any:
+async def create_checkout_session(req: Request):
     stripe_sdk = _stripe()
     price_id = (os.getenv("STRIPE_PRICE_ID", "") or "").strip()
     if not stripe_sdk or not price_id:
@@ -47,7 +46,7 @@ async def create_checkout_session(req: Request) -> Any:
 
 
 @router.post("/stripe/webhook")
-async def stripe_webhook(request: Request) -> Any:
+async def stripe_webhook(request: Request):
     stripe_sdk = _stripe()
     if not stripe_sdk:
         raise HTTPException(status_code=501, detail="Stripe not configured")
@@ -57,7 +56,7 @@ async def stripe_webhook(request: Request) -> Any:
     secret = (os.getenv("STRIPE_WEBHOOK_SECRET", "") or "").strip()
     if not sig_header or not secret:
         raise HTTPException(
-            status_code=400, detail="missing webhook signature or secret"
+            status_code=400, detail="missing webhook signature or secret",
         )
 
     try:
@@ -71,7 +70,7 @@ async def stripe_webhook(request: Request) -> Any:
     ):
         session = event["data"]["object"]
         email = (session.get("customer_details", {}) or {}).get("email") or session.get(
-            "customer_email"
+            "customer_email",
         )
         if email:
             email_l = email.lower()

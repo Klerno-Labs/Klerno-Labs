@@ -29,6 +29,8 @@ def test_status_endpoint():
     assert isinstance(data.get("version"), str) and data["version"].strip() != ""
 
 
+import importlib
+
 import app.main as main_mod
 from app import store
 from app.security_session import hash_pw
@@ -38,6 +40,11 @@ def test_smoke_login(tmp_path, monkeypatch):
     # Use a temporary sqlite DB for isolated test
     dbfile = tmp_path / "test_klerno.db"
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{dbfile}")
+    # Disable rate limiting for tests
+    monkeypatch.setenv("ENABLE_RATE_LIMIT", "false")
+
+    # Reload the main app module to pick up the environment changes
+    importlib.reload(main_mod)
 
     # Re-import store module state by calling init_db through main lifespan
     client = TestClient(main_mod.app)
@@ -50,7 +57,10 @@ def test_smoke_login(tmp_path, monkeypatch):
     password = "Labs2025"
     pw_hash = hash_pw(password)
     store.create_user(
-        email=email, password_hash=pw_hash, role="admin", subscription_active=True
+        email=email,
+        password_hash=pw_hash,
+        role="admin",
+        subscription_active=True,
     )
 
     # Landing page

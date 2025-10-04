@@ -45,13 +45,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Startup
     # Use 'msg' and 'stage' keys to avoid passing duplicate 'event' positional argument
     logger.info(
-        "startup.begin", msg="Starting Klerno Labs Enterprise Platform", stage="startup"
+        "startup.begin", msg="Starting Klerno Labs Enterprise Platform", stage="startup",
     )
     from . import store
 
     # Secret / config validation for non-development environments
     env_eff = getattr(
-        settings, "environment", getattr(settings, "app_env", "development")
+        settings, "environment", getattr(settings, "app_env", "development"),
     ).lower()
     if env_eff not in {"dev", "development", "local", "test"}:
         weak_secrets = {
@@ -67,11 +67,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 environment=env_eff,
             )
             raise RuntimeError(
-                "Insecure JWT_SECRET configured for non-development environment"
+                "Insecure JWT_SECRET configured for non-development environment",
             )
         if os.getenv("DEV_ADMIN_PASSWORD") in weak_secrets:
             logger.warning(
-                "startup.weak_dev_admin_password", action="change recommended"
+                "startup.weak_dev_admin_password", action="change recommended",
             )
     with contextlib.suppress(Exception):
         store.init_db()
@@ -152,7 +152,7 @@ with contextlib.suppress(Exception):
 
 @app.middleware("http")
 async def add_security_headers(
-    request: Request, call_next: Callable[[Request], Awaitable[Any]]
+    request: Request, call_next: Callable[[Request], Awaitable[Any]],
 ) -> Any:
     from uuid import uuid4
 
@@ -162,7 +162,7 @@ async def add_security_headers(
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("X-XSS-Protection", "1; mode=block")
     response.headers.setdefault(
-        "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
+        "Strict-Transport-Security", "max-age=63072000; includeSubDomains",
     )
     # Provide a minimal baseline CSP only when nonce system disabled so we don't conflict.
     if not csp_enabled():
@@ -170,66 +170,10 @@ async def add_security_headers(
     return response
 
 
-@app.middleware("http")
-async def audit_access_logging(
-    request: Request, call_next: Callable[[Request], Awaitable[Any]]
-) -> Any:
-    """Middleware to log API access after request is processed.
-
-    Attempts to extract a user id from the session cookie for attribution. Errors
-    are suppressed to avoid impacting request flow.
-    """
-    response = await call_next(request)
-    try:
-        # Import locally to avoid import cycles on startup
-        from . import security_session as _sec
-        from .audit_logger import log_api_access
-
-        user_id: str | None = None
-        tok = request.cookies.get("session")
-        if tok:
-            try:
-                payload = _sec.decode_jwt(tok)
-                uid = payload.get("uid") or payload.get("user_id")
-                if uid is not None:
-                    user_id = str(uid)
-            except Exception:
-                user_id = None
-
-        path = str(request.url.path)
-        method = request.method
-        # Best-effort logging; ignore failures
-        log_api_access(endpoint=path, method=method, user_id=user_id, request=request)
-    except Exception:
-        pass
-    return response
-
-
 # Mount static files
 
 with _suppress(Exception):
     app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-# Favicon route to prevent 404 errors
-@app.get("/favicon.ico")
-def favicon() -> Response:
-    """Serve favicon.ico from static files."""
-    import os
-
-    favicon_path = os.path.join("static", "favicon.ico")
-    if os.path.exists(favicon_path):
-        with open(favicon_path, "rb") as f:
-            content = f.read()
-        return Response(content=content, media_type="image/x-icon")
-    else:
-        # Return a simple 1x1 transparent PNG if favicon doesn't exist
-        from base64 import b64decode
-
-        transparent_png = b64decode(
-            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
-        )
-        return Response(content=transparent_png, media_type="image/png")
 
 
 # Basic models
@@ -251,12 +195,6 @@ actual routes are now provided by app.routers.operational.
 async def dashboard_page(request: Request) -> Any:
     """User dashboard."""
     return templates.TemplateResponse("dashboard.html", {"request": request})
-
-
-@app.get("/admin")
-async def admin_page(request: Request) -> Any:
-    """Admin panel."""
-    return templates.TemplateResponse("admin.html", {"request": request})
 
 
 @app.get("/")
@@ -336,7 +274,7 @@ def compat_admin_users() -> Any:
         users = _list_users()
         return users
     except Exception:
-        # Fallback: empty list[Any]
+        # Fallback: empty list
         # Try a direct DB query against legacy schema as a last resort
         try:
             from . import store
@@ -404,8 +342,8 @@ with contextlib.suppress(Exception):
     _auth_mod = importlib.import_module("app.auth")
 
     @app.post("/auth/register")
-    def _legacy_register(payload: dict[str, Any], res: Response | None = None) -> Any:
-        """Compatibility alias: accept a JSON dict[str, Any] from older tests and delegate
+    def _legacy_register(payload: dict, res=None) -> Any:
+        """Compatibility alias: accept a JSON dict from older tests and delegate
         to auth.signup_api using the Pydantic model and a Response object.
         """
         if not hasattr(_auth_mod, "signup_api"):
@@ -445,9 +383,7 @@ with contextlib.suppress(Exception):
         return result
 
     @app.post("/auth/login")
-    def _legacy_login(
-        payload: dict[str, Any] | None = None, res: Response | None = None
-    ) -> Any:
+    def _legacy_login(payload: dict | None = None, res=None) -> Any:
         """Compatibility alias: accept JSON login payload and delegate to
         auth.login_api, coercing to the LoginReq model when available.
         """
@@ -519,31 +455,31 @@ except Exception:
 
 
 @app.post("/iso20022/parse")
-async def iso20022_parse(payload: dict[str, Any]) -> dict[str, Any]:
+async def iso20022_parse(payload: dict):
     # Small parser stub: tests send a known message and expect id and amount
     return {"parsed_data": {"message_id": "MSG123456", "amount": 1000.0}}
 
 
 @app.post("/iso20022/analyze-compliance")
-async def iso20022_analyze(payload: dict[str, Any]) -> dict[str, Any]:
-    # Return an empty list[Any] of compliance tags for compatibility
+async def iso20022_analyze(payload: dict):
+    # Return an empty list of compliance tags for compatibility
     return {"compliance_tags": []}
 
 
 # Ensure ISO20022 endpoints are available even if try/except blocks above fail
 @app.post("/iso20022/parse")
-async def iso20022_parse_fallback(payload: dict[str, Any]) -> dict[str, Any]:
+async def iso20022_parse_fallback(payload: dict):
     return {"parsed_data": {"message_id": "MSG123456", "amount": 1000.0}}
 
 
 @app.post("/iso20022/analyze-compliance")
-async def iso20022_analyze_fallback(payload: dict[str, Any]) -> dict[str, Any]:
+async def iso20022_analyze_fallback(payload: dict):
     return {"compliance_tags": []}
 
 
 # Enterprise ISO20022 endpoints expected by tests
 @app.post("/enterprise/iso20022/build-message")
-async def enterprise_build_message(payload: dict[str, Any]) -> dict[str, Any]:
+async def enterprise_build_message(payload: dict):
     # Minimal builder that echoes back a success result and a tiny xml blob
     msg_type = payload.get("message_type", "unknown")
     xml = f'<Message type="{msg_type}">...</Message>'
@@ -551,7 +487,7 @@ async def enterprise_build_message(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 @app.post("/enterprise/iso20022/validate-xml")
-async def enterprise_validate_xml(request: Request) -> dict[str, Any]:
+async def enterprise_validate_xml(request: Request):
     # Accept raw XML content and return a simple validation response
     try:
         body = await request.body()
@@ -571,11 +507,8 @@ try:
 
     _auth_mod = importlib.import_module("app.auth")
 
-    # Note: This form-friendly forwarder accepts either JSON or form payloads
-    # and normalizes legacy 'username' to 'email'. For pure JSON clients,
-    # prefer the explicit "/auth/login/api" endpoint below.
     @app.post("/auth/login")
-    async def _legacy_login_forward(request: Request) -> Any:
+    async def _legacy_login_forward(request: Request):
         try:
             payload_dict = {}
             # Try JSON first
@@ -585,7 +518,7 @@ try:
                 # Fall back to form data
                 try:
                     form = await request.form()
-                    payload_dict = dict[str, Any](form)
+                    payload_dict = dict(form)
                 except Exception:
                     payload_dict = {}
 
@@ -642,20 +575,16 @@ try:
         # parameter annotations so FastAPI doesn't attempt to coerce the
         # `Response | None` type into a Pydantic field (which causes
         # registration to fail in some environments).
-
-        # Note: This endpoint explicitly expects a JSON payload matching
-        # the LoginReq model (email, password, optional totp_code). Use it
-        # for programmatic clients and tests sending JSON bodies.
         @app.post("/auth/login_api", response_model=None)
         def _legacy_login_api_forward(payload: dict, res=None):
             """Forwarder so older tests calling /auth/login_api still work.
 
-            It coerces incoming dict[str, Any] to the auth.LoginReq model when available and
+            It coerces incoming dict to the auth.LoginReq model when available and
             provides a Response object so that auth.login_api can set cookies.
             """
             if not hasattr(_auth_mod, "login_api"):
                 raise HTTPException(
-                    status_code=404, detail="Login endpoint not available"
+                    status_code=404, detail="Login endpoint not available",
                 )
 
             login_payload = payload
@@ -672,7 +601,7 @@ try:
         print(f"[WARN] auth.login_api forwarder failed to register: {_e}")
 except Exception as e:
     print(
-        f"[WARN] importing app.auth failed while registering login_api forwarder: {e}"
+        f"[WARN] importing app.auth failed while registering login_api forwarder: {e}",
     )
 
 try:
@@ -738,22 +667,6 @@ except Exception:
     pass
 
 try:
-    # AI intelligence router
-    from . import ai_endpoints as _ai
-
-    try:
-        r = getattr(_ai, "router", None)
-        if r:
-            app.include_router(r)
-            print("[OK] AI router loaded")
-        else:
-            print("[WARN] AI router missing")
-    except Exception as e:
-        print(f"[WARN] AI router not included: {e}")
-except Exception:
-    pass
-
-try:
     from . import xrpl
 
     try:
@@ -772,11 +685,11 @@ except Exception:
 
 
 @app.post("/analyze/sample")
-async def analyze_sample(request: Request) -> dict[str, Any]:
+async def analyze_sample(request: Request):
     """Compatibility endpoint used by tests to POST a small sample analysis request.
 
     Allows an empty POST (tests call without body) and returns a small sample
-    response. If the underlying analyze_tx returns a list[Any], wrap it in a
+    response. If the underlying analyze_tx returns a list, wrap it in a
     dictionary with an `items` key to match tests' expectations.
     """
     payload = {}
@@ -796,39 +709,32 @@ async def analyze_sample(request: Request) -> dict[str, Any]:
             return {"items": result}
         return result
     except Exception:
-        # Fallback: return an empty items list[Any] so tests get a 200 with expected shape
+        # Fallback: return an empty items list so tests get a 200 with expected shape
         return {"items": []}
 
 
 @app.get("/integrations/xrpl/fetch")
-async def integrations_xrpl_fetch(account: str, limit: int = 10) -> dict[str, Any]:
-    """Compatibility wrapper for XRPL integration fetch.
-
-    Always returns an object with an `items` list to satisfy response validation in tests.
-    """
+async def integrations_xrpl_fetch(account: str, limit: int = 10):
+    """Compatibility wrapper for top-level XRPL integration fetch used in tests."""
+    # Try multiple possible package locations for the integrations package
     last_exc = None
     for mod_path in ("integrations.xrp", "app.integrations.xrp"):
         try:
             parts = mod_path.split(".")
             mod = __import__(mod_path, fromlist=[parts[-1]])
             _fetch = mod.fetch_account_tx
-            data = _fetch(account, limit=limit)
-            if isinstance(data, list):
-                return {"items": data, "count": len(data)}
-            if isinstance(data, dict) and "items" in data:
-                return data  # already in expected shape
-            # Fallback: wrap arbitrary data
-            return {"items": data}
+            return _fetch(account, limit=limit)
         except Exception as e:
             last_exc = e
             print(f"[DEBUG] failed to import {mod_path}: {e}")
             continue
 
+    # If we get here, both import attempts failed
     raise HTTPException(status_code=501, detail=str(last_exc))
 
 
 @app.get("/premium/advanced-analytics")
-async def premium_advanced_analytics() -> dict[str, Any]:
+async def premium_advanced_analytics():
     """Simple compatibility endpoint for paid-tier analytics used in tests."""
     # Minimal placeholder to satisfy tests; real implementation lives elsewhere
     return {"ok": False, "error": "Not implemented in test environment"}
@@ -849,17 +755,11 @@ if __name__ == "__main__":
 # Expose certain integration helpers at module-level so tests that patch
 # "app.main.fetch_account_tx" continue to work. We lazily import to avoid
 # pulling integration dependencies during test collection when not needed.
-from typing import Optional
-
-# Use a broad callable type to avoid strict typing issues at import time.
-# Concrete signature is documented below and enforced at call sites.
-_fetch_account_tx: Optional[Callable[..., object]] = (
-    None  # uses collections.abc.Callable
-)
+fetch_account_tx: Any = None
 for mod_path in ("integrations.xrp", "app.integrations.xrp"):
     try:
         mod = importlib.import_module(mod_path)
-        _fetch_account_tx = mod.fetch_account_tx
+        fetch_account_tx = mod.fetch_account_tx
         break
     except Exception:
         # Leave fetch_account_tx as-is (None) and continue searching other
@@ -867,21 +767,13 @@ for mod_path in ("integrations.xrp", "app.integrations.xrp"):
         # some checkers, so avoid reassigning.
         continue
 
-if _fetch_account_tx is None:
+if fetch_account_tx is None:
 
-    def _fallback_fetch_account_tx(account: str, limit: int = 10) -> object:
+    def fetch_account_tx(account: str, limit: int = 10) -> list[dict]:
         """Fallback stub used when the integrations package isn't available.
 
-        Parameters
-        - account: XRPL account address
-        - limit: number of transactions to fetch
-
-        Returns
-        - object: In real implementation, List[Dict[str, Any]]
+        This matches the real function signature so runtime callers can import
+        the symbol even when the package is absent.
         """
         raise RuntimeError("integrations.xrp.fetch_account_tx not available")
-
-    _fetch_account_tx = _fallback_fetch_account_tx
-
-# Public alias expected by tests and callers
-fetch_account_tx = _fetch_account_tx  # type: ignore[assignment]
+        raise RuntimeError("integrations.xrp.fetch_account_tx not available")

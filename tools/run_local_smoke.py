@@ -68,7 +68,7 @@ def wait_for_ready(timeout: int = 30) -> bool:
 def run_login_probe() -> int:
     print("Running login_probe to acquire tokens...")
     return subprocess.call(
-        [sys.executable, str(ROOT / "tools" / "login_probe.py"), "--save-token"]
+        [sys.executable, str(ROOT / "tools" / "login_probe.py"), "--save-token"],
     )  # returns 0 on success
 
 

@@ -80,19 +80,19 @@ async def create_xrp_payment_request(
                 "success": True,
                 "request_id": payment["request_id"],
                 "destination_address": payment.get(
-                    "recipient", settings.XRP_WALLET_ADDRESS
+                    "recipient", settings.XRP_WALLET_ADDRESS,
                 ),
                 "destination_tag": payment.get("destination_tag", "12345"),
                 "amount": amount_xrp,
                 "tier": tier,
-            }
+            },
         )
     except Exception as e:
         return JSONResponse(
             status_code=500,
             content={
                 "success": False,
-                "error": f"Failed to create payment request: {str(e)}",
+                "error": f"Failed to create payment request: {e!s}",
             },
         )
 
@@ -124,7 +124,7 @@ async def verify_xrp_payment_request(
                     "verified": True,
                     "message": message,
                     "transaction": tx_details,
-                }
+                },
             )
             resp.set_cookie(
                 "cw_paid",
@@ -139,7 +139,7 @@ async def verify_xrp_payment_request(
     except Exception as e:
         return JSONResponse(
             status_code=500,
-            content={"error": f"Failed to verify payment: {str(e)}"},
+            content={"error": f"Failed to verify payment: {e!s}"},
         )
 
 
@@ -165,21 +165,20 @@ async def verify_payment_endpoint(
                     "success": True,
                     "message": "Payment verified successfully",
                     "transaction": result.get("transaction", {}),
-                }
+                },
             )
-        else:
-            return JSONResponse(
-                content={
-                    "success": False,
-                    "error": result.get("error", "Payment verification failed"),
-                }
-            )
+        return JSONResponse(
+            content={
+                "success": False,
+                "error": result.get("error", "Payment verification failed"),
+            },
+        )
     except Exception as e:
         return JSONResponse(
             status_code=500,
             content={
                 "success": False,
-                "error": f"Verification error: {str(e)}",
+                "error": f"Verification error: {e!s}",
             },
         )
 

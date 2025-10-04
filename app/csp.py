@@ -55,7 +55,13 @@ def add_csp_middleware(app) -> None:
         # Append script-src/style-src with nonce fallback to self
         script = f"script-src 'self' 'nonce-{nonce}'"
         style = f"style-src 'self' 'nonce-{nonce}'"
-        policy = f"{bp}; {script}; {style}" if bp else f"{script}; {style}"
+        # Add optional report-uri for report collection endpoint
+        report_uri = "/csp/report"
+        policy = (
+            f"{bp}; {script}; {style}; report-uri {report_uri}"
+            if bp
+            else f"{script}; {style}; report-uri {report_uri}"
+        )
         header_name = (
             "Content-Security-Policy-Report-Only"
             if report_only()

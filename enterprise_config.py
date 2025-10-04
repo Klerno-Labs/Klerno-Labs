@@ -1,5 +1,4 @@
-"""
-Klerno Labs - Enterprise Configuration System
+"""Klerno Labs - Enterprise Configuration System
 Controls enterprise features for TOP 0.1% application status
 """
 
@@ -126,7 +125,7 @@ class EnterpriseConfig:
                     self.features.behavioral_analysis,
                     self.features.real_time_metrics,
                     self.features.business_intelligence,
-                ]
+                ],
             ),
             "features": {
                 "monitoring": self.features.monitoring_enabled,

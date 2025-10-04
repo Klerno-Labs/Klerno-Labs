@@ -9,4 +9,4 @@ from . import bsc, bscscan, xrp
 
 # Re-export common helpers (if present) to provide stable import paths
 # Tests expect to be able to patch app.integrations.xrp.fetch_account_tx
-__all__ = ["xrp", "bsc", "bscscan"]
+__all__ = ["bsc", "bscscan", "xrp"]

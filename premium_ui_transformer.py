@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Klerno Labs Premium UI/UX Transformation System
+"""Klerno Labs Premium UI/UX Transformation System
 ============================================
 
 Transform your enterprise application to top 0.1% visual standards with:
@@ -17,11 +16,9 @@ Version: 1.0.0-premium
 """
 
 import json
-import os
-import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
 class PremiumUITransformer:
@@ -40,9 +37,8 @@ class PremiumUITransformer:
             "optimization_score": 0,
         }
 
-    def create_premium_css_framework(self) -> Dict[str, Any]:
+    def create_premium_css_framework(self) -> dict[str, Any]:
         """Create a comprehensive premium CSS framework"""
-
         # Ensure static directory exists
         self.static_dir.mkdir(exist_ok=True)
         css_dir = self.static_dir / "css"
@@ -610,7 +606,7 @@ body {
 
         self.transformation_report["components_created"].append("Premium CSS Framework")
         self.transformation_report["frameworks_integrated"].append(
-            "Klerno Premium Design System"
+            "Klerno Premium Design System",
         )
 
         return {
@@ -632,9 +628,8 @@ body {
             ],
         }
 
-    def create_premium_javascript(self) -> Dict[str, Any]:
+    def create_premium_javascript(self) -> dict[str, Any]:
         """Create premium JavaScript for interactive features"""
-
         js_dir = self.static_dir / "js"
         js_dir.mkdir(exist_ok=True)
 
@@ -1082,7 +1077,7 @@ window.KlernoPremiumUI = KlernoPremiumUI;
         js_file.write_text(premium_js)
 
         self.transformation_report["components_created"].append(
-            "Premium JavaScript Framework"
+            "Premium JavaScript Framework",
         )
         self.transformation_report["features_added"].extend(
             [
@@ -1096,7 +1091,7 @@ window.KlernoPremiumUI = KlernoPremiumUI;
                 "Theme Toggle",
                 "Notification System",
                 "Lazy Loading",
-            ]
+            ],
         )
 
         return {
@@ -1145,19 +1140,19 @@ def main():
     transformer.transformation_report["optimization_score"] = 98.5
     transformer.transformation_report["ui_standards"] = "Top 0.1% Professional"
 
-    with open(report_file, "w") as f:
+    with Path(report_file).open("w") as f:
         json.dump(transformer.transformation_report, f, indent=2)
 
     print("\n🏆 PREMIUM UI/UX TRANSFORMATION COMPLETED!")
     print("=" * 60)
     print(
-        f"📊 Optimization Score: {transformer.transformation_report['optimization_score']}%"
+        f"📊 Optimization Score: {transformer.transformation_report['optimization_score']}%",
     )
     print(
-        f"🎨 Components Created: {len(transformer.transformation_report['components_created'])}"
+        f"🎨 Components Created: {len(transformer.transformation_report['components_created'])}",
     )
     print(
-        f"⚡ Features Added: {len(transformer.transformation_report['features_added'])}"
+        f"⚡ Features Added: {len(transformer.transformation_report['features_added'])}",
     )
     print(f"🎯 UI Standards: {transformer.transformation_report['ui_standards']}")
     print(f"📄 Report: {report_file}")

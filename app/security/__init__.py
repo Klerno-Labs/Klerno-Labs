@@ -8,7 +8,7 @@ from typing import Any
 
 from . import encryption  # re-export for convenience
 
-__all__ = ["encryption", "expected_api_key", "enforce_api_key"]
+__all__ = ["encryption", "enforce_api_key", "expected_api_key"]
 
 
 def expected_api_key() -> str | None:

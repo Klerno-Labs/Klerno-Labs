@@ -1,5 +1,4 @@
-"""
-Advanced Performance Monitoring & Analytics for Klerno Labs
+"""Advanced Performance Monitoring & Analytics for Klerno Labs
 Real-time performance tracking, user analytics, and regression detection
 """
 
@@ -47,11 +46,11 @@ class UserSession:
 class PerformanceTracker:
     """Advanced performance metrics tracking"""
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.metrics: list[PerformanceMetric] = []
         self.request_times: deque[float] = deque(maxlen=1000)  # Last 1000 requests
         self.error_rates: dict[str, int] = defaultdict(int)
-        self.endpoint_stats: dict[str, list[float]] = defaultdict(list[Any])
+        self.endpoint_stats: dict[str, list[float]] = defaultdict(list)
         self.system_metrics: dict[str, Any] = {}
 
     def record_metric(
@@ -60,7 +59,7 @@ class PerformanceTracker:
         value: float,
         labels: dict[str, str] | None = None,
         metric_type: MetricType = MetricType.GAUGE,
-    ) -> None:
+    ):
         """Record a performance metric"""
         metric = PerformanceMetric(
             name=name,
@@ -76,8 +75,8 @@ class PerformanceTracker:
             self.metrics = self.metrics[-5000:]
 
     def record_request(
-        self, method: str, path: str, status_code: int, duration: float, size: int = 0
-    ) -> None:
+        self, method: str, path: str, status_code: int, duration: float, size: int = 0,
+    ):
         """Record request performance data"""
         self.request_times.append(duration)
         self.endpoint_stats[f"{method} {path}"].append(duration)
@@ -155,7 +154,7 @@ class PerformanceTracker:
                 "disk_percent": disk.percent if disk else 0,
                 "disk_free_gb": disk.free / (1024**3) if disk else 0,
             },
-            "error_rates": dict[str, Any](self.error_rates),
+            "error_rates": dict(self.error_rates),
             "endpoint_stats": {
                 endpoint: {
                     "count": len(times),
@@ -172,13 +171,13 @@ class PerformanceTracker:
 class UserAnalytics:
     """User behavior and conversion analytics"""
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.active_sessions: dict[str, UserSession] = {}
-        self.conversion_funnels = defaultdict(list[Any])
+        self.conversion_funnels = defaultdict(list)
         self.page_analytics = defaultdict(int)
-        self.user_flows = defaultdict(list[Any])
+        self.user_flows = defaultdict(list)
 
-    def start_session(self, session_id: str, ip: str, user_agent: str) -> None:
+    def start_session(self, session_id: str, ip: str, user_agent: str):
         """Start a new user session"""
         self.active_sessions[session_id] = UserSession(
             session_id=session_id,
@@ -191,7 +190,7 @@ class UserAnalytics:
             conversion_events=[],
         )
 
-    def track_page_view(self, session_id: str, path: str) -> None:
+    def track_page_view(self, session_id: str, path: str):
         """Track a page view"""
         if session_id in self.active_sessions:
             session = self.active_sessions[session_id]
@@ -202,7 +201,7 @@ class UserAnalytics:
             self.page_analytics[path] += 1
             self.user_flows[session_id].append(path)
 
-    def track_conversion(self, session_id: str, event: str) -> None:
+    def track_conversion(self, session_id: str, event: str):
         """Track a conversion event"""
         if session_id in self.active_sessions:
             session = self.active_sessions[session_id]
@@ -214,7 +213,7 @@ class UserAnalytics:
                     "session_id": session_id,
                     "timestamp": time.time(),
                     "pages_visited": session.page_views,
-                }
+                },
             )
 
     def get_analytics_summary(self) -> dict[str, Any]:
@@ -233,12 +232,12 @@ class UserAnalytics:
                     [
                         s.last_activity - s.start_time
                         for s in self.active_sessions.values()
-                    ]
+                    ],
                 )
                 if self.active_sessions
                 else 0
             ),
-            "page_views": dict[str, Any](self.page_analytics),
+            "page_views": dict(self.page_analytics),
             "conversion_rates": {
                 event: len(conversions)
                 for event, conversions in self.conversion_funnels.items()
@@ -260,7 +259,7 @@ class UserAnalytics:
         return [
             {"flow": flow, "count": count}
             for flow, count in sorted(
-                flow_counts.items(), key=lambda x: x[1], reverse=True
+                flow_counts.items(), key=lambda x: x[1], reverse=True,
             )[:10]
         ]
 
@@ -268,7 +267,7 @@ class UserAnalytics:
 class RegressionDetector:
     """Automated performance regression detection"""
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.baseline_metrics: dict[str, Any] = {}
         self.alerts: list[dict[str, Any]] = []
         self.thresholds = {
@@ -278,7 +277,7 @@ class RegressionDetector:
             "memory_threshold": 85,  # 85% memory
         }
 
-    def update_baseline(self, metrics: dict[str, Any]) -> None:
+    def update_baseline(self, metrics: dict[str, Any]):
         """Update performance baseline"""
         self.baseline_metrics = {
             "avg_response_time": metrics["request_performance"]["avg_response_time"],
@@ -289,7 +288,7 @@ class RegressionDetector:
         }
 
     def check_regressions(
-        self, current_metrics: dict[str, Any]
+        self, current_metrics: dict[str, Any],
     ) -> list[dict[str, Any]]:
         """Check for performance regressions"""
         alerts: list[dict[str, Any]] = []
@@ -316,7 +315,7 @@ class RegressionDetector:
                         "message": f"Response time increased by {response_time_increase:.1%}",
                         "current": current_response_time,
                         "baseline": baseline_response_time,
-                    }
+                    },
                 )
 
         # CPU threshold
@@ -329,7 +328,7 @@ class RegressionDetector:
                     "message": f"CPU usage at {current_cpu:.1f}%",
                     "current": current_cpu,
                     "threshold": self.thresholds["cpu_threshold"],
-                }
+                },
             )
 
         # Memory threshold
@@ -342,7 +341,7 @@ class RegressionDetector:
                     "message": f"Memory usage at {current_memory:.1f}%",
                     "current": current_memory,
                     "threshold": self.thresholds["memory_threshold"],
-                }
+                },
             )
 
         self.alerts.extend(alerts)
@@ -352,7 +351,7 @@ class RegressionDetector:
 class AdvancedMonitoringMiddleware(BaseHTTPMiddleware):
     """Comprehensive monitoring middleware"""
 
-    def __init__(self, app, start_background: bool = False) -> None:
+    def __init__(self, app, start_background: bool = False):
         super().__init__(app)
         self.performance_tracker = PerformanceTracker()
         self.user_analytics = UserAnalytics()
@@ -362,7 +361,7 @@ class AdvancedMonitoringMiddleware(BaseHTTPMiddleware):
         if start_background:
             asyncio.create_task(self._background_monitoring())
 
-    async def dispatch(self, request: Request, call_next) -> Any:
+    async def dispatch(self, request: Request, call_next):
         """Main monitoring dispatch"""
         start_time = time.time()
 
@@ -409,7 +408,7 @@ class AdvancedMonitoringMiddleware(BaseHTTPMiddleware):
 
         return response
 
-    async def _background_monitoring(self) -> Any:
+    async def _background_monitoring(self):
         """Background task for monitoring and alerting"""
         while True:
             try:
@@ -465,22 +464,21 @@ class AdvancedMonitoringMiddleware(BaseHTTPMiddleware):
             or error_count > 10
         ):
             return "critical"
-        elif (
+        if (
             response_time > 1.0
             or cpu_percent > 70
             or memory_percent > 80
             or error_count > 5
         ):
             return "warning"
-        else:
-            return "healthy"
+        return "healthy"
 
 
 # Global monitoring instance
 monitoring_middleware = None
 
 
-def get_monitoring_middleware(start_background: bool = False) -> None:
+def get_monitoring_middleware(start_background: bool = False):
     """Get or create monitoring middleware instance.
 
     By default the background monitoring loop is not started. Pass
@@ -490,6 +488,6 @@ def get_monitoring_middleware(start_background: bool = False) -> None:
     global monitoring_middleware
     if not monitoring_middleware:
         monitoring_middleware = AdvancedMonitoringMiddleware(
-            None, start_background=start_background
+            None, start_background=start_background,
         )
     return monitoring_middleware

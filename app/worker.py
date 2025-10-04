@@ -8,4 +8,4 @@ in modules that still reference `app.worker` during consolidation.
 
 def noop() -> None:
     """No-op placeholder for removed worker functionality."""
-    return None
+    return

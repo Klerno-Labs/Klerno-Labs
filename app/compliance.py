@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 from re import Pattern
-from typing import Any, Literal, cast
+from typing import Literal, cast
 
 import yaml
 
@@ -46,13 +46,13 @@ KEYWORD_PATTERNS: dict[str, list[Pattern[str]]] = {
 
 def _as_decimal(x) -> Decimal:
     if x is None:
-        return Decimal("0")
+        return Decimal(0)
     if isinstance(x, Decimal):
         return x
     try:
         return Decimal(str(x))
     except Exception:
-        return Decimal("0")
+        return Decimal(0)
 
 
 def _norm(text: str | None) -> str:
@@ -95,8 +95,7 @@ def _is_internal_transfer(tx, book: AddressBook | None) -> bool:
 
 
 def tag_categories(tx, address_book: AddressBook | None = None) -> list[TagResult]:
-    """
-    Multi - label: return every category that triggers, with score + reasons.
+    """Multi - label: return every category that triggers, with score + reasons.
     Compatible with any Transaction that has .memo, .fee, .amount, .direction.
     """
     memo = _norm(getattr(tx, "memo", None))
@@ -121,7 +120,7 @@ def tag_categories(tx, address_book: AddressBook | None = None) -> list[TagResul
                 category="fee",
                 score=weights["fee_signal"],
                 reasons=[TagReason("fee", "Positive fee + nonpositive amount")],
-            )
+            ),
         )
 
     # 2) Keyword hits per category
@@ -132,7 +131,7 @@ def tag_categories(tx, address_book: AddressBook | None = None) -> list[TagResul
                 if found:
                     found.score += weights["keyword"]
                     found.reasons.append(
-                        TagReason(cat, f"Keyword match: {pat.pattern}")
+                        TagReason(cat, f"Keyword match: {pat.pattern}"),
                     )
                 else:
                     results.append(
@@ -140,7 +139,7 @@ def tag_categories(tx, address_book: AddressBook | None = None) -> list[TagResul
                             category=cat,
                             score=weights["keyword"],
                             reasons=[TagReason(cat, f"Keyword match: {pat.pattern}")],
-                        )
+                        ),
                     )
 
     # 3) Internal transfers boost
@@ -149,7 +148,7 @@ def tag_categories(tx, address_book: AddressBook | None = None) -> list[TagResul
         if found:
             found.score += weights["internal_transfer"]
             found.reasons.append(
-                TagReason("transfer", "Internal transfer (same owner)")
+                TagReason("transfer", "Internal transfer (same owner)"),
             )
         else:
             results.append(
@@ -157,7 +156,7 @@ def tag_categories(tx, address_book: AddressBook | None = None) -> list[TagResul
                     category="transfer",
                     score=weights["internal_transfer"],
                     reasons=[TagReason("transfer", "Internal transfer (same owner)")],
-                )
+                ),
             )
 
     # 4) Direction soft signal
@@ -172,7 +171,7 @@ def tag_categories(tx, address_book: AddressBook | None = None) -> list[TagResul
                     category="income",
                     score=weights["direction_in"],
                     reasons=[TagReason("income", "Direction suggests inbound")],
-                )
+                ),
             )
     elif direction in {"out", "outgoing", "debit"}:
         found = next((r for r in results if r.category == "expense"), None)
@@ -185,7 +184,7 @@ def tag_categories(tx, address_book: AddressBook | None = None) -> list[TagResul
                     category="expense",
                     score=weights["direction_out"],
                     reasons=[TagReason("expense", "Direction suggests outbound")],
-                )
+                ),
             )
 
     results.sort(key=lambda r: r.score, reverse=True)
@@ -201,13 +200,13 @@ def tag_category(tx, address_book: AddressBook | None = None) -> Category:
     top_score = results[0].score
     contenders = [r for r in results if r.score == top_score]
     if len(contenders) == 1:
-        return cast(Category, contenders[0].category)
+        return cast("Category", contenders[0].category)
 
     for pref in PRIORITY + ["expense", "unknown"]:
         for r in contenders:
             if r.category == pref:
-                return cast(Category, r.category)
-    return cast(Category, contenders[0].category)
+                return cast("Category", r.category)
+    return cast("Category", contenders[0].category)
 
 
 # Compatibility layer for tests: provide ComplianceTag and ComplianceEngine
@@ -219,19 +218,19 @@ class ComplianceTag:
     transaction_id: int
     tag_type: str
     confidence: float
-    details: dict[str, Any]
+    details: dict
 
 
 class ComplianceEngine:
     """Minimal compliance engine used by tests. This wraps simple heuristics
-    and returns a list[Any] of ComplianceTag instances.
+    and returns a list of ComplianceTag instances.
     """
 
-    def __init__(self, *, high_amount_threshold: Decimal | float = 100000) -> None:
+    def __init__(self, *, high_amount_threshold: Decimal | float = 100000):
         self.high_amount_threshold = _as_decimal(high_amount_threshold)
 
-    async def analyze_transaction(self, tx: dict[str, Any]) -> list[ComplianceTag]:
-        """Analyze a transaction dict[str, Any] and return a list[Any] of ComplianceTag.
+    async def analyze_transaction(self, tx: dict) -> list[ComplianceTag]:
+        """Analyze a transaction dict and return a list of ComplianceTag.
 
         This implementation is intentionally simple: it checks amount thresholds
         and returns tags with confidence scores that satisfy the unit tests.
@@ -248,7 +247,7 @@ class ComplianceEngine:
                     tag_type="HIGH_AMOUNT",
                     confidence=0.95,
                     details={"reason": "amount_exceeds_threshold"},
-                )
+                ),
             )
             return tags
 
@@ -260,7 +259,7 @@ class ComplianceEngine:
                     tag_type="MEDIUM_AMOUNT",
                     confidence=0.8,
                     details={"reason": "amount_is_medium"},
-                )
+                ),
             )
         else:
             tags.append(
@@ -269,7 +268,7 @@ class ComplianceEngine:
                     tag_type="NORMAL",
                     confidence=0.5,
                     details={"reason": "no_issues_detected"},
-                )
+                ),
             )
 
         return tags

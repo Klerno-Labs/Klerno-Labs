@@ -1,5 +1,4 @@
-"""
-Klerno Labs Enterprise Health Monitoring Dashboard
+"""Klerno Labs Enterprise Health Monitoring Dashboard
 Real-time monitoring dashboard with comprehensive health checks and alerting
 """
 
@@ -24,11 +23,12 @@ else:
     try:
         import psutil
     except Exception:
-        psutil = None
+        psutil = None  # type: ignore
     try:
         import requests
     except Exception:
-        requests = None
+        requests = None  # type: ignore
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class HealthCheckResult:
     status: str  # healthy, degraded, unhealthy
     response_time_ms: float
     timestamp: datetime
-    details: dict[str, Any] = field(default_factory=dict[str, Any])
+    details: dict[str, Any] = field(default_factory=dict)
     error_message: str | None = None
 
 
@@ -77,13 +77,13 @@ class Alert:
 class EnterpriseHealthMonitor:
     """Comprehensive health monitoring system"""
 
-    def __init__(self, database_path: str = "./data/klerno.db") -> None:
+    def __init__(self, database_path: str = "./data/klerno.db"):
         self.database_path = database_path
         self.health_checks: dict[str, Callable] = {}
         self.health_results: list[HealthCheckResult] = []
         self.system_metrics: list[SystemMetrics] = []
         self.active_alerts: list[Alert] = []
-        self.alert_rules: dict[str, dict[str, Any]] = {}
+        self.alert_rules: dict[str, dict] = {}
 
         # Configuration
         self.check_interval = 30  # seconds
@@ -99,13 +99,13 @@ class EnterpriseHealthMonitor:
 
         # Start monitoring threads
         self._health_thread = threading.Thread(
-            target=self._health_check_worker, daemon=True
+            target=self._health_check_worker, daemon=True,
         )
         self._metrics_thread = threading.Thread(
-            target=self._metrics_worker, daemon=True
+            target=self._metrics_worker, daemon=True,
         )
         self._cleanup_thread = threading.Thread(
-            target=self._cleanup_worker, daemon=True
+            target=self._cleanup_worker, daemon=True,
         )
 
         self._health_thread.start()
@@ -118,12 +118,12 @@ class EnterpriseHealthMonitor:
 
         logger.info("[HEALTH] Enterprise health monitoring initialized")
 
-    def _init_database(self) -> None:
+    def _init_database(self):
         """Initialize health monitoring database"""
         try:
             Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
 
-            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             # Health check results table
@@ -138,7 +138,7 @@ class EnterpriseHealthMonitor:
                     details TEXT,
                     error_message TEXT
                 )
-            """
+            """,
             )
 
             # System metrics table
@@ -155,7 +155,7 @@ class EnterpriseHealthMonitor:
                     load_average TEXT,
                     uptime_seconds REAL NOT NULL
                 )
-            """
+            """,
             )
 
             # Alerts table
@@ -172,21 +172,21 @@ class EnterpriseHealthMonitor:
                     resolved BOOLEAN DEFAULT FALSE,
                     resolved_at TEXT
                 )
-            """
+            """,
             )
 
             # Create indices for performance
             cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_health_timestamp ON health_check_results(timestamp)"
+                "CREATE INDEX IF NOT EXISTS idx_health_timestamp ON health_check_results(timestamp)",
             )
             cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON system_metrics(timestamp)"
+                "CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON system_metrics(timestamp)",
             )
             cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_alerts_timestamp ON alerts(timestamp)"
+                "CREATE INDEX IF NOT EXISTS idx_alerts_timestamp ON alerts(timestamp)",
             )
             cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_alerts_resolved ON alerts(resolved)"
+                "CREATE INDEX IF NOT EXISTS idx_alerts_resolved ON alerts(resolved)",
             )
 
             conn.commit()
@@ -197,9 +197,7 @@ class EnterpriseHealthMonitor:
         except Exception as e:
             logger.error(f"[HEALTH] Database initialization failed: {e}")
 
-    def register_health_check(
-        self, service_name: str, check_function: Callable[[], Any]
-    ) -> None:
+    def register_health_check(self, service_name: str, check_function: Callable):
         """Register a custom health check"""
         with self._lock:
             self.health_checks[service_name] = check_function
@@ -212,7 +210,7 @@ class EnterpriseHealthMonitor:
         severity: str = "warning",
         title: str = "",
         message_template: str = "",
-    ) -> None:
+    ):
         """Register alert rule"""
         with self._lock:
             self.alert_rules[rule_name] = {
@@ -237,7 +235,7 @@ class EnterpriseHealthMonitor:
             """Compatibility alias for creating alert rules from integration hub."""
 
             # For backward compatibility, accept simple parameters and convert to internal format
-            def cond() -> None:
+            def cond():
                 return False
 
             condition_callable = cond
@@ -252,15 +250,15 @@ class EnterpriseHealthMonitor:
                 message_template=message_template,
             )
 
-    def _register_default_health_checks(self) -> None:
+    def _register_default_health_checks(self):
         """Register default health checks"""
 
-        def database_health_check() -> None:
+        def database_health_check():
             """Check database connectivity"""
             try:
                 start_time = time.time()
                 conn = cast(
-                    ISyncConnection, sqlite3.connect(self.database_path, timeout=5)
+                    "ISyncConnection", sqlite3.connect(self.database_path, timeout=5),
                 )
                 cursor = conn.cursor()
                 cursor.execute("SELECT 1")
@@ -284,7 +282,7 @@ class EnterpriseHealthMonitor:
                     error_message=str(e),
                 )
 
-        def memory_health_check() -> None:
+        def memory_health_check():
             """Check memory usage"""
             try:
                 memory = psutil.virtual_memory()
@@ -315,7 +313,7 @@ class EnterpriseHealthMonitor:
                     error_message=str(e),
                 )
 
-        def disk_health_check() -> None:
+        def disk_health_check():
             """Check disk usage"""
             try:
                 disk = psutil.disk_usage("/")
@@ -347,7 +345,7 @@ class EnterpriseHealthMonitor:
                     error_message=str(e),
                 )
 
-        def api_health_check() -> None:
+        def api_health_check():
             """Check API endpoint"""
             try:
                 start_time = time.time()
@@ -394,10 +392,10 @@ class EnterpriseHealthMonitor:
         self.register_health_check("disk", disk_health_check)
         self.register_health_check("api", api_health_check)
 
-    def _register_default_alert_rules(self) -> None:
+    def _register_default_alert_rules(self):
         """Register default alert rules"""
 
-        def high_cpu_condition(metrics) -> None:
+        def high_cpu_condition(metrics):
             recent_metrics = [
                 m
                 for m in metrics
@@ -408,7 +406,7 @@ class EnterpriseHealthMonitor:
                 return avg_cpu > 90
             return False
 
-        def high_memory_condition(metrics) -> None:
+        def high_memory_condition(metrics):
             recent_metrics = [
                 m
                 for m in metrics
@@ -419,7 +417,7 @@ class EnterpriseHealthMonitor:
                 return avg_memory > 90
             return False
 
-        def service_down_condition(health_results) -> None:
+        def service_down_condition(health_results):
             recent_results = [
                 r
                 for r in health_results
@@ -462,7 +460,7 @@ class EnterpriseHealthMonitor:
             "One or more services are reporting unhealthy status",
         )
 
-    def _health_check_worker(self) -> None:
+    def _health_check_worker(self):
         """Background health check worker"""
         while self._running:
             try:
@@ -472,7 +470,7 @@ class EnterpriseHealthMonitor:
                 logger.error(f"[HEALTH] Health check worker error: {e}")
                 time.sleep(self.check_interval)
 
-    def _run_health_checks(self) -> None:
+    def _run_health_checks(self):
         """Run all registered health checks"""
         with self._lock:
             for service_name, check_function in self.health_checks.items():
@@ -487,22 +485,22 @@ class EnterpriseHealthMonitor:
                     if result.status == "healthy":
                         logger.debug(
                             f"[HEALTH] {service_name}: {result.status} "
-                            + f"({result.response_time_ms:.1f}ms)"
+                             f"({result.response_time_ms:.1f}ms)",
                         )
                     else:
                         logger.warning(
-                            f"[HEALTH] {service_name}: {result.status} - {result.error_message}"
+                            f"[HEALTH] {service_name}: {result.status} - {result.error_message}",
                         )
 
                 except Exception as e:
                     logger.error(
-                        f"[HEALTH] Health check failed for {service_name}: {e}"
+                        f"[HEALTH] Health check failed for {service_name}: {e}",
                     )
 
-    def _store_health_result(self, result: HealthCheckResult) -> None:
+    def _store_health_result(self, result: HealthCheckResult):
         """Store health check result in database"""
         try:
-            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -527,7 +525,7 @@ class EnterpriseHealthMonitor:
         except Exception as e:
             logger.error(f"[HEALTH] Failed to store health result: {e}")
 
-    def _metrics_worker(self) -> None:
+    def _metrics_worker(self):
         """Background system metrics worker"""
         while self._running:
             try:
@@ -537,17 +535,17 @@ class EnterpriseHealthMonitor:
                 logger.error(f"[HEALTH] Metrics worker error: {e}")
                 time.sleep(30)
 
-    def _collect_system_metrics(self) -> None:
+    def _collect_system_metrics(self):
         """Collect system metrics"""
         try:
             # CPU usage
             cpu_percent = psutil.cpu_percent(interval=1)
             # Ensure cpu_percent is a float. psutil.cpu_percent can (rarely) be
-            # a list[Any] when called with percpu=True in other contexts; coerce
+            # a list when called with percpu=True in other contexts; coerce
             # defensively so the type-checker and consumers see a float.
-            # Only call float() on atomic values; if cpu_percent is a list[Any]/tuple[Any, ...],
+            # Only call float() on atomic values; if cpu_percent is a list/tuple,
             # extract the first element. This keeps the type-checker happy.
-            if isinstance(cpu_percent, (list[Any], tuple[Any, ...])):
+            if isinstance(cpu_percent, (list, tuple)):
                 if cpu_percent:
                     first = cpu_percent[0]
                     try:
@@ -573,12 +571,12 @@ class EnterpriseHealthMonitor:
             network = psutil.net_io_counters()
 
             # Helper to safely extract network attributes when `network` might
-            # be None or a dict[str, Any]-like object (common in tests / mocks).
+            # be None or a dict-like object (common in tests / mocks).
             def _safe_net_val(net, attr: str) -> int:
                 if net is None:
                     return 0
-                # dict[str, Any]-like mock
-                if isinstance(net, dict[str, Any]):
+                # dict-like mock
+                if isinstance(net, dict):
                     val = net.get(attr, 0)
                 else:
                     val = getattr(net, attr, 0)
@@ -604,7 +602,7 @@ class EnterpriseHealthMonitor:
 
             # Load average (Unix only)
             try:
-                load_average = list[Any](psutil.getloadavg())
+                load_average = list(psutil.getloadavg())
             except Exception:
                 load_average = [0.0, 0.0, 0.0]
 
@@ -634,10 +632,10 @@ class EnterpriseHealthMonitor:
         except Exception as e:
             logger.error(f"[HEALTH] Failed to collect system metrics: {e}")
 
-    def _store_system_metrics(self, metrics: SystemMetrics) -> None:
+    def _store_system_metrics(self, metrics: SystemMetrics):
         """Store system metrics in database"""
         try:
-            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -665,7 +663,7 @@ class EnterpriseHealthMonitor:
         except Exception as e:
             logger.error(f"[HEALTH] Failed to store system metrics: {e}")
 
-    def _check_alert_rules(self) -> None:
+    def _check_alert_rules(self):
         """Check all alert rules and trigger alerts"""
         for rule_name, rule_config in self.alert_rules.items():
             try:
@@ -694,16 +692,16 @@ class EnterpriseHealthMonitor:
                         self._store_alert(alert)
 
                         logger.warning(
-                            f"[HEALTH] ALERT: {alert.title} - {alert.message}"
+                            f"[HEALTH] ALERT: {alert.title} - {alert.message}",
                         )
 
             except Exception as e:
                 logger.error(f"[HEALTH] Alert rule check failed for {rule_name}: {e}")
 
-    def _store_alert(self, alert: Alert) -> None:
+    def _store_alert(self, alert: Alert):
         """Store alert in database"""
         try:
-            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -730,7 +728,7 @@ class EnterpriseHealthMonitor:
         except Exception as e:
             logger.error(f"[HEALTH] Failed to store alert: {e}")
 
-    def _cleanup_worker(self) -> None:
+    def _cleanup_worker(self):
         """Background cleanup worker"""
         while self._running:
             try:
@@ -740,13 +738,13 @@ class EnterpriseHealthMonitor:
                 logger.error(f"[HEALTH] Cleanup worker error: {e}")
                 time.sleep(3600)
 
-    def _cleanup_old_data(self) -> None:
+    def _cleanup_old_data(self):
         """Clean up old monitoring data"""
         try:
             cutoff_time = datetime.now() - timedelta(hours=self.metrics_retention_hours)
             alert_cutoff = datetime.now() - timedelta(days=self.alert_retention_days)
 
-            conn = cast(ISyncConnection, sqlite3.connect(self.database_path))
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             # Clean old health results
@@ -864,16 +862,16 @@ class EnterpriseHealthMonitor:
                 "active_alerts": active_alerts,
                 "alert_counts": {
                     "critical": len(
-                        [a for a in active_alerts if a.get("severity") == "critical"]
+                        [a for a in active_alerts if a.get("severity") == "critical"],
                     ),
                     "error": len(
-                        [a for a in active_alerts if a.get("severity") == "error"]
+                        [a for a in active_alerts if a.get("severity") == "error"],
                     ),
                     "warning": len(
-                        [a for a in active_alerts if a.get("severity") == "warning"]
+                        [a for a in active_alerts if a.get("severity") == "warning"],
                     ),
                     "info": len(
-                        [a for a in active_alerts if a.get("severity") == "info"]
+                        [a for a in active_alerts if a.get("severity") == "info"],
                     ),
                 },
                 "statistics": {
@@ -883,7 +881,7 @@ class EnterpriseHealthMonitor:
                             a
                             for a in self.active_alerts
                             if (datetime.now() - a.timestamp).total_seconds() < 86400
-                        ]
+                        ],
                     ),
                     "avg_response_time": self._calculate_avg_response_time(),
                 },
@@ -920,10 +918,9 @@ class EnterpriseHealthMonitor:
 
         if any(status == "unhealthy" for status in recent_health.values()):
             return "unhealthy"
-        elif any(status == "degraded" for status in recent_health.values()):
+        if any(status == "degraded" for status in recent_health.values()):
             return "degraded"
-        else:
-            return "healthy"
+        return "healthy"
 
     def _calculate_avg_response_time(self) -> float:
         """Calculate average response time"""
@@ -954,7 +951,7 @@ class EnterpriseHealthMonitor:
 
         return False
 
-    def shutdown(self) -> None:
+    def shutdown(self):
         """Shutdown the health monitor"""
         self._running = False
         logger.info("[HEALTH] Health monitor shutdown")
@@ -974,7 +971,7 @@ def get_health_monitor() -> EnterpriseHealthMonitor:
     return health_monitor
 
 
-def initialize_health_monitoring() -> None:
+def initialize_health_monitoring():
     """Initialize enterprise health monitoring"""
     try:
         monitor = get_health_monitor()

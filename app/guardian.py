@@ -41,8 +41,7 @@ def _get(tx, name: str, default=None) -> None:
 
 
 def score_risk(tx) -> tuple[float, list[str]]:
-    """
-    Returns (score, flags). Score is clamped to [0, 1].
+    """Returns (score, flags). Score is clamped to [0, 1].
     Flags explain which signals contributed; useful for tests & auditing.
     """
     memo = _norm(_get(tx, "memo", ""))
@@ -81,7 +80,7 @@ def score_risk(tx) -> tuple[float, list[str]]:
         score += Decimal("0.05")
         flags.append("fee_present")
         if amount != 0:
-            ratio = (fee / abs(amount)) if abs(amount) > 0 else Decimal("0")
+            ratio = (fee / abs(amount)) if abs(amount) > 0 else Decimal(0)
             if ratio > Decimal("0.01"):
                 score += Decimal("0.05")
                 flags.append("high_fee_ratio")
@@ -108,9 +107,9 @@ def score_risk(tx) -> tuple[float, list[str]]:
 
     # Clamp to [0, 1]
     if score < 0:
-        score = Decimal("0")
+        score = Decimal(0)
     if score > 1:
-        score = Decimal("1")
+        score = Decimal(1)
 
     return float(score), flags
 
@@ -133,7 +132,7 @@ class GuardianEngine:
         pass
 
     async def detect_anomalies(
-        self, transactions: list[dict[str, Any]]
+        self, transactions: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         # Very small anomaly detector: flag txs with amount far above median
         amounts = [abs(Decimal(str(t.get("amount", 0)))) for t in transactions]
@@ -151,7 +150,7 @@ class GuardianEngine:
         return anomalies
 
     async def detect_patterns(
-        self, transactions: list[dict[str, Any]]
+        self, transactions: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         # Return a list[Any] of pattern dicts used by tests. Detect simple
         # structured layering: repeated transfers of the same amount to
@@ -174,7 +173,7 @@ class GuardianEngine:
                         "type": "structured_layering",
                         "amount": amt,
                         "count": len(recipients),
-                    }
+                    },
                 )
 
         # Always include a summary pattern
@@ -183,7 +182,7 @@ class GuardianEngine:
 
     # Backwards-compatible instance method name expected by older code/tests
     async def analyze_patterns(
-        self, transactions: list[dict[str, Any]]
+        self, transactions: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         return await self.detect_patterns(transactions)
 

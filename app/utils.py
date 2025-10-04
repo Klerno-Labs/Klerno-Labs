@@ -14,7 +14,7 @@ def get_exchange_rate(from_currency: str, to_currency: str) -> float:
 
 
 def convert_currency(
-    amount: float | int | Decimal,
+    amount: float | Decimal,
     from_currency: str,
     to_currency: str,
 ) -> float:
@@ -31,14 +31,14 @@ def validate_email(email: str) -> bool:
     return re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email) is not None
 
 
-def validate_amount(amount: int | float | Decimal) -> bool:
+def validate_amount(amount: float | Decimal) -> bool:
     try:
         return float(amount) >= 0
     except Exception:
         return False
 
 
-__all__ = ["convert_currency", "validate_email", "validate_amount"]
+__all__ = ["convert_currency", "validate_amount", "validate_email"]
 
 
 def to_mapping(obj: object) -> dict[str, Any]:
@@ -56,8 +56,8 @@ def to_mapping(obj: object) -> dict[str, Any]:
     if callable(keys):
         try:
             # keys() may return a dict_keys or other iterable; cast to Any
-            ks = list[Any](cast(Any, keys()))
-            any_obj = cast(Any, obj)
+            ks = list[Any](cast("Any", keys()))
+            any_obj = cast("Any", obj)
             return {k: any_obj[k] for k in ks}
         except Exception:
             return {}

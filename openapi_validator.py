@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-"""
-OpenAPI Documentation Validator
+"""OpenAPI Documentation Validator
 Validates that the FastAPI application has comprehensive OpenAPI documentation
 """
 
-import json
 import time
-from typing import Any, Dict, List
 
 import requests
 
@@ -26,7 +23,7 @@ def test_openapi_schema_completeness():
             return False
 
         schema = response.json()
-        print(f"✅ OpenAPI schema fetched successfully")
+        print("✅ OpenAPI schema fetched successfully")
 
         # Check basic schema structure
         required_fields = ["openapi", "info", "paths"]
@@ -35,7 +32,7 @@ def test_openapi_schema_completeness():
                 print(f"❌ Missing required field: {field}")
                 return False
 
-        print(f"✅ Schema has all required top-level fields")
+        print("✅ Schema has all required top-level fields")
 
         # Check info section
         info = schema.get("info", {})
@@ -73,23 +70,23 @@ def test_openapi_schema_completeness():
                 missing_endpoints.append(endpoint)
                 print(f"❌ {endpoint} - not documented")
 
-        print(f"\nDocumentation Summary:")
+        print("\nDocumentation Summary:")
         print(
-            f"✅ Documented endpoints: {len(documented_endpoints)}/{len(expected_endpoints)}"
+            f"✅ Documented endpoints: {len(documented_endpoints)}/{len(expected_endpoints)}",
         )
         if missing_endpoints:
             print(f"❌ Missing documentation: {missing_endpoints}")
 
         # Check if endpoints have proper HTTP methods
         methods_count = {}
-        for path, methods in paths.items():
-            for method in methods.keys():
+        for _path, methods in paths.items():
+            for method in methods:
                 if method not in ["parameters", "summary", "description"]:
                     methods_count[method.upper()] = (
                         methods_count.get(method.upper(), 0) + 1
                     )
 
-        print(f"\nHTTP Methods Distribution:")
+        print("\nHTTP Methods Distribution:")
         for method, count in methods_count.items():
             print(f"✅ {method}: {count} endpoints")
 
@@ -123,9 +120,8 @@ def test_redoc_documentation():
                     print(f"❌ Missing '{term}' content")
 
             return True
-        else:
-            print(f"❌ ReDoc not accessible: {response.status_code}")
-            return False
+        print(f"❌ ReDoc not accessible: {response.status_code}")
+        return False
 
     except Exception as e:
         print(f"❌ Error testing ReDoc: {e}")
@@ -155,9 +151,8 @@ def test_swagger_ui():
                     print(f"❌ Missing '{term}' content")
 
             return True
-        else:
-            print(f"❌ Swagger UI not accessible: {response.status_code}")
-            return False
+        print(f"❌ Swagger UI not accessible: {response.status_code}")
+        return False
 
     except Exception as e:
         print(f"❌ Error testing Swagger UI: {e}")

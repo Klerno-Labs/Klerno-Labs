@@ -1,4 +1,3 @@
-# ruff: noqa: E402
 import asyncio
 import os
 import sqlite3
@@ -15,7 +14,7 @@ from app._typing_shims import ISyncConnection
 with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
     db_path = tmp.name
 
-conn = cast(ISyncConnection, sqlite3.connect(db_path))
+conn = cast("ISyncConnection", sqlite3.connect(db_path))
 cur = conn.cursor()
 cur.execute(
     """
@@ -23,7 +22,7 @@ cur.execute(
         id INTEGER PRIMARY KEY,
         email TEXT
     );
-    """
+    """,
 )
 cur.execute(
     """
@@ -35,7 +34,7 @@ cur.execute(
         status TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-    """
+    """,
 )
 cur.execute(
     """
@@ -46,7 +45,7 @@ cur.execute(
         confidence REAL NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-    """
+    """,
 )
 conn.commit()
 conn.close()
@@ -64,12 +63,12 @@ from app.main import app
 
 async def run_batch(n=50):
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
+        transport=ASGITransport(app=app), base_url="http://test",
     ) as client:
 
         async def op(i):
             resp = await client.post(
-                "/transactions", json={"amount": float(i), "currency": "USD"}
+                "/transactions", json={"amount": float(i), "currency": "USD"},
             )
             return resp.status_code, resp.text
 

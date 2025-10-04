@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""
-Enterprise Feature Validation Test
+"""Enterprise Feature Validation Test
 Comprehensive testing of all enterprise features and analytics endpoints
 """
 
 import json
 import time
-from typing import Any, Dict
 
 import requests
 
@@ -61,7 +59,7 @@ class EnterpriseFeatureValidator:
 
                 status = "✅" if response.status_code == 200 else "❌"
                 print(
-                    f"  {status} {route}: {response.status_code} ({end_time - start_time:.3f}s)"
+                    f"  {status} {route}: {response.status_code} ({end_time - start_time:.3f}s)",
                 )
 
                 # Try to parse JSON response for enterprise endpoints
@@ -75,7 +73,7 @@ class EnterpriseFeatureValidator:
                         self.results["enterprise_endpoints"][route]["json_keys"] = (
                             list(data.keys()) if isinstance(data, dict) else []
                         )
-                    except:
+                    except Exception:
                         self.results["enterprise_endpoints"][route]["has_json"] = False
 
             except Exception as e:
@@ -133,10 +131,10 @@ class EnterpriseFeatureValidator:
                             "analytics_keys"
                         ] = found_keys
                         print(
-                            f"  ✅ {route}: Found {len(found_keys)} analytics indicators"
+                            f"  ✅ {route}: Found {len(found_keys)} analytics indicators",
                         )
 
-                    except:
+                    except Exception:
                         print(f"  ⚠️  {route}: Non-JSON response")
                 else:
                     print(f"  ❌ {route}: Status {response.status_code}")
@@ -183,7 +181,7 @@ class EnterpriseFeatureValidator:
 
                 status = "✅" if response.status_code == 200 else "❌"
                 print(
-                    f"  {status} {route}: {response.status_code} (admin indicators: {len(found_indicators)})"
+                    f"  {status} {route}: {response.status_code} (admin indicators: {len(found_indicators)})",
                 )
 
             except Exception as e:
@@ -230,10 +228,10 @@ class EnterpriseFeatureValidator:
                             "premium_indicators"
                         ] = found_premium_keys
                         print(
-                            f"  ✅ {route}: Found {len(found_premium_keys)} premium indicators"
+                            f"  ✅ {route}: Found {len(found_premium_keys)} premium indicators",
                         )
 
-                    except:
+                    except Exception:
                         print(f"  ⚠️  {route}: Non-JSON response")
                 else:
                     print(f"  ❌ {route}: Status {response.status_code}")
@@ -281,7 +279,7 @@ class EnterpriseFeatureValidator:
 
                 status = "✅" if response.status_code == 200 else "❌"
                 print(
-                    f"  {status} {route}: {response.status_code} (security headers: {len(found_headers)})"
+                    f"  {status} {route}: {response.status_code} (security headers: {len(found_headers)})",
                 )
 
             except Exception as e:
@@ -315,12 +313,12 @@ class EnterpriseFeatureValidator:
                             openapi_data.get("openapi", "unknown")
                         )
                         self.results["api_documentation"][route]["path_count"] = len(
-                            openapi_data.get("paths", {})
+                            openapi_data.get("paths", {}),
                         )
                         print(
-                            f"  ✅ {route}: Valid OpenAPI v{openapi_data.get('openapi', 'unknown')} with {len(openapi_data.get('paths', {}))} paths"
+                            f"  ✅ {route}: Valid OpenAPI v{openapi_data.get('openapi', 'unknown')} with {len(openapi_data.get('paths', {}))} paths",
                         )
-                    except:
+                    except Exception:
                         self.results["api_documentation"][route][
                             "is_valid_openapi"
                         ] = False
@@ -357,7 +355,7 @@ class EnterpriseFeatureValidator:
 
             print(f"\n📋 {category.replace('_', ' ').title()}:")
             print(
-                f"   Success Rate: {success_rate:.1f}% ({category_success}/{category_total})"
+                f"   Success Rate: {success_rate:.1f}% ({category_success}/{category_total})",
             )
 
             # Show details for each endpoint
@@ -366,7 +364,7 @@ class EnterpriseFeatureValidator:
                 response_time = data.get("response_time", 0)
                 time_str = f" ({response_time:.3f}s)" if response_time > 0 else ""
                 print(
-                    f"   {status} {endpoint}: {data.get('status_code', 'N/A')}{time_str}"
+                    f"   {status} {endpoint}: {data.get('status_code', 'N/A')}{time_str}",
                 )
 
         # Overall summary
@@ -374,7 +372,7 @@ class EnterpriseFeatureValidator:
             (successful_endpoints / total_endpoints * 100) if total_endpoints > 0 else 0
         )
 
-        print(f"\n🎯 OVERALL SUMMARY:")
+        print("\n🎯 OVERALL SUMMARY:")
         print(f"   Total Endpoints Tested: {total_endpoints}")
         print(f"   Successful Endpoints: {successful_endpoints}")
         print(f"   Overall Success Rate: {overall_success_rate:.1f}%")
@@ -393,7 +391,7 @@ class EnterpriseFeatureValidator:
             print(f"   Maximum Response Time: {max_response_time:.3f}s")
 
         # Recommendations
-        print(f"\n💡 ASSESSMENT:")
+        print("\n💡 ASSESSMENT:")
         if overall_success_rate >= 95:
             print("   🏆 EXCELLENT - Enterprise platform is production ready!")
         elif overall_success_rate >= 90:
@@ -448,3 +446,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

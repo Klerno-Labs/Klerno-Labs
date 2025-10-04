@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 def test_login_api_with_temp_sqlite_db():
     # Create a temp DB file
     tmp = tempfile.NamedTemporaryFile(
-        prefix="klerno_test_pytest_", suffix=".db", delete=False
+        prefix="klerno_test_pytest_", suffix=".db", delete=False,
     )
     db_path = tmp.name
     tmp.close()
@@ -24,7 +24,7 @@ def test_login_api_with_temp_sqlite_db():
     importlib.reload(main_mod)
 
     # Reload store and security_session to ensure they use the new DATABASE_URL
-    import app.store as store
+    from app import store
 
     importlib.reload(store)
 

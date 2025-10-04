@@ -1,5 +1,4 @@
-"""
-Tests for plugin system functionality
+"""Tests for plugin system functionality
 """
 
 import pytest

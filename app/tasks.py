@@ -8,4 +8,4 @@ in modules that may still `import app.tasks` during consolidation.
 
 def noop_task() -> None:
     """Placeholder function for task runner APIs."""
-    return None
+    return

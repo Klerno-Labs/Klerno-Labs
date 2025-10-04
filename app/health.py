@@ -1,5 +1,4 @@
-"""
-Klerno Labs - Enhanced Health Checks and Monitoring
+"""Klerno Labs - Enhanced Health Checks and Monitoring
 ==================================================
 Comprehensive health checks and metrics for horizontal scaling
 """
@@ -64,7 +63,7 @@ class MetricsResponse(BaseModel):
 class HealthChecker:
     """Comprehensive health checking for all services"""
 
-    def __init__(self, app: FastAPI) -> None:
+    def __init__(self, app: FastAPI):
         self.app = app
         self.start_time = time.time()
         self.version = "1.0.0"  # Should be loaded from environment
@@ -117,7 +116,7 @@ class HealthChecker:
         except Exception as e:
             return {
                 "status": "unhealthy",
-                "message": f"Database connection failed: {str(e)}",
+                "message": f"Database connection failed: {e!s}",
                 "response_time_ms": 0,
             }
 
@@ -136,9 +135,9 @@ class HealthChecker:
 
             # Correct Redis URL (no spaces) and use the imported redis_lib
             redis_client = redis_lib.Redis.from_url(
-                "redis://redis:6379/0", decode_responses=True
+                "redis://redis:6379/0", decode_responses=True,
             )
-            redis_client = cast(IRedisLike, redis_client)
+            redis_client = cast("IRedisLike", redis_client)
 
             # Ensure redis_client is not None for static analysis; runtime still handles exceptions
             assert redis_client is not None
@@ -155,8 +154,8 @@ class HealthChecker:
             info = redis_client.info()
             # redis client implementations can return awaitable results in some environments
             info_obj = await info if asyncio.iscoroutine(info) else info
-            # Cast to a mapping for the type checker; runtime will still work with dict[str, Any]-like objects
-            info_obj = cast(Mapping[str, Any], info_obj)
+            # Cast to a mapping for the type checker; runtime will still work with dict-like objects
+            info_obj = cast("Mapping[str, Any]", info_obj)
 
             # Now use info_obj as a mapping safely
             return {
@@ -164,7 +163,7 @@ class HealthChecker:
                 "message": "Cache connection successful",
                 "response_time_ms": round(response_time, 2),
                 "memory_usage_mb": round(
-                    info_obj.get("used_memory", 0) / 1024 / 1024, 2
+                    info_obj.get("used_memory", 0) / 1024 / 1024, 2,
                 ),
                 "connected_clients": info_obj.get("connected_clients", 0),
                 "total_commands_processed": info_obj.get("total_commands_processed", 0),
@@ -173,7 +172,7 @@ class HealthChecker:
         except Exception as e:
             return {
                 "status": "unhealthy",
-                "message": f"Cache connection failed: {str(e)}",
+                "message": f"Cache connection failed: {e!s}",
                 "response_time_ms": 0,
             }
 
@@ -191,7 +190,7 @@ class HealthChecker:
 
                 timeout = ClientTimeout(total=5)
                 async with session.get(
-                    "https://s2.ripple.com:51234", timeout=timeout
+                    "https://s2.ripple.com:51234", timeout=timeout,
                 ) as response:
                     response_time = (time.time() - start_time) * 1000
                     checks["xrpl"] = {
@@ -202,7 +201,7 @@ class HealthChecker:
         except Exception as e:
             checks["xrpl"] = {
                 "status": "unhealthy",
-                "message": f"XRPL connection failed: {str(e)}",
+                "message": f"XRPL connection failed: {e!s}",
                 "response_time_ms": 0,
             }
 
@@ -250,7 +249,7 @@ class HealthChecker:
                 },
             }
         except Exception as e:
-            return {"error": f"Failed to get system metrics: {str(e)}"}
+            return {"error": f"Failed to get system metrics: {e!s}"}
 
     async def comprehensive_health_check(self) -> HealthStatus:
         """Perform comprehensive health check"""
@@ -265,7 +264,7 @@ class HealthChecker:
             return_exceptions=True,
         )
 
-        # Each result may be a dict[str, Any] or an Exception when return_exceptions=True
+        # Each result may be a dict or an Exception when return_exceptions=True
         database_check: dict[str, Any] | BaseException = results[0]
         cache_check: dict[str, Any] | BaseException = results[1]
         external_checks: dict[str, Any] | BaseException = results[2]
@@ -294,7 +293,7 @@ class HealthChecker:
         all_healthy = all(
             check.get("status") == "healthy"
             for check in [database_check, cache_check]
-            if isinstance(check, dict[str, Any])
+            if isinstance(check, dict)
         )
 
         overall_status = "healthy" if all_healthy else "unhealthy"
@@ -325,10 +324,10 @@ class HealthChecker:
                 "threads": psutil.Process().num_threads(),
                 "memory_info": {
                     "rss_mb": round(
-                        psutil.Process().memory_info().rss / 1024 / 1024, 2
+                        psutil.Process().memory_info().rss / 1024 / 1024, 2,
                     ),
                     "vms_mb": round(
-                        psutil.Process().memory_info().vms / 1024 / 1024, 2
+                        psutil.Process().memory_info().vms / 1024 / 1024, 2,
                     ),
                 },
                 "cpu_percent": psutil.Process().cpu_percent(),
@@ -352,7 +351,7 @@ class HealthChecker:
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to get metrics: {str(e)}",
+                detail=f"Failed to get metrics: {e!s}",
             ) from e
 
 

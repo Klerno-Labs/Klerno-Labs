@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
 
 # create temp DB
 with tempfile.NamedTemporaryFile(
-    prefix="klerno_test_debug_", suffix=".db", delete=False
+    prefix="klerno_test_debug_", suffix=".db", delete=False,
 ) as temp_db:
     db_path = temp_db.name
 
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS users (
     is_active INTEGER DEFAULT 1,
     is_admin INTEGER DEFAULT 0
 )
-"""
+""",
 )
 con.commit()
 con.close()
@@ -82,7 +82,7 @@ if user and user.get("password_hash"):
         # cast to str for static checkers; in runtime ph should be a str
         from typing import cast
 
-        ph_str = cast(str, ph)
+        ph_str = cast("str", ph)
         print("stored password_hash (prefix):", ph_str[:8])
         ok = verify_pw(pw, ph_str)
         print("verify_pw result:", ok)

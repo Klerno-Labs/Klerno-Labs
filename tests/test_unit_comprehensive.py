@@ -1,5 +1,4 @@
-"""
-Comprehensive Unit Tests
+"""Comprehensive Unit Tests
 Tests individual components and functions in isolation
 """
 
@@ -72,7 +71,7 @@ class TestTransactionModel:
             Transaction(
                 id=1,
                 user_id=1,
-                amount=Decimal("-100"),  # Negative amount
+                amount=Decimal(-100),  # Negative amount
                 currency="USD",
                 status="completed",
             )
@@ -269,7 +268,7 @@ class TestUtilityFunctions:
         assert validate_email("invalid-email") is False
 
         assert validate_amount(Decimal("100.50")) is True
-        assert validate_amount(Decimal("-50")) is False
+        assert validate_amount(Decimal(-50)) is False
 
     def test_encryption_functions(self):
         """Test encryption and decryption."""

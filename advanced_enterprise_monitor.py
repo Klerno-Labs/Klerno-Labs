@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-KLERNO LABS ENTERPRISE PLATFORM - ADVANCED MONITORING SUITE V2
+"""KLERNO LABS ENTERPRISE PLATFORM - ADVANCED MONITORING SUITE V2
 ===============================================================
 
 Real-time monitoring, metrics collection, and observability for enterprise deployment.
@@ -13,9 +12,9 @@ import logging
 import threading
 import time
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import aiohttp
 import psutil
@@ -45,7 +44,7 @@ class ApplicationMetrics:
     successful_requests: int
     failed_requests: int
     average_response_time: float
-    endpoint_stats: Dict[str, Any]
+    endpoint_stats: dict[str, Any]
     cache_hit_rate: float
     database_connections: int
 
@@ -58,7 +57,7 @@ class APIHealthCheck:
     status_code: int
     response_time: float
     success: bool
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 class AdvancedEnterpriseMonitor:
@@ -81,11 +80,11 @@ class AdvancedEnterpriseMonitor:
         )
         self.logger = logging.getLogger("AdvancedEnterpriseMonitor")
 
-        self.system_metrics: List[SystemMetrics] = []
-        self.app_metrics: List[ApplicationMetrics] = []
-        self.api_health_checks: List[APIHealthCheck] = []
+        self.system_metrics: list[SystemMetrics] = []
+        self.app_metrics: list[ApplicationMetrics] = []
+        self.api_health_checks: list[APIHealthCheck] = []
         self.monitoring_active = False
-        self.monitor_thread: Optional[threading.Thread] = None
+        self.monitor_thread: threading.Thread | None = None
 
         # Monitoring intervals
         self.system_interval = 10  # seconds
@@ -138,7 +137,7 @@ class AdvancedEnterpriseMonitor:
             return None
 
     async def check_api_endpoint(
-        self, session: aiohttp.ClientSession, endpoint: str
+        self, session: aiohttp.ClientSession, endpoint: str,
     ) -> APIHealthCheck:
         """Check health of a specific API endpoint"""
         url = f"{self.base_url}{endpoint}"
@@ -146,7 +145,7 @@ class AdvancedEnterpriseMonitor:
 
         try:
             async with session.get(
-                url, timeout=aiohttp.ClientTimeout(total=5)
+                url, timeout=aiohttp.ClientTimeout(total=5),
             ) as response:
                 response_time = time.time() - start_time
                 success = response.status == 200
@@ -168,7 +167,7 @@ class AdvancedEnterpriseMonitor:
                 error_message=str(e),
             )
 
-    async def collect_api_metrics(self) -> List[APIHealthCheck]:
+    async def collect_api_metrics(self) -> list[APIHealthCheck]:
         """Collect API health metrics for all monitored endpoints"""
         health_checks = []
 
@@ -191,7 +190,7 @@ class AdvancedEnterpriseMonitor:
         return health_checks
 
     def simulate_application_metrics(
-        self, api_health_checks: List[APIHealthCheck]
+        self, api_health_checks: list[APIHealthCheck],
     ) -> ApplicationMetrics:
         """Generate application metrics based on API health checks"""
         # Calculate success metrics from API health checks
@@ -226,7 +225,7 @@ class AdvancedEnterpriseMonitor:
         )
 
     def check_alerts(
-        self, system_metrics: SystemMetrics, app_metrics: ApplicationMetrics
+        self, system_metrics: SystemMetrics, app_metrics: ApplicationMetrics,
     ):
         """Check for alert conditions and log warnings"""
         alerts = []
@@ -267,7 +266,6 @@ class AdvancedEnterpriseMonitor:
         """Main monitoring loop with async API checks"""
         self.logger.info("Advanced enterprise monitoring started")
         last_system_check = 0
-        last_app_check = 0
         last_api_check = 0
 
         while self.monitoring_active:
@@ -291,7 +289,7 @@ class AdvancedEnterpriseMonitor:
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
                     api_health_checks = loop.run_until_complete(
-                        self.collect_api_metrics()
+                        self.collect_api_metrics(),
                     )
                     loop.close()
 
@@ -309,7 +307,6 @@ class AdvancedEnterpriseMonitor:
                         self.app_metrics = self.app_metrics[-100:]
 
                     last_api_check = current_time
-                    last_app_check = current_time
 
                     # Check for alerts
                     system_metrics = (
@@ -342,7 +339,7 @@ class AdvancedEnterpriseMonitor:
             self.monitor_thread.join(timeout=5)
         self.logger.info("Advanced monitoring stopped")
 
-    def get_comprehensive_health_report(self) -> Dict[str, Any]:
+    def get_comprehensive_health_report(self) -> dict[str, Any]:
         """Generate comprehensive health report including API status"""
         report = {
             "timestamp": datetime.now().isoformat(),
@@ -364,7 +361,7 @@ class AdvancedEnterpriseMonitor:
 
             avg_cpu = sum(m.cpu_percent for m in recent_system) / len(recent_system)
             avg_memory = sum(m.memory_percent for m in recent_system) / len(
-                recent_system
+                recent_system,
             )
 
             system_status = "HEALTHY"
@@ -475,7 +472,7 @@ class AdvancedEnterpriseMonitor:
             "comprehensive_health_report": self.get_comprehensive_health_report(),
         }
 
-        with open(filename, "w") as f:
+        with Path(filename).open("w") as f:
             json.dump(export_data, f, indent=2)
 
         self.logger.info(f"Advanced metrics exported to {filename}")
@@ -491,7 +488,7 @@ class AdvancedEnterpriseMonitor:
         status_emoji = {"HEALTHY": "✅", "WARNING": "⚠️", "CRITICAL": "🚨"}
         overall_status = health_report["overall_health"]
         print(
-            f"\n🎯 OVERALL HEALTH: {status_emoji.get(overall_status, '❓')} {overall_status}"
+            f"\n🎯 OVERALL HEALTH: {status_emoji.get(overall_status, '❓')} {overall_status}",
         )
         print("-" * 50)
 
@@ -499,14 +496,14 @@ class AdvancedEnterpriseMonitor:
         if "system_health" in health_report:
             sys_health = health_report["system_health"]
             print(
-                f"\n🖥️  SYSTEM HEALTH: {status_emoji.get(sys_health['status'], '❓')} {sys_health['status']}"
+                f"\n🖥️  SYSTEM HEALTH: {status_emoji.get(sys_health['status'], '❓')} {sys_health['status']}",
             )
             print("-" * 30)
             print(
-                f"CPU Usage: {sys_health['cpu_percent']:.1f}% (avg: {sys_health['averages']['cpu_percent']:.1f}%)"
+                f"CPU Usage: {sys_health['cpu_percent']:.1f}% (avg: {sys_health['averages']['cpu_percent']:.1f}%)",
             )
             print(
-                f"Memory Usage: {sys_health['memory_percent']:.1f}% (avg: {sys_health['averages']['memory_percent']:.1f}%)"
+                f"Memory Usage: {sys_health['memory_percent']:.1f}% (avg: {sys_health['averages']['memory_percent']:.1f}%)",
             )
             print(f"Disk Usage: {sys_health['disk_usage_percent']:.1f}%")
             print(f"Active Connections: {sys_health['active_connections']}")
@@ -515,7 +512,7 @@ class AdvancedEnterpriseMonitor:
         if "application_health" in health_report:
             app_health = health_report["application_health"]
             print(
-                f"\n🚀 APPLICATION HEALTH: {status_emoji.get(app_health['status'], '❓')} {app_health['status']}"
+                f"\n🚀 APPLICATION HEALTH: {status_emoji.get(app_health['status'], '❓')} {app_health['status']}",
             )
             print("-" * 30)
             print(f"Success Rate: {app_health['success_rate']:.1f}%")
@@ -529,18 +526,18 @@ class AdvancedEnterpriseMonitor:
         if "api_health" in health_report:
             api_health = health_report["api_health"]
             print(
-                f"\n🌐 API HEALTH: {status_emoji.get(api_health['status'], '❓')} {api_health['status']}"
+                f"\n🌐 API HEALTH: {status_emoji.get(api_health['status'], '❓')} {api_health['status']}",
             )
             print("-" * 30)
             print(f"API Success Rate: {api_health['success_rate']:.1f}%")
             print(f"Endpoints Monitored: {api_health['total_endpoints']}")
             print(f"Successful Endpoints: {api_health['successful_endpoints']}")
 
-            print(f"\n📊 ENDPOINT DETAILS:")
+            print("\n📊 ENDPOINT DETAILS:")
             for endpoint, details in api_health["endpoint_details"].items():
                 status_icon = "✅" if details["success"] else "❌"
                 print(
-                    f"  {status_icon} {endpoint}: {details['status_code']} ({details['response_time']:.3f}s)"
+                    f"  {status_icon} {endpoint}: {details['status_code']} ({details['response_time']:.3f}s)",
                 )
                 if details["error"]:
                     print(f"    Error: {details['error']}")
@@ -548,7 +545,7 @@ class AdvancedEnterpriseMonitor:
         # Monitoring statistics
         if "monitoring_stats" in health_report:
             stats = health_report["monitoring_stats"]
-            print(f"\n📈 MONITORING STATISTICS")
+            print("\n📈 MONITORING STATISTICS")
             print("-" * 30)
             print(f"System Metrics: {stats['system_metrics_collected']}")
             print(f"App Metrics: {stats['app_metrics_collected']}")
@@ -567,7 +564,7 @@ def main():
         # Start monitoring
         monitor.start_monitoring()
         print(
-            "✅ Advanced monitoring started. Collecting comprehensive metrics for 45 seconds..."
+            "✅ Advanced monitoring started. Collecting comprehensive metrics for 45 seconds...",
         )
         print("   - System resource monitoring every 10 seconds")
         print("   - API health checks every 20 seconds")

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Klerno Labs Advanced Frontend Framework
+"""Klerno Labs Advanced Frontend Framework
 ========================================
 
 Advanced responsive design, interactive components, and cutting-edge frontend
@@ -20,10 +19,9 @@ Version: 1.0.0-advanced
 """
 
 import json
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 
 class AdvancedFrontendFramework:
@@ -34,9 +32,8 @@ class AdvancedFrontendFramework:
         self.static_dir = self.workspace_path / "static"
         self.components_dir = self.static_dir / "components"
 
-    def create_advanced_components(self) -> Dict[str, Any]:
+    def create_advanced_components(self) -> dict[str, Any]:
         """Create advanced UI components library"""
-
         # Ensure directories exist
         self.components_dir.mkdir(parents=True, exist_ok=True)
 
@@ -649,9 +646,8 @@ class AdvancedFrontendFramework:
             ],
         }
 
-    def create_advanced_javascript(self) -> Dict[str, Any]:
+    def create_advanced_javascript(self) -> dict[str, Any]:
         """Create advanced JavaScript for component interactions"""
-
         advanced_js = """
 // ===================================================================
 // KLERNO LABS ADVANCED COMPONENTS JAVASCRIPT
@@ -1118,7 +1114,7 @@ def main():
         "ui_standards": "Top 0.1% Professional Enterprise",
     }
 
-    with open("advanced_frontend_report.json", "w") as f:
+    with Path("advanced_frontend_report.json").open("w") as f:
         json.dump(report, f, indent=2)
 
     print("\n🏆 ADVANCED FRONTEND FRAMEWORK COMPLETED!")

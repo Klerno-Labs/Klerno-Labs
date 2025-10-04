@@ -1,5 +1,4 @@
-"""
-Advanced Analytics Module for Klerno Labs
+"""Advanced Analytics Module for Klerno Labs
 Provides enhanced analytics, insights, and dashboard functionality
 """
 
@@ -115,7 +114,7 @@ class AdvancedAnalytics:
             (
                 (recent_df["risk_score"] >= rt["low"])
                 & (recent_df["risk_score"] < rt["medium"])
-            ).sum()
+            ).sum(),
         )
         low_risk_count = int((recent_df["risk_score"] < rt["low"]).sum())
 
@@ -194,7 +193,7 @@ class AdvancedAnalytics:
 
         # Sort by average risk score and return top addresses
         sorted_addresses = sorted(
-            address_metrics.values(), key=lambda x: x["avg_risk"], reverse=True
+            address_metrics.values(), key=lambda x: x["avg_risk"], reverse=True,
         )
 
         return sorted_addresses[:limit]
@@ -230,7 +229,7 @@ class AdvancedAnalytics:
                     "max_risk": float(row["max_risk"]),
                     "transaction_count": int(row["transaction_count"]),
                     "total_volume": float(row["total_volume"]),
-                }
+                },
             )
 
         return sorted(trend, key=lambda x: x["date"])
@@ -265,8 +264,8 @@ class AdvancedAnalytics:
                         "hour": hour,
                         "avg_risk": float(hour_data["risk_score"].iloc[0]),
                         "total_volume": float(hour_data["amount"].iloc[0]),
-                        "transaction_count": int(len(df[df["hour"] == hour])),
-                    }
+                        "transaction_count": len(df[df["hour"] == hour]),
+                    },
                 )
             else:
                 activity.append(
@@ -275,7 +274,7 @@ class AdvancedAnalytics:
                         "avg_risk": 0.0,
                         "total_volume": 0.0,
                         "transaction_count": 0,
-                    }
+                    },
                 )
 
         return activity
@@ -307,7 +306,7 @@ class AdvancedAnalytics:
 
         # Find addresses with most connections (hubs)
         hub_addresses = sorted(
-            connections.items(), key=lambda x: len(x[1]), reverse=True
+            connections.items(), key=lambda x: len(x[1]), reverse=True,
         )[:5]
 
         return {
@@ -364,7 +363,7 @@ class AdvancedAnalytics:
 class InsightsEngine:
     """AI - powered insights generator"""
 
-    def generate_insights(self, metrics: AnalyticsMetrics) -> None:
+    def generate_insights(self, metrics: AnalyticsMetrics):
         """Generate AI-powered insights from analytics data"""
         insights = []
 
@@ -386,7 +385,7 @@ class InsightsEngine:
                         "adjusting risk thresholds."
                     ),
                     "priority": "high",
-                }
+                },
             )
         elif avg > 0.5:
             insights.append(
@@ -399,7 +398,7 @@ class InsightsEngine:
                         "due-diligence procedures."
                     ),
                     "priority": "medium",
-                }
+                },
             )
 
         # Volume insights
@@ -414,7 +413,7 @@ class InsightsEngine:
                         "enhanced monitoring."
                     ),
                     "priority": "medium",
-                }
+                },
             )
 
         # Anomaly insights
@@ -426,7 +425,7 @@ class InsightsEngine:
                     "description": f"{anomaly:.1%} transactions anomalous.",
                     "action": ("Investigate unusual transaction amounts and patterns."),
                     "priority": "high",
-                }
+                },
             )
 
         # Network insights
@@ -446,7 +445,7 @@ class InsightsEngine:
                             "laundering patterns."
                         ),
                         "priority": "medium",
-                    }
+                    },
                 )
 
         return insights
@@ -463,19 +462,19 @@ class _LazyProxy:
     eager construction during import.
     """
 
-    def __init__(self, factory) -> None:
+    def __init__(self, factory):
         self._factory = factory
         self._obj = None
 
-    def _ensure(self) -> None:
+    def _ensure(self):
         if self._obj is None:
             self._obj = self._factory()
 
-    def __getattr__(self, name) -> None:
+    def __getattr__(self, name):
         self._ensure()
         return getattr(self._obj, name)
 
-    def __call__(self, *args, **kwargs) -> None:
+    def __call__(self, *args, **kwargs):
         self._ensure()
         # If the proxied object is callable, delegate the call. Otherwise,
         # raise a clear TypeError to match normal Python behavior.

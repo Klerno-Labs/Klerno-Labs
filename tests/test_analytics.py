@@ -1,5 +1,4 @@
-"""
-Tests for advanced analytics functionality
+"""Tests for advanced analytics functionality
 """
 
 import pytest
@@ -126,7 +125,7 @@ def test_network_hub_insights():
         category_distribution={},
         hourly_activity=[],
         network_analysis={
-            "hub_addresses": [{"address": "rHub123...", "connection_count": 25}]
+            "hub_addresses": [{"address": "rHub123...", "connection_count": 25}],
         },
         anomaly_score=0.05,
     )

@@ -1,5 +1,4 @@
-"""
-Klerno Labs - Enterprise Edition Main Application
+"""Klerno Labs - Enterprise Edition Main Application
 TOP 0.1% Application with Enterprise Features Integration
 """
 
@@ -48,9 +47,9 @@ try:
     _mod_auth = importlib.import_module("app.auth")
     _mod_store = importlib.import_module("app.store")
 
-    admin = cast(IAdminModule, _mod_admin)
-    auth = cast(IAuthModule, _mod_auth)
-    store = cast(IStore, _mod_store)
+    admin = cast("IAdminModule", _mod_admin)
+    auth = cast("IAuthModule", _mod_auth)
+    store = cast("IStore", _mod_store)
 except Exception:
     # In minimal preview/test environments optional app submodules may
     # fail to import due to missing dependencies (jwt, itsdangerous, etc.).
@@ -74,13 +73,13 @@ logger.setLevel(logging.DEBUG)
 # Console handler: ensure console stream is UTF-8 encoded on Windows
 try:
     console_stream = io.TextIOWrapper(
-        sys.stdout.buffer, encoding="utf-8", line_buffering=True
+        sys.stdout.buffer, encoding="utf-8", line_buffering=True,
     )
     # cast to TextIO for static checkers
     from typing import TextIO as _TextIO
     from typing import cast
 
-    ch = logging.StreamHandler(stream=cast(_TextIO, console_stream))
+    ch = logging.StreamHandler(stream=cast("_TextIO", console_stream))
 except Exception:
     # Fallback to default stream handler
     ch = logging.StreamHandler()
@@ -265,7 +264,7 @@ if _has_session_middleware and SessionMiddleware is not None:
     app.add_middleware(SessionMiddleware, secret_key=settings.jwt_secret)
 else:
     logger.warning(
-        "SessionMiddleware unavailable; skipping session middleware registration"
+        "SessionMiddleware unavailable; skipping session middleware registration",
     )
 
 # Mount static files
@@ -293,7 +292,7 @@ async def simple_monitoring_middleware(request: Request, call_next):
         try:
             duration = (datetime.now() - start_time).total_seconds() * 1000
             logger.info(
-                f"{request.method} {request.url.path} - {response.status_code} - {duration:.2f}ms"
+                f"{request.method} {request.url.path} - {response.status_code} - {duration:.2f}ms",
             )
         except Exception as e:
             logger.error(f"Monitoring error: {e}")
@@ -409,7 +408,7 @@ async def signup_alias(request: Request):
 
     templates.env.globals["url_path_for"] = request.app.url_path_for
     return templates.TemplateResponse(
-        "signup.html", {"request": request, "app_env": "dev"}
+        "signup.html", {"request": request, "app_env": "dev"},
     )
 
 
@@ -420,7 +419,7 @@ async def login_alias(request: Request):
 
     templates.env.globals["url_path_for"] = request.app.url_path_for
     return templates.TemplateResponse(
-        "login.html", {"request": request, "error": None, "app_env": "dev"}
+        "login.html", {"request": request, "error": None, "app_env": "dev"},
     )
 
 
@@ -436,119 +435,11 @@ async def offline_page():
     raise HTTPException(status_code=404, detail="offline.html not found")
 
 
-# Favicon route
-@app.get("/favicon.ico")
-async def favicon():
-    """Serve favicon."""
-    favicon_path = Path("static/favicon.ico")
-    if favicon_path.exists():
-        from fastapi.responses import FileResponse
-
-        return FileResponse(str(favicon_path), media_type="image/x-icon")
-    raise HTTPException(status_code=404, detail="favicon.ico not found")
-
-
-# User Dashboard route
-@app.get("/dashboard")
-async def dashboard_page(request: Request):
-    """User dashboard."""
-    return templates.TemplateResponse("dashboard.html", {"request": request})
-
-
-# Admin route (direct access, not prefixed)
-@app.get("/admin")
-async def admin_page(request: Request):
-    """Admin panel."""
-    return templates.TemplateResponse("admin.html", {"request": request})
-
-
 # Include auth + admin routes. Routers already define their own prefixes
 # (e.g. `auth.router` uses prefix="/auth"). If a module failed to import
 # (e.g. optional dependency missing) register a lightweight shim router
 # so the app remains usable in preview mode.
 from fastapi import APIRouter
-
-
-# Add missing route handlers to fix 404 errors
-@app.get("/healthz")
-async def healthz():
-    """Kubernetes-style health check."""
-    return {"status": "healthy", "service": "klerno-labs"}
-
-
-@app.get("/status")
-async def status():
-    """Application status endpoint."""
-    return {"status": "running", "version": "2.0.0-Enterprise"}
-
-
-@app.get("/ready")
-async def readiness():
-    """Readiness probe endpoint."""
-    return {"ready": True, "status": "ready"}
-
-
-@app.get("/robots.txt")
-async def robots_txt():
-    """Serve robots.txt from static files."""
-    from fastapi.responses import FileResponse
-
-    robots_path = Path("static/robots.txt")
-    if robots_path.exists():
-        return FileResponse(str(robots_path), media_type="text/plain")
-    # Return default robots.txt content
-    from fastapi.responses import PlainTextResponse
-
-    return PlainTextResponse(
-        "User-agent: *\nDisallow: /admin/\nDisallow: /api/\nAllow: /"
-    )
-
-
-@app.get("/manifest.json")
-async def manifest_json():
-    """Serve manifest.json from static files."""
-    from fastapi.responses import FileResponse
-
-    manifest_path = Path("static/manifest.json")
-    if manifest_path.exists():
-        return FileResponse(str(manifest_path), media_type="application/json")
-    raise HTTPException(status_code=404, detail="manifest.json not found")
-
-
-@app.get("/sw.js")
-async def service_worker():
-    """Serve service worker from static files."""
-    from fastapi.responses import FileResponse
-
-    sw_path = Path("static/sw.js")
-    if sw_path.exists():
-        return FileResponse(str(sw_path), media_type="application/javascript")
-    raise HTTPException(status_code=404, detail="sw.js not found")
-
-
-@app.get("/.well-known/security.txt")
-async def security_txt():
-    """Security disclosure information."""
-    from fastapi.responses import PlainTextResponse
-
-    security_content = """Contact: mailto:security@klernolabs.com
-Expires: 2025-12-31T23:59:59.000Z
-Encryption: https://klernolabs.com/pgp-key.txt
-Acknowledgments: https://klernolabs.com/security-thanks
-Policy: https://klernolabs.com/security-policy"""
-    return PlainTextResponse(security_content)
-
-
-@app.get("/api/status")
-async def api_status():
-    """API status endpoint."""
-    return {"api": "operational", "version": "2.0.0-Enterprise", "status": "healthy"}
-
-
-@app.get("/api/health")
-async def api_health():
-    """API health endpoint."""
-    return {"health": "ok", "timestamp": datetime.now(UTC).isoformat()}
 
 
 def _register_auth_router():
@@ -563,7 +454,7 @@ def _register_auth_router():
     def _shim_signup(request: Request):
         templates.env.globals["url_path_for"] = request.app.url_path_for
         return templates.TemplateResponse(
-            "signup.html", {"request": request, "app_env": "dev"}
+            "signup.html", {"request": request, "app_env": "dev"},
         )
 
     @shim.get("/login", response_class=HTMLResponse)
@@ -588,65 +479,14 @@ def _register_admin_router():
     @shim.get("/", response_class=HTMLResponse)
     def _shim_admin_home(request: Request):
         return templates.TemplateResponse(
-            "admin.html", {"request": request, "title": "Admin"}
+            "admin.html", {"request": request, "title": "Admin"},
         )
 
     app.include_router(shim)
 
 
-# Add public admin endpoints before admin router registration
-@app.get("/admin/api/stats")
-async def admin_stats_public():
-    """Public admin stats endpoint for testing."""
-    return {
-        "status": "ok",
-        "total_users": 0,
-        "active_sessions": 0,
-        "total_transactions": 0,
-        "system_health": "operational",
-    }
-
-
 _register_auth_router()
 _register_admin_router()
-
-# Register paywall router for /paywall and /logout routes
-try:
-    import app.paywall as paywall_module
-
-    if hasattr(paywall_module, "router"):
-        app.include_router(paywall_module.router)
-        logger.info("Paywall router included")
-except ImportError:
-    logger.warning("Paywall module not available")
-
-# Add missing compatibility routes
-
-
-@app.get("/admin/users")
-async def admin_users_compat():
-    """Public admin users endpoint for testing."""
-    return {
-        "status": "ok",
-        "message": "Admin users endpoint available",
-        "users": [],
-        "total": 0,
-    }
-
-
-@app.get("/premium/advanced-analytics")
-async def premium_advanced_analytics():
-    """Premium advanced analytics feature - test version."""
-    return {
-        "status": "ok",
-        "message": "Advanced analytics available",
-        "analytics_data": {
-            "total_volume": 0,
-            "transaction_trends": [],
-            "risk_metrics": {},
-            "compliance_score": 100,
-        },
-    }
 
 
 if __name__ == "__main__":
@@ -669,7 +509,7 @@ if __name__ == "__main__":
     try:
         print("[DIAG] Starting uvicorn...")
         uvicorn.run(
-            app,
+            "enterprise_main_v2:app",
             host="127.0.0.1",
             port=8002,  # Use different port for enterprise
             reload=config.debug_mode,
@@ -686,7 +526,7 @@ if __name__ == "__main__":
             from typing import cast
 
             with LOG_FILE.open("a", encoding="utf-8") as fh_file:
-                fh_t = cast(_TextIO, fh_file)
+                fh_t = cast("_TextIO", fh_file)
                 fh_t.write("\n=== STARTUP EXCEPTION ===\n")
                 fh_t.write(traceback.format_exc())
                 fh_t.write("\n=== END STARTUP EXCEPTION ===\n")

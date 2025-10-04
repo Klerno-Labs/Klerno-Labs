@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-KLERNO LABS ENTERPRISE PLATFORM - CI/CD PIPELINE VALIDATION
+"""KLERNO LABS ENTERPRISE PLATFORM - CI/CD PIPELINE VALIDATION
 ============================================================
 
 Comprehensive CI/CD pipeline validation with automated testing,
@@ -9,13 +8,12 @@ deployment checks, quality gates, and production readiness verification.
 
 import json
 import logging
-import os
 import subprocess
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
 @dataclass
@@ -25,11 +23,11 @@ class PipelineStage:
     name: str
     status: str  # PASSED, FAILED, SKIPPED, RUNNING
     start_time: str
-    end_time: Optional[str]
+    end_time: str | None
     duration_seconds: float
-    details: Dict[str, Any]
-    artifacts: List[str]
-    error_message: Optional[str] = None
+    details: dict[str, Any]
+    artifacts: list[str]
+    error_message: str | None = None
 
 
 @dataclass
@@ -53,9 +51,9 @@ class PipelineResults:
     end_time: str
     total_duration: float
     overall_status: str
-    stages: List[PipelineStage]
-    quality_gates: List[QualityGate]
-    artifacts: List[str]
+    stages: list[PipelineStage]
+    quality_gates: list[QualityGate]
+    artifacts: list[str]
     deployment_ready: bool
 
 
@@ -79,7 +77,7 @@ class CICDValidator:
         )
         return logging.getLogger("CICDValidator")
 
-    def _load_pipeline_config(self) -> Dict[str, Any]:
+    def _load_pipeline_config(self) -> dict[str, Any]:
         """Load CI/CD pipeline configuration"""
         return {
             "pipeline_stages": [
@@ -137,13 +135,13 @@ class CICDValidator:
         }
 
     def run_command(
-        self, command: List[str], timeout: int = 300
-    ) -> Tuple[int, str, str]:
+        self, command: list[str], timeout: int = 300,
+    ) -> tuple[int, str, str]:
         """Run a command and return exit code, stdout, stderr"""
         try:
             result = subprocess.run(
                 command,
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
                 timeout=timeout,
                 cwd=self.workspace_path,
@@ -223,7 +221,7 @@ class CICDValidator:
             dependencies = []
 
             if req_file.exists():
-                with open(req_file, "r") as f:
+                with req_file.open() as f:
                     dependencies = [
                         line.strip()
                         for line in f
@@ -594,7 +592,7 @@ class CICDValidator:
                 error_message=str(e),
             )
 
-    def evaluate_quality_gates(self, stages: List[PipelineStage]) -> List[QualityGate]:
+    def evaluate_quality_gates(self, stages: list[PipelineStage]) -> list[QualityGate]:
         """Evaluate quality gates based on stage results"""
         quality_gates = []
 
@@ -635,7 +633,7 @@ class CICDValidator:
 
         return quality_gates
 
-    def run_pipeline(self, pipeline_id: Optional[str] = None) -> PipelineResults:
+    def run_pipeline(self, pipeline_id: str | None = None) -> PipelineResults:
         """Run complete CI/CD pipeline"""
         if not pipeline_id:
             pipeline_id = f"pipeline_{int(time.time())}"
@@ -674,7 +672,7 @@ class CICDValidator:
 
             except Exception as e:
                 self.logger.error(
-                    f"Stage {stage_func.__name__} failed with exception: {e}"
+                    f"Stage {stage_func.__name__} failed with exception: {e}",
                 )
                 overall_status = "FAILED"
 
@@ -688,7 +686,7 @@ class CICDValidator:
         if blocking_failures:
             overall_status = "FAILED"
             self.logger.warning(
-                f"Blocking quality gates failed: {[qg.name for qg in blocking_failures]}"
+                f"Blocking quality gates failed: {[qg.name for qg in blocking_failures]}",
             )
 
         # Determine deployment readiness
@@ -722,24 +720,24 @@ class CICDValidator:
         )
 
         self.logger.info(
-            f"Pipeline {pipeline_id} completed with status: {overall_status}"
+            f"Pipeline {pipeline_id} completed with status: {overall_status}",
         )
         return results
 
     def export_pipeline_results(
-        self, results: PipelineResults, filename: str = "pipeline_results.json"
+        self, results: PipelineResults, filename: str = "pipeline_results.json",
     ):
         """Export pipeline results to JSON file"""
         export_data = asdict(results)
 
-        with open(filename, "w") as f:
+        with Path(filename).open("w") as f:
             json.dump(export_data, f, indent=2)
 
         self.logger.info(f"Pipeline results exported to {filename}")
 
     def generate_pipeline_report(self, results: PipelineResults):
         """Generate comprehensive pipeline report"""
-        print(f"\n🔄 KLERNO LABS CI/CD PIPELINE REPORT")
+        print("\n🔄 KLERNO LABS CI/CD PIPELINE REPORT")
         print("=" * 60)
         print(f"Pipeline ID: {results.pipeline_id}")
         print(f"Status: {results.overall_status}")
@@ -758,7 +756,7 @@ class CICDValidator:
                 "RUNNING": "🔄",
             }.get(stage.status, "❓")
             print(
-                f"{status_emoji} {stage.name}: {stage.status} ({stage.duration_seconds:.1f}s)"
+                f"{status_emoji} {stage.name}: {stage.status} ({stage.duration_seconds:.1f}s)",
             )
 
             if stage.error_message:
@@ -775,7 +773,7 @@ class CICDValidator:
             status_emoji = "✅" if gate.status == "PASSED" else "❌"
             blocking_text = "BLOCKING" if gate.blocking else "NON-BLOCKING"
             print(
-                f"{status_emoji} {gate.name}: {gate.actual_value:.1f} / {gate.threshold:.1f} ({blocking_text})"
+                f"{status_emoji} {gate.name}: {gate.actual_value:.1f} / {gate.threshold:.1f} ({blocking_text})",
             )
 
         # Summary
@@ -784,14 +782,14 @@ class CICDValidator:
         passed_gates = len([g for g in results.quality_gates if g.status == "PASSED"])
         failed_gates = len([g for g in results.quality_gates if g.status == "FAILED"])
 
-        print(f"\n📊 SUMMARY")
+        print("\n📊 SUMMARY")
         print("-" * 30)
         print(f"Stages: {passed_stages} passed, {failed_stages} failed")
         print(f"Quality Gates: {passed_gates} passed, {failed_gates} failed")
         print(f"Total Artifacts: {len(results.artifacts)}")
 
         # Recommendations
-        print(f"\n💡 RECOMMENDATIONS")
+        print("\n💡 RECOMMENDATIONS")
         print("-" * 30)
 
         if results.deployment_ready:
@@ -807,7 +805,7 @@ class CICDValidator:
             for gate in results.quality_gates:
                 if gate.status == "FAILED" and gate.blocking:
                     print(
-                        f"   - Improve {gate.name} (current: {gate.actual_value:.1f}, required: {gate.threshold:.1f})"
+                        f"   - Improve {gate.name} (current: {gate.actual_value:.1f}, required: {gate.threshold:.1f})",
                     )
 
 
@@ -828,7 +826,7 @@ def main():
         # Export results
         validator.export_pipeline_results(results)
 
-        print(f"\n✅ CI/CD pipeline validation completed")
+        print("\n✅ CI/CD pipeline validation completed")
 
     except Exception as e:
         print(f"❌ Pipeline validation failed: {e}")

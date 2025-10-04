@@ -1,5 +1,4 @@
-"""
-Shared constants for the application.
+"""Shared constants for the application.
 
 Place commonly reused configuration values here so they are easy to
 find, change, and import from other modules. Keep this file minimal and

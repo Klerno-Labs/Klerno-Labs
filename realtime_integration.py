@@ -1,14 +1,18 @@
-
+﻿
 # ===================================================================
 # KLERNO LABS REAL-TIME FASTAPI INTEGRATION
 # Add to your main FastAPI application
 # ===================================================================
 
-from fastapi import FastAPI, WebSocket, Request
-from fastapi.responses import HTMLResponse
+import asyncio
+import json
+import time
+from datetime import datetime
+
+from fastapi import FastAPI, Request, WebSocket
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import json
 
 # Import the WebSocket manager
 from realtime_websocket_server import manager, websocket_endpoint
@@ -66,7 +70,7 @@ async def update_realtime_data(data: dict):
     await manager.broadcast({
         "type": "data_update",
         "data": data,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     })
     return {"status": "Data updated successfully"}
 
@@ -79,20 +83,20 @@ async def realtime_events(request: Request):
             # Check if client is still connected
             if await request.is_disconnected():
                 break
-            
+
             # Send heartbeat
             yield f"data: {json.dumps({'type': 'heartbeat', 'timestamp': datetime.now().isoformat()})}\n\n"
-            
+
             # Wait before next heartbeat
             await asyncio.sleep(30)
-    
+
     return StreamingResponse(
         event_stream(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
-            "Connection": "keep-alive"
-        }
+            "Connection": "keep-alive",
+        },
     )
 
 # Add real-time middleware for tracking
@@ -100,13 +104,13 @@ async def realtime_events(request: Request):
 async def realtime_middleware(request: Request, call_next):
     """Middleware to track user activity and real-time metrics"""
     start_time = time.time()
-    
+
     # Process request
     response = await call_next(request)
-    
+
     # Calculate processing time
     process_time = time.time() - start_time
-    
+
     # Broadcast performance metrics
     await manager.broadcast({
         "type": "performance_metric",
@@ -114,33 +118,33 @@ async def realtime_middleware(request: Request, call_next):
             "endpoint": str(request.url.path),
             "method": request.method,
             "process_time": process_time,
-            "status_code": response.status_code
+            "status_code": response.status_code,
         },
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     })
-    
+
     return response
 
 # Real-time notification system
 class NotificationManager:
     """Manages real-time notifications"""
-    
+
     @staticmethod
     async def send_notification(user_id: str, notification: dict):
         """Send notification to specific user"""
         await manager.send_to_user({
             "type": "notification",
             "data": notification,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }, user_id)
-    
+
     @staticmethod
     async def broadcast_notification(notification: dict, exclude_user: str = None):
         """Broadcast notification to all users"""
         await manager.broadcast({
             "type": "notification",
             "data": notification,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }, exclude_user=exclude_user)
 
 # Example usage in your application:

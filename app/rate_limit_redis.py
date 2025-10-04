@@ -19,6 +19,7 @@ Unix ms. It refills tokens based on elapsed time and the configured rate.
 
 from __future__ import annotations
 
+import contextlib
 import os
 import time
 from collections.abc import Awaitable, Callable
@@ -28,6 +29,18 @@ from fastapi import Request
 from fastapi.responses import JSONResponse, Response
 
 from ._typing_shims import IRedisLike
+
+# Optional metrics helpers; import guarded to avoid hard dependency
+try:  # pragma: no cover - import side effects not critical to tests
+    from .metrics import inc_rate_limit_allowed, inc_rate_limit_denied
+except Exception:  # pragma: no cover
+
+    def inc_rate_limit_allowed(backend: str = "redis") -> None:  # type: ignore[no-redef]
+        return
+
+    def inc_rate_limit_denied(backend: str = "redis") -> None:  # type: ignore[no-redef]
+        return
+
 
 redis: Any | None = None
 try:  # pragma: no cover - optional dependency
@@ -104,7 +117,7 @@ def add_redis_rate_limiter(app) -> None:
     capacity, rate_per_sec, prefix = _rate_limit_config()
     cost = 1.0
 
-    def _eval_bucket(remote: str) -> bool:
+    def _eval_bucket(remote: str) -> tuple[bool, float]:
         global _script_sha
         key = f"{prefix}:{remote}"
         now_ms = int(time.time() * 1000)
@@ -120,26 +133,57 @@ def add_redis_rate_limiter(app) -> None:
                 res = client.eval(_LUA_SCRIPT, len(keys), *keys, *args)
                 _script_sha = None
             except Exception:
-                return True  # fail-open (do not block traffic)
+                return True, float(capacity)  # fail-open (do not block traffic)
         try:
             allowed_flag = int(res[0]) if res else 0
         except Exception:
-            return True  # fail-open on unexpected structure
-        return allowed_flag == 1
+            return True, float(capacity)  # fail-open on unexpected structure
+        # res[1] is tokens remaining
+        remaining = 0.0
+        try:
+            remaining = float(res[1]) if res and len(res) > 1 else 0.0
+        except Exception:
+            remaining = 0.0
+        return (allowed_flag == 1), remaining
 
     @app.middleware("http")
     async def _redis_rate_limit(
-        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+        request: Request, call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
+        # Never rate-limit metrics endpoint to keep observability reliable
+        try:
+            if request.url.path in ("/metrics", "/csp/report"):
+                return await call_next(request)
+        except Exception:
+            pass
         remote = request.client.host if request.client else "unknown"
-        allowed = _eval_bucket(remote)
+        allowed, remaining = _eval_bucket(remote)
+        # Coarse reset estimate; precise value would require ts exposure
+        reset_sec = 1
+        base_headers = {
+            "X-RateLimit-Limit": str(int(capacity)),
+            "X-RateLimit-Remaining": str(int(max(remaining, 0))),
+            "X-RateLimit-Reset": str(reset_sec),
+        }
         if not allowed:
+            # Metrics: record denied
+            with contextlib.suppress(Exception):
+                inc_rate_limit_denied("redis")
             return JSONResponse(
                 status_code=429,
                 content={
                     "error": "rate_limited",
                     "detail": "Too many requests; please slow down.",
                 },
-                headers={"Retry-After": "1"},
+                headers={"Retry-After": "1", **base_headers},
             )
-        return await call_next(request)
+        resp = await call_next(request)
+        # Metrics: record allowed
+        with contextlib.suppress(Exception):
+            inc_rate_limit_allowed("redis")
+        try:
+            for k, v in base_headers.items():
+                resp.headers.setdefault(k, v)
+        except Exception:
+            pass
+        return resp

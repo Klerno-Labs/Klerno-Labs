@@ -1,4 +1,3 @@
-# ruff: noqa: E402
 import importlib
 
 importlib.invalidate_caches()

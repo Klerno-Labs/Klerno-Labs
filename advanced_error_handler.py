@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Klerno Labs Advanced Error Handling System
+"""Klerno Labs Advanced Error Handling System
 ==========================================
 
 Sophisticated error handling and user experience that makes top 0.1% websites feel bulletproof.
@@ -19,9 +18,8 @@ Version: 1.0.0-bulletproof
 """
 
 import json
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 
 class AdvancedErrorHandler:
@@ -34,9 +32,8 @@ class AdvancedErrorHandler:
         self.js_dir = self.static_dir / "js"
         self.css_dir = self.static_dir / "css"
 
-    def create_error_templates(self) -> Dict[str, Any]:
+    def create_error_templates(self) -> dict[str, Any]:
         """Create beautiful, helpful error page templates"""
-
         # Ensure directories exist
         self.templates_dir.mkdir(exist_ok=True)
         self.css_dir.mkdir(parents=True, exist_ok=True)
@@ -647,9 +644,8 @@ class AdvancedErrorHandler:
             ],
         }
 
-    def create_error_handling_js(self) -> Dict[str, Any]:
+    def create_error_handling_js(self) -> dict[str, Any]:
         """Create advanced JavaScript error handling"""
-
         error_handler_js = """
 // ===================================================================
 // KLERNO LABS ADVANCED ERROR HANDLER
@@ -1315,7 +1311,6 @@ if (typeof module !== 'undefined' && module.exports) {
 
     def generate_report(self) -> str:
         """Generate error handling implementation report"""
-
         template_results = self.create_error_templates()
         js_results = self.create_error_handling_js()
 

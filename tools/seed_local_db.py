@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
     is_admin INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
-"""
+""",
 )
 
 # Inspect existing columns and add canonical columns if missing. This avoids

@@ -1,5 +1,4 @@
-"""
-Plugin System for Klerno Labs
+"""Plugin System for Klerno Labs
 Provides extensible API functionality through a plugin architecture
 """
 
@@ -32,7 +31,7 @@ class PluginMetadata(BaseModel):
 class PluginHook:
     """Represents a hook point in the system"""
 
-    def __init__(self, name: str, description: str = "") -> None:
+    def __init__(self, name: str, description: str = ""):
         self.name = name
         self.description = description
         self.callbacks: list[Callable] = []
@@ -63,12 +62,10 @@ class BasePlugin(ABC):
     @abstractmethod
     def get_metadata(self) -> PluginMetadata:
         """Return plugin metadata"""
-        pass
 
     @abstractmethod
     def initialize(self, app: FastAPI, plugin_manager: "PluginManager") -> None:
         """Initialize the plugin"""
-        pass
 
     def register_hook(self, hook_name: str, callback: Callable) -> None:
         """Register a callback for a specific hook"""
@@ -76,7 +73,7 @@ class BasePlugin(ABC):
             self.hooks[hook_name].register(callback)
 
     def add_api_route(
-        self, app: FastAPI, path: str, endpoint: Callable, **kwargs: Any
+        self, app: FastAPI, path: str, endpoint: Callable, **kwargs: Any,
     ) -> None:
         """Helper to add API routes with plugin prefix"""
         if self.metadata is None:
@@ -103,26 +100,26 @@ class PluginManager:
         self.hooks.update(
             {
                 "transaction_analyzed": PluginHook(
-                    "transaction_analyzed", "Called after a transaction is analyzed"
+                    "transaction_analyzed", "Called after a transaction is analyzed",
                 ),
                 "risk_calculated": PluginHook(
-                    "risk_calculated", "Called after risk score is calculated"
+                    "risk_calculated", "Called after risk score is calculated",
                 ),
                 "alert_generated": PluginHook(
-                    "alert_generated", "Called when an alert is generated"
+                    "alert_generated", "Called when an alert is generated",
                 ),
                 "dashboard_data": PluginHook(
-                    "dashboard_data", "Called when dashboard data is requested"
+                    "dashboard_data", "Called when dashboard data is requested",
                 ),
                 "api_request": PluginHook("api_request", "Called on API requests"),
                 "user_login": PluginHook("user_login", "Called when user logs in"),
                 "report_generated": PluginHook(
-                    "report_generated", "Called when a report is generated"
+                    "report_generated", "Called when a report is generated",
                 ),
                 "settings_changed": PluginHook(
-                    "settings_changed", "Called when settings are modified"
+                    "settings_changed", "Called when settings are modified",
                 ),
-            }
+            },
         )
 
     def register_plugin(self, plugin_class: type) -> bool:
@@ -204,7 +201,7 @@ class PluginManager:
         """Get information about a specific plugin"""
         if plugin_name in self.plugins:
             plugin = self.plugins[plugin_name]
-            # Normalize metadata to a mapping so callers always receive a dict[str, Any]
+            # Normalize metadata to a mapping so callers always receive a dict
             metadata: dict[str, Any] | None = None
             if plugin.metadata is not None:
                 try:
@@ -212,8 +209,8 @@ class PluginManager:
                     metadata = plugin.metadata.model_dump()
                 except Exception:
                     try:
-                        # pydantic v1: dict[str, Any]()
-                        metadata = plugin.metadata.dict[str, Any]()
+                        # pydantic v1: dict()
+                        metadata = plugin.metadata.dict()
                     except Exception:
                         # Provide a consistent mapping fallback
                         metadata = {"info": str(plugin.metadata)}
@@ -246,7 +243,7 @@ class PluginManager:
                     metadata = plugin.metadata.model_dump()
                 except Exception:
                     try:
-                        metadata = plugin.metadata.dict[str, Any]()
+                        metadata = plugin.metadata.dict()
                     except Exception:
                         metadata = {"info": str(plugin.metadata)}
 
@@ -285,7 +282,7 @@ class SampleAnalyticsPlugin(BasePlugin):
         """Initialize the sample analytics plugin"""
         # Register hook callbacks
         plugin_manager.hooks["transaction_analyzed"].register(
-            self.on_transaction_analyzed
+            self.on_transaction_analyzed,
         )
 
         # Add custom API endpoints
@@ -298,7 +295,7 @@ class SampleAnalyticsPlugin(BasePlugin):
         )
 
     def on_transaction_analyzed(
-        self, transaction_data: dict[str, Any]
+        self, transaction_data: dict[str, Any],
     ) -> dict[str, Any]:
         """Called when a transaction is analyzed"""
         # Add custom analysis

@@ -1,4 +1,3 @@
-# ruff: noqa: E402
 import os
 import sqlite3
 import sys
@@ -19,7 +18,7 @@ if ROOT not in sys.path:
 with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
     db_path = tmp.name
 
-conn = cast(ISyncConnection, sqlite3.connect(db_path))
+conn = cast("ISyncConnection", sqlite3.connect(db_path))
 cur = conn.cursor()
 cur.execute(
     """
@@ -32,7 +31,7 @@ cur.execute(
         subscription_status TEXT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-    """
+    """,
 )
 cur.execute(
     """
@@ -45,7 +44,7 @@ cur.execute(
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (id)
     );
-    """
+    """,
 )
 cur.execute(
     """
@@ -57,7 +56,7 @@ cur.execute(
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (transaction_id) REFERENCES transactions (id)
     );
-    """
+    """,
 )
 conn.commit()
 conn.close()

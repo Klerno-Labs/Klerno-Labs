@@ -100,6 +100,7 @@
             opacity: 0;
             transform: translateY(30px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
@@ -107,9 +108,12 @@
     }
 
     @keyframes pulse {
-        0%, 100% {
+
+        0%,
+        100% {
             transform: scale(1);
         }
+
         50% {
             transform: scale(1.05);
         }
@@ -140,13 +144,13 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Add some interactive particles
-    const container = document.querySelector('.error-container');
+    document.addEventListener('DOMContentLoaded', function () {
+        // Add some interactive particles
+        const container = document.querySelector('.error-container');
 
-    for (let i = 0; i < 20; i++) {
-        const particle = document.createElement('div');
-        particle.style.cssText = `
+        for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.style.cssText = `
             position: absolute;
             width: 4px;
             height: 4px;
@@ -157,12 +161,12 @@ document.addEventListener('DOMContentLoaded', function() {
             animation: float ${3 + Math.random() * 4}s ease-in-out infinite;
             animation-delay: ${Math.random() * 2}s;
         `;
-        container.appendChild(particle);
-    }
+            container.appendChild(particle);
+        }
 
-    // Add floating animation
-    const style = document.createElement('style');
-    style.textContent = `
+        // Add floating animation
+        const style = document.createElement('style');
+        style.textContent = `
         @keyframes float {
             0%, 100% {
                 transform: translateY(0px) rotate(0deg);
@@ -178,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     `;
-    document.head.appendChild(style);
-});
+        document.head.appendChild(style);
+    });
 </script>
 {% endblock %}

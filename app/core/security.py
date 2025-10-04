@@ -1,5 +1,4 @@
-"""
-Unified Security Module for Klerno Labs
+"""Unified Security Module for Klerno Labs
 
 This module consolidates all security functionality into a single source of truth:
 - API key authentication
@@ -75,9 +74,9 @@ SECURITY_CONFIG = {
 }
 
 # In-memory security storage (fallback if Redis unavailable)
-_rate_limits: dict[str, list[float]] = defaultdict(list[Any])
+_rate_limits: dict[str, list[float]] = defaultdict(list)
 _security_events: list[dict[str, Any]] = []
-_blocked_ips: set[str] = cast(set[str], SECURITY_CONFIG.get("blocked_ips", set()))
+_blocked_ips: set[str] = cast("set[str]", SECURITY_CONFIG.get("blocked_ips", set()))
 _suspicious_activity: dict[str, int] = defaultdict(int)
 
 
@@ -115,7 +114,7 @@ class AuditEvent:
         outcome: str = "success",
         details: dict[str, Any] | None = None,
         user_id: str | None = None,
-    ) -> None:
+    ):
         self.event_type = event_type
         self.outcome = outcome
         self.details = details or {}
@@ -131,7 +130,7 @@ class SecurityManager:
         self.config = SECURITY_CONFIG
 
     def log_security_event(
-        self, event_type: str, details: dict[str, Any], ip: str | None = None
+        self, event_type: str, details: dict[str, Any], ip: str | None = None,
     ) -> None:
         """Log security events with standardized format."""
         event = {
@@ -153,14 +152,14 @@ class SecurityManager:
             _suspicious_activity[ip] += 1
             if _suspicious_activity[ip] >= 5:
                 self.block_ip(
-                    ip, f"Auto-blocked after {_suspicious_activity[ip]} security events"
+                    ip, f"Auto-blocked after {_suspicious_activity[ip]} security events",
                 )
 
     def block_ip(self, ip: str, reason: str = "Security violation") -> None:
         """Block an IP address."""
         _blocked_ips.add(ip)
         self.log_security_event(
-            SecurityEventType.SUSPICIOUS_IP, {"action": "blocked", "reason": reason}, ip
+            SecurityEventType.SUSPICIOUS_IP, {"action": "blocked", "reason": reason}, ip,
         )
 
     def is_ip_blocked(self, ip: str) -> bool:
@@ -173,8 +172,8 @@ class SecurityManager:
         # SECURITY_CONFIG is constructed from ints above; narrow types here so
         # mypy knows arithmetic and comparisons are valid.
         # config values may be typed as object; cast to Any so int() overloads match
-        window: int = int(cast(Any, self.config.get("rate_limit_window", 60)))
-        max_requests: int = int(cast(Any, self.config.get("rate_limit_requests", 100)))
+        window: int = int(cast("Any", self.config.get("rate_limit_window", 60)))
+        max_requests: int = int(cast("Any", self.config.get("rate_limit_requests", 100)))
 
         # Clean old entries
         _rate_limits[identifier] = [
@@ -195,7 +194,7 @@ class SecurityManager:
         """Validate request size."""
         content_length = request.headers.get("content-length")
         # Ensure numeric comparison uses ints so mypy can validate types
-        max_req_size = int(cast(Any, self.config.get("max_request_size", 0)))
+        max_req_size = int(cast("Any", self.config.get("max_request_size", 0)))
         return not (content_length and int(content_length) > max_req_size)
 
     def detect_injection_attempts(self, data: str) -> bool:
@@ -224,8 +223,7 @@ security_manager = SecurityManager()
 
 
 def expected_api_key() -> str:
-    """
-    Get expected API key with priority:
+    """Get expected API key with priority:
     1) ENV: X_API_KEY or API_KEY
     2) File: data/api_key.secret
     3) Generate new key
@@ -260,26 +258,25 @@ def enforce_api_key(x_api_key: str = Header(None, alias="X-API-Key")) -> bool:
 
     if not x_api_key:
         security_manager.log_security_event(
-            SecurityEventType.UNAUTHORIZED_ACCESS, {"reason": "Missing API key"}
+            SecurityEventType.UNAUTHORIZED_ACCESS, {"reason": "Missing API key"},
         )
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="API key required"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="API key required",
         )
 
     if not hmac.compare_digest(x_api_key, expected):
         security_manager.log_security_event(
-            SecurityEventType.UNAUTHORIZED_ACCESS, {"reason": "Invalid API key"}
+            SecurityEventType.UNAUTHORIZED_ACCESS, {"reason": "Invalid API key"},
         )
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key",
         )
 
     return True
 
 
 class UnifiedSecurityMiddleware(BaseHTTPMiddleware):
-    """
-    Unified security middleware combining all security features:
+    """Unified security middleware combining all security features:
     - IP blocking & allowlisting
     - Rate limiting
     - Request validation
@@ -294,7 +291,7 @@ class UnifiedSecurityMiddleware(BaseHTTPMiddleware):
         self.security = security_manager
 
     async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Any]
+        self, request: Request, call_next: Callable[[Request], Any],
     ) -> Any:
         start_time = time.time()
 
@@ -333,7 +330,7 @@ class UnifiedSecurityMiddleware(BaseHTTPMiddleware):
                     client_ip,
                 )
                 return JSONResponse(
-                    status_code=413, content={"error": "Request too large"}
+                    status_code=413, content={"error": "Request too large"},
                 )
 
             # 4. Input validation for query parameters
@@ -345,7 +342,7 @@ class UnifiedSecurityMiddleware(BaseHTTPMiddleware):
                     client_ip,
                 )
                 return JSONResponse(
-                    status_code=400, content={"error": "Invalid request"}
+                    status_code=400, content={"error": "Invalid request"},
                 )
 
             # 5. Process request
@@ -381,7 +378,7 @@ class UnifiedSecurityMiddleware(BaseHTTPMiddleware):
                 client_ip,
             )
             return JSONResponse(
-                status_code=500, content={"error": "Internal server error"}
+                status_code=500, content={"error": "Internal server error"},
             )
 
     def _get_client_ip(self, request: Request) -> str:
@@ -422,7 +419,7 @@ class UnifiedSecurityMiddleware(BaseHTTPMiddleware):
 class AuditLogger:
     """Centralized audit logging for security events."""
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.logger = logging.getLogger("klerno.audit")
         self.logger.setLevel(logging.INFO)
 
@@ -452,11 +449,11 @@ class AuditLogger:
         """Log failed authentication."""
         self.logger.warning(f"AUTH_FAILURE: user={user} ip={ip} reason={reason}")
         security_manager.log_security_event(
-            SecurityEventType.FAILED_LOGIN, {"user": user, "reason": reason}, ip
+            SecurityEventType.FAILED_LOGIN, {"user": user, "reason": reason}, ip,
         )
 
     def log_admin_action(
-        self, user: str, action: str, target: str | None = None
+        self, user: str, action: str, target: str | None = None,
     ) -> None:
         """Log administrative actions."""
         self.logger.info(f"ADMIN_ACTION: user={user} action={action} target={target}")
@@ -468,7 +465,7 @@ class AuditLogger:
     def log_data_access(self, user: str, resource: str, action: str) -> None:
         """Log data access events."""
         self.logger.info(
-            f"DATA_ACCESS: user={user} resource={resource} action={action}"
+            f"DATA_ACCESS: user={user} resource={resource} action={action}",
         )
         security_manager.log_security_event(
             SecurityEventType.DATA_ACCESS,
@@ -484,15 +481,15 @@ SecurityMiddleware = UnifiedSecurityMiddleware  # Alias for existing code
 
 # Export public interface
 __all__ = [
-    "SecurityManager",
-    "UnifiedSecurityMiddleware",
-    "SecurityMiddleware",  # Legacy alias
-    "AuditLogger",
     "AuditEvent",
     "AuditEventType",
+    "AuditLogger",
     "SecurityEventType",
-    "expected_api_key",
-    "enforce_api_key",
-    "security_manager",
+    "SecurityManager",
+    "SecurityMiddleware",  # Legacy alias
+    "UnifiedSecurityMiddleware",
     "audit_logger",
+    "enforce_api_key",
+    "expected_api_key",
+    "security_manager",
 ]

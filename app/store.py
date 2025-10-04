@@ -1,5 +1,4 @@
-"""
-Data store utilities with SQLite/Postgres backends and a small cache.
+"""Data store utilities with SQLite/Postgres backends and a small cache.
 """
 
 # NOTE: Bandit analysis intentionally enabled for this file.
@@ -53,7 +52,7 @@ def _safe_idx(seq: Sequence[Any] | Any, idx: int) -> Any:
         return None
 
 
-def _get_cache_key(*args) -> str:
+def _get_cache_key(*args: Any) -> str:
     """Generate cache key from arguments."""
     return "|".join(str(arg) for arg in args)
 
@@ -63,10 +62,9 @@ def _get_cached(key: str, ttl: int = CACHE_TTL) -> Any | None:
     if key in _cache:
         if time.time() < _cache_expiry.get(key, 0):
             return _cache[key]
-        else:
-            # Expired, remove from cache
-            _cache.pop(key, None)
-            _cache_expiry.pop(key, None)
+        # Expired, remove from cache
+        _cache.pop(key, None)
+        _cache_expiry.pop(key, None)
     return None
 
 
@@ -183,9 +181,9 @@ def _sqlite_conn() -> ISyncConnection:
     data_dir.mkdir(parents=True, exist_ok=True)
     # use a small timeout so concurrent writers don't immediately fail
     con = cast(
-        ISyncConnection, sqlite3.connect(db_path, check_same_thread=False, timeout=5.0)
+        "ISyncConnection", sqlite3.connect(db_path, check_same_thread=False, timeout=5.0),
     )
-    con.row_factory = sqlite3.Row  # return dict[str, Any] - like rows to unify handling
+    con.row_factory = sqlite3.Row  # return dict - like rows to unify handling
     # Improve concurrency/performance for test and multi-request workloads:
     # - WAL reduces write lock contention allowing readers during writes
     # - synchronous=NORMAL gives good durability with better write throughput
@@ -204,8 +202,7 @@ def _sqlite_conn() -> ISyncConnection:
 
 
 def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> Any:
-    """
-    Create a Postgres connection with a small retry/backoff policy.
+    """Create a Postgres connection with a small retry/backoff policy.
 
     This attempts to support both `psycopg` (psycopg3) and `psycopg2`.
     Retries and backoff can be controlled with env vars `DB_CONNECT_RETRIES`
@@ -233,7 +230,7 @@ def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> 
             # psycopg2
             if psycopg is None or RealDictCursor is None:
                 raise RuntimeError(
-                    "psycopg2 and RealDictCursor required but not available"
+                    "psycopg2 and RealDictCursor required but not available",
                 )
             return psycopg.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         except Exception as e:
@@ -251,8 +248,7 @@ def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> 
 
 
 def _conn() -> Any:
-    """
-    Return a DB connection:
+    """Return a DB connection:
     - Postgres if DATABASE_URL & psycopg2 are available
     - else SQLite
     """
@@ -265,10 +261,7 @@ def _ph() -> str:
 
 
 def wait_for_row(
-    select_sql: str,
-    params: tuple[Any, ...] = (),
-    timeout: float = 1.0,
-    poll: float = 0.05,
+    select_sql: str, params: tuple = (), timeout: float = 1.0, poll: float = 0.05,
 ) -> list[Any]:
     """Wait for a row to become visible in the database.
 
@@ -306,8 +299,7 @@ def wait_for_row(
 
 
 def init_db() -> None:
-    """
-    Create tables if they do not exist:
+    """Create tables if they do not exist:
       - txs           : transactions store
       - users         : auth / accounts
       - user_settings : per - user persisted settings (x_api_key, thresholds, etc.)
@@ -330,7 +322,7 @@ def init_db() -> None:
         # ensure directory
         data_dir = Path(db_path).resolve().parent
         data_dir.mkdir(parents=True, exist_ok=True)
-        con = cast(ISyncConnection, sqlite3.connect(db_path, check_same_thread=False))
+        con = cast("ISyncConnection", sqlite3.connect(db_path, check_same_thread=False))
         con.row_factory = sqlite3.Row
     else:
         con = _conn()
@@ -356,19 +348,19 @@ def init_db() -> None:
                 risk_score DOUBLE PRECISION,
                 risk_flags TEXT,
                 notes TEXT
-        );"""
+        );""",
         )
         cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_from_addr ON txs (from_addr);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_to_addr ON txs (to_addr);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_timestamp ON txs (timestamp);")
         # Additional indexes for admin analytics performance
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score ON txs (risk_score);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score ON txs (risk_score);",
         )
         cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_category ON txs (category);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_amount ON txs (amount);")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc ON txs (timestamp DESC);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc ON txs (timestamp DESC);",
         )
     else:
         cur.execute(
@@ -389,19 +381,19 @@ def init_db() -> None:
                 risk_score REAL,
                 risk_flags TEXT,
                 notes TEXT
-        );"""
+        );""",
         )
         cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_from_addr ON txs (from_addr);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_to_addr ON txs (to_addr);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_timestamp ON txs (timestamp);")
         # Additional indexes for admin analytics performance
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score ON txs (risk_score);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_risk_score ON txs (risk_score);",
         )
         cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_category ON txs (category);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_txs_amount ON txs (amount);")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc ON txs (timestamp DESC);"
+            "CREATE INDEX IF NOT EXISTS idx_txs_timestamp_desc ON txs (timestamp DESC);",
         )
 
     # ---- USERS TABLE ----
@@ -429,20 +421,20 @@ def init_db() -> None:
                 mfa_type TEXT,
                 recovery_codes TEXT DEFAULT '[]',
                 has_hardware_key BOOLEAN NOT NULL DEFAULT FALSE
-        );"""
+        );""",
         )
         # Indexes for user queries
         cur.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users (role);")
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at);"
+            "CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at);",
         )
         cur.execute(
             "CREATE INDEX IF NOT EXISTS idx_users_oauth_provider "
-            "ON users (oauth_provider);"
+            "ON users (oauth_provider);",
         )
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id ON users (oauth_id);"
+            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id ON users (oauth_id);",
         )
     else:
         # users table (SQLite): subscription_active uses 0 / 1
@@ -466,7 +458,7 @@ def init_db() -> None:
                 mfa_type TEXT,
                 recovery_codes TEXT DEFAULT '[]',
                 has_hardware_key INTEGER NOT NULL DEFAULT 0
-        );"""
+        );""",
         )
         # Basic indexes for user queries
         # Use contextlib.suppress to ignore index creation errors
@@ -477,35 +469,35 @@ def init_db() -> None:
             cur.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON users (role);")
         with contextlib.suppress(sqlite3.OperationalError):
             cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at);"
+                "CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at);",
             )
 
     # Add columns to existing users table if they don't exist (migration)
     try:
         if USING_POSTGRES:
             cur.execute(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_provider TEXT;"
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_provider TEXT;",
             )
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_id TEXT;")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name TEXT;")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;")
             cur.execute(
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS wallet_addresses TEXT "
-                "DEFAULT '[]';"
+                "DEFAULT '[]';",
             )
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;")
             cur.execute(
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN "
-                "NOT NULL DEFAULT FALSE;"
+                "NOT NULL DEFAULT FALSE;",
             )
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_type TEXT;")
             cur.execute(
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS recovery_codes TEXT "
-                "DEFAULT '[]';"
+                "DEFAULT '[]';",
             )
             cur.execute(
                 "ALTER TABLE users ADD COLUMN IF NOT EXISTS has_hardware_key BOOLEAN "
-                "NOT NULL DEFAULT FALSE;"
+                "NOT NULL DEFAULT FALSE;",
             )
         else:
             # SQLite doesn't support IF NOT EXISTS for ALTER TABLE,
@@ -518,12 +510,12 @@ def init_db() -> None:
                 ("has_hardware_key INTEGER NOT NULL DEFAULT 0",),
             ]:
                 with contextlib.suppress(sqlite3.OperationalError):
-                    # coldef values are from an internal hardcoded list[Any] above
+                    # coldef values are from an internal hardcoded list above
                     # (migration definitions). This is not user input; add a
                     # precise suppression so Bandit doesn't flag this dynamic
                     # DDL string as a false-positive for hardcoded SQL.
                     cur.execute(
-                        f"ALTER TABLE users ADD COLUMN {coldef[0]};"
+                        f"ALTER TABLE users ADD COLUMN {coldef[0]};",
                     )  # nosec: B608 - migration column definition is an internal constant
     except Exception as e:
         print(f"Migration warning: {e}")
@@ -533,11 +525,11 @@ def init_db() -> None:
     with contextlib.suppress(sqlite3.OperationalError):
         cur.execute(
             "CREATE INDEX IF NOT EXISTS idx_users_oauth_provider "
-            "ON users (oauth_provider);"
+            "ON users (oauth_provider);",
         )
     with contextlib.suppress(sqlite3.OperationalError):
         cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id ON users (oauth_id);"
+            "CREATE INDEX IF NOT EXISTS idx_users_oauth_id ON users (oauth_id);",
         )
 
     # ---- USER_SETTINGS TABLE (normalized columns) ----
@@ -552,7 +544,7 @@ def init_db() -> None:
                 ui_prefs JSONB,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-        );"""
+        );""",
         )
     else:
         cur.execute(
@@ -566,7 +558,7 @@ def init_db() -> None:
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-        );"""
+        );""",
         )
 
     con.commit()
@@ -582,7 +574,7 @@ class UserDict(TypedDict):
     email: str
     role: str
     subscription_active: bool
-    # Normalized to a list[Any] during _row_to_user
+    # Normalized to a list during _row_to_user
     wallet_addresses: list[dict[str, Any]]
     mfa_enabled: bool
     recovery_codes: list[str]
@@ -602,10 +594,10 @@ class UserDict(TypedDict):
 def _rows_to_dicts(rows: Iterable[Any]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for r in rows:
-        # r can be psycopg2 RealDictRow (dict[str, Any]) or sqlite3.Row (mapping - like)
+        # r can be psycopg2 RealDictRow (dict) or sqlite3.Row (mapping - like)
         d = dict(r) if isinstance(r, dict) else {k: r[k] for k in r}
 
-        # normalize risk_flags to a list[Any]
+        # normalize risk_flags to a list
         raw = d.get("risk_flags")
         try:
             d["risk_flags"] = (
@@ -645,7 +637,7 @@ def _row_to_user(row: Any | None) -> UserDict | None:
         "has_hardware_key",
     ]
 
-    # Convert row to dict[str, Any] safely
+    # Convert row to dict safely
     if isinstance(row, dict):
         d = dict(row)
     else:
@@ -715,7 +707,7 @@ def save_tagged(t: dict[str, Any]) -> int:
     con = _conn()
     cur = con.cursor()
     # SQL placeholder for current backend (inline {_ph()} is used)
-    # Parameterized query using _ph() placeholders and parameters tuple[Any, ...] - safe from SQL injection
+    # Parameterized query using _ph() placeholders and parameters tuple - safe from SQL injection
     sql = f"""
       INSERT INTO txs (
         tx_id, timestamp, chain, from_addr, to_addr, amount, symbol, direction,
@@ -787,8 +779,8 @@ def list_by_wallet(wallet: str, limit: int = 100) -> list[dict[str, Any]]:
     cur = con.cursor()
     # placeholder not needed; using inline {_ph()} in query
     # Parameterized query using internal {_ph()} placeholder function and a
-    # separate parameters tuple[Any, ...]. This is safe against SQL injection.
-    # Parameterized SELECT by wallet, safe: placeholders used in parameters tuple[Any, ...]
+    # separate parameters tuple. This is safe against SQL injection.
+    # Parameterized SELECT by wallet, safe: placeholders used in parameters tuple
     sql = f"""
         SELECT
             tx_id, timestamp, chain, from_addr, to_addr, amount, symbol, direction,
@@ -799,7 +791,7 @@ def list_by_wallet(wallet: str, limit: int = 100) -> list[dict[str, Any]]:
         LIMIT {_ph()}
     """  # nosec: B608 - parameterized placeholders used
     cur.execute(
-        sql, (wallet, wallet, limit)
+        sql, (wallet, wallet, limit),
     )  # nosec: B608 - parameterized placeholders used
     rows = cur.fetchall()
     con.close()
@@ -811,7 +803,7 @@ def list_alerts(threshold: float = 0.75, limit: int = 100) -> list[dict[str, Any
     cur = con.cursor()
     # placeholder not needed; using inline {_ph()} in query
     # Parameterized query using internal {_ph()} placeholder function and a
-    # separate parameters tuple[Any, ...]. This is safe against SQL injection.
+    # separate parameters tuple. This is safe against SQL injection.
     # Parameterized SELECT by risk threshold - placeholders used
     sql = f"""
         SELECT
@@ -823,7 +815,7 @@ def list_alerts(threshold: float = 0.75, limit: int = 100) -> list[dict[str, Any
         LIMIT {_ph()}
     """  # nosec: B608 - parameterized placeholders used
     cur.execute(
-        sql, (threshold, limit)
+        sql, (threshold, limit),
     )  # nosec: B608 - parameterized placeholders used
     rows = cur.fetchall()
     con.close()
@@ -841,7 +833,7 @@ def list_all(limit: int = 1000) -> list[dict[str, Any]]:
     cur = con.cursor()
     # placeholder not needed; using inline {_ph()} in query
     # Parameterized query using internal {_ph()} placeholder function and a
-    # separate parameters tuple[Any, ...]. This is safe against SQL injection.
+    # separate parameters tuple. This is safe against SQL injection.
     # Parameterized SELECT all txs with limit
     sql = f"""
         SELECT
@@ -873,7 +865,7 @@ def legacy_transactions_exists() -> bool:
         cur = con.cursor()
         try:
             cur.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='transactions'"
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='transactions'",
             )
             return cur.fetchone() is not None
         except Exception:
@@ -920,7 +912,7 @@ def get_user_by_email(email: str) -> UserDict | None:
     # placeholder not needed; using inline {_ph()} in query
     try:
         # Parameterized query using internal {_ph()} placeholder function and a
-        # separate parameters tuple[Any, ...]. This is safe against SQL injection.
+        # separate parameters tuple. This is safe against SQL injection.
         sql = f"""
             SELECT id, email, password_hash, role, subscription_active, created_at,
                    oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
@@ -940,7 +932,7 @@ def get_user_by_email(email: str) -> UserDict | None:
     except sqlite3.OperationalError:
         # Fallback for legacy / test DB schemas that use different column names
         try:
-            cur.execute(  # nosec: B608 - parameterized query using _ph() placeholders and parameters tuple[Any, ...]
+            cur.execute(  # nosec: B608 - parameterized query using _ph() placeholders and parameters tuple
                 "SELECT id, email, hashed_password, is_active, is_admin FROM users WHERE email=?",
                 (email,),
             )
@@ -999,8 +991,8 @@ def get_user_by_id(uid: int) -> UserDict | None:
     cur = con.cursor()
     try:
         # Parameterized query using internal {_ph()} placeholder function and a
-        # separate parameters tuple[Any, ...]. This is safe against SQL injection.
-        # Parameterized query using _ph() placeholders and parameters tuple[Any, ...] - safe from SQL injection
+        # separate parameters tuple. This is safe against SQL injection.
+        # Parameterized query using _ph() placeholders and parameters tuple - safe from SQL injection
         sql = f"""
         SELECT id, email, password_hash, role, subscription_active, created_at,
                oauth_provider, oauth_id, display_name, avatar_url, wallet_addresses,
@@ -1069,11 +1061,10 @@ def create_user(
     totp_secret: str | None = None,
     mfa_enabled: bool = False,
     mfa_type: str | None = None,
-    recovery_codes: list[Any] | None = None,
+    recovery_codes: list | None = None,
     has_hardware_key: bool = False,
 ) -> UserDict | None:
-    """
-    Create a new user with support for both traditional email / password and OAuth authentication.
+    """Create a new user with support for both traditional email / password and OAuth authentication.
     """
     con = _conn()
     cur = con.cursor()
@@ -1116,7 +1107,7 @@ def create_user(
             ),
         )
         _f = cur.fetchone()
-        # Normalize returned shape: psycopg2 may return a dict[str, Any]-like row, sqlite returns a sequence
+        # Normalize returned shape: psycopg2 may return a dict-like row, sqlite returns a sequence
         if _f is None:
             new_id = None
         elif isinstance(_f, dict):
@@ -1266,9 +1257,8 @@ def update_user_subscription(user_id: int | str, active: bool = True) -> bool:
 
 
 def get_settings_for_user(user_id: int) -> dict[str, Any]:
-    """
-    Return user's saved settings or {} if none.
-    Keys: x_api_key (str), risk_threshold (float|None), time_range_days (int|None), ui_prefs (dict[str, Any])
+    """Return user's saved settings or {} if none.
+    Keys: x_api_key (str), risk_threshold (float|None), time_range_days (int|None), ui_prefs (dict)
     """
     try:
         con = _conn()
@@ -1321,16 +1311,15 @@ def get_settings_for_user(user_id: int) -> dict[str, Any]:
 
 
 def save_settings_for_user(user_id: int, patch: dict[str, Any]) -> dict[str, Any]:
-    """
-    Upsert user settings with provided keys only.
-    Accepts: x_api_key, risk_threshold, time_range_days, ui_prefs (dict[str, Any])
+    """Upsert user settings with provided keys only.
+    Accepts: x_api_key, risk_threshold, time_range_days, ui_prefs (dict)
     Returns the merged row.
     """
     # Load current
     current = get_settings_for_user(user_id)
 
     # Merge with light coercion
-    merged = dict[str, Any](current)
+    merged = dict(current)
     if "x_api_key" in patch:
         merged["x_api_key"] = (patch["x_api_key"] or "").strip() or None
     if "risk_threshold" in patch and patch["risk_threshold"] is not None:
@@ -1436,7 +1425,7 @@ def get_user_by_oauth(oauth_provider: str, oauth_id: str) -> UserDict | None:
     FROM users WHERE oauth_provider={_ph()} AND oauth_id={_ph()}
         """  # nosec: B608 - parameterized placeholders used
     cur.execute(
-        sql, (oauth_provider, oauth_id)
+        sql, (oauth_provider, oauth_id),
     )  # nosec: B608 - parameterized placeholders used
     row = cur.fetchone()
     con.close()
@@ -1447,14 +1436,14 @@ def get_user_by_oauth(oauth_provider: str, oauth_id: str) -> UserDict | None:
 
 
 def update_user_wallet_addresses(
-    user_id: int, wallet_addresses: list[dict[str, Any]]
+    user_id: int, wallet_addresses: list[dict[str, Any]],
 ) -> None:
     """Update a user's wallet addresses."""
     con = _conn()
     cur = con.cursor()
     wallet_addresses_json = json.dumps(wallet_addresses)
     # Parameterized query using internal {_ph()} placeholder function and a
-    # separate parameters tuple[Any, ...]. This is safe against SQL injection.
+    # separate parameters tuple. This is safe against SQL injection.
     cur.execute(
         f"UPDATE users SET wallet_addresses={_ph()} WHERE id={_ph()}",  # nosec: B608
         (wallet_addresses_json, user_id),
@@ -1469,7 +1458,7 @@ def update_user_wallet_addresses(
 
 
 def add_wallet_address(
-    user_id: int, address: str, chain: str, label: str | None = None
+    user_id: int, address: str, chain: str, label: str | None = None,
 ) -> None:
     """Add a wallet address to a user's profile."""
     user = get_user_by_id(user_id)
@@ -1490,7 +1479,7 @@ def add_wallet_address(
         "label": label or f"{chain} Wallet",
         "added_at": datetime.now().isoformat(),
     }
-    wallet_addresses = list[Any](wallet_addresses or [])
+    wallet_addresses = list(wallet_addresses or [])
     wallet_addresses.append(new_wallet)
 
     update_user_wallet_addresses(user_id, wallet_addresses)
@@ -1501,7 +1490,7 @@ def update_user_mfa(
     mfa_enabled: bool | None = None,
     mfa_type: str | None = None,
     totp_secret: str | None = None,
-    recovery_codes: list[Any] | None = None,
+    recovery_codes: list | None = None,
     has_hardware_key: bool | None = None,
 ) -> None:
     """Update MFA settings for a user."""
@@ -1515,42 +1504,42 @@ def update_user_mfa(
     if mfa_enabled is not None:
         if USING_POSTGRES:
             updates.append(
-                f"mfa_enabled={_ph()}"
+                f"mfa_enabled={_ph()}",
             )  # nosec: B608 - internal placeholder; value passed via params
             values.append(mfa_enabled)
         else:
             updates.append(
-                f"mfa_enabled={_ph()}"
+                f"mfa_enabled={_ph()}",
             )  # nosec: B608 - internal placeholder; value passed via params
             values.append(1 if mfa_enabled else 0)
 
     if mfa_type is not None:
         updates.append(
-            f"mfa_type={_ph()}"
+            f"mfa_type={_ph()}",
         )  # nosec: B608 - internal placeholder; value passed via params
         values.append(mfa_type)
 
     if totp_secret is not None:
         updates.append(
-            f"totp_secret={_ph()}"
+            f"totp_secret={_ph()}",
         )  # nosec: B608 - internal placeholder; value passed via params
         values.append(totp_secret)
 
     if recovery_codes is not None:
         updates.append(
-            f"recovery_codes={_ph()}"
+            f"recovery_codes={_ph()}",
         )  # nosec: B608 - internal placeholder; value passed via params
         values.append(json.dumps(recovery_codes))
 
     if has_hardware_key is not None:
         if USING_POSTGRES:
             updates.append(
-                f"has_hardware_key={_ph()}"
+                f"has_hardware_key={_ph()}",
             )  # nosec: B608 - internal placeholder; value passed via params
             values.append(has_hardware_key)
         else:
             updates.append(
-                f"has_hardware_key={_ph()}"
+                f"has_hardware_key={_ph()}",
             )  # nosec: B608 - internal placeholder; value passed via params
             values.append(1 if has_hardware_key else 0)
 
@@ -1592,7 +1581,7 @@ _rotated_passwords: dict[int, list[tuple[int, str]]] = {}
 
 
 def add_rotated_password(
-    user_id: int, password_hash: str, max_age_seconds: int = 30 * 24 * 3600
+    user_id: int, password_hash: str, max_age_seconds: int = 30 * 24 * 3600,
 ) -> None:
     """Record a previous password hash for a user with a timestamp.
 
@@ -1612,9 +1601,9 @@ def add_rotated_password(
 
 
 def get_rotated_passwords(user_id: int) -> list[str]:
-    """Return a list[Any] of rotated password hashes (most recent last).
+    """Return a list of rotated password hashes (most recent last).
 
-    Returns an empty list[Any] if none recorded.
+    Returns an empty list if none recorded.
     """
     lst = _rotated_passwords.get(user_id) or []
     return [ph for (_ts, ph) in lst]
@@ -1637,7 +1626,7 @@ def remove_wallet_address(user_id: int, address: str, chain: str) -> None:
 
 
 def update_user_profile(
-    user_id: int, display_name: str | None = None, avatar_url: str | None = None
+    user_id: int, display_name: str | None = None, avatar_url: str | None = None,
 ) -> None:
     """Update a user's profile information."""
     con = _conn()
@@ -1648,20 +1637,20 @@ def update_user_profile(
 
     if display_name is not None:
         updates.append(
-            f"display_name={_ph()}"
+            f"display_name={_ph()}",
         )  # nosec: B608 - internal placeholder; value passed via params
         params.append(display_name)
 
     if avatar_url is not None:
         updates.append(
-            f"avatar_url={_ph()}"
+            f"avatar_url={_ph()}",
         )  # nosec: B608 - internal placeholder; value passed via params
         params.append(avatar_url)
 
     if updates:
         params.append(user_id)
         # Constructed query uses internal {_ph()} placeholders and the
-        # accompanying `params` tuple[Any, ...] below, so values are passed separately
+        # accompanying `params` tuple below, so values are passed separately
         # to the DB API. Suppress Bandit B608 here with a short rationale.
         sql = f"UPDATE users SET {', '.join(updates)} WHERE id={_ph()}"  # nosec: B608
         cur.execute(sql, params)  # nosec: B608 - parameterized placeholders used

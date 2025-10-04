@@ -14,7 +14,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context  # type: ignore[attr-defined]
 
 # Import models metadata if/when SQLAlchemy models are added.
-# from app import models  # noqa: F401
+# from app import models
 
 
 def get_url() -> str:
@@ -44,7 +44,7 @@ def run_migrations_online() -> None:
     # Alembic's Config.get_section returns a mapping; cast to dict for static checkers
     from typing import cast
 
-    section = cast(dict, config.get_section(config.config_ini_section))
+    section = cast("dict", config.get_section(config.config_ini_section))
     connectable = engine_from_config(
         section,
         prefix="sqlalchemy.",

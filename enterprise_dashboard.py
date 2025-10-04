@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-KLERNO LABS ENTERPRISE PLATFORM - REAL-TIME DASHBOARD
+"""KLERNO LABS ENTERPRISE PLATFORM - REAL-TIME DASHBOARD
 ======================================================
 
 Comprehensive enterprise dashboard with metrics visualization, health monitoring,
@@ -8,12 +7,11 @@ and administrative controls for production environments.
 """
 
 import json
-import subprocess
 import time
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import psutil
 
@@ -23,22 +21,22 @@ class DashboardMetrics:
     """Real-time dashboard metrics"""
 
     timestamp: str
-    system_health: Dict[str, Any]
-    application_health: Dict[str, Any]
-    performance_metrics: Dict[str, Any]
-    security_status: Dict[str, Any]
-    alerts: List[str]
+    system_health: dict[str, Any]
+    application_health: dict[str, Any]
+    performance_metrics: dict[str, Any]
+    security_status: dict[str, Any]
+    alerts: list[str]
 
 
 class EnterpriseDashboard:
     """Real-time enterprise monitoring dashboard"""
 
     def __init__(self):
-        self.metrics_history: List[DashboardMetrics] = []
-        self.alerts: List[str] = []
+        self.metrics_history: list[DashboardMetrics] = []
+        self.alerts: list[str] = []
         self.dashboard_config = self._load_dashboard_config()
 
-    def _load_dashboard_config(self) -> Dict[str, Any]:
+    def _load_dashboard_config(self) -> dict[str, Any]:
         """Load dashboard configuration"""
         return {
             "refresh_interval": 5,  # seconds
@@ -63,7 +61,7 @@ class EnterpriseDashboard:
             ],
         }
 
-    def collect_system_metrics(self) -> Dict[str, Any]:
+    def collect_system_metrics(self) -> dict[str, Any]:
         """Collect current system metrics"""
         try:
             # CPU metrics
@@ -139,7 +137,7 @@ class EnterpriseDashboard:
         except Exception as e:
             return {"error": f"Failed to collect system metrics: {e}"}
 
-    def check_application_status(self) -> Dict[str, Any]:
+    def check_application_status(self) -> dict[str, Any]:
         """Check application and service status"""
         try:
             # Check if enterprise server is running
@@ -178,7 +176,7 @@ class EnterpriseDashboard:
         except Exception as e:
             return {"error": f"Failed to check application status: {e}"}
 
-    def _check_server_status(self) -> Dict[str, Any]:
+    def _check_server_status(self) -> dict[str, Any]:
         """Check if enterprise server is running"""
         try:
             # Check for uvicorn/FastAPI processes
@@ -200,7 +198,7 @@ class EnterpriseDashboard:
         except Exception:
             return {"healthy": False, "status": "UNKNOWN", "pid": None, "port": "8000"}
 
-    def _check_database_status(self) -> Dict[str, Any]:
+    def _check_database_status(self) -> dict[str, Any]:
         """Simulate database connectivity check"""
         # In a real environment, this would check actual database connections
         return {
@@ -210,7 +208,7 @@ class EnterpriseDashboard:
             "response_time_ms": 15,
         }
 
-    def _check_external_services(self) -> Dict[str, Any]:
+    def _check_external_services(self) -> dict[str, Any]:
         """Simulate external service checks"""
         # In a real environment, this would check APIs, payment providers, etc.
         return {
@@ -228,7 +226,7 @@ class EnterpriseDashboard:
         # In a real environment, this would track actual application start time
         return 72.5  # Simulated 72.5 hours uptime
 
-    def collect_performance_metrics(self) -> Dict[str, Any]:
+    def collect_performance_metrics(self) -> dict[str, Any]:
         """Collect performance metrics"""
         try:
             # Simulated performance metrics (in production these would come from APM tools)
@@ -262,7 +260,7 @@ class EnterpriseDashboard:
         except Exception as e:
             return {"error": f"Failed to collect performance metrics: {e}"}
 
-    def collect_security_metrics(self) -> Dict[str, Any]:
+    def collect_security_metrics(self) -> dict[str, Any]:
         """Collect security status and metrics"""
         try:
             return {
@@ -295,7 +293,7 @@ class EnterpriseDashboard:
         except Exception as e:
             return {"error": f"Failed to collect security metrics: {e}"}
 
-    def generate_alerts(self, metrics: DashboardMetrics) -> List[str]:
+    def generate_alerts(self, metrics: DashboardMetrics) -> list[str]:
         """Generate alerts based on current metrics"""
         alerts = []
         thresholds = self.dashboard_config["alert_thresholds"]
@@ -314,14 +312,14 @@ class EnterpriseDashboard:
                 > thresholds["memory_critical"]
             ):
                 alerts.append(
-                    f"CRITICAL: Memory usage at {system['memory']['percent']:.1f}%"
+                    f"CRITICAL: Memory usage at {system['memory']['percent']:.1f}%",
                 )
             elif (
                 system.get("memory", {}).get("percent", 0)
                 > thresholds["memory_warning"]
             ):
                 alerts.append(
-                    f"WARNING: Memory usage at {system['memory']['percent']:.1f}%"
+                    f"WARNING: Memory usage at {system['memory']['percent']:.1f}%",
                 )
 
         # Application alerts
@@ -378,10 +376,10 @@ class EnterpriseDashboard:
             for alert in metrics.alerts:
                 print(f"  {alert}")
         else:
-            print(f"\n✅ NO ACTIVE ALERTS")
+            print("\n✅ NO ACTIVE ALERTS")
 
         # System Health
-        print(f"\n🖥️  SYSTEM HEALTH")
+        print("\n🖥️  SYSTEM HEALTH")
         print("-" * 50)
         if "error" not in metrics.system_health:
             sys = metrics.system_health
@@ -389,48 +387,48 @@ class EnterpriseDashboard:
             # CPU
             cpu_status = sys.get("cpu", {})
             cpu_emoji = {"HEALTHY": "✅", "WARNING": "⚠️", "CRITICAL": "🚨"}.get(
-                cpu_status.get("status"), "❓"
+                cpu_status.get("status"), "❓",
             )
             print(
-                f"{cpu_emoji} CPU: {cpu_status.get('percent', 0):.1f}% ({cpu_status.get('count', 0)} cores)"
+                f"{cpu_emoji} CPU: {cpu_status.get('percent', 0):.1f}% ({cpu_status.get('count', 0)} cores)",
             )
 
             # Memory
             mem_status = sys.get("memory", {})
             mem_emoji = {"HEALTHY": "✅", "WARNING": "⚠️", "CRITICAL": "🚨"}.get(
-                mem_status.get("status"), "❓"
+                mem_status.get("status"), "❓",
             )
             print(
-                f"{mem_emoji} Memory: {mem_status.get('percent', 0):.1f}% ({mem_status.get('used_gb', 0):.1f}GB / {mem_status.get('total_gb', 0):.1f}GB)"
+                f"{mem_emoji} Memory: {mem_status.get('percent', 0):.1f}% ({mem_status.get('used_gb', 0):.1f}GB / {mem_status.get('total_gb', 0):.1f}GB)",
             )
 
             # Disk
             disk_status = sys.get("disk", {})
             disk_emoji = {"HEALTHY": "✅", "WARNING": "⚠️", "CRITICAL": "🚨"}.get(
-                disk_status.get("status"), "❓"
+                disk_status.get("status"), "❓",
             )
             print(
-                f"{disk_emoji} Disk: {disk_status.get('percent', 0):.1f}% ({disk_status.get('used_gb', 0):.1f}GB / {disk_status.get('total_gb', 0):.1f}GB)"
+                f"{disk_emoji} Disk: {disk_status.get('percent', 0):.1f}% ({disk_status.get('used_gb', 0):.1f}GB / {disk_status.get('total_gb', 0):.1f}GB)",
             )
 
             # Network
             net_status = sys.get("network", {})
             print(f"🌐 Network: {net_status.get('active_connections', 0)} connections")
             print(
-                f"   TX: {net_status.get('bytes_sent_mb', 0):.1f}MB | RX: {net_status.get('bytes_recv_mb', 0):.1f}MB"
+                f"   TX: {net_status.get('bytes_sent_mb', 0):.1f}MB | RX: {net_status.get('bytes_recv_mb', 0):.1f}MB",
             )
 
         # Application Health
-        print(f"\n🚀 APPLICATION HEALTH")
+        print("\n🚀 APPLICATION HEALTH")
         print("-" * 50)
         if "error" not in metrics.application_health:
             app = metrics.application_health
 
             status_emoji = {"HEALTHY": "✅", "WARNING": "⚠️", "CRITICAL": "🚨"}.get(
-                app.get("overall_status"), "❓"
+                app.get("overall_status"), "❓",
             )
             print(
-                f"{status_emoji} Overall Status: {app.get('overall_status')} ({app.get('health_score', 0):.1f}%)"
+                f"{status_emoji} Overall Status: {app.get('overall_status')} ({app.get('health_score', 0):.1f}%)",
             )
             print(f"⏱️  Uptime: {app.get('uptime_hours', 0):.1f} hours")
             print(f"📦 Version: {app.get('version', 'Unknown')}")
@@ -439,18 +437,18 @@ class EnterpriseDashboard:
             server = app.get("server", {})
             server_emoji = "✅" if server.get("healthy") else "❌"
             print(
-                f"{server_emoji} Server: {server.get('status')} (PID: {server.get('pid', 'N/A')})"
+                f"{server_emoji} Server: {server.get('status')} (PID: {server.get('pid', 'N/A')})",
             )
 
             # Database status
             db = app.get("database", {})
             db_emoji = "✅" if db.get("healthy") else "❌"
             print(
-                f"{db_emoji} Database: {db.get('status')} ({db.get('response_time_ms', 0)}ms)"
+                f"{db_emoji} Database: {db.get('status')} ({db.get('response_time_ms', 0)}ms)",
             )
 
         # Performance Metrics
-        print(f"\n⚡ PERFORMANCE METRICS")
+        print("\n⚡ PERFORMANCE METRICS")
         print("-" * 50)
         if "error" not in metrics.performance_metrics:
             perf = metrics.performance_metrics
@@ -458,29 +456,29 @@ class EnterpriseDashboard:
             # Response times
             resp = perf.get("response_times", {})
             print(
-                f"🕐 Response Times: Avg {resp.get('avg_ms', 0)}ms | P95 {resp.get('p95_ms', 0)}ms | P99 {resp.get('p99_ms', 0)}ms"
+                f"🕐 Response Times: Avg {resp.get('avg_ms', 0)}ms | P95 {resp.get('p95_ms', 0)}ms | P99 {resp.get('p99_ms', 0)}ms",
             )
 
             # Throughput
             throughput = perf.get("throughput", {})
             print(
-                f"🚀 Throughput: {throughput.get('requests_per_second', 0):.1f} RPS (Peak: {throughput.get('peak_rps', 0):.1f})"
+                f"🚀 Throughput: {throughput.get('requests_per_second', 0):.1f} RPS (Peak: {throughput.get('peak_rps', 0):.1f})",
             )
 
             # Error rates
             errors = perf.get("error_rates", {})
             print(
-                f"❌ Error Rate: {errors.get('error_rate_percent', 0):.2f}% (4xx: {errors.get('4xx_errors', 0)}, 5xx: {errors.get('5xx_errors', 0)})"
+                f"❌ Error Rate: {errors.get('error_rate_percent', 0):.2f}% (4xx: {errors.get('4xx_errors', 0)}, 5xx: {errors.get('5xx_errors', 0)})",
             )
 
             # Cache
             cache = perf.get("cache", {})
             print(
-                f"💾 Cache: {cache.get('hit_rate_percent', 0):.1f}% hit rate ({cache.get('size_mb', 0)}MB)"
+                f"💾 Cache: {cache.get('hit_rate_percent', 0):.1f}% hit rate ({cache.get('size_mb', 0)}MB)",
             )
 
         # Security Status
-        print(f"\n🔒 SECURITY STATUS")
+        print("\n🔒 SECURITY STATUS")
         print("-" * 50)
         if "error" not in metrics.security_status:
             sec = metrics.security_status
@@ -488,19 +486,19 @@ class EnterpriseDashboard:
             # Authentication
             auth = sec.get("authentication", {})
             print(
-                f"🔐 Authentication: {auth.get('active_sessions', 0)} active sessions, {auth.get('failed_logins_24h', 0)} failed logins (24h)"
+                f"🔐 Authentication: {auth.get('active_sessions', 0)} active sessions, {auth.get('failed_logins_24h', 0)} failed logins (24h)",
             )
 
             # SSL
             ssl = sec.get("ssl_certificates", {})
             print(
-                f"📜 SSL Certificate: Expires in {ssl.get('expires_in_days', 0)} days"
+                f"📜 SSL Certificate: Expires in {ssl.get('expires_in_days', 0)} days",
             )
 
             # Firewall
             firewall = sec.get("firewall", {})
             print(
-                f"🛡️  Firewall: {firewall.get('blocked_requests_24h', 0)} blocked, {firewall.get('allowed_requests_24h', 0)} allowed (24h)"
+                f"🛡️  Firewall: {firewall.get('blocked_requests_24h', 0)} blocked, {firewall.get('allowed_requests_24h', 0)} allowed (24h)",
             )
 
             # Compliance
@@ -510,7 +508,7 @@ class EnterpriseDashboard:
             iso = "✅" if compliance.get("iso27001_compliant") else "❌"
             print(f"📋 Compliance: GDPR {gdpr} | PCI {pci} | ISO27001 {iso}")
 
-        print(f"\n" + "=" * 80)
+        print("\n" + "=" * 80)
 
     def export_metrics(self, filename: str = "dashboard_metrics.json"):
         """Export current metrics to JSON file"""
@@ -528,7 +526,7 @@ class EnterpriseDashboard:
             },
         }
 
-        with open(filename, "w") as f:
+        with Path(filename).open("w") as f:
             json.dump(export_data, f, indent=2)
 
         print(f"Dashboard metrics exported to {filename}")
@@ -536,7 +534,7 @@ class EnterpriseDashboard:
     def run_dashboard(self, duration_minutes: int = 5):
         """Run live dashboard for specified duration"""
         print(
-            f"🏢 Starting Enterprise Dashboard (running for {duration_minutes} minutes)"
+            f"🏢 Starting Enterprise Dashboard (running for {duration_minutes} minutes)",
         )
         print("Press Ctrl+C to stop early")
 
@@ -568,12 +566,12 @@ class EnterpriseDashboard:
                 time.sleep(self.dashboard_config["refresh_interval"])
 
         except KeyboardInterrupt:
-            print(f"\n\n⏹️  Dashboard stopped by user")
+            print("\n\n⏹️  Dashboard stopped by user")
 
         # Export final metrics
         self.export_metrics()
 
-        print(f"\n✅ Dashboard session completed")
+        print("\n✅ Dashboard session completed")
         print(f"📊 Collected {len(self.metrics_history)} metric snapshots")
         print(f"🚨 Generated {len(self.alerts)} alerts")
 

@@ -1,5 +1,4 @@
-"""
-Klerno Labs Enterprise Database Connection Pool & Async Processing
+"""Klerno Labs Enterprise Database Connection Pool & Async Processing
 Advanced database management with connection pooling and async operations
 """
 
@@ -73,7 +72,7 @@ class DatabaseConnectionPool:
 
         # Connection management
         self._pool: queue.Queue[tuple[ISyncConnection, float]] = queue.Queue(
-            maxsize=pool_size
+            maxsize=pool_size,
         )
         self._overflow: list[ISyncConnection] = []
         self._checked_out: weakref.WeakSet[ISyncConnection] = weakref.WeakSet()
@@ -85,12 +84,12 @@ class DatabaseConnectionPool:
 
         # Start maintenance thread
         self._maintenance_thread: threading.Thread = threading.Thread(
-            target=self._maintenance_worker, daemon=True
+            target=self._maintenance_worker, daemon=True,
         )
         self._maintenance_thread.start()
 
         logger.info(
-            f"[DB-POOL] Initialized with {pool_size} connections, max overflow: {max_overflow}"
+            f"[DB-POOL] Initialized with {pool_size} connections, max overflow: {max_overflow}",
         )
 
     def _initialize_pool(self) -> None:
@@ -113,7 +112,7 @@ class DatabaseConnectionPool:
                     continue
 
             logger.info(
-                f"[DB-POOL] Created {self._stats.total_connections} initial connections"
+                f"[DB-POOL] Created {self._stats.total_connections} initial connections",
             )
 
         except Exception as e:
@@ -123,7 +122,7 @@ class DatabaseConnectionPool:
         """Create a new database connection"""
         try:
             conn = sqlite3.connect(
-                self.database_path, timeout=self.timeout, check_same_thread=False
+                self.database_path, timeout=self.timeout, check_same_thread=False,
             )
 
             # Configure connection
@@ -136,7 +135,7 @@ class DatabaseConnectionPool:
 
             from typing import cast
 
-            return cast(ISyncConnection, conn)
+            return cast("ISyncConnection", conn)
 
         except Exception as e:
             logger.error(f"[DB-POOL] Failed to create connection: {e}")
@@ -196,8 +195,7 @@ class DatabaseConnectionPool:
                 + query_time
             ) / self._stats.total_queries
 
-            if self._stats.active_connections > self._stats.peak_connections:
-                self._stats.peak_connections = self._stats.active_connections
+            self._stats.peak_connections = max(self._stats.peak_connections, self._stats.active_connections)
 
     def return_connection(self, conn: ISyncConnection) -> None:
         """Return a connection to the pool"""
@@ -208,7 +206,7 @@ class DatabaseConnectionPool:
             with self._lock:
                 self._checked_out.discard(conn)
                 self._stats.active_connections = max(
-                    0, self._stats.active_connections - 1
+                    0, self._stats.active_connections - 1,
                 )
 
                 # Check if it's an overflow connection
@@ -267,7 +265,7 @@ class DatabaseConnectionPool:
 
                 logger.info(
                     f"[DB-POOL] Maintenance: {self._stats.active_connections} active, "
-                    f"{self._stats.idle_connections} idle, {self._stats.total_connections} total"
+                    f"{self._stats.idle_connections} idle, {self._stats.total_connections} total",
                 )
 
             except Exception as e:
@@ -303,7 +301,7 @@ class AsyncTaskProcessor:
     """Enterprise async task processing system"""
 
     def __init__(
-        self, max_workers: int = 10, queue_size: int = 1000, batch_size: int = 50
+        self, max_workers: int = 10, queue_size: int = 1000, batch_size: int = 50,
     ) -> None:
         self.max_workers = max_workers
         self.queue_size = queue_size
@@ -320,10 +318,10 @@ class AsyncTaskProcessor:
         # Threading
         self._executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=max_workers)
         self._scheduler_thread: threading.Thread = threading.Thread(
-            target=self._scheduler_worker, daemon=True
+            target=self._scheduler_worker, daemon=True,
         )
         self._processor_thread: threading.Thread = threading.Thread(
-            target=self._processor_worker, daemon=True
+            target=self._processor_worker, daemon=True,
         )
 
         # Statistics
@@ -359,7 +357,7 @@ class AsyncTaskProcessor:
                 self._stats["queued_tasks"] += 1
 
                 logger.info(
-                    f"[ASYNC] Task {task.task_id} submitted (priority: {task.priority})"
+                    f"[ASYNC] Task {task.task_id} submitted (priority: {task.priority})",
                 )
                 return task.task_id
 
@@ -375,7 +373,7 @@ class AsyncTaskProcessor:
                 self._scheduled_tasks.append(task)
 
                 logger.info(
-                    f"[ASYNC] Task {task.task_id} scheduled for {task.scheduled_at}"
+                    f"[ASYNC] Task {task.task_id} scheduled for {task.scheduled_at}",
                 )
                 return task.task_id
 
@@ -477,7 +475,7 @@ class AsyncTaskProcessor:
             raise
 
     def _handle_task_completion(
-        self, task: AsyncTask, result: Any, error: Exception | None
+        self, task: AsyncTask, result: Any, error: Exception | None,
     ) -> None:
         """Handle task completion"""
         with self._lock:
@@ -490,7 +488,7 @@ class AsyncTaskProcessor:
                     # Retry task
                     logger.warning(
                         f"[ASYNC] Retrying task {task.task_id} "
-                        f"(attempt {task.retry_count}/{task.max_retries})"
+                        f"(attempt {task.retry_count}/{task.max_retries})",
                     )
                     self.submit_task(task)
                 else:
@@ -498,7 +496,7 @@ class AsyncTaskProcessor:
                     self._stats["failed_tasks"] += 1
                     self._failed_tasks.append((task, error))
                     logger.error(
-                        f"[ASYNC] Task {task.task_id} failed permanently: {error}"
+                        f"[ASYNC] Task {task.task_id} failed permanently: {error}",
                     )
             else:
                 # Mark as completed
@@ -548,11 +546,10 @@ class AsyncDatabaseManager:
             try:
                 cursor = conn.execute(query, params)
                 if query.strip().upper().startswith("SELECT"):
-                    results = [dict[str, Any](row) for row in cursor.fetchall()]
+                    results = [dict(row) for row in cursor.fetchall()]
                     return results
-                else:
-                    conn.commit()
-                    return {"affected_rows": cursor.rowcount}
+                conn.commit()
+                return {"affected_rows": cursor.rowcount}
             finally:
                 self._pool.return_connection(conn)
 
@@ -585,7 +582,7 @@ class AsyncDatabaseManager:
         return await loop.run_in_executor(None, _execute)
 
     def submit_background_task(
-        self, task_func: Callable, *args, **kwargs
+        self, task_func: Callable, *args, **kwargs,
     ) -> str | None:
         """Submit a background database task"""
         task = AsyncTask(
@@ -673,7 +670,7 @@ if __name__ == "__main__":
             [
                 ("INSERT OR IGNORE INTO test_table (name) VALUES (?)", ("test",)),
                 ("UPDATE test_table SET name = ? WHERE name = ?", ("updated", "test")),
-            ]
+            ],
         )
         print(f"Transaction success: {success}")
 

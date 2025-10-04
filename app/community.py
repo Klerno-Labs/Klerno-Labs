@@ -1,5 +1,4 @@
-"""
-Community and Collaboration Features for Klerno Labs
+"""Community and Collaboration Features for Klerno Labs
 Provides forums, knowledge sharing, and collaborative features
 """
 
@@ -139,7 +138,7 @@ class UserContribution(BaseModel):
 class CommunityManager:
     """Manages community features and interactions"""
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.posts: dict[int, CommunityPost] = {}
         self.replies: dict[int, list[CommunityReply]] = {}
         self.knowledge_articles: dict[int, KnowledgeArticle] = {}
@@ -152,9 +151,8 @@ class CommunityManager:
         # Initialize with sample content
         self._initialize_sample_content()
 
-    def _initialize_sample_content(self) -> None:
+    def _initialize_sample_content(self):
         """Initialize with sample community content"""
-
         # Sample knowledge articles
         self.knowledge_articles[1] = KnowledgeArticle(
             id=1,
@@ -234,7 +232,7 @@ import time
 from requests.exceptions import HTTPError
 
 
-def analyze_with_retry(client, transaction) -> None:
+def analyze_with_retry(client, transaction):
     max_retries=3
     for attempt in range(max_retries):
         try:
@@ -258,7 +256,7 @@ app=Flask(__name__)
 @app.route('/klerno - webhook', methods=['POST'])
 
 
-def handle_webhook() -> None:
+def handle_webhook():
     signature=request.headers.get('X-Klerno-Signature')
     payload=request.get_data()
 
@@ -284,7 +282,7 @@ class KlernoAPIError(Exception):
     pass
 
 
-def safe_analyze(client, transaction) -> None:
+def safe_analyze(client, transaction):
     try:
         result=client.analyze_transaction(transaction)
         return result
@@ -499,7 +497,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
 
         return reply
 
-    def vote_on_post(self, user_id: int, post_id: int, vote_type: VoteType) -> None:
+    def vote_on_post(self, user_id: int, post_id: int, vote_type: VoteType):
         """Vote on a post"""
         if post_id not in self.posts:
             raise ValueError("Post not found")
@@ -545,7 +543,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
                     "tag": tag,
                     "post_count": count,
                     "growth": "up",  # Simplified - would calculate actual growth
-                }
+                },
             )
 
         return trending[:10]
@@ -554,12 +552,12 @@ This has worked well for us and reduces alert fatigue significantly.""",
 class CollaborationFeatures:
     """Features for team collaboration and knowledge sharing"""
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.shared_workspaces: dict[int, dict[str, Any]] = {}
         self.team_annotations: dict[str, list[dict[str, Any]]] = {}
 
     def create_shared_workspace(
-        self, name: str, description: str, owner_id: int, team_members: list[int]
+        self, name: str, description: str, owner_id: int, team_members: list[int],
     ) -> dict[str, Any]:
         """Create a shared workspace for team collaboration"""
         workspace_id = max(self.shared_workspaces, default=0) + 1

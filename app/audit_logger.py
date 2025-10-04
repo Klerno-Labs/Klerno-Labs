@@ -1,6 +1,5 @@
 # app / audit_logger.py
-"""
-Comprehensive audit logging system for security events and compliance.
+"""Comprehensive audit logging system for security events and compliance.
 """
 
 from __future__ import annotations
@@ -75,8 +74,7 @@ class AuditEvent(BaseModel):
 
 
 class AuditLogger:
-    """
-    Centralized audit logging system with structured logging and security focus.
+    """Centralized audit logging system with structured logging and security focus.
     """
 
     def __init__(self) -> None:
@@ -101,7 +99,7 @@ class AuditLogger:
             def format(self, record: logging.LogRecord) -> str:
                 log_entry = {
                     "timestamp": datetime.fromtimestamp(
-                        record.created, tz=UTC
+                        record.created, tz=UTC,
                     ).isoformat(),
                     "level": record.levelname,
                     "logger": record.name,
@@ -130,7 +128,7 @@ class AuditLogger:
             console_handler = logging.StreamHandler()
             console_handler.setLevel(logging.INFO)
             console_handler.setFormatter(
-                logging.Formatter("%(asctime)s - AUDIT - %(message)s")
+                logging.Formatter("%(asctime)s - AUDIT - %(message)s"),
             )
             logger.addHandler(console_handler)
         elif app_env in {"test", "testing"}:
@@ -138,7 +136,7 @@ class AuditLogger:
             console_handler = logging.StreamHandler()
             console_handler.setLevel(logging.WARNING)
             console_handler.setFormatter(
-                logging.Formatter("%(asctime)s - AUDIT - %(message)s")
+                logging.Formatter("%(asctime)s - AUDIT - %(message)s"),
             )
             logger.addHandler(console_handler)
 
@@ -194,7 +192,7 @@ class AuditLogger:
         self.log_event(event)
 
     def log_user_created(
-        self, user_id: str, user_email: str, request: Request | None = None
+        self, user_id: str, user_email: str, request: Request | None = None,
     ) -> None:
         """Log that a new user account was created."""
         event = AuditEvent(
@@ -232,7 +230,7 @@ class AuditLogger:
         self.log_event(event)
 
     def log_mfa_enabled(
-        self, user_id: str, user_email: str, request: Request | None = None
+        self, user_id: str, user_email: str, request: Request | None = None,
     ) -> None:
         """Log that a user enabled MFA."""
         event = AuditEvent(
@@ -272,7 +270,7 @@ class AuditLogger:
         self.log_event(event)
 
     def log_auth_failure(
-        self, email: str, reason: str, request: Request | None = None
+        self, email: str, reason: str, request: Request | None = None,
     ) -> None:
         """Log failed authentication attempt."""
         event = AuditEvent(
@@ -294,8 +292,14 @@ class AuditLogger:
         user_id: str | None = None,
         api_key_used: bool = False,
         request: Request | None = None,
+        *,
+        status_code: int | None = None,
+        duration_ms: float | None = None,
     ) -> None:
-        """Log API access."""
+        """Log API access.
+
+        Optional status_code and duration_ms are included in the event details when provided.
+        """
         event = AuditEvent(
             event_type=AuditEventType.API_ACCESS,
             user_id=user_id,
@@ -304,6 +308,15 @@ class AuditLogger:
             outcome="success",
             details={"api_key_used": api_key_used},
         )
+
+        # Enrich details with optional metrics if provided
+        if status_code is not None:
+            event.details["status_code"] = status_code
+        if duration_ms is not None:
+            try:
+                event.details["duration_ms"] = round(float(duration_ms), 2)
+            except Exception:
+                event.details["duration_ms"] = duration_ms
 
         if request:
             self._enrich_from_request(event, request)
@@ -405,7 +418,7 @@ audit_logger = AuditLogger()
 
 
 def log_auth_success(
-    user_id: str, user_email: str, user_role: str, request: Request | None = None
+    user_id: str, user_email: str, user_role: str, request: Request | None = None,
 ) -> None:
     """Convenience function for logging successful authentication."""
     audit_logger.log_auth_success(user_id, user_email, user_role, request)
@@ -422,9 +435,20 @@ def log_api_access(
     user_id: str | None = None,
     api_key_used: bool = False,
     request: Request | None = None,
+    *,
+    status_code: int | None = None,
+    duration_ms: float | None = None,
 ) -> None:
     """Convenience function for logging API access."""
-    audit_logger.log_api_access(endpoint, method, user_id, api_key_used, request)
+    audit_logger.log_api_access(
+        endpoint,
+        method,
+        user_id,
+        api_key_used,
+        request,
+        status_code=status_code,
+        duration_ms=duration_ms,
+    )
 
 
 def log_security_event(
@@ -438,28 +462,28 @@ def log_security_event(
 
 
 def log_logout(
-    user_id: str, user_email: str, user_role: str, request: Request | None = None
+    user_id: str, user_email: str, user_role: str, request: Request | None = None,
 ) -> None:
     """Convenience: log user logout."""
     audit_logger.log_logout(user_id, user_email, user_role, request)
 
 
 def log_user_created(
-    user_id: str, user_email: str, request: Request | None = None
+    user_id: str, user_email: str, request: Request | None = None,
 ) -> None:
     """Convenience: log user creation."""
     audit_logger.log_user_created(user_id, user_email, request)
 
 
 def log_password_reset_requested(
-    email: str, request: Request | None = None, user_id: str | None = None
+    email: str, request: Request | None = None, user_id: str | None = None,
 ) -> None:
     """Convenience: log password reset request."""
     audit_logger.log_password_reset("request", email, user_id, request)
 
 
 def log_password_reset_confirmed(
-    user_id: str, email: str, request: Request | None = None
+    user_id: str, email: str, request: Request | None = None,
 ) -> None:
     """Convenience: log password reset confirmation."""
     audit_logger.log_password_reset("confirm", email, user_id, request)

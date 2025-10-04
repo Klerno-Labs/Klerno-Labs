@@ -1,7 +1,6 @@
 import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -154,7 +153,7 @@ def issue_jwt(uid: int, email: str, role: str, minutes: int | None = None) -> st
     return token
 
 
-def decode_jwt(token: str) -> dict[str, Any]:
+def decode_jwt(token: str) -> dict:
     return jwt.decode(token, str(SECRET_KEY), algorithms=[ALGO])
 
 
@@ -165,8 +164,7 @@ security = HTTPBearer()
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
-    """
-    Extracts and validates the JWT token from the request.
+    """Extracts and validates the JWT token from the request.
     Returns the user information if valid.
     """
     token = credentials.credentials

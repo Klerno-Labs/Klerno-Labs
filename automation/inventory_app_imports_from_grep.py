@@ -69,7 +69,7 @@ for fn in sorted(p.name for p in app_dir.iterdir() if p.is_file()):
             "module": mod,
             "refs": len(refs),
             "examples": ";".join(refs[:5]),
-        }
+        },
     )
 
 with OUT.open("w", encoding="utf-8") as fh:

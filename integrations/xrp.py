@@ -31,7 +31,7 @@ def xrpl_json_to_transactions(account: str, tx_list: list[dict]):
         tx = item.get("tx", {})
         tx_id = tx.get("hash", "unknown")
         timestamp = datetime.utcfromtimestamp(
-            tx.get("date", 0) + 946684800
+            tx.get("date", 0) + 946684800,
         )  # XRPL epoch → UNIX
         from_addr = tx.get("Account", account)
         to_addr = tx.get("Destination", account)
@@ -54,7 +54,7 @@ def xrpl_json_to_transactions(account: str, tx_list: list[dict]):
                 direction=direction,
                 memo=None,
                 fee=fee,
-            )
+            ),
         )
     return out
 
@@ -63,12 +63,11 @@ def xrpl_json_to_transactions(account: str, tx_list: list[dict]):
 
 
 def fetch_account_tx(account: str, limit: int = 10) -> list[dict]:
-    """
-    Uses XRPL JSON - RPC 'account_tx' to fetch recent transactions for an account.
+    """Uses XRPL JSON - RPC 'account_tx' to fetch recent transactions for an account.
     Read - only. No keys. Safe to try.
     """
     url = os.getenv(
-        "XRPL_RPC_URL", "https://s1.ripple.com:51234"
+        "XRPL_RPC_URL", "https://s1.ripple.com:51234",
     )  # public Ripple server
     payload = {
         "method": "account_tx",
@@ -78,7 +77,7 @@ def fetch_account_tx(account: str, limit: int = 10) -> list[dict]:
                 "ledger_index_min": -1,
                 "ledger_index_max": -1,
                 "limit": int(limit),
-            }
+            },
         ],
     }
     try:

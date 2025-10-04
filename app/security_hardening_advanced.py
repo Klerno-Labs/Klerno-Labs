@@ -1,5 +1,4 @@
-"""
-Klerno Labs - Advanced Security Hardening Module
+"""Klerno Labs - Advanced Security Hardening Module
 Enterprise-grade security for 0.01% quality applications
 """
 
@@ -52,14 +51,14 @@ class ThreatIntelligence:
 class AdvancedSecurityHardening:
     """Advanced security hardening with real-time threat detection."""
 
-    def __init__(self, db_path: str = "./data/security.db") -> None:
+    def __init__(self, db_path: str = "./data/security.db"):
         self.db_path = db_path
         # rate_limits stores timestamps (floats) per IP
         self.rate_limits: dict[str, deque[float]] = defaultdict(deque)
         self.blocked_ips: set[str] = set()
         self.threat_intel: dict[str, ThreatIntelligence] = {}
         self.security_events: list[SecurityEvent] = []
-        self.failed_attempts: dict[str, list[datetime]] = defaultdict(list[Any])
+        self.failed_attempts: dict[str, list[datetime]] = defaultdict(list)
 
         # Security thresholds
         self.max_requests_per_minute = 100
@@ -85,7 +84,7 @@ class AdvancedSecurityHardening:
         """Initialize security monitoring database."""
         Path(self.db_path).parent.mkdir(exist_ok=True, parents=True)
 
-        conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
+        conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
         cursor = conn.cursor()
 
         # Security events table
@@ -103,7 +102,7 @@ class AdvancedSecurityHardening:
                 blocked BOOLEAN DEFAULT FALSE,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # Threat intelligence table
@@ -120,7 +119,7 @@ class AdvancedSecurityHardening:
                 description TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # Blocked IPs table
@@ -135,7 +134,7 @@ class AdvancedSecurityHardening:
                 permanent BOOLEAN DEFAULT FALSE,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # Failed authentication attempts
@@ -150,24 +149,24 @@ class AdvancedSecurityHardening:
                 timestamp TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # Create indexes for performance
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_security_events_ip ON security_events(source_ip)"
+            "CREATE INDEX IF NOT EXISTS idx_security_events_ip ON security_events(source_ip)",
         )
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_security_events_timestamp ON security_events(timestamp)"
+            "CREATE INDEX IF NOT EXISTS idx_security_events_timestamp ON security_events(timestamp)",
         )
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_threat_intel_ip ON threat_intelligence(ip_address)"
+            "CREATE INDEX IF NOT EXISTS idx_threat_intel_ip ON threat_intelligence(ip_address)",
         )
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_blocked_ips_ip ON blocked_ips(ip_address)"
+            "CREATE INDEX IF NOT EXISTS idx_blocked_ips_ip ON blocked_ips(ip_address)",
         )
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_failed_auth_ip ON failed_auth_attempts(ip_address)"
+            "CREATE INDEX IF NOT EXISTS idx_failed_auth_ip ON failed_auth_attempts(ip_address)",
         )
 
         conn.commit()
@@ -194,7 +193,7 @@ class AdvancedSecurityHardening:
     def _load_threat_intelligence(self) -> None:
         """Load threat intelligence from database."""
         try:
-            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             cursor.execute("SELECT * FROM threat_intelligence")
@@ -227,7 +226,7 @@ class AdvancedSecurityHardening:
             loaded_count = len(self.threat_intel)
             blocked_count = len(self.blocked_ips)
             logger.info(
-                f"[OK] Loaded {loaded_count} threat indicators and {blocked_count} blocked IPs"
+                f"[OK] Loaded {loaded_count} threat indicators and {blocked_count} blocked IPs",
             )
 
         except Exception as e:
@@ -257,13 +256,13 @@ class AdvancedSecurityHardening:
         return ip_address in self.blocked_ips
 
     def block_ip(
-        self, ip_address: str, reason: str, duration: timedelta | None = None
+        self, ip_address: str, reason: str, duration: timedelta | None = None,
     ) -> None:
         """Block an IP address."""
         self.blocked_ips.add(ip_address)
 
         try:
-            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             blocked_at = datetime.now()
@@ -293,7 +292,7 @@ class AdvancedSecurityHardening:
             logger.error(f"Error blocking IP {ip_address}: {e}")
 
     def check_rate_limit(
-        self, ip_address: str, max_requests: int | None = None
+        self, ip_address: str, max_requests: int | None = None,
     ) -> bool:
         """Check if IP is within rate limits."""
         max_requests = max_requests or self.max_requests_per_minute
@@ -342,7 +341,7 @@ class AdvancedSecurityHardening:
             for pattern in self.suspicious_patterns:
                 if re.search(pattern, str(value), re.IGNORECASE):
                     suspicious_findings.append(
-                        f"Suspicious pattern in parameter {key}: {pattern}"
+                        f"Suspicious pattern in parameter {key}: {pattern}",
                     )
 
         # Check headers
@@ -352,7 +351,7 @@ class AdvancedSecurityHardening:
                 for pattern in self.suspicious_patterns:
                     if re.search(pattern, str(value), re.IGNORECASE):
                         suspicious_findings.append(
-                            f"Suspicious pattern in header {header}: {pattern}"
+                            f"Suspicious pattern in header {header}: {pattern}",
                         )
 
         # Check for common attack indicators
@@ -475,7 +474,7 @@ class AdvancedSecurityHardening:
         self.security_events.append(event)
 
         try:
-            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -501,7 +500,7 @@ class AdvancedSecurityHardening:
 
             if severity in ["high", "critical"]:
                 logger.warning(
-                    f"🚨 Security event: {event_type} from {source_ip} - {severity}"
+                    f"🚨 Security event: {event_type} from {source_ip} - {severity}",
                 )
 
         except Exception as e:
@@ -528,7 +527,7 @@ class AdvancedSecurityHardening:
 
         # Log to database
         try:
-            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -639,7 +638,7 @@ class AdvancedSecurityHardening:
             # Auto-block very high risk requests
             if analysis["risk_score"] >= 90:
                 self.block_ip(
-                    ip_address, f"Automated block: risk score {analysis['risk_score']}"
+                    ip_address, f"Automated block: risk score {analysis['risk_score']}",
                 )
                 analysis["blocked"] = True
                 analysis["actions_taken"].append("IP auto-blocked for high risk")
@@ -649,7 +648,7 @@ class AdvancedSecurityHardening:
     def get_security_dashboard_data(self, hours: int = 24) -> dict[str, Any]:
         """Get security dashboard data."""
         try:
-            conn = cast(ISyncConnection, sqlite3.connect(self.db_path))
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             since = datetime.now() - timedelta(hours=hours)

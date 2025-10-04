@@ -1,5 +1,4 @@
-"""
-Database Optimization and Connection Pooling
+"""Database Optimization and Connection Pooling
 Advanced database performance improvements with connection pooling and query optimization
 """
 
@@ -80,7 +79,7 @@ class AsyncConnectionPool:
         self._cleanup_task = asyncio.create_task(self._cleanup_idle_connections())
 
         logger.info(
-            f"Connection pool started with {len(self.idle_connections)} connections"
+            f"Connection pool started with {len(self.idle_connections)} connections",
         )
 
     async def stop(self):
@@ -110,7 +109,7 @@ class AsyncConnectionPool:
             raise
 
         conn = await aiosqlite.connect(
-            self.database_path, timeout=30.0, check_same_thread=False
+            self.database_path, timeout=30.0, check_same_thread=False,
         )
 
         # Enable optimizations
@@ -166,7 +165,7 @@ class AsyncConnectionPool:
                 self.stats.idle_connections = len(self.idle_connections)
 
     async def execute_query(
-        self, query: str, params: tuple | None = None
+        self, query: str, params: tuple | None = None,
     ) -> list[dict[str, Any]]:
         """Execute a query with performance monitoring"""
         start_time = time.time()
@@ -201,7 +200,7 @@ class AsyncConnectionPool:
                 if query_time > self.slow_query_threshold:
                     self.stats.slow_queries += 1
                     logger.warning(
-                        f"Slow query detected: {query_time:.2f}s - {query[:100]}..."
+                        f"Slow query detected: {query_time:.2f}s - {query[:100]}...",
                     )
 
                 return result
@@ -211,7 +210,7 @@ class AsyncConnectionPool:
             raise
 
     async def execute_transaction(
-        self, queries: list[tuple[str, tuple | None]]
+        self, queries: list[tuple[str, tuple | None]],
     ) -> bool:
         """Execute multiple queries in a transaction"""
         async with self.get_connection() as conn:
@@ -329,7 +328,7 @@ class QueryOptimizer:
 
     @staticmethod
     async def analyze_query_performance(
-        pool: AsyncConnectionPool, query: str, params: tuple | None = None
+        pool: AsyncConnectionPool, query: str, params: tuple | None = None,
     ) -> dict[str, Any]:
         """Analyze query performance with EXPLAIN QUERY PLAN"""
         explain_query = f"EXPLAIN QUERY PLAN {query}"
@@ -386,7 +385,7 @@ class DatabaseService:
 
         # Query database
         result = await self.pool.execute_query(
-            "SELECT * FROM users WHERE id = ? AND is_active = 1", (user_id,)
+            "SELECT * FROM users WHERE id = ? AND is_active = 1", (user_id,),
         )
 
         user = result[0] if result else None
@@ -397,7 +396,7 @@ class DatabaseService:
         return user
 
     async def get_user_transactions(
-        self, user_id: int, limit: int = 100, offset: int = 0
+        self, user_id: int, limit: int = 100, offset: int = 0,
     ) -> list[dict[str, Any]]:
         """Get user transactions with pagination"""
         return await self.pool.execute_query(
@@ -412,7 +411,7 @@ class DatabaseService:
         )
 
     async def get_transaction_with_compliance(
-        self, transaction_id: int
+        self, transaction_id: int,
     ) -> dict[str, Any] | None:
         """Get transaction with compliance tags in a single query"""
         result = await self.pool.execute_query(
@@ -438,7 +437,7 @@ class DatabaseService:
                     float(c) for c in transaction["tag_confidences"].split(",")
                 ]
                 transaction["compliance_data"] = list(
-                    zip(tags, confidences, strict=False)
+                    zip(tags, confidences, strict=False),
                 )
             else:
                 transaction["compliance_data"] = []
@@ -466,7 +465,7 @@ class DatabaseService:
                     transaction_data.get("status", "pending"),
                     transaction_data.get("description", ""),
                 ),
-            )
+            ),
         ]
 
         # Add compliance tag queries
@@ -479,7 +478,7 @@ class DatabaseService:
                         "VALUES (last_insert_rowid(), ?, ?)"
                     ),
                     (tag_type, confidence),
-                )
+                ),
             )
 
         await self.pool.execute_transaction(queries)
@@ -521,13 +520,13 @@ def with_db_stats(func):
             result = await func(*args, **kwargs)
             execution_time = time.time() - start_time
             logger.info(
-                f"DB operation {func.__name__} completed in {execution_time:.3f}s"
+                f"DB operation {func.__name__} completed in {execution_time:.3f}s",
             )
             return result
         except Exception as e:
             execution_time = time.time() - start_time
             logger.error(
-                f"DB operation {func.__name__} failed after {execution_time:.3f}s: {e}"
+                f"DB operation {func.__name__} failed after {execution_time:.3f}s: {e}",
             )
             raise
 

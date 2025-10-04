@@ -1,4 +1,3 @@
-# ruff: noqa: E402
 import contextlib
 import os
 import sqlite3
@@ -10,7 +9,7 @@ from fastapi.testclient import TestClient
 
 # create a small temp sqlite DB with legacy schema
 with tempfile.NamedTemporaryFile(
-    prefix="klerno_test_", suffix=".db", delete=False
+    prefix="klerno_test_", suffix=".db", delete=False,
 ) as _tmp:
     db_path = _tmp.name
 
@@ -33,11 +32,11 @@ CREATE TABLE IF NOT EXISTS users (
     is_active INTEGER DEFAULT 1,
     is_admin INTEGER DEFAULT 0
 )
-"""
+""",
 )
 cur.execute(
     "INSERT OR REPLACE INTO users (id, email, hashed_password, is_active, "
-    "is_admin) VALUES (1, 'test@example.com', '$2b$12$test_hash', 1, 0)"
+    "is_admin) VALUES (1, 'test@example.com', '$2b$12$test_hash', 1, 0)",
 )
 con.commit()
 con.close()
@@ -137,7 +136,7 @@ except Exception:
 
 # Try JSON
 resp2 = client.post(
-    "/auth/login", json={"username": "test@example.com", "password": "testpassword"}
+    "/auth/login", json={"username": "test@example.com", "password": "testpassword"},
 )
 print("status json", resp2.status_code)
 try:

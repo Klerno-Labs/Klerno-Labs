@@ -11,8 +11,7 @@ router = APIRouter(prefix="/compliance", tags=["compliance"])
 
 @router.post("/tx", response_model=list[TagResultOut])
 def analyze_tx(tx: dict[str, Any], user=Depends(require_user)):
-    """
-    Accepts a Transaction - like dict[str, Any] with at least:
+    """Accepts a Transaction - like dict with at least:
     memo: str | None
     fee: number | None
     amount: number | None
@@ -29,7 +28,7 @@ def analyze_tx(tx: dict[str, Any], user=Depends(require_user)):
         from_address = tx.get("from_address")
         to_address = tx.get("to_address")
 
-    # Use empty address book for analysis - production would use real DB-backed AddressBook
+    # TODO: pass a real AddressBook from your DB
     book = AddressBook(owned=set())
     results = tag_categories(Tx, address_book=book)
 

@@ -1,13 +1,13 @@
 {
     "venvPath": ".",
-    "venv": ".venv-1",
+    "venv": ".venv-py311",
     "include": [
         "app"
     ],
     "exclude": [
         "**/tests/**",
         "**/docs/**",
-        "**/.venv-1/**",
+        "**/.venv-py311/**",
         "local_data/**",
         "CLEAN_APP/**",
         "data/**",
@@ -21,7 +21,7 @@
         {
             "root": ".",
             "extraPaths": [
-                ".venv-1/Lib/site-packages"
+                ".venv-py311/Lib/site-packages"
             ]
         }
     ]

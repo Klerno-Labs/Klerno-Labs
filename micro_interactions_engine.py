@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Klerno Labs Micro-Interactions Engine
+"""Klerno Labs Micro-Interactions Engine
 =====================================
 
 Delightful micro-interactions and animations that make top 0.1% websites feel magical.
@@ -19,10 +18,8 @@ Version: 1.0.0-magical
 """
 
 import json
-import os
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
 class MicroInteractionsEngine:
@@ -34,9 +31,8 @@ class MicroInteractionsEngine:
         self.js_dir = self.static_dir / "js"
         self.css_dir = self.static_dir / "css"
 
-    def create_micro_interactions_system(self) -> Dict[str, Any]:
+    def create_micro_interactions_system(self) -> dict[str, Any]:
         """Create comprehensive micro-interactions system"""
-
         # Ensure directories exist
         self.js_dir.mkdir(parents=True, exist_ok=True)
         self.css_dir.mkdir(parents=True, exist_ok=True)
@@ -750,9 +746,8 @@ if (typeof module !== 'undefined' && module.exports) {
             "accessibility_compliant": True,
         }
 
-    def create_pwa_capabilities(self) -> Dict[str, Any]:
+    def create_pwa_capabilities(self) -> dict[str, Any]:
         """Create Progressive Web App capabilities"""
-
         # Service Worker
         service_worker = """
 // Klerno Labs Enterprise PWA Service Worker
@@ -882,7 +877,7 @@ self.addEventListener('push', (event) => {
                         {
                             "src": "/static/icons/shortcut-dashboard.png",
                             "sizes": "96x96",
-                        }
+                        },
                     ],
                 },
                 {
@@ -894,7 +889,7 @@ self.addEventListener('push', (event) => {
                         {
                             "src": "/static/icons/shortcut-analytics.png",
                             "sizes": "96x96",
-                        }
+                        },
                     ],
                 },
             ],
@@ -922,7 +917,6 @@ self.addEventListener('push', (event) => {
 
     def generate_report(self) -> str:
         """Generate micro-interactions implementation report"""
-
         micro_features = self.create_micro_interactions_system()
         pwa_features = self.create_pwa_capabilities()
 
@@ -954,10 +948,10 @@ self.addEventListener('push', (event) => {
 
         print("🎭 KLERNO LABS MICRO-INTERACTIONS ENGINE")
         print("=" * 60)
-        print(f"✨ Delightful animations and micro-interactions implemented")
-        print(f"📱 Progressive Web App capabilities added")
-        print(f"⚡ Performance-optimized interactions created")
-        print(f"♿ Accessibility-compliant animations included")
+        print("✨ Delightful animations and micro-interactions implemented")
+        print("📱 Progressive Web App capabilities added")
+        print("⚡ Performance-optimized interactions created")
+        print("♿ Accessibility-compliant animations included")
         print(f"🎯 Implementation Score: {report['implementation_score']}")
         print(f"🏆 Status: {report['top_percentile_status']}")
         print(f"📊 Report saved: {report_path}")

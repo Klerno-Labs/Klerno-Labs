@@ -15,7 +15,7 @@ if ROOT not in sys.path:
 with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
     db_path = tmp.name
 
-conn = cast(ISyncConnection, sqlite3.connect(db_path))
+conn = cast("ISyncConnection", sqlite3.connect(db_path))
 conn.execute(
     """
 CREATE TABLE users (
@@ -26,7 +26,7 @@ CREATE TABLE users (
     is_admin BOOLEAN DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
-"""
+""",
 )
 conn.execute(
     "INSERT INTO users (email, hashed_password, is_active, is_admin) VALUES (?, ?, ?, ?)",

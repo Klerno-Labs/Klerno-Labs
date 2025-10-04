@@ -1,4 +1,4 @@
-Typing sweep: conservative hybrid approach + runtime-safe fixes (PR ready for review
+# Typing sweep: conservative hybrid approach + runtime-safe fixes (PR ready for review)
 
 Summary:
 - What I did: Continued the conservative typing/modernization sweep using the hybrid "permissive in-repo Protocols + conservative runtime-safe casts" approach. I focused on small, review-friendly changes that reduce mypy noise and keep runtime behavior safe.

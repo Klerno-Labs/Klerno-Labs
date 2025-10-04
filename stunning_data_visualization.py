@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Klerno Labs Stunning Data Visualization Engine
+"""Klerno Labs Stunning Data Visualization Engine
 ===============================================
 
 Interactive charts, graphs, analytics dashboards, and beautiful data presentations
@@ -22,9 +21,8 @@ Version: 1.0.0-stunning-viz
 import json
 import math
 import random
-from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
 class StunningDataVisualizationEngine:
@@ -37,9 +35,8 @@ class StunningDataVisualizationEngine:
         self.css_dir = self.static_dir / "css"
         self.data_dir = self.workspace_path / "data"
 
-    def create_visualization_framework(self) -> Dict[str, Any]:
+    def create_visualization_framework(self) -> dict[str, Any]:
         """Create comprehensive data visualization framework"""
-
         # Ensure directories exist
         self.js_dir.mkdir(parents=True, exist_ok=True)
         self.css_dir.mkdir(parents=True, exist_ok=True)
@@ -1059,9 +1056,8 @@ if (typeof module !== 'undefined' && module.exports) {
             ],
         }
 
-    def generate_sample_data(self) -> Dict[str, Any]:
+    def generate_sample_data(self) -> dict[str, Any]:
         """Generate sample data for demonstrations"""
-
         # Generate realistic business data
         sample_data = {
             "revenue_data": {
@@ -1092,7 +1088,7 @@ if (typeof module !== 'undefined' && module.exports) {
             "data_categories": list(sample_data.keys()),
         }
 
-    def _generate_monthly_revenue(self) -> Dict[str, Any]:
+    def _generate_monthly_revenue(self) -> dict[str, Any]:
         """Generate monthly revenue data"""
         months = [
             "Jan",
@@ -1111,7 +1107,7 @@ if (typeof module !== 'undefined' && module.exports) {
         base_revenue = 50000
         revenue_data = []
 
-        for i, month in enumerate(months):
+        for i, _month in enumerate(months):
             # Add seasonal variation and growth trend
             seasonal_factor = 1 + 0.2 * math.sin(i * math.pi / 6)
             growth_factor = 1 + (i * 0.05)
@@ -1129,11 +1125,11 @@ if (typeof module !== 'undefined' && module.exports) {
                     "borderColor": "#6366f1",
                     "backgroundColor": "rgba(99, 102, 241, 0.1)",
                     "tension": 0.4,
-                }
+                },
             ],
         }
 
-    def _generate_quarterly_data(self) -> Dict[str, Any]:
+    def _generate_quarterly_data(self) -> dict[str, Any]:
         """Generate quarterly performance data"""
         quarters = ["Q1 2024", "Q2 2024", "Q3 2024", "Q4 2024"]
 
@@ -1153,7 +1149,7 @@ if (typeof module !== 'undefined' && module.exports) {
             ],
         }
 
-    def _generate_yearly_growth(self) -> Dict[str, Any]:
+    def _generate_yearly_growth(self) -> dict[str, Any]:
         """Generate yearly growth data"""
         years = ["2020", "2021", "2022", "2023", "2024"]
 
@@ -1166,11 +1162,11 @@ if (typeof module !== 'undefined' && module.exports) {
                     "borderColor": "#8b5cf6",
                     "backgroundColor": "rgba(139, 92, 246, 0.1)",
                     "fill": True,
-                }
+                },
             ],
         }
 
-    def _generate_user_growth(self) -> Dict[str, Any]:
+    def _generate_user_growth(self) -> dict[str, Any]:
         """Generate user growth data"""
         months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
         base_users = 1000
@@ -1178,7 +1174,7 @@ if (typeof module !== 'undefined' && module.exports) {
         user_data = []
         cumulative_users = base_users
 
-        for i in range(len(months)):
+        for _i in range(len(months)):
             growth = random.randint(150, 300)
             cumulative_users += growth
             user_data.append(cumulative_users)
@@ -1192,11 +1188,11 @@ if (typeof module !== 'undefined' && module.exports) {
                     "borderColor": "#06b6d4",
                     "backgroundColor": "rgba(6, 182, 212, 0.1)",
                     "fill": True,
-                }
+                },
             ],
         }
 
-    def _generate_demographics(self) -> Dict[str, Any]:
+    def _generate_demographics(self) -> dict[str, Any]:
         """Generate user demographics data"""
         return {
             "labels": ["18-25", "26-35", "36-45", "46-55", "55+"],
@@ -1204,7 +1200,7 @@ if (typeof module !== 'undefined' && module.exports) {
             "colors": ["#6366f1", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"],
         }
 
-    def _generate_engagement_data(self) -> Dict[str, Any]:
+    def _generate_engagement_data(self) -> dict[str, Any]:
         """Generate user engagement metrics"""
         return {
             "daily_active": 4200,
@@ -1214,7 +1210,7 @@ if (typeof module !== 'undefined' && module.exports) {
             "conversion_rate": 3.2,
         }
 
-    def _generate_system_metrics(self) -> Dict[str, Any]:
+    def _generate_system_metrics(self) -> dict[str, Any]:
         """Generate system performance metrics"""
         return {
             "cpu_usage": random.uniform(25, 75),
@@ -1225,7 +1221,7 @@ if (typeof module !== 'undefined' && module.exports) {
             "response_time": random.uniform(120, 250),
         }
 
-    def _generate_app_metrics(self) -> Dict[str, Any]:
+    def _generate_app_metrics(self) -> dict[str, Any]:
         """Generate application performance metrics"""
         return {
             "requests_per_second": random.randint(450, 850),
@@ -1235,7 +1231,7 @@ if (typeof module !== 'undefined' && module.exports) {
             "queue_size": random.randint(0, 25),
         }
 
-    def _generate_business_metrics(self) -> Dict[str, Any]:
+    def _generate_business_metrics(self) -> dict[str, Any]:
         """Generate business KPI metrics"""
         return {
             "customer_satisfaction": random.uniform(4.2, 4.8),
@@ -1245,7 +1241,7 @@ if (typeof module !== 'undefined' && module.exports) {
             "acquisition_cost": random.randint(85, 150),
         }
 
-    def _generate_dashboard_config(self) -> Dict[str, Any]:
+    def _generate_dashboard_config(self) -> dict[str, Any]:
         """Generate dashboard configuration"""
         return {
             "widgets": [
@@ -1270,12 +1266,11 @@ if (typeof module !== 'undefined' && module.exports) {
                     "size": "medium",
                     "data": self._generate_quarterly_data(),
                 },
-            ]
+            ],
         }
 
     def generate_report(self) -> str:
         """Generate data visualization implementation report"""
-
         framework_results = self.create_visualization_framework()
         data_results = self.generate_sample_data()
 

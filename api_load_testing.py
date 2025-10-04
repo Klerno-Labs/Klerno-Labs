@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-KLERNO LABS ENTERPRISE PLATFORM - API LOAD TESTING FRAMEWORK
+"""KLERNO LABS ENTERPRISE PLATFORM - API LOAD TESTING FRAMEWORK
 =============================================================
 
 Comprehensive API load testing with concurrent requests, performance benchmarking,
@@ -8,17 +7,15 @@ and enterprise-grade validation for production readiness.
 """
 
 import asyncio
-import concurrent.futures
 import json
 import logging
 import statistics
-import threading
 import time
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from queue import Queue
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import aiohttp
 
@@ -47,7 +44,7 @@ class RequestResult:
     timestamp: str
     user_id: int
     success: bool
-    error_message: Optional[str] = None
+    error_message: str | None = None
     response_size: int = 0
 
 
@@ -70,8 +67,8 @@ class LoadTestResults:
     p99_response_time: float
     requests_per_second: float
     error_rate: float
-    endpoint_results: Dict[str, Any]
-    raw_results: List[RequestResult]
+    endpoint_results: dict[str, Any]
+    raw_results: list[RequestResult]
 
 
 class APILoadTester:
@@ -95,7 +92,7 @@ class APILoadTester:
         )
         return logging.getLogger("APILoadTester")
 
-    def _define_test_scenarios(self) -> List[Dict[str, Any]]:
+    def _define_test_scenarios(self) -> list[dict[str, Any]]:
         """Define comprehensive test scenarios for enterprise endpoints"""
         return [
             # Core health endpoints
@@ -117,7 +114,7 @@ class APILoadTester:
             {"method": "GET", "endpoint": "/", "weight": 2},
         ]
 
-    def _select_random_scenario(self) -> Dict[str, Any]:
+    def _select_random_scenario(self) -> dict[str, Any]:
         """Select a random test scenario based on weights"""
         import random
 
@@ -134,7 +131,7 @@ class APILoadTester:
         return self.test_scenarios[0]
 
     async def make_request(
-        self, session: aiohttp.ClientSession, scenario: Dict[str, Any], user_id: int
+        self, session: aiohttp.ClientSession, scenario: dict[str, Any], user_id: int,
     ) -> RequestResult:
         """Make a single API request and return result"""
         method = scenario["method"]
@@ -175,8 +172,8 @@ class APILoadTester:
             )
 
     async def simulate_user(
-        self, user_id: int, session: aiohttp.ClientSession
-    ) -> List[RequestResult]:
+        self, user_id: int, session: aiohttp.ClientSession,
+    ) -> list[RequestResult]:
         """Simulate a single user making multiple requests"""
         results = []
 
@@ -199,7 +196,7 @@ class APILoadTester:
         return results
 
     async def run_load_test(
-        self, test_name: str = "Enterprise API Load Test"
+        self, test_name: str = "Enterprise API Load Test",
     ) -> LoadTestResults:
         """Run comprehensive load test with concurrent users"""
         self.logger.info(f"Starting load test: {test_name}")
@@ -224,14 +221,14 @@ class APILoadTester:
             for batch in range(0, self.config.concurrent_users, users_per_batch):
                 batch_tasks = []
                 for user_id in range(
-                    batch, min(batch + users_per_batch, self.config.concurrent_users)
+                    batch, min(batch + users_per_batch, self.config.concurrent_users),
                 ):
                     task = asyncio.create_task(self.simulate_user(user_id, session))
                     batch_tasks.append(task)
                     tasks.append(task)
 
                 self.logger.info(
-                    f"Started batch of {len(batch_tasks)} users (total: {len(tasks)})"
+                    f"Started batch of {len(batch_tasks)} users (total: {len(tasks)})",
                 )
 
                 # Ramp-up delay
@@ -240,7 +237,7 @@ class APILoadTester:
 
             # Wait for all users to complete
             self.logger.info(
-                f"All {self.config.concurrent_users} users started. Waiting for completion..."
+                f"All {self.config.concurrent_users} users started. Waiting for completion...",
             )
 
             batch_results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -260,7 +257,7 @@ class APILoadTester:
     def _analyze_results(
         self,
         test_name: str,
-        results: List[RequestResult],
+        results: list[RequestResult],
         start_time: datetime,
         end_time: datetime,
     ) -> LoadTestResults:
@@ -315,23 +312,22 @@ class APILoadTester:
             raw_results=results,
         )
 
-    def _percentile(self, data: List[float], percentile: int) -> float:
+    def _percentile(self, data: list[float], percentile: int) -> float:
         """Calculate percentile value"""
         sorted_data = sorted(data)
         index = (percentile / 100) * (len(sorted_data) - 1)
 
         if index.is_integer():
             return sorted_data[int(index)]
-        else:
-            lower_index = int(index)
-            upper_index = lower_index + 1
-            weight = index - lower_index
-            return (
-                sorted_data[lower_index] * (1 - weight)
-                + sorted_data[upper_index] * weight
-            )
+        lower_index = int(index)
+        upper_index = lower_index + 1
+        weight = index - lower_index
+        return (
+            sorted_data[lower_index] * (1 - weight)
+            + sorted_data[upper_index] * weight
+        )
 
-    def _analyze_by_endpoint(self, results: List[RequestResult]) -> Dict[str, Any]:
+    def _analyze_by_endpoint(self, results: list[RequestResult]) -> dict[str, Any]:
         """Analyze results grouped by endpoint"""
         endpoint_data = {}
 
@@ -364,7 +360,7 @@ class APILoadTester:
         return endpoint_analysis
 
     def export_results(
-        self, results: LoadTestResults, filename: str = "load_test_results.json"
+        self, results: LoadTestResults, filename: str = "load_test_results.json",
     ):
         """Export load test results to JSON file"""
         if not results:
@@ -396,7 +392,7 @@ class APILoadTester:
             "raw_results": [asdict(r) for r in results.raw_results],
         }
 
-        with open(filename, "w") as f:
+        with Path(filename).open("w") as f:
             json.dump(export_data, f, indent=2)
 
         self.logger.info(f"Load test results exported to {filename}")
@@ -407,13 +403,13 @@ class APILoadTester:
             print("❌ No results to report")
             return
 
-        print(f"\n🚀 KLERNO LABS API LOAD TEST REPORT")
+        print("\n🚀 KLERNO LABS API LOAD TEST REPORT")
         print("=" * 60)
         print(f"Test Name: {results.test_name}")
         print(f"Test Period: {results.start_time} to {results.end_time}")
 
         # Test configuration
-        print(f"\n⚙️  TEST CONFIGURATION")
+        print("\n⚙️  TEST CONFIGURATION")
         print("-" * 30)
         print(f"Base URL: {results.config.base_url}")
         print(f"Concurrent Users: {results.config.concurrent_users}")
@@ -422,19 +418,19 @@ class APILoadTester:
         print(f"Request Timeout: {results.config.request_timeout}s")
 
         # Overall results
-        print(f"\n📊 OVERALL RESULTS")
+        print("\n📊 OVERALL RESULTS")
         print("-" * 30)
         print(f"Total Requests: {results.total_requests:,}")
         print(f"Successful Requests: {results.successful_requests:,}")
         print(f"Failed Requests: {results.failed_requests:,}")
         print(
-            f"Success Rate: {((results.successful_requests / results.total_requests) * 100):.2f}%"
+            f"Success Rate: {((results.successful_requests / results.total_requests) * 100):.2f}%",
         )
         print(f"Error Rate: {results.error_rate:.2f}%")
         print(f"Requests per Second: {results.requests_per_second:.2f}")
 
         # Performance metrics
-        print(f"\n⚡ PERFORMANCE METRICS")
+        print("\n⚡ PERFORMANCE METRICS")
         print("-" * 30)
         print(f"Average Response Time: {results.average_response_time:.3f}s")
         print(f"Minimum Response Time: {results.min_response_time:.3f}s")
@@ -444,7 +440,7 @@ class APILoadTester:
         print(f"99th Percentile (P99): {results.p99_response_time:.3f}s")
 
         # Endpoint analysis
-        print(f"\n🎯 ENDPOINT PERFORMANCE")
+        print("\n🎯 ENDPOINT PERFORMANCE")
         print("-" * 50)
         for endpoint, stats in results.endpoint_results.items():
             status_icon = (
@@ -454,14 +450,14 @@ class APILoadTester:
             )
             print(f"{status_icon} {endpoint}")
             print(
-                f"   Requests: {stats['total_requests']:,} | Success Rate: {stats['success_rate']:.1f}%"
+                f"   Requests: {stats['total_requests']:,} | Success Rate: {stats['success_rate']:.1f}%",
             )
             print(
-                f"   Avg Time: {stats['average_response_time']:.3f}s | Max Time: {stats['max_response_time']:.3f}s"
+                f"   Avg Time: {stats['average_response_time']:.3f}s | Max Time: {stats['max_response_time']:.3f}s",
             )
 
         # Performance assessment
-        print(f"\n🎯 PERFORMANCE ASSESSMENT")
+        print("\n🎯 PERFORMANCE ASSESSMENT")
         print("-" * 30)
 
         if results.error_rate < 1:
@@ -553,11 +549,11 @@ def run_comprehensive_load_tests():
 
         # Brief pause between tests
         if i < len(test_configs):
-            print(f"\n⏳ Waiting 10 seconds before next test...")
+            print("\n⏳ Waiting 10 seconds before next test...")
             time.sleep(10)
 
     # Summary report
-    print(f"\n📋 COMPREHENSIVE LOAD TESTING SUMMARY")
+    print("\n📋 COMPREHENSIVE LOAD TESTING SUMMARY")
     print("=" * 50)
 
     for i, results in enumerate(all_results, 1):
@@ -565,12 +561,12 @@ def run_comprehensive_load_tests():
         print(f"\n{i}. {config_name}:")
         print(f"   Total Requests: {results.total_requests:,}")
         print(
-            f"   Success Rate: {((results.successful_requests / results.total_requests) * 100):.1f}%"
+            f"   Success Rate: {((results.successful_requests / results.total_requests) * 100):.1f}%",
         )
         print(f"   Avg Response Time: {results.average_response_time:.3f}s")
         print(f"   Throughput: {results.requests_per_second:.1f} RPS")
 
-    print(f"\n✅ Load testing completed. Results exported to JSON files.")
+    print("\n✅ Load testing completed. Results exported to JSON files.")
 
 
 async def main():

@@ -1,5 +1,4 @@
-"""
-Run mypy on `app` and summarize error counts by file.
+"""Run mypy on `app` and summarize error counts by file.
 Saves full mypy output to tools/mypy_full.txt and prints top 20 files with counts and sample errors.
 """
 
@@ -18,7 +17,7 @@ from pathlib import Path
 def run_mypy():
     cmd = [sys.executable, "-m", "mypy", "app", "--show-error-codes"]
     print("Running:", " ".join(cmd))
-    p = subprocess.run(cmd, capture_output=True, text=True)
+    p = subprocess.run(cmd, check=False, capture_output=True, text=True)
     out = p.stdout + p.stderr
     path = Path("tools/mypy_full.txt")
     with path.open("w", encoding="utf-8") as f:

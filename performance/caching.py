@@ -1,5 +1,4 @@
-"""
-Advanced Caching System
+"""Advanced Caching System
 Multi-tier caching with Redis, in-memory cache, and intelligent cache strategies
 """
 
@@ -137,7 +136,7 @@ class RedisCache:
     """Redis-based distributed cache"""
 
     def __init__(
-        self, redis_url: str = "redis://localhost:6379", default_ttl: int = 3600
+        self, redis_url: str = "redis://localhost:6379", default_ttl: int = 3600,
     ):
         self.redis_url = redis_url
         self.default_ttl = default_ttl
@@ -150,9 +149,9 @@ class RedisCache:
             # redis_client may be None in failure scenarios; guard before calling ping
             if self.redis_client is not None:
                 # redis.Redis has ping in runtime; cast to Any for static checkers
-                from typing import Any, cast
+                from typing import cast
 
-                client_any = cast(Any, self.redis_client)
+                client_any = cast("Any", self.redis_client)
                 await client_any.ping()
         except Exception as e:
             print(f"Redis connection failed: {e}")
@@ -290,7 +289,7 @@ class MultiTierCache:
     def get_stats(self) -> dict[str, Any]:
         """Get comprehensive cache statistics"""
         total_requests = sum(
-            [self.stats["l1_hits"], self.stats["l2_hits"], self.stats["misses"]]
+            [self.stats["l1_hits"], self.stats["l2_hits"], self.stats["misses"]],
         )
 
         l1_stats = self.l1_cache.get_stats()
@@ -368,18 +367,15 @@ async def cache_context():
 async def get_user_by_id(user_id: int):
     """Cached user lookup by ID"""
     # This would be implemented in your user service
-    pass
 
 
 @cached(ttl=600, key_prefix="compliance")
 async def get_compliance_tags(transaction_id: int):
     """Cached compliance tags lookup"""
     # This would be implemented in your compliance service
-    pass
 
 
 @cached(ttl=1800, key_prefix="analytics")
 async def get_user_analytics(user_id: int, date_range: str):
     """Cached user analytics"""
     # This would be implemented in your analytics service
-    pass
