@@ -4,7 +4,7 @@
 import json
 import subprocess
 import time
-from typing import Any, Dict
+from typing import Any
 
 
 def generate_final_validation_report():
@@ -300,7 +300,7 @@ def run_final_validation_tests():
     return validation_results
 
 
-def print_achievement_summary(report: Dict[str, Any]):
+def print_achievement_summary(report: dict[str, Any]):
     """Print comprehensive achievement summary."""
 
     print("\n🏆 ACHIEVEMENT SUMMARY")

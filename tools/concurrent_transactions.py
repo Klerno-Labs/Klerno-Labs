@@ -63,12 +63,14 @@ from app.main import app
 
 async def run_batch(n=50):
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test",
+        transport=ASGITransport(app=app),
+        base_url="http://test",
     ) as client:
 
         async def op(i):
             resp = await client.post(
-                "/transactions", json={"amount": float(i), "currency": "USD"},
+                "/transactions",
+                json={"amount": float(i), "currency": "USD"},
             )
             return resp.status_code, resp.text
 

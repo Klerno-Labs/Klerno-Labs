@@ -5,7 +5,7 @@ import json
 import subprocess
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class SecurityValidator:
@@ -20,7 +20,7 @@ class SecurityValidator:
             "hardening_applied": [],
         }
 
-    def run_comprehensive_security_scan(self) -> Dict[str, Any]:
+    def run_comprehensive_security_scan(self) -> dict[str, Any]:
         """Run comprehensive security analysis."""
 
         print("🔒 COMPREHENSIVE SECURITY VALIDATION")
@@ -63,7 +63,7 @@ class SecurityValidator:
 
         return security_report
 
-    def _run_bandit_scan(self) -> Dict[str, Any]:
+    def _run_bandit_scan(self) -> dict[str, Any]:
         """Run Bandit security scanner and parse results."""
 
         try:
@@ -144,7 +144,7 @@ class SecurityValidator:
                 "error": f"Failed to run Bandit scan: {str(e)}",
             }
 
-    def _analyze_dependencies(self) -> Dict[str, Any]:
+    def _analyze_dependencies(self) -> dict[str, Any]:
         """Analyze dependencies for known vulnerabilities."""
 
         dependency_analysis = {
@@ -193,7 +193,7 @@ class SecurityValidator:
 
         return dependency_analysis
 
-    def _scan_sensitive_data(self) -> Dict[str, Any]:
+    def _scan_sensitive_data(self) -> dict[str, Any]:
         """Scan for potential sensitive data exposure."""
 
         sensitive_patterns = [
@@ -209,7 +209,7 @@ class SecurityValidator:
         sensitive_findings = []
 
         # Scan Python files for sensitive patterns
-        for py_file in Path(".").rglob("*.py"):
+        for py_file in Path().rglob("*.py"):
             if any(
                 exclude in str(py_file)
                 for exclude in [".venv", "__pycache__", "node_modules"]
@@ -245,7 +245,7 @@ class SecurityValidator:
             "recommendation": "Review and secure any sensitive data found in code",
         }
 
-    def _validate_authentication(self) -> Dict[str, Any]:
+    def _validate_authentication(self) -> dict[str, Any]:
         """Validate authentication and authorization mechanisms."""
 
         auth_analysis = {
@@ -269,7 +269,7 @@ class SecurityValidator:
 
         auth_implementations = []
 
-        for py_file in Path(".").rglob("*.py"):
+        for py_file in Path().rglob("*.py"):
             if any(exclude in str(py_file) for exclude in [".venv", "__pycache__"]):
                 continue
 
@@ -308,7 +308,7 @@ class SecurityValidator:
 
         return auth_analysis
 
-    def _check_security_configs(self) -> Dict[str, Any]:
+    def _check_security_configs(self) -> dict[str, Any]:
         """Check security configurations."""
 
         config_analysis = {
@@ -319,7 +319,7 @@ class SecurityValidator:
         }
 
         # Check for debug mode in production
-        for py_file in Path(".").rglob("*.py"):
+        for py_file in Path().rglob("*.py"):
             if any(exclude in str(py_file) for exclude in [".venv", "__pycache__"]):
                 continue
 
@@ -349,13 +349,13 @@ class SecurityValidator:
 
         return config_analysis
 
-    def _check_environment_variables(self) -> Dict[str, Any]:
+    def _check_environment_variables(self) -> dict[str, Any]:
         """Check environment variable usage for security."""
 
         env_patterns = ["os.environ", "getenv", "env.", "Environment"]
         env_usage = []
 
-        for py_file in Path(".").rglob("*.py"):
+        for py_file in Path().rglob("*.py"):
             if any(exclude in str(py_file) for exclude in [".venv", "__pycache__"]):
                 continue
 
@@ -376,8 +376,8 @@ class SecurityValidator:
         }
 
     def _calculate_security_score(
-        self, bandit_results: Dict, dependency_results: Dict, config_results: Dict
-    ) -> Dict[str, Any]:
+        self, bandit_results: dict, dependency_results: dict, config_results: dict
+    ) -> dict[str, Any]:
         """Calculate overall security score."""
 
         base_score = 100
@@ -428,7 +428,7 @@ class SecurityValidator:
             },
         }
 
-    def _identify_critical_issues(self, bandit_results: Dict) -> List[Dict[str, Any]]:
+    def _identify_critical_issues(self, bandit_results: dict) -> list[dict[str, Any]]:
         """Identify critical security issues that need immediate attention."""
 
         critical_issues = []
@@ -464,7 +464,7 @@ class SecurityValidator:
 
         return critical_issues
 
-    def _generate_remediation_plan(self) -> Dict[str, Any]:
+    def _generate_remediation_plan(self) -> dict[str, Any]:
         """Generate comprehensive security remediation plan."""
 
         remediation_plan = {
@@ -550,7 +550,7 @@ def main():
         json.dump(security_report, f, indent=2)
 
     # Print summary
-    print(f"\n🔒 SECURITY VALIDATION COMPLETE")
+    print("\n🔒 SECURITY VALIDATION COMPLETE")
     print("=" * 50)
 
     overall_score = security_report["overall_security_score"]
@@ -559,7 +559,7 @@ def main():
 
     if security_report["bandit_analysis"].get("scan_successful"):
         summary = security_report["bandit_analysis"]["scan_summary"]
-        print(f"\nVulnerabilities Found:")
+        print("\nVulnerabilities Found:")
         print(f"   • HIGH Severity: {summary['high_severity']}")
         print(f"   • MEDIUM Severity: {summary['medium_severity']}")
         print(f"   • LOW Severity: {summary['low_severity']}")
@@ -570,13 +570,13 @@ def main():
         for issue in critical_issues[:5]:  # Show first 5
             print(f"   • {issue['test_name']} in {issue['file']}:{issue['line']}")
 
-    print(f"\n📋 Remediation Plan:")
+    print("\n📋 Remediation Plan:")
     plan = security_report["remediation_plan"]
     print(f"   • Immediate Actions: {len(plan['immediate_actions'])}")
     print(f"   • Short-term Actions: {len(plan['short_term_actions'])}")
     print(f"   • Long-term Actions: {len(plan['long_term_actions'])}")
 
-    print(f"\n📊 Detailed security report saved to: comprehensive_security_report.json")
+    print("\n📊 Detailed security report saved to: comprehensive_security_report.json")
 
     return security_report
 

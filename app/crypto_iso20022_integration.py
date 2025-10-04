@@ -193,7 +193,8 @@ class CryptoISO20022Manager:
         return configs
 
     def _add_remaining_crypto_configs(
-        self, configs: dict[SupportedCryptos, CryptoNetworkConfig],
+        self,
+        configs: dict[SupportedCryptos, CryptoNetworkConfig],
     ) -> None:
         """Add configurations for remaining cryptocurrencies."""
         # Cardano (ADA)

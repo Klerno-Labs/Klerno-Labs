@@ -39,7 +39,10 @@ def main(url: str | None = None) -> int:
         Column("password_hash", String(255), nullable=True),
         Column("role", String(50), nullable=False, server_default="user"),
         Column(
-            "subscription_active", Boolean, nullable=False, server_default=text("false"),
+            "subscription_active",
+            Boolean,
+            nullable=False,
+            server_default=text("false"),
         ),
         Column(
             "created_at",

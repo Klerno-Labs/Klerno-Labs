@@ -84,7 +84,8 @@ class DatabaseConnectionPool:
 
         # Start maintenance thread
         self._maintenance_thread: threading.Thread = threading.Thread(
-            target=self._maintenance_worker, daemon=True,
+            target=self._maintenance_worker,
+            daemon=True,
         )
         self._maintenance_thread.start()
 
@@ -122,7 +123,9 @@ class DatabaseConnectionPool:
         """Create a new database connection"""
         try:
             conn = sqlite3.connect(
-                self.database_path, timeout=self.timeout, check_same_thread=False,
+                self.database_path,
+                timeout=self.timeout,
+                check_same_thread=False,
             )
 
             # Configure connection
@@ -195,7 +198,9 @@ class DatabaseConnectionPool:
                 + query_time
             ) / self._stats.total_queries
 
-            self._stats.peak_connections = max(self._stats.peak_connections, self._stats.active_connections)
+            self._stats.peak_connections = max(
+                self._stats.peak_connections, self._stats.active_connections
+            )
 
     def return_connection(self, conn: ISyncConnection) -> None:
         """Return a connection to the pool"""
@@ -206,7 +211,8 @@ class DatabaseConnectionPool:
             with self._lock:
                 self._checked_out.discard(conn)
                 self._stats.active_connections = max(
-                    0, self._stats.active_connections - 1,
+                    0,
+                    self._stats.active_connections - 1,
                 )
 
                 # Check if it's an overflow connection
@@ -301,7 +307,10 @@ class AsyncTaskProcessor:
     """Enterprise async task processing system"""
 
     def __init__(
-        self, max_workers: int = 10, queue_size: int = 1000, batch_size: int = 50,
+        self,
+        max_workers: int = 10,
+        queue_size: int = 1000,
+        batch_size: int = 50,
     ) -> None:
         self.max_workers = max_workers
         self.queue_size = queue_size
@@ -318,10 +327,12 @@ class AsyncTaskProcessor:
         # Threading
         self._executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=max_workers)
         self._scheduler_thread: threading.Thread = threading.Thread(
-            target=self._scheduler_worker, daemon=True,
+            target=self._scheduler_worker,
+            daemon=True,
         )
         self._processor_thread: threading.Thread = threading.Thread(
-            target=self._processor_worker, daemon=True,
+            target=self._processor_worker,
+            daemon=True,
         )
 
         # Statistics
@@ -475,7 +486,10 @@ class AsyncTaskProcessor:
             raise
 
     def _handle_task_completion(
-        self, task: AsyncTask, result: Any, error: Exception | None,
+        self,
+        task: AsyncTask,
+        result: Any,
+        error: Exception | None,
     ) -> None:
         """Handle task completion"""
         with self._lock:
@@ -582,7 +596,10 @@ class AsyncDatabaseManager:
         return await loop.run_in_executor(None, _execute)
 
     def submit_background_task(
-        self, task_func: Callable, *args, **kwargs,
+        self,
+        task_func: Callable,
+        *args,
+        **kwargs,
     ) -> str | None:
         """Submit a background database task"""
         task = AsyncTask(

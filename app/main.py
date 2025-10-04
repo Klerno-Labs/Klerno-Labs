@@ -45,13 +45,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Startup
     # Use 'msg' and 'stage' keys to avoid passing duplicate 'event' positional argument
     logger.info(
-        "startup.begin", msg="Starting Klerno Labs Enterprise Platform", stage="startup",
+        "startup.begin",
+        msg="Starting Klerno Labs Enterprise Platform",
+        stage="startup",
     )
     from . import store
 
     # Secret / config validation for non-development environments
     env_eff = getattr(
-        settings, "environment", getattr(settings, "app_env", "development"),
+        settings,
+        "environment",
+        getattr(settings, "app_env", "development"),
     ).lower()
     if env_eff not in {"dev", "development", "local", "test"}:
         weak_secrets = {
@@ -71,7 +75,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             )
         if os.getenv("DEV_ADMIN_PASSWORD") in weak_secrets:
             logger.warning(
-                "startup.weak_dev_admin_password", action="change recommended",
+                "startup.weak_dev_admin_password",
+                action="change recommended",
             )
     with contextlib.suppress(Exception):
         store.init_db()
@@ -152,7 +157,8 @@ with contextlib.suppress(Exception):
 
 @app.middleware("http")
 async def add_security_headers(
-    request: Request, call_next: Callable[[Request], Awaitable[Any]],
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Any]],
 ) -> Any:
     from uuid import uuid4
 
@@ -162,7 +168,8 @@ async def add_security_headers(
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("X-XSS-Protection", "1; mode=block")
     response.headers.setdefault(
-        "Strict-Transport-Security", "max-age=63072000; includeSubDomains",
+        "Strict-Transport-Security",
+        "max-age=63072000; includeSubDomains",
     )
     # Provide a minimal baseline CSP only when nonce system disabled so we don't conflict.
     if not csp_enabled():
@@ -584,7 +591,8 @@ try:
             """
             if not hasattr(_auth_mod, "login_api"):
                 raise HTTPException(
-                    status_code=404, detail="Login endpoint not available",
+                    status_code=404,
+                    detail="Login endpoint not available",
                 )
 
             login_payload = payload

@@ -80,7 +80,8 @@ def add_rate_limiter(app) -> None:
 
     @app.middleware("http")
     async def _apply_rate_limit(
-        request: Request, call_next: Callable[[Request], Awaitable[Response]],
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         # Never rate-limit metrics endpoint to keep observability reliable
         try:

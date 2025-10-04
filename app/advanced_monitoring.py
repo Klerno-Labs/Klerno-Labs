@@ -75,7 +75,12 @@ class PerformanceTracker:
             self.metrics = self.metrics[-5000:]
 
     def record_request(
-        self, method: str, path: str, status_code: int, duration: float, size: int = 0,
+        self,
+        method: str,
+        path: str,
+        status_code: int,
+        duration: float,
+        size: int = 0,
     ):
         """Record request performance data"""
         self.request_times.append(duration)
@@ -259,7 +264,9 @@ class UserAnalytics:
         return [
             {"flow": flow, "count": count}
             for flow, count in sorted(
-                flow_counts.items(), key=lambda x: x[1], reverse=True,
+                flow_counts.items(),
+                key=lambda x: x[1],
+                reverse=True,
             )[:10]
         ]
 
@@ -288,7 +295,8 @@ class RegressionDetector:
         }
 
     def check_regressions(
-        self, current_metrics: dict[str, Any],
+        self,
+        current_metrics: dict[str, Any],
     ) -> list[dict[str, Any]]:
         """Check for performance regressions"""
         alerts: list[dict[str, Any]] = []
@@ -488,6 +496,7 @@ def get_monitoring_middleware(start_background: bool = False):
     global monitoring_middleware
     if not monitoring_middleware:
         monitoring_middleware = AdvancedMonitoringMiddleware(
-            None, start_background=start_background,
+            None,
+            start_background=start_background,
         )
     return monitoring_middleware

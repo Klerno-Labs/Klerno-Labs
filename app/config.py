@@ -2,7 +2,6 @@
 Uses pydantic - settings for secure, validated configuration.
 """
 
-
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -17,7 +16,8 @@ class Settings(BaseSettings):
     )
     DEBUG: bool = Field(False, description="Debug mode")
     SECRET_KEY: str = Field(
-        ..., description="Secret key for session encryption and JWT",
+        ...,
+        description="Secret key for session encryption and JWT",
     )
 
     # Web server
@@ -41,7 +41,8 @@ class Settings(BaseSettings):
     # Database
     USE_SQLITE: bool = Field(True, description="Use SQLite instead of Postgres")
     DATABASE_URL: str | None = Field(
-        None, description="Database connection string (can be SQLite or PostgreSQL)",
+        None,
+        description="Database connection string (can be SQLite or PostgreSQL)",
     )
     SQLITE_PATH: str = Field(
         "./data/klerno.db",
@@ -50,7 +51,8 @@ class Settings(BaseSettings):
 
     # XRPL Settings
     XRPL_NET: str = Field(
-        "testnet", description="XRPL network to use: 'mainnet', 'testnet', or 'devnet'",
+        "testnet",
+        description="XRPL network to use: 'mainnet', 'testnet', or 'devnet'",
     )
     DESTINATION_WALLET: str = Field(
         "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
@@ -58,7 +60,8 @@ class Settings(BaseSettings):
     )
     SUB_PRICE_XRP: float = Field(10.0, description="Price in XRP for a subscription")
     SUB_DURATION_DAYS: int = Field(
-        30, description="Duration in days for a subscription",
+        30,
+        description="Duration in days for a subscription",
     )
 
     # Email (SendGrid)
@@ -68,21 +71,27 @@ class Settings(BaseSettings):
 
     # Security
     COOKIE_SECURE: str = Field(
-        "auto", description="Cookie secure flag: 'auto', 'true', or 'false'",
+        "auto",
+        description="Cookie secure flag: 'auto', 'true', or 'false'",
     )
     COOKIE_SAMESITE: str = Field(
-        "lax", description="Cookie samesite flag: 'lax', 'strict', or 'none'",
+        "lax",
+        description="Cookie samesite flag: 'lax', 'strict', or 'none'",
     )
     ENABLE_HSTS: bool = Field(True, description="Enable HTTP Strict Transport Security")
 
     # Risk threshold for alerts
     RISK_THRESHOLD: float = Field(
-        0.75, description="Risk threshold for alerts (0.0 - 1.0)", ge=0.0, le=1.0,
+        0.75,
+        description="Risk threshold for alerts (0.0 - 1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     # Admin email
     ADMIN_EMAIL: str | None = Field(
-        None, description="Admin email address (gets admin role on signup)",
+        None,
+        description="Admin email address (gets admin role on signup)",
     )
 
     # Model configuration

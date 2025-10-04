@@ -257,7 +257,6 @@ class CircuitBreakerOpenError(Exception):
     """Exception raised when circuit breaker is open."""
 
 
-
 class RetryManager:
     """Advanced retry mechanism with various strategies."""
 
@@ -279,7 +278,10 @@ class RetryManager:
             @wraps(func)
             async def async_wrapper(*args, **kwargs):
                 return await self._execute_with_retry_async(
-                    func, policy, *args, **kwargs,
+                    func,
+                    policy,
+                    *args,
+                    **kwargs,
                 )
 
             @wraps(func)
@@ -293,7 +295,11 @@ class RetryManager:
         return decorator
 
     async def _execute_with_retry_async(
-        self, func: Callable[..., Awaitable[Any]], policy: RetryPolicy, *args, **kwargs,
+        self,
+        func: Callable[..., Awaitable[Any]],
+        policy: RetryPolicy,
+        *args,
+        **kwargs,
     ) -> Any:
         """Execute async function with retry logic."""
         func_name = func.__name__
@@ -339,7 +345,11 @@ class RetryManager:
         raise RuntimeError(f"All {policy.max_attempts} retry attempts failed")
 
     def _execute_with_retry_sync(
-        self, func: Callable, policy: RetryPolicy, *args, **kwargs,
+        self,
+        func: Callable,
+        policy: RetryPolicy,
+        *args,
+        **kwargs,
     ) -> Any:
         """Execute sync function with retry logic."""
         func_name = func.__name__
@@ -386,7 +396,8 @@ class RetryManager:
     def _calculate_delay(self, attempt: int, policy: RetryPolicy) -> float:
         """Calculate retry delay with exponential backoff and jitter."""
         delay = min(
-            policy.base_delay * (policy.exponential_base**attempt), policy.max_delay,
+            policy.base_delay * (policy.exponential_base**attempt),
+            policy.max_delay,
         )
 
         if policy.jitter:
@@ -395,7 +406,8 @@ class RetryManager:
             # the standard random module is acceptable here (not security-sensitive).
             jitter_range = delay * 0.25
             delay += random.uniform(
-                -jitter_range, jitter_range,
+                -jitter_range,
+                jitter_range,
             )  # nosec: B311 - non-crypto jitter for backoff, cryptographic randomness not required
 
         return max(0, delay)
@@ -513,7 +525,9 @@ class FailoverManager:
             return True
 
     def force_failover(
-        self, service_name: str, target_endpoint: str | None = None,
+        self,
+        service_name: str,
+        target_endpoint: str | None = None,
     ) -> bool:
         """Manually force failover to specific endpoint."""
         with self.lock:
@@ -597,7 +611,9 @@ class GracefulDegradationManager:
             logger.info(f"Feature flag {feature_name} set to {enabled}")
 
     async def evaluate_degradation(
-        self, service_name: str, context: dict[str, Any],
+        self,
+        service_name: str,
+        context: dict[str, Any],
     ) -> str:
         """Evaluate if service should degrade and to what level."""
         if service_name not in self.degradation_rules:
@@ -634,7 +650,10 @@ class GracefulDegradationManager:
         return "normal"
 
     async def execute_with_degradation(
-        self, service_name: str, context: dict[str, Any], **kwargs,
+        self,
+        service_name: str,
+        context: dict[str, Any],
+        **kwargs,
     ) -> Any:
         """Execute service function with appropriate degradation level."""
         current_level = await self.evaluate_degradation(service_name, context)
@@ -695,7 +714,10 @@ class SelfHealingManager:
             for pattern, rule in self.healing_rules.items():
                 if pattern in error_message:
                     return await self._execute_healing_action(
-                        pattern, rule, error, context,
+                        pattern,
+                        rule,
+                        error,
+                        context,
                     )
 
         return False
@@ -810,7 +832,9 @@ class ResilienceOrchestrator:
         self._setup_default_healing_rules()
 
     def create_circuit_breaker(
-        self, name: str, config: CircuitBreakerConfig,
+        self,
+        name: str,
+        config: CircuitBreakerConfig,
     ) -> CircuitBreaker:
         """Create and register circuit breaker."""
         with self.lock:
@@ -824,7 +848,10 @@ class ResilienceOrchestrator:
         return self.circuit_breakers.get(name)
 
     async def handle_error(
-        self, error: Exception, service_name: str, context: dict[str, Any],
+        self,
+        error: Exception,
+        service_name: str,
+        context: dict[str, Any],
     ) -> None:
         """Comprehensive error handling with resilience features."""
         # Use SHA-256 for generated IDs to avoid weak-hash warnings (MD5).
@@ -910,7 +937,8 @@ class ResilienceOrchestrator:
         # Database connection healing
 
         async def heal_database_connection(
-            error: Exception, context: dict[str, Any],
+            error: Exception,
+            context: dict[str, Any],
         ) -> bool:
             try:
                 # Attempt to restart database connection
@@ -930,7 +958,8 @@ class ResilienceOrchestrator:
         # Memory pressure healing
 
         async def heal_memory_pressure(
-            error: Exception, context: dict[str, Any],
+            error: Exception,
+            context: dict[str, Any],
         ) -> bool:
             try:
                 logger.info("Attempting to heal memory pressure")
@@ -942,7 +971,10 @@ class ResilienceOrchestrator:
                 return False
 
         self.healing_manager.register_healing_rule(
-            "out of memory", heal_memory_pressure, max_attempts=2, cooldown_period=30,
+            "out of memory",
+            heal_memory_pressure,
+            max_attempts=2,
+            cooldown_period=30,
         )
 
     def get_resilience_dashboard(self) -> dict[str, Any]:
@@ -1081,7 +1113,9 @@ def retry_on_failure(policy: RetryPolicy | None = None):
 
 
 async def handle_service_error(
-    error: Exception, service_name: str, context: dict[str, Any] | None = None,
+    error: Exception,
+    service_name: str,
+    context: dict[str, Any] | None = None,
 ) -> None:
     """Handle service error with full resilience features."""
     await resilience_orchestrator.handle_error(error, service_name, context or {})

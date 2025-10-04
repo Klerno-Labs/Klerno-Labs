@@ -205,7 +205,10 @@ class AdvancedAIRiskEngine:
 
         # Calculate overall risk score
         overall_score = self._calculate_overall_score(
-            anomaly_score, risk_proba, features, transaction_data,
+            anomaly_score,
+            risk_proba,
+            features,
+            transaction_data,
         )
 
         # Determine risk level
@@ -213,12 +216,17 @@ class AdvancedAIRiskEngine:
 
         # Extract detailed risk factors
         risk_factors = self._analyze_risk_factors(
-            features, transaction_data, user_history or [],
+            features,
+            transaction_data,
+            user_history or [],
         )
 
         # Generate AI insights and recommendations
         insights = self._generate_ai_insights(
-            transaction_data, risk_factors, anomaly_score, is_anomaly,
+            transaction_data,
+            risk_factors,
+            anomaly_score,
+            is_anomaly,
         )
         recommendations = self._generate_recommendations(risk_level, risk_factors)
 
@@ -233,7 +241,9 @@ class AdvancedAIRiskEngine:
         )
 
     def _extract_features(
-        self, transaction: dict[str, Any], history: list[dict[str, Any]],
+        self,
+        transaction: dict[str, Any],
+        history: list[dict[str, Any]],
     ) -> list[float]:
         """Extract numerical features for AI analysis."""
         # Transaction amount (log - scaled for better distribution)
@@ -284,7 +294,9 @@ class AdvancedAIRiskEngine:
         return min(1.0, max(0.0, overall))
 
     def _calculate_rule_based_score(
-        self, features: list[float], transaction: dict[str, Any],
+        self,
+        features: list[float],
+        transaction: dict[str, Any],
     ) -> float:
         """Calculate rule - based risk component."""
         score = 0.0
@@ -393,7 +405,9 @@ class AdvancedAIRiskEngine:
         return insights
 
     def _generate_recommendations(
-        self, risk_level: str, factors: RiskFactors,
+        self,
+        risk_level: str,
+        factors: RiskFactors,
     ) -> list[str]:
         """Generate actionable recommendations."""
         recommendations = []
@@ -450,7 +464,9 @@ class AdvancedAIRiskEngine:
         return (hash(address + "centrality") % 100) / 100.0
 
     def _analyze_behavioral_pattern(
-        self, transaction: dict[str, Any], history: list[dict[str, Any]],
+        self,
+        transaction: dict[str, Any],
+        history: list[dict[str, Any]],
     ) -> float:
         """Analyze behavioral patterns."""
         if len(history) < 5:
@@ -481,7 +497,8 @@ def _get_advanced_ai_engine() -> AdvancedAIRiskEngine:
 
 
 def get_advanced_risk_score(
-    transaction_data: dict[str, Any], user_history: list[dict[str, Any]] | None = None,
+    transaction_data: dict[str, Any],
+    user_history: list[dict[str, Any]] | None = None,
 ) -> AdvancedRiskScore:
     """Get advanced AI risk score for a transaction."""
     engine = _get_advanced_ai_engine()

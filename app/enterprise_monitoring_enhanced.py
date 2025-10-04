@@ -312,7 +312,10 @@ class EnterpriseMonitor:
         self.metrics_buffer.append(metric)
 
     def add_custom_metric(
-        self, name: str, value: float, tags: dict[str, str] | None = None,
+        self,
+        name: str,
+        value: float,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Add a custom metric."""
         metric = MetricPoint(
@@ -385,12 +388,12 @@ class EnterpriseMonitor:
                 # Check if alert condition is met
                 condition_met = False
                 if (
-                    (alert.operator == "gt"
-                    and avg_value > alert.threshold)
-                    or (alert.operator == "lt"
-                    and avg_value < alert.threshold)
-                    or (alert.operator == "eq"
-                    and abs(avg_value - alert.threshold) < 0.01)
+                    (alert.operator == "gt" and avg_value > alert.threshold)
+                    or (alert.operator == "lt" and avg_value < alert.threshold)
+                    or (
+                        alert.operator == "eq"
+                        and abs(avg_value - alert.threshold) < 0.01
+                    )
                 ):
                     condition_met = True
 

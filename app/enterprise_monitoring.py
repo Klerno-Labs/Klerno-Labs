@@ -149,7 +149,10 @@ class MetricsCollector:
                 )
 
     def increment_counter(
-        self, name: str, value: int = 1, tags: dict[str, str] | None = None,
+        self,
+        name: str,
+        value: int = 1,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Increment a counter metric."""
         metric = Metric(
@@ -201,7 +204,10 @@ class MetricsCollector:
         self.record_metric(metric)
 
     def record_histogram(
-        self, name: str, value: float, tags: dict[str, str] | None = None,
+        self,
+        name: str,
+        value: float,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Record a histogram metric."""
         metric = Metric(
@@ -234,7 +240,9 @@ class MetricsCollector:
         agg["values"].append(metric.value)
 
     def get_aggregate_stats(
-        self, metric_name: str, metric_type: MetricType,
+        self,
+        metric_name: str,
+        metric_type: MetricType,
     ) -> dict[str, Any]:
         """Get aggregate statistics for a metric."""
         key = f"{metric_name}:{metric_type.value}"
@@ -391,7 +399,9 @@ class HealthChecker:
         self.logger = logging.getLogger(__name__)
 
     def register_check(
-        self, name: str, check_func: Callable[[], dict[str, Any]],
+        self,
+        name: str,
+        check_func: Callable[[], dict[str, Any]],
     ) -> None:
         """Register a health check."""
         self.checks[name] = check_func
@@ -411,7 +421,8 @@ class HealthChecker:
         start_time = time.time()
         try:
             result = await asyncio.get_event_loop().run_in_executor(
-                None, self.checks[name],
+                None,
+                self.checks[name],
             )
             duration_ms = (time.time() - start_time) * 1000
 
@@ -488,7 +499,9 @@ class SystemMonitor:
 
         self.monitoring = True
         self.monitor_thread = threading.Thread(
-            target=self._monitor_loop, args=(interval_seconds,), daemon=True,
+            target=self._monitor_loop,
+            args=(interval_seconds,),
+            daemon=True,
         )
         self.monitor_thread.start()
         self.logger.info("System monitoring started")
@@ -522,33 +535,45 @@ class SystemMonitor:
             self.metrics.set_gauge("system.memory.usage", memory.percent, unit="%")
             self.metrics.set_gauge("system.memory.used", memory.used, unit="bytes")
             self.metrics.set_gauge(
-                "system.memory.available", memory.available, unit="bytes",
+                "system.memory.available",
+                memory.available,
+                unit="bytes",
             )
 
             # Disk metrics
             disk = psutil.disk_usage("/")
             self.metrics.set_gauge(
-                "system.disk.usage", (disk.used / disk.total) * 100, unit="%",
+                "system.disk.usage",
+                (disk.used / disk.total) * 100,
+                unit="%",
             )
             self.metrics.set_gauge("system.disk.free", disk.free, unit="bytes")
 
             # Network metrics
             network = psutil.net_io_counters()
             self.metrics.set_gauge(
-                "system.network.bytes_sent", network.bytes_sent, unit="bytes",
+                "system.network.bytes_sent",
+                network.bytes_sent,
+                unit="bytes",
             )
             self.metrics.set_gauge(
-                "system.network.bytes_recv", network.bytes_recv, unit="bytes",
+                "system.network.bytes_recv",
+                network.bytes_recv,
+                unit="bytes",
             )
 
             # Process metrics
             process = psutil.Process()
             self.metrics.set_gauge("process.cpu.usage", process.cpu_percent(), unit="%")
             self.metrics.set_gauge(
-                "process.memory.usage", process.memory_percent(), unit="%",
+                "process.memory.usage",
+                process.memory_percent(),
+                unit="%",
             )
             self.metrics.set_gauge(
-                "process.memory.rss", process.memory_info().rss, unit="bytes",
+                "process.memory.rss",
+                process.memory_info().rss,
+                unit="bytes",
             )
 
             # Load average (Unix only)
@@ -641,7 +666,8 @@ class QualityController:
         if requests > 0:
             error_rate = errors / requests
             error_score = max(
-                0, 100 - (error_rate / self.quality_thresholds["error_rate"]) * 100,
+                0,
+                100 - (error_rate / self.quality_thresholds["error_rate"]) * 100,
             )
             scores.append(error_score)
 
@@ -650,7 +676,8 @@ class QualityController:
         if cpu_metrics:
             avg_cpu = statistics.mean(cpu_metrics)
             cpu_score = max(
-                0, 100 - (avg_cpu / self.quality_thresholds["cpu_usage"]) * 100,
+                0,
+                100 - (avg_cpu / self.quality_thresholds["cpu_usage"]) * 100,
             )
             scores.append(cpu_score)
 
@@ -658,7 +685,8 @@ class QualityController:
         if memory_metrics:
             avg_memory = statistics.mean(memory_metrics)
             memory_score = max(
-                0, 100 - (avg_memory / self.quality_thresholds["memory_usage"]) * 100,
+                0,
+                100 - (avg_memory / self.quality_thresholds["memory_usage"]) * 100,
             )
             scores.append(memory_score)
 
@@ -801,13 +829,16 @@ def get_monitoring_dashboard() -> dict[str, Any]:
         },
         "system_stats": {
             "cpu_usage": metrics_collector.get_aggregate_stats(
-                "system.cpu.usage", MetricType.GAUGE,
+                "system.cpu.usage",
+                MetricType.GAUGE,
             ),
             "memory_usage": metrics_collector.get_aggregate_stats(
-                "system.memory.usage", MetricType.GAUGE,
+                "system.memory.usage",
+                MetricType.GAUGE,
             ),
             "response_times": metrics_collector.get_aggregate_stats(
-                "api.response_time", MetricType.TIMER,
+                "api.response_time",
+                MetricType.TIMER,
             ),
         },
         "recommendations": quality_controller.get_quality_recommendations(
@@ -890,13 +921,16 @@ class MonitoringOrchestrator:
                 "metrics_count": len(recent_metrics),
                 "system_metrics": {
                     "cpu_usage": self.metrics_collector.get_aggregate_stats(
-                        "system.cpu.usage", MetricType.GAUGE,
+                        "system.cpu.usage",
+                        MetricType.GAUGE,
                     ),
                     "memory_usage": self.metrics_collector.get_aggregate_stats(
-                        "system.memory.usage", MetricType.GAUGE,
+                        "system.memory.usage",
+                        MetricType.GAUGE,
                     ),
                     "response_time": self.metrics_collector.get_aggregate_stats(
-                        "api.response_time", MetricType.TIMER,
+                        "api.response_time",
+                        MetricType.TIMER,
                     ),
                 },
                 "monitoring_active": self.monitoring_active,

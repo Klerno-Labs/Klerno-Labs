@@ -272,7 +272,9 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     WHITELISTED_PATHS = ["/health", "/healthz", "/metrics", "/status", "/ping"]
 
     async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]],
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         start_time = time.time()
         client_ip = self._get_client_ip(request)
@@ -302,7 +304,10 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                     round((time.time() - start_time) * 1000, 2),
                 )
                 self._log_request(
-                    request, response, client_ip, time.time() - start_time,
+                    request,
+                    response,
+                    client_ip,
+                    time.time() - start_time,
                 )
                 return response
 
@@ -328,7 +333,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                     f"Rate limit exceeded for {client_ip} on {endpoint_type}",
                 )
                 return JSONResponse(
-                    status_code=429, content={"error": "Rate limit exceeded"},
+                    status_code=429,
+                    content={"error": "Rate limit exceeded"},
                 )
 
             # Process request
@@ -358,7 +364,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 f"Security middleware error for {client_ip}: {e!s}",
             )
             return JSONResponse(
-                status_code=500, content={"error": "Internal server error"},
+                status_code=500,
+                content={"error": "Internal server error"},
             )
 
     def _get_client_ip(self, request: Request) -> str:
@@ -406,7 +413,11 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         return str(uuid.uuid4())[:8]
 
     def _log_request(
-        self, request: Request, response: Response, client_ip: str, duration: float,
+        self,
+        request: Request,
+        response: Response,
+        client_ip: str,
+        duration: float,
     ) -> None:
         """Log request for security monitoring."""
         log_data = {
@@ -429,7 +440,9 @@ class AuditLogger:
 
     @staticmethod
     def log_security_event(
-        event_type: str, details: dict[str, Any], client_ip: str | None = None,
+        event_type: str,
+        details: dict[str, Any],
+        client_ip: str | None = None,
     ):
         """Log security - related events for audit trail."""
         log_entry = {
@@ -443,7 +456,10 @@ class AuditLogger:
 
     @staticmethod
     def log_admin_action(
-        admin_email: str, action: str, target: str, client_ip: str | None = None,
+        admin_email: str,
+        action: str,
+        target: str,
+        client_ip: str | None = None,
     ):
         """Log administrative actions for compliance."""
         AuditLogger.log_security_event(
@@ -456,7 +472,9 @@ class AuditLogger:
     def log_authentication(email: str, success: bool, client_ip: str | None = None):
         """Log authentication attempts."""
         AuditLogger.log_security_event(
-            "authentication", {"email": email, "success": success}, client_ip,
+            "authentication",
+            {"email": email, "success": success},
+            client_ip,
         )
 
 

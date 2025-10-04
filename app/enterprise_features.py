@@ -243,7 +243,10 @@ class EnterpriseManager:
         conn.close()
 
     def setup_white_label(
-        self, user_id: str, config_level: WhiteLabelConfig, settings: WhiteLabelSettings,
+        self,
+        user_id: str,
+        config_level: WhiteLabelConfig,
+        settings: WhiteLabelSettings,
     ) -> bool:
         """Set up white - label configuration for enterprise client."""
         conn = get_db_connection()
@@ -322,7 +325,10 @@ class EnterpriseManager:
         )
 
     def create_sla_agreement(
-        self, user_id: str, tier: SLATier, duration_months: int = 12,
+        self,
+        user_id: str,
+        tier: SLATier,
+        duration_months: int = 12,
     ) -> bool:
         """Create SLA agreement for enterprise client."""
         # SLA guarantees by tier
@@ -554,7 +560,12 @@ class EnterpriseManager:
         return models
 
     def create_support_ticket(
-        self, user_id: str, priority: str, category: str, subject: str, description: str,
+        self,
+        user_id: str,
+        priority: str,
+        category: str,
+        subject: str,
+        description: str,
     ) -> SupportTicket:
         """Create dedicated support ticket."""
         ticket_id = str(uuid.uuid4())
@@ -600,7 +611,9 @@ class EnterpriseManager:
         return ticket
 
     def get_support_tickets(
-        self, user_id: str, status: str | None = None,
+        self,
+        user_id: str,
+        status: str | None = None,
     ) -> list[SupportTicket]:
         """Get support tickets for user."""
         conn = get_db_connection()
@@ -708,7 +721,9 @@ enterprise_manager = EnterpriseManager()
 
 
 def setup_white_label(
-    user_id: str, config_level: WhiteLabelConfig, settings: WhiteLabelSettings,
+    user_id: str,
+    config_level: WhiteLabelConfig,
+    settings: WhiteLabelSettings,
 ) -> bool:
     """Set up white - label configuration."""
     return enterprise_manager.setup_white_label(user_id, config_level, settings)
@@ -720,7 +735,9 @@ def get_white_label_config(user_id: str) -> WhiteLabelSettings | None:
 
 
 def create_sla_agreement(
-    user_id: str, tier: SLATier, duration_months: int = 12,
+    user_id: str,
+    tier: SLATier,
+    duration_months: int = 12,
 ) -> bool:
     """Create SLA agreement."""
     return enterprise_manager.create_sla_agreement(user_id, tier, duration_months)
@@ -741,16 +758,29 @@ def deploy_custom_ai_model(
 ) -> CustomAIModel:
     """Deploy custom AI model."""
     return enterprise_manager.deploy_custom_ai_model(
-        user_id, name, description, model_type, training_data, model_data,
+        user_id,
+        name,
+        description,
+        model_type,
+        training_data,
+        model_data,
     )
 
 
 def create_support_ticket(
-    user_id: str, priority: str, category: str, subject: str, description: str,
+    user_id: str,
+    priority: str,
+    category: str,
+    subject: str,
+    description: str,
 ) -> SupportTicket:
     """Create support ticket."""
     return enterprise_manager.create_support_ticket(
-        user_id, priority, category, subject, description,
+        user_id,
+        priority,
+        category,
+        subject,
+        description,
     )
 
 

@@ -232,7 +232,6 @@ class CircuitBreakerOpenError(Exception):
     """Exception raised when circuit breaker is open"""
 
 
-
 class EnterpriseErrorHandler:
     """Comprehensive error handling system"""
 
@@ -248,7 +247,8 @@ class EnterpriseErrorHandler:
 
         # Start error monitoring thread
         self._monitoring_thread = threading.Thread(
-            target=self._monitor_errors, daemon=True,
+            target=self._monitor_errors,
+            daemon=True,
         )
         self._monitoring_thread.start()
 
@@ -305,7 +305,9 @@ class EnterpriseErrorHandler:
             logger.error(f"[ERROR-HANDLER] Database initialization failed: {e}")
 
     def create_circuit_breaker(
-        self, name: str, config: CircuitBreakerConfig,
+        self,
+        name: str,
+        config: CircuitBreakerConfig,
     ) -> EnterpriseCircuitBreaker:
         """Create a new circuit breaker"""
         with self._lock:
@@ -507,7 +509,9 @@ class EnterpriseErrorHandler:
 
     @contextmanager
     def error_context(
-        self, service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM,
+        self,
+        service: str,
+        severity: ErrorSeverity = ErrorSeverity.MEDIUM,
     ) -> Any:
         """Context manager for automatic error handling"""
         try:
@@ -519,7 +523,8 @@ class EnterpriseErrorHandler:
 
 # Decorators for error handling
 def handle_errors(
-    service: str, severity: ErrorSeverity = ErrorSeverity.MEDIUM,
+    service: str,
+    severity: ErrorSeverity = ErrorSeverity.MEDIUM,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for automatic error handling"""
 
@@ -538,7 +543,8 @@ def handle_errors(
 
 
 def with_circuit_breaker(
-    breaker_name: str, config: CircuitBreakerConfig | None = None,
+    breaker_name: str,
+    config: CircuitBreakerConfig | None = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for circuit breaker protection"""
 
@@ -553,7 +559,8 @@ def with_circuit_breaker(
             else:
                 default_config = CircuitBreakerConfig()
                 breaker = error_handler.create_circuit_breaker(
-                    breaker_name, default_config,
+                    breaker_name,
+                    default_config,
                 )
 
         return breaker(func)
@@ -562,7 +569,9 @@ def with_circuit_breaker(
 
 
 def retry_on_failure(
-    max_retries: int = 3, delay: float = 1.0, backoff: float = 2.0,
+    max_retries: int = 3,
+    delay: float = 1.0,
+    backoff: float = 2.0,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for automatic retry with exponential backoff"""
 
@@ -610,15 +619,21 @@ def initialize_error_handling() -> EnterpriseErrorHandler:
     try:
         # Create default circuit breakers
         database_config = CircuitBreakerConfig(
-            failure_threshold=5, recovery_timeout=30, expected_exception=Exception,
+            failure_threshold=5,
+            recovery_timeout=30,
+            expected_exception=Exception,
         )
 
         payment_config = CircuitBreakerConfig(
-            failure_threshold=3, recovery_timeout=60, expected_exception=Exception,
+            failure_threshold=3,
+            recovery_timeout=60,
+            expected_exception=Exception,
         )
 
         api_config = CircuitBreakerConfig(
-            failure_threshold=10, recovery_timeout=30, expected_exception=Exception,
+            failure_threshold=10,
+            recovery_timeout=30,
+            expected_exception=Exception,
         )
 
         error_handler.create_circuit_breaker("database", database_config)

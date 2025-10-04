@@ -300,11 +300,13 @@ class TaggedTransaction(BaseModel):
 
     # Accept both 'risk_score' and legacy 'score' on input; serialize as 'risk_score'
     risk_score: float | None = Field(
-        default=None, validation_alias=AliasChoices("risk_score", "score"),
+        default=None,
+        validation_alias=AliasChoices("risk_score", "score"),
     )
     # Accept both 'risk_flags' and legacy 'flags' on input; serialize as 'risk_flags'
     risk_flags: list[str] = Field(
-        default_factory=list[Any], validation_alias=AliasChoices("risk_flags", "flags"),
+        default_factory=list[Any],
+        validation_alias=AliasChoices("risk_flags", "flags"),
     )
 
     # Convenience accessors so code can read .from_address/.to_address or .score/.flags too
@@ -374,7 +376,8 @@ class ReportSummary(BaseModel):
     # Backwards-compatible fields expected by older tests/code. Use distinct
     # alias fields so pydantic/mypy do not see duplicate class attributes.
     legacy_total_transactions: int | None = Field(
-        default=None, alias="total_transactions",
+        default=None,
+        alias="total_transactions",
     )
     legacy_total_volume: Decimal | None = Field(default=None, alias="total_volume")
     legacy_high_risk_count: int | None = Field(default=None, alias="high_risk_count")

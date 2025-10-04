@@ -1,5 +1,4 @@
-"""Shared constants and utilities to avoid circular imports.
-"""
+"""Shared constants and utilities to avoid circular imports."""
 
 import os
 from typing import Any

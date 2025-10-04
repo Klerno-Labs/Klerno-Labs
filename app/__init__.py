@@ -148,7 +148,9 @@ except Exception:
                 from . import security_session as _ss
 
                 self.ACCESS_TOKEN_EXPIRE_MINUTES = getattr(
-                    _ss, "ACCESS_TOKEN_EXPIRE_MINUTES", None,
+                    _ss,
+                    "ACCESS_TOKEN_EXPIRE_MINUTES",
+                    None,
                 )
             except Exception:
                 self.ACCESS_TOKEN_EXPIRE_MINUTES = None

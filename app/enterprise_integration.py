@@ -153,7 +153,8 @@ class EnterpriseIntegrationOrchestrator:
             }
 
             pain001_message = self.iso20022_manager.create_payment_instruction(
-                MessageType.PAIN_001, test_payment,
+                MessageType.PAIN_001,
+                test_payment,
             )
 
             # Validate generated message
@@ -385,7 +386,8 @@ class EnterpriseIntegrationOrchestrator:
             for msg_type in MessageType:
                 try:
                     message = self.iso20022_manager.create_payment_instruction(
-                        msg_type, test_data,
+                        msg_type,
+                        test_data,
                     )
                     validation = self.iso20022_manager.validate_message(message)
                     message_tests[msg_type.value] = {
@@ -513,7 +515,8 @@ class EnterpriseIntegrationOrchestrator:
             from typing import cast
 
             performance_metrics = await cast(
-                "Any", self.performance,
+                "Any",
+                self.performance,
             ).get_performance_metrics()
 
             # Test caching
@@ -521,7 +524,8 @@ class EnterpriseIntegrationOrchestrator:
 
             # Test load balancer
             load_balancer_status = await cast(
-                "Any", self.performance,
+                "Any",
+                self.performance,
             ).get_load_balancer_status()
 
             # Calculate health score based on performance
@@ -618,7 +622,8 @@ class EnterpriseIntegrationOrchestrator:
                 "health_score": health_score,
                 "circuit_breakers_active": len(cb_stats),
                 "auto_healing_enabled": healing_stats.get(
-                    "auto_healing_enabled", False,
+                    "auto_healing_enabled",
+                    False,
                 ),
                 "recent_healing_attempts": len(
                     healing_stats.get("recent_attempts", []),
@@ -639,7 +644,8 @@ class EnterpriseIntegrationOrchestrator:
             }
 
     def _calculate_integration_score(
-        self, verification_results: dict[str, Any],
+        self,
+        verification_results: dict[str, Any],
     ) -> float:
         """Calculate overall integration score."""
         total_score = 0
@@ -659,12 +665,14 @@ class EnterpriseIntegrationOrchestrator:
         try:
             # Performance validation (sub - second response times)
             performance_metrics = await cast(
-                "Any", self.performance,
+                "Any",
+                self.performance,
             ).get_performance_metrics()
             response_time = performance_metrics.get("avg_response_time", 1000)
             throughput = performance_metrics.get("requests_per_second", 0)
             performance_score = min(
-                100, max(0, 100 - (response_time / 10) + (throughput / 10)),
+                100,
+                max(0, 100 - (response_time / 10) + (throughput / 10)),
             )
 
             # Security validation (99.9%+ security score)
@@ -759,7 +767,9 @@ class EnterpriseIntegrationOrchestrator:
             performance_benchmarks = await self.performance.run_performance_benchmarks()
 
             # Run full test suite
-            full_test_results = await cast("Any", self.test_runner).run_full_test_suite()
+            full_test_results = await cast(
+                "Any", self.test_runner
+            ).run_full_test_suite()
 
             # Generate compliance report
             compliance_report = await self.iso20022_manager.generate_compliance_report()

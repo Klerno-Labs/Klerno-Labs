@@ -12,7 +12,9 @@ if str(ROOT) not in sys.path:
 
 # create temp DB
 with tempfile.NamedTemporaryFile(
-    prefix="klerno_test_debug_", suffix=".db", delete=False,
+    prefix="klerno_test_debug_",
+    suffix=".db",
+    delete=False,
 ) as temp_db:
     db_path = temp_db.name
 

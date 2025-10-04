@@ -109,7 +109,9 @@ class AsyncConnectionPool:
             raise
 
         conn = await aiosqlite.connect(
-            self.database_path, timeout=30.0, check_same_thread=False,
+            self.database_path,
+            timeout=30.0,
+            check_same_thread=False,
         )
 
         # Enable optimizations
@@ -165,7 +167,9 @@ class AsyncConnectionPool:
                 self.stats.idle_connections = len(self.idle_connections)
 
     async def execute_query(
-        self, query: str, params: tuple | None = None,
+        self,
+        query: str,
+        params: tuple | None = None,
     ) -> list[dict[str, Any]]:
         """Execute a query with performance monitoring"""
         start_time = time.time()
@@ -210,7 +214,8 @@ class AsyncConnectionPool:
             raise
 
     async def execute_transaction(
-        self, queries: list[tuple[str, tuple | None]],
+        self,
+        queries: list[tuple[str, tuple | None]],
     ) -> bool:
         """Execute multiple queries in a transaction"""
         async with self.get_connection() as conn:
@@ -328,7 +333,9 @@ class QueryOptimizer:
 
     @staticmethod
     async def analyze_query_performance(
-        pool: AsyncConnectionPool, query: str, params: tuple | None = None,
+        pool: AsyncConnectionPool,
+        query: str,
+        params: tuple | None = None,
     ) -> dict[str, Any]:
         """Analyze query performance with EXPLAIN QUERY PLAN"""
         explain_query = f"EXPLAIN QUERY PLAN {query}"
@@ -385,7 +392,8 @@ class DatabaseService:
 
         # Query database
         result = await self.pool.execute_query(
-            "SELECT * FROM users WHERE id = ? AND is_active = 1", (user_id,),
+            "SELECT * FROM users WHERE id = ? AND is_active = 1",
+            (user_id,),
         )
 
         user = result[0] if result else None
@@ -396,7 +404,10 @@ class DatabaseService:
         return user
 
     async def get_user_transactions(
-        self, user_id: int, limit: int = 100, offset: int = 0,
+        self,
+        user_id: int,
+        limit: int = 100,
+        offset: int = 0,
     ) -> list[dict[str, Any]]:
         """Get user transactions with pagination"""
         return await self.pool.execute_query(
@@ -411,7 +422,8 @@ class DatabaseService:
         )
 
     async def get_transaction_with_compliance(
-        self, transaction_id: int,
+        self,
+        transaction_id: int,
     ) -> dict[str, Any] | None:
         """Get transaction with compliance tags in a single query"""
         result = await self.pool.execute_query(

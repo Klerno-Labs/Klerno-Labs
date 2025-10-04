@@ -99,13 +99,16 @@ class EnterpriseHealthMonitor:
 
         # Start monitoring threads
         self._health_thread = threading.Thread(
-            target=self._health_check_worker, daemon=True,
+            target=self._health_check_worker,
+            daemon=True,
         )
         self._metrics_thread = threading.Thread(
-            target=self._metrics_worker, daemon=True,
+            target=self._metrics_worker,
+            daemon=True,
         )
         self._cleanup_thread = threading.Thread(
-            target=self._cleanup_worker, daemon=True,
+            target=self._cleanup_worker,
+            daemon=True,
         )
 
         self._health_thread.start()
@@ -258,7 +261,8 @@ class EnterpriseHealthMonitor:
             try:
                 start_time = time.time()
                 conn = cast(
-                    "ISyncConnection", sqlite3.connect(self.database_path, timeout=5),
+                    "ISyncConnection",
+                    sqlite3.connect(self.database_path, timeout=5),
                 )
                 cursor = conn.cursor()
                 cursor.execute("SELECT 1")
@@ -485,7 +489,7 @@ class EnterpriseHealthMonitor:
                     if result.status == "healthy":
                         logger.debug(
                             f"[HEALTH] {service_name}: {result.status} "
-                             f"({result.response_time_ms:.1f}ms)",
+                            f"({result.response_time_ms:.1f}ms)",
                         )
                     else:
                         logger.warning(

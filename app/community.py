@@ -144,9 +144,9 @@ class CommunityManager:
         self.knowledge_articles: dict[int, KnowledgeArticle] = {}
         self.tutorials: dict[int, Tutorial] = {}
         self.user_contributions: dict[int, UserContribution] = {}
-        self.votes: dict[str, dict[int, VoteType]] = (
-            {}
-        )  # user_id -> {post_id: vote_type}
+        self.votes: dict[
+            str, dict[int, VoteType]
+        ] = {}  # user_id -> {post_id: vote_type}
 
         # Initialize with sample content
         self._initialize_sample_content()
@@ -557,7 +557,11 @@ class CollaborationFeatures:
         self.team_annotations: dict[str, list[dict[str, Any]]] = {}
 
     def create_shared_workspace(
-        self, name: str, description: str, owner_id: int, team_members: list[int],
+        self,
+        name: str,
+        description: str,
+        owner_id: int,
+        team_members: list[int],
     ) -> dict[str, Any]:
         """Create a shared workspace for team collaboration"""
         workspace_id = max(self.shared_workspaces, default=0) + 1

@@ -301,7 +301,8 @@ class TestScalabilityLimits:
             try:
                 start_time = time.time()
                 response = await asyncio.wait_for(
-                    async_client.get("/health"), timeout=request_timeout,
+                    async_client.get("/health"),
+                    timeout=request_timeout,
                 )
                 end_time = time.time()
 

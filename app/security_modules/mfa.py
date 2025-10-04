@@ -82,7 +82,9 @@ except Exception:
                 return None
 
             def make_image(
-                self, fill_color: str = "black", back_color: str = "white",
+                self,
+                fill_color: str = "black",
+                back_color: str = "white",
             ) -> "_FallbackQRCode._MockImage":
                 return _FallbackQRCode._MockImage()
 
@@ -132,8 +134,7 @@ def decrypt_seed(token: str) -> str:
 
 
 class MFAManager:
-    """Enterprise - grade MFA manager with comprehensive security features
-    """
+    """Enterprise - grade MFA manager with comprehensive security features"""
 
     def __init__(self, encryption_key: bytes | None = None):
         """Initialize MFA manager with optional custom encryption key"""

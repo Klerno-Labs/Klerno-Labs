@@ -115,8 +115,7 @@ def _parse_iso(ts: Any) -> datetime | None:
 
 
 def explain_tx(tx: dict[str, Any]) -> str:
-    """Return a natural - language explanation of a single transaction.
-    """
+    """Return a natural - language explanation of a single transaction."""
     pre = [
         f"Transaction {tx.get('tx_id', '—')} on {tx.get('chain', 'unknown')}:",
         f"  from {tx.get('from_addr', '—')} to {tx.get('to_addr', '—')}",
@@ -131,7 +130,9 @@ def explain_tx(tx: dict[str, Any]) -> str:
         "direction, counterparties, and any anomalies. Avoid hedging."
     )
     user = "Explain this JSON transaction for a compliance analyst:\n" + json.dumps(
-        tx, ensure_ascii=False, indent=2,
+        tx,
+        ensure_ascii=False,
+        indent=2,
     )
     llm = _safe_llm(system, user)
     return preface + "\n\n" + llm
@@ -216,7 +217,8 @@ def ask_to_filters(question: str) -> dict[str, Any]:
 
 
 def apply_filters(
-    rows: list[dict[str, Any]], spec: dict[str, Any],
+    rows: list[dict[str, Any]],
+    spec: dict[str, Any],
 ) -> list[dict[str, Any]]:
     if not rows:
         return []
@@ -318,7 +320,8 @@ def explain_selection(question: str, rows: list[dict[str, Any]]) -> str:
 
 
 def summarize_rows(
-    rows: list[dict[str, Any]], title: str = "Summary",
+    rows: list[dict[str, Any]],
+    title: str = "Summary",
 ) -> dict[str, Any]:
     n = len(rows)
     if n == 0:

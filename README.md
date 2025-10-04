@@ -75,8 +75,8 @@ Klerno Labs uses short-lived access tokens (default 15 minutes) and long-lived r
 - **Refresh token lifetime**: Configurable via `REFRESH_TOKEN_EXPIRE_DAYS` (default: 7)
 - **Redis support**: If `USE_REDIS_REFRESH=true` and `REDIS_URL` is set, refresh tokens are stored in Redis for distributed deployments; otherwise, in-memory fallback is used.
 - **Endpoints**:
-   - `/auth/token/refresh`: Exchange a valid refresh token for a new access+refresh token pair (rotates refresh token)
-   - `/auth/token/revoke`: Revoke a refresh token (logout)
+  - `/auth/token/refresh`: Exchange a valid refresh token for a new access+refresh token pair (rotates refresh token)
+  - `/auth/token/revoke`: Revoke a refresh token (logout)
 
 **Environment variables:**
 

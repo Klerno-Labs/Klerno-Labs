@@ -71,7 +71,10 @@ class SecurityMetrics:
 
 class SystemMonitor:
     def auto_block_suspicious_users(
-        self, admin_manager, guardian_module, risk_threshold=0.9,
+        self,
+        admin_manager,
+        guardian_module,
+        risk_threshold=0.9,
     ):
         """Scan recent transactions, auto - block users with high risk, and log alerts."""
         try:

@@ -1,5 +1,4 @@
-"""Data store utilities with SQLite/Postgres backends and a small cache.
-"""
+"""Data store utilities with SQLite/Postgres backends and a small cache."""
 
 # NOTE: Bandit analysis intentionally enabled for this file.
 #
@@ -181,7 +180,8 @@ def _sqlite_conn() -> ISyncConnection:
     data_dir.mkdir(parents=True, exist_ok=True)
     # use a small timeout so concurrent writers don't immediately fail
     con = cast(
-        "ISyncConnection", sqlite3.connect(db_path, check_same_thread=False, timeout=5.0),
+        "ISyncConnection",
+        sqlite3.connect(db_path, check_same_thread=False, timeout=5.0),
     )
     con.row_factory = sqlite3.Row  # return dict - like rows to unify handling
     # Improve concurrency/performance for test and multi-request workloads:
@@ -261,7 +261,10 @@ def _ph() -> str:
 
 
 def wait_for_row(
-    select_sql: str, params: tuple = (), timeout: float = 1.0, poll: float = 0.05,
+    select_sql: str,
+    params: tuple = (),
+    timeout: float = 1.0,
+    poll: float = 0.05,
 ) -> list[Any]:
     """Wait for a row to become visible in the database.
 
@@ -791,7 +794,8 @@ def list_by_wallet(wallet: str, limit: int = 100) -> list[dict[str, Any]]:
         LIMIT {_ph()}
     """  # nosec: B608 - parameterized placeholders used
     cur.execute(
-        sql, (wallet, wallet, limit),
+        sql,
+        (wallet, wallet, limit),
     )  # nosec: B608 - parameterized placeholders used
     rows = cur.fetchall()
     con.close()
@@ -815,7 +819,8 @@ def list_alerts(threshold: float = 0.75, limit: int = 100) -> list[dict[str, Any
         LIMIT {_ph()}
     """  # nosec: B608 - parameterized placeholders used
     cur.execute(
-        sql, (threshold, limit),
+        sql,
+        (threshold, limit),
     )  # nosec: B608 - parameterized placeholders used
     rows = cur.fetchall()
     con.close()
@@ -1064,8 +1069,7 @@ def create_user(
     recovery_codes: list | None = None,
     has_hardware_key: bool = False,
 ) -> UserDict | None:
-    """Create a new user with support for both traditional email / password and OAuth authentication.
-    """
+    """Create a new user with support for both traditional email / password and OAuth authentication."""
     con = _conn()
     cur = con.cursor()
 
@@ -1425,7 +1429,8 @@ def get_user_by_oauth(oauth_provider: str, oauth_id: str) -> UserDict | None:
     FROM users WHERE oauth_provider={_ph()} AND oauth_id={_ph()}
         """  # nosec: B608 - parameterized placeholders used
     cur.execute(
-        sql, (oauth_provider, oauth_id),
+        sql,
+        (oauth_provider, oauth_id),
     )  # nosec: B608 - parameterized placeholders used
     row = cur.fetchone()
     con.close()
@@ -1436,7 +1441,8 @@ def get_user_by_oauth(oauth_provider: str, oauth_id: str) -> UserDict | None:
 
 
 def update_user_wallet_addresses(
-    user_id: int, wallet_addresses: list[dict[str, Any]],
+    user_id: int,
+    wallet_addresses: list[dict[str, Any]],
 ) -> None:
     """Update a user's wallet addresses."""
     con = _conn()
@@ -1458,7 +1464,10 @@ def update_user_wallet_addresses(
 
 
 def add_wallet_address(
-    user_id: int, address: str, chain: str, label: str | None = None,
+    user_id: int,
+    address: str,
+    chain: str,
+    label: str | None = None,
 ) -> None:
     """Add a wallet address to a user's profile."""
     user = get_user_by_id(user_id)
@@ -1581,7 +1590,9 @@ _rotated_passwords: dict[int, list[tuple[int, str]]] = {}
 
 
 def add_rotated_password(
-    user_id: int, password_hash: str, max_age_seconds: int = 30 * 24 * 3600,
+    user_id: int,
+    password_hash: str,
+    max_age_seconds: int = 30 * 24 * 3600,
 ) -> None:
     """Record a previous password hash for a user with a timestamp.
 
@@ -1626,7 +1637,9 @@ def remove_wallet_address(user_id: int, address: str, chain: str) -> None:
 
 
 def update_user_profile(
-    user_id: int, display_name: str | None = None, avatar_url: str | None = None,
+    user_id: int,
+    display_name: str | None = None,
+    avatar_url: str | None = None,
 ) -> None:
     """Update a user's profile information."""
     con = _conn()

@@ -1,5 +1,4 @@
-"""Unit tests for data models and validation.
-"""
+"""Unit tests for data models and validation."""
 
 from datetime import datetime
 from decimal import Decimal

@@ -73,7 +73,9 @@ logger.setLevel(logging.DEBUG)
 # Console handler: ensure console stream is UTF-8 encoded on Windows
 try:
     console_stream = io.TextIOWrapper(
-        sys.stdout.buffer, encoding="utf-8", line_buffering=True,
+        sys.stdout.buffer,
+        encoding="utf-8",
+        line_buffering=True,
     )
     # cast to TextIO for static checkers
     from typing import TextIO as _TextIO
@@ -408,7 +410,8 @@ async def signup_alias(request: Request):
 
     templates.env.globals["url_path_for"] = request.app.url_path_for
     return templates.TemplateResponse(
-        "signup.html", {"request": request, "app_env": "dev"},
+        "signup.html",
+        {"request": request, "app_env": "dev"},
     )
 
 
@@ -419,7 +422,8 @@ async def login_alias(request: Request):
 
     templates.env.globals["url_path_for"] = request.app.url_path_for
     return templates.TemplateResponse(
-        "login.html", {"request": request, "error": None, "app_env": "dev"},
+        "login.html",
+        {"request": request, "error": None, "app_env": "dev"},
     )
 
 
@@ -454,7 +458,8 @@ def _register_auth_router():
     def _shim_signup(request: Request):
         templates.env.globals["url_path_for"] = request.app.url_path_for
         return templates.TemplateResponse(
-            "signup.html", {"request": request, "app_env": "dev"},
+            "signup.html",
+            {"request": request, "app_env": "dev"},
         )
 
     @shim.get("/login", response_class=HTMLResponse)
@@ -479,7 +484,8 @@ def _register_admin_router():
     @shim.get("/", response_class=HTMLResponse)
     def _shim_admin_home(request: Request):
         return templates.TemplateResponse(
-            "admin.html", {"request": request, "title": "Admin"},
+            "admin.html",
+            {"request": request, "title": "Admin"},
         )
 
     app.include_router(shim)

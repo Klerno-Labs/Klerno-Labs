@@ -15,12 +15,16 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 class IMetrics(Protocol):
     def increment(
-        self, *args: Any, **kwargs: Any,
+        self,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:  # pragma: no cover - typing shim
         ...
 
     def histogram(
-        self, *args: Any, **kwargs: Any,
+        self,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:  # pragma: no cover - typing shim
         ...
 
@@ -30,7 +34,10 @@ class ICache(Protocol):
         ...
 
     async def set(
-        self, key: str, value: Any, ttl: int | None = None,
+        self,
+        key: str,
+        value: Any,
+        ttl: int | None = None,
     ) -> None:  # pragma: no cover - typing shim
         ...
 
@@ -125,7 +132,8 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
                     # Track cache hit metrics
                     if self.metrics_enabled:
                         metrics.increment(
-                            "http_cache_hits", tags={"endpoint": path, "method": method},
+                            "http_cache_hits",
+                            tags={"endpoint": path, "method": method},
                         )
                         metrics.histogram(
                             "http_response_time",

@@ -1,4 +1,3 @@
-
 """Removed worker helpers.
 
 This module was empty previously. Keep a no-op shim to avoid import-time errors

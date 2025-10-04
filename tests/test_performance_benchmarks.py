@@ -40,7 +40,7 @@ class TestPerformanceBenchmarks:
         median_time = statistics.median(response_times)
         p95_time = sorted(response_times)[int(len(response_times) * 0.95)]
 
-        print(f"\n🚀 Health Endpoint Performance:")
+        print("\n🚀 Health Endpoint Performance:")
         print(f"   Average: {avg_time:.2f}ms")
         print(f"   Median:  {median_time:.2f}ms")
         print(f"   95th %:  {p95_time:.2f}ms")
@@ -58,7 +58,7 @@ class TestPerformanceBenchmarks:
         def make_requests(worker_id):
             """Make multiple requests from a single worker."""
             worker_times = []
-            for i in range(requests_per_worker):
+            for _ in range(requests_per_worker):
                 start_time = time.perf_counter()
                 response = client.get("/healthz")
                 end_time = time.perf_counter()
@@ -103,7 +103,6 @@ class TestPerformanceBenchmarks:
     def test_memory_efficiency(self, client):
         """Test memory efficiency under load."""
         import gc
-        import sys
 
         # Get initial memory usage (rough estimate)
         gc.collect()
@@ -119,7 +118,7 @@ class TestPerformanceBenchmarks:
         final_objects = len(gc.get_objects())
 
         object_growth = final_objects - initial_objects
-        print(f"\n💾 Memory Efficiency:")
+        print("\n💾 Memory Efficiency:")
         print(f"   Initial objects: {initial_objects}")
         print(f"   Final objects: {final_objects}")
         print(f"   Object growth: {object_growth}")
@@ -159,7 +158,7 @@ class TestPerformanceBenchmarks:
                 avg_time = statistics.mean(response_times)
                 results[endpoint] = avg_time
 
-        print(f"\n🗄️ Database Operation Performance:")
+        print("\n🗄️ Database Operation Performance:")
         for endpoint, avg_time in results.items():
             print(f"   {endpoint}: {avg_time:.2f}ms")
             # Database operations should be reasonably fast
@@ -169,7 +168,7 @@ class TestPerformanceBenchmarks:
         """Test API response size efficiency."""
         endpoints = ["/healthz", "/status", "/health"]
 
-        print(f"\n📦 Response Size Analysis:")
+        print("\n📦 Response Size Analysis:")
 
         for endpoint in endpoints:
             response = client.get(endpoint)
@@ -190,9 +189,9 @@ class TestPerformanceBenchmarks:
                 )
 
                 # Response sizes should be reasonable
-                assert (
-                    response_size < 10000
-                ), f"{endpoint} response too large: {response_size} bytes"
+                assert response_size < 10000, (
+                    f"{endpoint} response too large: {response_size} bytes"
+                )
 
     def test_cold_start_performance(self, client):
         """Test cold start performance (first request after initialization)."""
@@ -205,7 +204,7 @@ class TestPerformanceBenchmarks:
 
         assert response.status_code == 200
 
-        print(f"\n🚀 Cold Start Performance:")
+        print("\n🚀 Cold Start Performance:")
         print(f"   First request: {cold_start_time:.2f}ms")
 
         # Cold start should not be excessive
@@ -228,7 +227,7 @@ def generate_performance_report():
     avg_response_time = ((time.perf_counter() - start_time) / 10) * 1000
 
     print(f"✅ Basic health check: {avg_response_time:.2f}ms average")
-    print(f"✅ Application status: Responsive")
+    print("✅ Application status: Responsive")
     print(
         f"✅ Performance tier: {'Excellent' if avg_response_time < 50 else 'Good' if avg_response_time < 100 else 'Acceptable'}"
     )

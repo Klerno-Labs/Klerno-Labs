@@ -54,7 +54,10 @@ class SecurityManager:
         ]
 
     def log_security_event(
-        self, event_type: str, details: dict[str, Any], request: Request | None = None,
+        self,
+        event_type: str,
+        details: dict[str, Any],
+        request: Request | None = None,
     ) -> None:
         """Log security events for monitoring"""
         event_data = {
@@ -89,7 +92,10 @@ class SecurityManager:
         return request.client.host if request.client else "unknown"
 
     def is_brute_force(
-        self, identifier: str, window_minutes: int = 15, max_attempts: int = 5,
+        self,
+        identifier: str,
+        window_minutes: int = 15,
+        max_attempts: int = 5,
     ) -> bool:
         """Check for brute force attempts"""
         now = datetime.now(UTC)
@@ -107,7 +113,10 @@ class SecurityManager:
         self.failed_attempts[identifier].append(datetime.now(UTC))
 
     def is_rate_limited(
-        self, identifier: str, window_minutes: int = 1, max_requests: int = 60,
+        self,
+        identifier: str,
+        window_minutes: int = 1,
+        max_requests: int = 60,
     ) -> bool:
         """Check rate limiting"""
         now = datetime.now(UTC)
@@ -161,7 +170,9 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     """Security middleware for request filtering and monitoring"""
 
     async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]],
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         start_time = time.time()
         client_ip = security_manager.get_client_ip(request)
@@ -174,13 +185,16 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 request,
             )
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied",
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied",
             )
 
         # Rate limiting
         if security_manager.is_rate_limited(client_ip):
             security_manager.log_security_event(
-                SECURITY_EVENTS["RATE_LIMIT_EXCEEDED"], {"ip": client_ip}, request,
+                SECURITY_EVENTS["RATE_LIMIT_EXCEEDED"],
+                {"ip": client_ip},
+                request,
             )
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -195,7 +209,8 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 request,
             )
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied",
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied",
             )
 
         # Input validation for suspicious patterns

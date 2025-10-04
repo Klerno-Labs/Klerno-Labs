@@ -2,10 +2,9 @@
 """Simple performance optimization implementation for the FastAPI application."""
 
 import json
-import statistics
 import subprocess
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 
 def analyze_code_performance():
@@ -71,7 +70,7 @@ def analyze_code_performance():
     return analysis_results
 
 
-def implement_immediate_optimizations() -> List[Dict[str, Any]]:
+def implement_immediate_optimizations() -> list[dict[str, Any]]:
     """Implement immediate performance optimizations."""
 
     optimizations = []
@@ -125,7 +124,7 @@ def implement_immediate_optimizations() -> List[Dict[str, Any]]:
     return optimizations
 
 
-def generate_optimization_recommendations() -> List[Dict[str, Any]]:
+def generate_optimization_recommendations() -> list[dict[str, Any]]:
     """Generate advanced optimization recommendations."""
 
     recommendations = [
@@ -174,7 +173,7 @@ def generate_optimization_recommendations() -> List[Dict[str, Any]]:
     return recommendations
 
 
-def calculate_performance_score(metrics: Dict[str, Any]) -> Dict[str, Any]:
+def calculate_performance_score(metrics: dict[str, Any]) -> dict[str, Any]:
     """Calculate overall performance score based on available metrics."""
 
     # Base score components
@@ -223,7 +222,7 @@ def calculate_performance_score(metrics: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def get_strengths(scores: Dict[str, float]) -> List[str]:
+def get_strengths(scores: dict[str, float]) -> list[str]:
     """Identify performance strengths."""
     strengths = []
 
@@ -234,7 +233,7 @@ def get_strengths(scores: Dict[str, float]) -> List[str]:
     return strengths
 
 
-def get_improvement_areas(scores: Dict[str, float]) -> List[str]:
+def get_improvement_areas(scores: dict[str, float]) -> list[str]:
     """Identify areas needing improvement."""
     improvement_areas = []
 
@@ -247,7 +246,7 @@ def get_improvement_areas(scores: Dict[str, float]) -> List[str]:
     return improvement_areas
 
 
-def generate_top_tier_action_plan() -> Dict[str, Any]:
+def generate_top_tier_action_plan() -> dict[str, Any]:
     """Generate action plan to reach top 0.01% performance."""
 
     action_plan = {
@@ -342,17 +341,17 @@ def main():
         json.dump(comprehensive_report, f, indent=2)
 
     # Print summary
-    print(f"\n🎯 PERFORMANCE ANALYSIS COMPLETE")
+    print("\n🎯 PERFORMANCE ANALYSIS COMPLETE")
     print("=" * 50)
     print(f"Current Score: {performance_score['overall_score']}/100")
     print(f"Performance Tier: {performance_score['performance_tier']}")
 
-    print(f"\n✅ Strengths:")
+    print("\n✅ Strengths:")
     for strength in performance_score["strengths"]:
         print(f"   • {strength}")
 
     if performance_score["improvement_areas"]:
-        print(f"\n🔧 Areas for Improvement:")
+        print("\n🔧 Areas for Improvement:")
         for area in performance_score["improvement_areas"]:
             print(f"   • {area}")
 
@@ -365,7 +364,7 @@ def main():
     print(f"⏱️  Timeline: {action_plan['phases'][0]['timeline']}")
     print(f"🔥 Priority: {action_plan['phases'][0]['priority']}")
 
-    print(f"\n📊 Detailed report saved to: top_tier_performance_report.json")
+    print("\n📊 Detailed report saved to: top_tier_performance_report.json")
 
     return comprehensive_report
 

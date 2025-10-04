@@ -68,7 +68,8 @@ class PerformanceMonitor:
             stats["p95_time"] = sorted_times[p95_index]
 
     def get_slow_endpoints(
-        self, threshold_ms: float = 100.0,
+        self,
+        threshold_ms: float = 100.0,
     ) -> dict[str, dict[str, Any]]:
         """Get endpoints exceeding the response time threshold."""
         return {
@@ -195,7 +196,8 @@ class InMemoryCache:
 
 
 def performance_cache(
-    ttl: int = 60, key_func: Callable | None = None,
+    ttl: int = 60,
+    key_func: Callable | None = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for caching function results with TTL."""
 

@@ -56,7 +56,9 @@ def create_access_token(data: dict[str, Any] | Any, *a, **kw) -> str:
         try:
             if "app.auth" in sys.modules:
                 minutes = getattr(
-                    sys.modules.get("app.auth"), "ACCESS_TOKEN_EXPIRE_MINUTES", None,
+                    sys.modules.get("app.auth"),
+                    "ACCESS_TOKEN_EXPIRE_MINUTES",
+                    None,
                 )
         except Exception:
             minutes = None

@@ -85,7 +85,9 @@ class BatchProcessor:
         self._shutdown = False
 
     def register_processor(
-        self, name: str, processor: Callable[[list[Any]], Awaitable[list[Any]]],
+        self,
+        name: str,
+        processor: Callable[[list[Any]], Awaitable[list[Any]]],
     ):
         """Register a batch processor function"""
         self.batch_processors[name] = processor
@@ -171,7 +173,10 @@ class AsyncTaskManager:
         self.task_stats: dict[str, dict[str, Any]] = {}
 
     async def submit_task(
-        self, task_id: str, coro: Awaitable[Any], timeout: float | None = None,
+        self,
+        task_id: str,
+        coro: Awaitable[Any],
+        timeout: float | None = None,
     ) -> str:
         """Submit a task for async execution"""
         if task_id in self.running_tasks:
@@ -355,7 +360,8 @@ def async_timeout(timeout_seconds: float):
         async def wrapper(*args, **kwargs):
             try:
                 return await asyncio.wait_for(
-                    func(*args, **kwargs), timeout=timeout_seconds,
+                    func(*args, **kwargs),
+                    timeout=timeout_seconds,
                 )
             except TimeoutError:
                 logger.error(
@@ -399,7 +405,8 @@ task_manager = AsyncTaskManager()
 
 
 async def process_concurrent_tasks(
-    tasks: list[Awaitable[Any]], max_concurrent: int = 10,
+    tasks: list[Awaitable[Any]],
+    max_concurrent: int = 10,
 ) -> list[Any]:
     """Process multiple tasks with controlled concurrency"""
     semaphore = asyncio.Semaphore(max_concurrent)

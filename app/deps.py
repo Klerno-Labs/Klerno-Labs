@@ -27,8 +27,7 @@ S = _LazySettings(get_settings)
 
 
 def _lookup_user_by_sub(sub: str) -> UserDict | dict | None:
-    """`sub` may be a numeric user id OR an email. Try both.
-    """
+    """`sub` may be a numeric user id OR an email. Try both."""
     # 1) try numeric id
     try:
         uid = int(sub)

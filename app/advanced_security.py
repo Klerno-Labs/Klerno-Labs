@@ -156,7 +156,9 @@ class BehavioralAnalyzer:
             )
 
     def detect_anomalies(
-        self, user_id: str, current_activity: dict[str, Any],
+        self,
+        user_id: str,
+        current_activity: dict[str, Any],
     ) -> list[dict[str, Any]]:
         """Detect behavioral anomalies."""
         anomalies: list[dict[str, Any]] = []
@@ -207,7 +209,8 @@ class BehavioralAnalyzer:
             recent_requests = [
                 req
                 for req in self.session_data.get(
-                    current_activity.get("session_id", ""), [],
+                    current_activity.get("session_id", ""),
+                    [],
                 )
                 if req["timestamp"] > current_time - timedelta(minutes=5)
                 and req["activity"].get("endpoint") == current_endpoint
@@ -476,7 +479,9 @@ class AdvancedFirewall:
             self.blocked_ips.add(ip_address)
             # Schedule unblock (simplified - in production use proper scheduler)
             threading.Timer(
-                duration_minutes * 60, self._unblock_ip, args=[ip_address],
+                duration_minutes * 60,
+                self._unblock_ip,
+                args=[ip_address],
             ).start()
             logger.warning(f"Blocked IP {ip_address} for {duration_minutes} minutes")
 
@@ -491,7 +496,10 @@ class AdvancedFirewall:
         return ip_address in self.blocked_ips
 
     def check_rate_limit(
-        self, ip_address: str, endpoint: str, limit: int = 100,
+        self,
+        ip_address: str,
+        endpoint: str,
+        limit: int = 100,
     ) -> bool:
         """Check rate limit for IP / endpoint combination."""
         current_time = time.time()
@@ -542,7 +550,9 @@ class CryptographicManager:
 
         # Generate RSA signing key pair
         private_key = rsa.generate_private_key(
-            public_exponent=65537, key_size=4096, backend=default_backend(),
+            public_exponent=65537,
+            key_size=4096,
+            backend=default_backend(),
         )
         self.signing_keys["master"] = private_key
 
@@ -558,7 +568,9 @@ class CryptographicManager:
         return encrypted_data.hex()
 
     def decrypt_sensitive_data(
-        self, encrypted_data: str, key_id: str = "master",
+        self,
+        encrypted_data: str,
+        key_id: str = "master",
     ) -> str:
         """Decrypt sensitive data."""
         self.ensure_initialized()
@@ -579,14 +591,18 @@ class CryptographicManager:
         signature = private_key.sign(
             data.encode(),
             padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH,
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH,
             ),
             hashes.SHA256(),
         )
         return signature.hex()
 
     def verify_signature(
-        self, data: str, signature: str, key_id: str = "master",
+        self,
+        data: str,
+        signature: str,
+        key_id: str = "master",
     ) -> bool:
         """Verify data signature."""
         self.ensure_initialized()
@@ -791,7 +807,8 @@ class SecurityOrchestrator:
         }
 
     def _calculate_overall_threat_level(
-        self, recent_threats: list[dict[str, Any]],
+        self,
+        recent_threats: list[dict[str, Any]],
     ) -> str:
         """Calculate overall threat level."""
         if not recent_threats:
@@ -856,7 +873,8 @@ def encrypt_data(data: str, key_id: str = "master") -> str:
 def decrypt_data(encrypted_data: str, key_id: str = "master") -> str:
     """Decrypt sensitive data."""
     return security_orchestrator.crypto_manager.decrypt_sensitive_data(
-        encrypted_data, key_id,
+        encrypted_data,
+        key_id,
     )
 
 

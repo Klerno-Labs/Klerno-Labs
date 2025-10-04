@@ -351,7 +351,8 @@ class APITestUtils:
     def authenticate_user(client: TestClient, email: str, password: str) -> str:
         """Authenticate user and return access token."""
         response = client.post(
-            "/auth/login", data={"username": email, "password": password},
+            "/auth/login",
+            data={"username": email, "password": password},
         )
         assert response.status_code == 200
         # Cast to str to satisfy strict typing (response.json() is Any at runtime)

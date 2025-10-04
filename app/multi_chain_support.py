@@ -223,7 +223,9 @@ class MultiChainEngine:
             }
 
     async def get_transaction(
-        self, chain: SupportedChain, tx_hash: str,
+        self,
+        chain: SupportedChain,
+        tx_hash: str,
     ) -> ChainTransaction | None:
         """Get transaction details from any supported chain."""
         if not self._check_rate_limit(chain):
@@ -253,7 +255,10 @@ class MultiChainEngine:
             return None
 
     async def get_address_transactions(
-        self, chain: SupportedChain, address: str, limit: int = 100,
+        self,
+        chain: SupportedChain,
+        address: str,
+        limit: int = 100,
     ) -> list[ChainTransaction]:
         """Get transactions for an address on any chain."""
         if not self._check_rate_limit(chain):
@@ -285,7 +290,9 @@ class MultiChainEngine:
             return []
 
     async def analyze_cross_chain_activity(
-        self, addresses: dict[SupportedChain, list[str]], days: int = 30,
+        self,
+        addresses: dict[SupportedChain, list[str]],
+        days: int = 30,
     ) -> MultiChainAnalytics:
         """Analyze activity across multiple chains."""
         all_transactions = []
@@ -330,7 +337,8 @@ class MultiChainEngine:
 
         # Calculate cross - chain risk metrics
         risk_metrics = self._calculate_cross_chain_risks(
-            all_transactions, chain_distribution,
+            all_transactions,
+            chain_distribution,
         )
 
         return MultiChainAnalytics(
@@ -564,7 +572,9 @@ class MultiChainEngine:
     # Address transaction methods (simplified - would return lists)
 
     async def _get_bitcoin_address_transactions(
-        self, address: str, limit: int,
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_bitcoin_transaction(f"mock_tx_{i}")
@@ -572,7 +582,9 @@ class MultiChainEngine:
         ]
 
     async def _get_ethereum_address_transactions(
-        self, address: str, limit: int,
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_ethereum_transaction(f"mock_tx_{i}")
@@ -580,7 +592,9 @@ class MultiChainEngine:
         ]
 
     async def _get_xrp_address_transactions(
-        self, address: str, limit: int,
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_xrp_transaction(f"mock_tx_{i}")
@@ -588,7 +602,9 @@ class MultiChainEngine:
         ]
 
     async def _get_polygon_address_transactions(
-        self, address: str, limit: int,
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_polygon_transaction(f"mock_tx_{i}")
@@ -596,7 +612,9 @@ class MultiChainEngine:
         ]
 
     async def _get_bsc_address_transactions(
-        self, address: str, limit: int,
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_bsc_transaction(f"mock_tx_{i}")
@@ -604,7 +622,9 @@ class MultiChainEngine:
         ]
 
     async def _get_cardano_address_transactions(
-        self, address: str, limit: int,
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_cardano_transaction(f"mock_tx_{i}")
@@ -612,7 +632,9 @@ class MultiChainEngine:
         ]
 
     async def _get_solana_address_transactions(
-        self, address: str, limit: int,
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_solana_transaction(f"mock_tx_{i}")
@@ -620,7 +642,9 @@ class MultiChainEngine:
         ]
 
     async def _get_avalanche_address_transactions(
-        self, address: str, limit: int,
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_avalanche_transaction(f"mock_tx_{i}")
@@ -633,21 +657,25 @@ multi_chain_engine = MultiChainEngine()
 
 
 async def get_transaction(
-    chain: SupportedChain, tx_hash: str,
+    chain: SupportedChain,
+    tx_hash: str,
 ) -> ChainTransaction | None:
     """Get transaction from any supported chain."""
     return await multi_chain_engine.get_transaction(chain, tx_hash)
 
 
 async def get_address_transactions(
-    chain: SupportedChain, address: str, limit: int = 100,
+    chain: SupportedChain,
+    address: str,
+    limit: int = 100,
 ) -> list[ChainTransaction]:
     """Get transactions for address on any chain."""
     return await multi_chain_engine.get_address_transactions(chain, address, limit)
 
 
 async def analyze_cross_chain_activity(
-    addresses: dict[SupportedChain, list[str]], days: int = 30,
+    addresses: dict[SupportedChain, list[str]],
+    days: int = 30,
 ) -> MultiChainAnalytics:
     """Analyze cross - chain activity."""
     return await multi_chain_engine.analyze_cross_chain_activity(addresses, days)

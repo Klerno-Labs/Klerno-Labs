@@ -139,7 +139,8 @@ def create_transaction(payload: dict[str, Any] = Body(...), user=Depends(current
             }
         except Exception as e:
             raise HTTPException(
-                status_code=500, detail="Failed to save transaction",
+                status_code=500,
+                detail="Failed to save transaction",
             ) from e
     finally:
         with contextlib.suppress(Exception):

@@ -73,7 +73,11 @@ class BasePlugin(ABC):
             self.hooks[hook_name].register(callback)
 
     def add_api_route(
-        self, app: FastAPI, path: str, endpoint: Callable, **kwargs: Any,
+        self,
+        app: FastAPI,
+        path: str,
+        endpoint: Callable,
+        **kwargs: Any,
     ) -> None:
         """Helper to add API routes with plugin prefix"""
         if self.metadata is None:
@@ -100,24 +104,30 @@ class PluginManager:
         self.hooks.update(
             {
                 "transaction_analyzed": PluginHook(
-                    "transaction_analyzed", "Called after a transaction is analyzed",
+                    "transaction_analyzed",
+                    "Called after a transaction is analyzed",
                 ),
                 "risk_calculated": PluginHook(
-                    "risk_calculated", "Called after risk score is calculated",
+                    "risk_calculated",
+                    "Called after risk score is calculated",
                 ),
                 "alert_generated": PluginHook(
-                    "alert_generated", "Called when an alert is generated",
+                    "alert_generated",
+                    "Called when an alert is generated",
                 ),
                 "dashboard_data": PluginHook(
-                    "dashboard_data", "Called when dashboard data is requested",
+                    "dashboard_data",
+                    "Called when dashboard data is requested",
                 ),
                 "api_request": PluginHook("api_request", "Called on API requests"),
                 "user_login": PluginHook("user_login", "Called when user logs in"),
                 "report_generated": PluginHook(
-                    "report_generated", "Called when a report is generated",
+                    "report_generated",
+                    "Called when a report is generated",
                 ),
                 "settings_changed": PluginHook(
-                    "settings_changed", "Called when settings are modified",
+                    "settings_changed",
+                    "Called when settings are modified",
                 ),
             },
         )
@@ -295,7 +305,8 @@ class SampleAnalyticsPlugin(BasePlugin):
         )
 
     def on_transaction_analyzed(
-        self, transaction_data: dict[str, Any],
+        self,
+        transaction_data: dict[str, Any],
     ) -> dict[str, Any]:
         """Called when a transaction is analyzed"""
         # Add custom analysis

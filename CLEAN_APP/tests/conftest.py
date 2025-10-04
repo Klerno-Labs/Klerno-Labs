@@ -19,7 +19,8 @@ try:
     import app.legacy_helpers as _legacy
 
     if hasattr(_legacy, "create_access_token") and not hasattr(
-        builtins, "create_access_token",
+        builtins,
+        "create_access_token",
     ):
         # Use setattr and a typed ignore to avoid static type complaints about
         # adding attributes to the builtins module during test collection.
@@ -313,7 +314,8 @@ class APITestUtils:
     def authenticate_user(client: TestClient, email: str, password: str) -> str:
         """Authenticate user and return access token."""
         response = client.post(
-            "/auth/login", data={"username": email, "password": password},
+            "/auth/login",
+            data={"username": email, "password": password},
         )
         assert response.status_code == 200
         return response.json()["access_token"]

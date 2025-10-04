@@ -80,7 +80,8 @@ async def run_test(concurrent=20):
 
         async def op(i):
             resp = await client.post(
-                "/transactions", json={"amount": float(i), "currency": "USD"},
+                "/transactions",
+                json={"amount": float(i), "currency": "USD"},
             )
             try:
                 data = resp.json()
@@ -92,11 +93,13 @@ async def run_test(concurrent=20):
                 # Verify directly on disk that the transaction exists
                 try:
                     check_con = cast(
-                        "ISyncConnection", sqlite3.connect(db_path, timeout=5.0),
+                        "ISyncConnection",
+                        sqlite3.connect(db_path, timeout=5.0),
                     )
                     cur = check_con.cursor()
                     cur.execute(
-                        "SELECT id, amount FROM transactions WHERE id=?", (txid,),
+                        "SELECT id, amount FROM transactions WHERE id=?",
+                        (txid,),
                     )
                     rr = cur.fetchone()
                     check_con.close()

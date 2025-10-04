@@ -53,7 +53,9 @@ def upgrade():
         ),
     )
     op.create_index(
-        "idx_transactions_created_at", "transactions", ["created_at"],
+        "idx_transactions_created_at",
+        "transactions",
+        ["created_at"],
     )
 
 

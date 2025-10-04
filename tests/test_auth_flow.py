@@ -9,7 +9,9 @@ from fastapi.testclient import TestClient
 def test_login_api_with_temp_sqlite_db():
     # Create a temp DB file
     tmp = tempfile.NamedTemporaryFile(
-        prefix="klerno_test_pytest_", suffix=".db", delete=False,
+        prefix="klerno_test_pytest_",
+        suffix=".db",
+        delete=False,
     )
     db_path = tmp.name
     tmp.close()
@@ -53,9 +55,9 @@ def test_login_api_with_temp_sqlite_db():
         "/auth/login/api",
         json={"email": "pytest_test@example.com", "password": password},
     )
-    assert (
-        resp.status_code == 200
-    ), f"unexpected status: {resp.status_code} body={resp.text}"
+    assert resp.status_code == 200, (
+        f"unexpected status: {resp.status_code} body={resp.text}"
+    )
     j = resp.json()
     assert j.get("ok") is True
     assert j.get("user", {}).get("email") == "pytest_test@example.com"

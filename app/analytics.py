@@ -193,7 +193,9 @@ class AdvancedAnalytics:
 
         # Sort by average risk score and return top addresses
         sorted_addresses = sorted(
-            address_metrics.values(), key=lambda x: x["avg_risk"], reverse=True,
+            address_metrics.values(),
+            key=lambda x: x["avg_risk"],
+            reverse=True,
         )
 
         return sorted_addresses[:limit]
@@ -306,7 +308,9 @@ class AdvancedAnalytics:
 
         # Find addresses with most connections (hubs)
         hub_addresses = sorted(
-            connections.items(), key=lambda x: len(x[1]), reverse=True,
+            connections.items(),
+            key=lambda x: len(x[1]),
+            reverse=True,
         )[:5]
 
         return {

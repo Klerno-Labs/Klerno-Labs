@@ -117,7 +117,9 @@ def main() -> int:
                 code = 1
             else:
                 maybe_app = getattr(app_mod, "app", None) or getattr(
-                    app_mod, "create_app", None,
+                    app_mod,
+                    "create_app",
+                    None,
                 )
                 if maybe_app is None:
                     attrs = [a for a in dir(app_mod) if a.lower().endswith("app")]

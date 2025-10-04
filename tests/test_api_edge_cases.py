@@ -1,10 +1,8 @@
 """Enhanced API testing for edge cases and error scenarios."""
 
-import asyncio
-import json
 import time
 from concurrent.futures import ThreadPoolExecutor
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -248,9 +246,10 @@ class TestDataValidationEdgeCases:
 
     def test_special_numeric_values(self, client):
         """Test handling of special numeric values."""
-        special_numbers = {
-            "infinity": float("inf"),
-            "negative_infinity": float("-inf"),
+        # Test special numeric values in requests
+        {
+            "infinity": "inf",
+            "negative_infinity": "-inf",
             "very_large": 10**100,
             "very_small": 10**-100,
             "zero": 0,
@@ -283,8 +282,6 @@ class TestRateLimitingEdgeCases:
 
         # Check if rate limiting is working
         status_codes = [r.status_code for r in responses]
-        has_rate_limit = 429 in status_codes
-
         # Either all succeed (rate limiting disabled) or some are rate limited
         assert all(code in [200, 429] for code in status_codes)
 

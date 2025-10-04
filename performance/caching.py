@@ -136,7 +136,9 @@ class RedisCache:
     """Redis-based distributed cache"""
 
     def __init__(
-        self, redis_url: str = "redis://localhost:6379", default_ttl: int = 3600,
+        self,
+        redis_url: str = "redis://localhost:6379",
+        default_ttl: int = 3600,
     ):
         self.redis_url = redis_url
         self.default_ttl = default_ttl

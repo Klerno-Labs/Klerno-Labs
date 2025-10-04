@@ -1,4 +1,3 @@
-
 # ===================================================================
 # KLERNO LABS REAL-TIME WEBSOCKET SERVER
 # Elite Real-Time Features for FastAPI
@@ -42,7 +41,8 @@ class ConnectionManager:
         self.user_presence[user_id] = {
             "status": "online",
             "last_seen": datetime.now().isoformat(),
-            "connections": self.user_presence.get(user_id, {}).get("connections", []) + [connection_id],
+            "connections": self.user_presence.get(user_id, {}).get("connections", [])
+            + [connection_id],
         }
 
         # Notify others about user joining
@@ -70,7 +70,9 @@ class ConnectionManager:
 
                 if not connections:
                     self.user_presence[user_id]["status"] = "offline"
-                    self.user_presence[user_id]["last_seen"] = datetime.now().isoformat()
+                    self.user_presence[user_id]["last_seen"] = (
+                        datetime.now().isoformat()
+                    )
                     await self.broadcast_user_presence(user_id, "left")
 
                 self.user_presence[user_id]["connections"] = connections
@@ -88,7 +90,9 @@ class ConnectionManager:
         """Send message to all connections of a specific user"""
         if user_id in self.user_presence:
             connections = self.user_presence[user_id].get("connections", [])
-            for connection_id in connections[:]:  # Copy to avoid modification during iteration
+            for connection_id in connections[
+                :
+            ]:  # Copy to avoid modification during iteration
                 await self.send_personal_message(json.dumps(message), connection_id)
 
     async def broadcast(self, message: dict, exclude_user: str = None):
@@ -110,7 +114,9 @@ class ConnectionManager:
         for connection_id in disconnected:
             await self.disconnect(connection_id)
 
-    async def broadcast_to_room(self, message: dict, room_id: str, exclude_user: str = None):
+    async def broadcast_to_room(
+        self, message: dict, room_id: str, exclude_user: str = None
+    ):
         """Broadcast message to all users in a specific room"""
         if room_id in self.room_connections:
             for connection_id in list(self.room_connections[room_id]):
@@ -129,12 +135,16 @@ class ConnectionManager:
         user_id = session.get("user_id")
 
         # Notify room about new member
-        await self.broadcast_to_room({
-            "type": "room_member_joined",
-            "room_id": room_id,
-            "user_id": user_id,
-            "timestamp": datetime.now().isoformat(),
-        }, room_id, exclude_user=user_id)
+        await self.broadcast_to_room(
+            {
+                "type": "room_member_joined",
+                "room_id": room_id,
+                "user_id": user_id,
+                "timestamp": datetime.now().isoformat(),
+            },
+            room_id,
+            exclude_user=user_id,
+        )
 
     async def leave_room(self, connection_id: str, room_id: str):
         """Remove user from a room"""
@@ -147,35 +157,44 @@ class ConnectionManager:
         user_id = session.get("user_id")
 
         # Notify room about member leaving
-        await self.broadcast_to_room({
-            "type": "room_member_left",
-            "room_id": room_id,
-            "user_id": user_id,
-            "timestamp": datetime.now().isoformat(),
-        }, room_id, exclude_user=user_id)
+        await self.broadcast_to_room(
+            {
+                "type": "room_member_left",
+                "room_id": room_id,
+                "user_id": user_id,
+                "timestamp": datetime.now().isoformat(),
+            },
+            room_id,
+            exclude_user=user_id,
+        )
 
     async def broadcast_user_presence(self, user_id: str, action: str):
         """Broadcast user presence changes"""
         presence_data = self.user_presence.get(user_id, {})
-        await self.broadcast({
-            "type": "user_presence",
-            "action": action,
-            "user_id": user_id,
-            "status": presence_data.get("status", "offline"),
-            "timestamp": datetime.now().isoformat(),
-        }, exclude_user=user_id)
+        await self.broadcast(
+            {
+                "type": "user_presence",
+                "action": action,
+                "user_id": user_id,
+                "status": presence_data.get("status", "offline"),
+                "timestamp": datetime.now().isoformat(),
+            },
+            exclude_user=user_id,
+        )
 
     def get_active_users(self) -> list[dict]:
         """Get list of active users"""
         active_users = []
         for user_id, presence in self.user_presence.items():
             if presence.get("status") == "online":
-                active_users.append({
-                    "user_id": user_id,
-                    "status": presence.get("status"),
-                    "last_seen": presence.get("last_seen"),
-                    "connection_count": len(presence.get("connections", [])),
-                })
+                active_users.append(
+                    {
+                        "user_id": user_id,
+                        "status": presence.get("status"),
+                        "last_seen": presence.get("last_seen"),
+                        "connection_count": len(presence.get("connections", [])),
+                    }
+                )
         return active_users
 
     def get_room_members(self, room_id: str) -> list[str]:
@@ -191,8 +210,10 @@ class ConnectionManager:
                 members.append(user_id)
         return list(set(members))  # Remove duplicates
 
+
 # Global connection manager
 manager = ConnectionManager()
+
 
 # WebSocket endpoint for FastAPI
 async def websocket_endpoint(websocket: WebSocket, user_id: str = None):
@@ -211,6 +232,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str = None):
     except Exception as e:
         logging.exception(f"WebSocket error: {e}")
         await manager.disconnect(connection_id)
+
 
 async def handle_websocket_message(connection_id: str, message: dict):
     """Handle incoming WebSocket messages"""
@@ -236,35 +258,44 @@ async def handle_websocket_message(connection_id: str, message: dict):
         content = message.get("content")
 
         if room_id and content:
-            await manager.broadcast_to_room({
-                "type": "chat_message",
-                "room_id": room_id,
-                "user_id": user_id,
-                "content": content,
-                "timestamp": datetime.now().isoformat(),
-                "message_id": str(uuid.uuid4()),
-            }, room_id)
+            await manager.broadcast_to_room(
+                {
+                    "type": "chat_message",
+                    "room_id": room_id,
+                    "user_id": user_id,
+                    "content": content,
+                    "timestamp": datetime.now().isoformat(),
+                    "message_id": str(uuid.uuid4()),
+                },
+                room_id,
+            )
 
     elif message_type == "user_activity":
         activity_data = message.get("data", {})
-        await manager.broadcast({
-            "type": "user_activity",
-            "user_id": user_id,
-            "activity": activity_data,
-            "timestamp": datetime.now().isoformat(),
-        }, exclude_user=user_id)
+        await manager.broadcast(
+            {
+                "type": "user_activity",
+                "user_id": user_id,
+                "activity": activity_data,
+                "timestamp": datetime.now().isoformat(),
+            },
+            exclude_user=user_id,
+        )
 
     elif message_type == "data_update":
         # Handle real-time data updates
         update_data = message.get("data", {})
-        await manager.broadcast({
-            "type": "data_update",
-            "data": update_data,
-            "updated_by": user_id,
-            "timestamp": datetime.now().isoformat(),
-        }, exclude_user=user_id)
+        await manager.broadcast(
+            {
+                "type": "data_update",
+                "data": update_data,
+                "updated_by": user_id,
+                "timestamp": datetime.now().isoformat(),
+            },
+            exclude_user=user_id,
+        )
+
 
 # Add this to your FastAPI routes
 # app.websocket("/ws/{user_id}")(websocket_endpoint)
 # app.websocket("/ws")(lambda websocket: websocket_endpoint(websocket))
-

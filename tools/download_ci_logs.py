@@ -47,7 +47,8 @@ for c in fails[:3]:
     try:
         res = subprocess.run(
             ["gh", "run", "download", run_id, "--dir", str(target)],
-            check=False, capture_output=True,
+            check=False,
+            capture_output=True,
             text=True,
         )
     except FileNotFoundError:

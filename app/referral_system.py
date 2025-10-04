@@ -97,7 +97,10 @@ class ReferralManager:
         return self._store_referral_event(event)
 
     def track_referral_conversion(
-        self, user_id: str, plan_type: str, amount: float,
+        self,
+        user_id: str,
+        plan_type: str,
+        amount: float,
     ) -> bool:
         """Track when a referred user converts to paid"""
         # Find referral event for this user
@@ -129,7 +132,9 @@ class ReferralManager:
         }
 
     def generate_social_share_content(
-        self, user_id: str, platform: str,
+        self,
+        user_id: str,
+        platform: str,
     ) -> dict[str, Any]:
         """Generate platform - specific sharing content"""
         referral_link = self.create_referral_link(user_id, f"social_{platform}")

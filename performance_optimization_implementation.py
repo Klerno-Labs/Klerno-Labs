@@ -2,10 +2,6 @@
 """Performance optimization analysis and implementation."""
 
 import json
-import threading
-import time
-from functools import wraps
-from typing import Any, Dict
 
 
 def create_performance_optimization_report():
@@ -416,12 +412,12 @@ def main():
         f"✅ Performance Tier: {report['performance_assessment']['performance_tier']}"
     )
 
-    print(f"\n💡 Optimization Opportunities:")
+    print("\n💡 Optimization Opportunities:")
     for opt in report["optimization_opportunities"]["immediate_optimizations"]:
         print(f"   • {opt['category']}: {opt['impact']}")
 
-    print(f"\n📊 Implementation plan saved to: performance_optimization_report.json")
-    print(f"🔧 Code implementations saved to: optimizations/ directory")
+    print("\n📊 Implementation plan saved to: performance_optimization_report.json")
+    print("🔧 Code implementations saved to: optimizations/ directory")
 
     return report
 

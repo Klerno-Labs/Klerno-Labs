@@ -71,7 +71,9 @@ class AuthorizationException(KlernoException):
     """Exception for authorization errors."""
 
     def __init__(
-        self, message: str = "Access denied", details: dict[str, Any] | None = None,
+        self,
+        message: str = "Access denied",
+        details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(
             message=message,
@@ -106,7 +108,9 @@ class RateLimitException(KlernoException):
     """Exception for rate limiting errors."""
 
     def __init__(
-        self, message: str = "Rate limit exceeded", retry_after: int | None = None,
+        self,
+        message: str = "Rate limit exceeded",
+        retry_after: int | None = None,
     ) -> None:
         details = {}
         if retry_after:
@@ -165,7 +169,8 @@ def create_error_response(
 
 
 async def klerno_exception_handler(
-    request: Request, exc: KlernoException,
+    request: Request,
+    exc: KlernoException,
 ) -> JSONResponse:
     """Handle Klerno application exceptions."""
     request_id = getattr(request.state, "request_id", None)
@@ -239,7 +244,8 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
 
 
 async def validation_exception_handler(
-    request: Request, exc: RequestValidationError,
+    request: Request,
+    exc: RequestValidationError,
 ) -> JSONResponse:
     """Handle request validation exceptions."""
     request_id = getattr(request.state, "request_id", None)

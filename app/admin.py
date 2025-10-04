@@ -135,7 +135,8 @@ def _send_email(subject: str, text: str, to_email: str | None = None) -> dict[st
 # ---------- UI ----------
 def admin_home(request: Request, user=Depends(require_admin)) -> Any:
     return templates.TemplateResponse(
-        "admin.html", {"request": request, "title": "Admin"},
+        "admin.html",
+        {"request": request, "title": "Admin"},
     )
 
 
@@ -443,7 +444,9 @@ class UpdateSubPayload(BaseModel):
 
 @router.post("/api/users/{user_id}/role")
 def admin_set_role(
-    user_id: int, payload: UpdateRolePayload, user=Depends(require_admin),
+    user_id: int,
+    payload: UpdateRolePayload,
+    user=Depends(require_admin),
 ):
     u = store.get_user_by_id(user_id)
     if not u:
@@ -457,7 +460,9 @@ def admin_set_role(
 
 @router.post("/api/users/{user_id}/subscription")
 def admin_set_subscription(
-    user_id: int, payload: UpdateSubPayload, user=Depends(require_admin),
+    user_id: int,
+    payload: UpdateSubPayload,
+    user=Depends(require_admin),
 ):
     u = store.get_user_by_id(user_id)
     if not u:
@@ -475,7 +480,8 @@ class SeedDemoPayload(BaseModel):
 
 @router.post("/api/data/seed_demo")
 def admin_seed_demo(
-    payload: SeedDemoPayload = Body(default=None), user=Depends(require_admin),
+    payload: SeedDemoPayload = Body(default=None),
+    user=Depends(require_admin),
 ):
     data_path = (BASE_DIR / ".." / "data" / "sample_transactions.csv").resolve()
     if not data_path.exists():
@@ -561,7 +567,8 @@ class TestEmailPayload(BaseModel):
 
 @router.post("/api/email/test")
 def admin_email_test(
-    payload: TestEmailPayload = Body(default=None), user=Depends(require_admin),
+    payload: TestEmailPayload = Body(default=None),
+    user=Depends(require_admin),
 ):
     to_addr = payload.email if payload and payload.email else DEFAULT_TO
     subject = "Klerno Admin Test"
@@ -706,7 +713,9 @@ def update_fund_config(config: FundDistributionConfig, user=Depends(require_admi
 
 @router.get("/api/fund-management/transactions")
 def get_fund_transactions(
-    limit: int = 50, offset: int = 0, user=Depends(require_admin),
+    limit: int = 50,
+    offset: int = 0,
+    user=Depends(require_admin),
 ):
     """Get recent fund transactions and distributions."""
     # Mock data for now - in production, query actual transactions
@@ -885,7 +894,8 @@ def update_security_policy(config: SecurityPolicyConfig, admin=Depends(require_a
             # Clear blacklist set
             cfg.common_passwords = set()
         elif len(getattr(cfg, "common_passwords", [])) == 0 and hasattr(
-            cfg, "_load_common_passwords",
+            cfg,
+            "_load_common_passwords",
         ):
             # Reload default blacklist if it was cleared
             cfg._load_common_passwords()

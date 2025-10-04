@@ -246,7 +246,7 @@ def main():
             f"\n💡 {full_report['summary']['total_recommendations']} recommendations available in database_validation_report.json"
         )
 
-    print(f"\n📄 Full report saved to: database_validation_report.json")
+    print("\n📄 Full report saved to: database_validation_report.json")
     return full_report
 
 

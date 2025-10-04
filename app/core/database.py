@@ -30,7 +30,8 @@ class DatabaseConnectionManager:
 
     @contextlib.contextmanager
     def get_connection(
-        self, timeout: float = 30.0,
+        self,
+        timeout: float = 30.0,
     ) -> Generator[ISyncConnection, None, None]:
         """Get a properly managed database connection that will be automatically closed.
 

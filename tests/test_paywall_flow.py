@@ -15,7 +15,9 @@ def test_landing_and_paywall_redirect(test_client):
 
     # Submitting wrong code should redirect back with err=1
     r = test_client.post(
-        "/paywall/verify", data={"code": "wrongcode"}, follow_redirects=False,
+        "/paywall/verify",
+        data={"code": "wrongcode"},
+        follow_redirects=False,
     )
     assert r.status_code in (302, 303)
     assert "/paywall?err=1" in r.headers.get("location", "")
@@ -26,7 +28,9 @@ def test_landing_and_paywall_redirect(test_client):
     from app.paywall import PAYWALL_CODE
 
     r = test_client.post(
-        "/paywall/verify", data={"code": PAYWALL_CODE}, follow_redirects=False,
+        "/paywall/verify",
+        data={"code": PAYWALL_CODE},
+        follow_redirects=False,
     )
     assert r.status_code in (302, 303)
     loc = r.headers.get("location", "")

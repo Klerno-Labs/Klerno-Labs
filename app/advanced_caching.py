@@ -180,7 +180,8 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
                         if if_modified_since:
                             try:
                                 client_time = datetime.strptime(
-                                    if_modified_since, "%a, %d %b %Y %H:%M:%S GMT",
+                                    if_modified_since,
+                                    "%a, %d %b %Y %H:%M:%S GMT",
                                 )
                                 file_time = datetime.fromtimestamp(mtime)
                                 if client_time >= file_time:

@@ -1,6 +1,5 @@
 # app / audit_logger.py
-"""Comprehensive audit logging system for security events and compliance.
-"""
+"""Comprehensive audit logging system for security events and compliance."""
 
 from __future__ import annotations
 
@@ -74,8 +73,7 @@ class AuditEvent(BaseModel):
 
 
 class AuditLogger:
-    """Centralized audit logging system with structured logging and security focus.
-    """
+    """Centralized audit logging system with structured logging and security focus."""
 
     def __init__(self) -> None:
         self.logger = self._setup_logger()
@@ -99,7 +97,8 @@ class AuditLogger:
             def format(self, record: logging.LogRecord) -> str:
                 log_entry = {
                     "timestamp": datetime.fromtimestamp(
-                        record.created, tz=UTC,
+                        record.created,
+                        tz=UTC,
                     ).isoformat(),
                     "level": record.levelname,
                     "logger": record.name,
@@ -192,7 +191,10 @@ class AuditLogger:
         self.log_event(event)
 
     def log_user_created(
-        self, user_id: str, user_email: str, request: Request | None = None,
+        self,
+        user_id: str,
+        user_email: str,
+        request: Request | None = None,
     ) -> None:
         """Log that a new user account was created."""
         event = AuditEvent(
@@ -230,7 +232,10 @@ class AuditLogger:
         self.log_event(event)
 
     def log_mfa_enabled(
-        self, user_id: str, user_email: str, request: Request | None = None,
+        self,
+        user_id: str,
+        user_email: str,
+        request: Request | None = None,
     ) -> None:
         """Log that a user enabled MFA."""
         event = AuditEvent(
@@ -270,7 +275,10 @@ class AuditLogger:
         self.log_event(event)
 
     def log_auth_failure(
-        self, email: str, reason: str, request: Request | None = None,
+        self,
+        email: str,
+        reason: str,
+        request: Request | None = None,
     ) -> None:
         """Log failed authentication attempt."""
         event = AuditEvent(
@@ -418,7 +426,10 @@ audit_logger = AuditLogger()
 
 
 def log_auth_success(
-    user_id: str, user_email: str, user_role: str, request: Request | None = None,
+    user_id: str,
+    user_email: str,
+    user_role: str,
+    request: Request | None = None,
 ) -> None:
     """Convenience function for logging successful authentication."""
     audit_logger.log_auth_success(user_id, user_email, user_role, request)
@@ -462,28 +473,37 @@ def log_security_event(
 
 
 def log_logout(
-    user_id: str, user_email: str, user_role: str, request: Request | None = None,
+    user_id: str,
+    user_email: str,
+    user_role: str,
+    request: Request | None = None,
 ) -> None:
     """Convenience: log user logout."""
     audit_logger.log_logout(user_id, user_email, user_role, request)
 
 
 def log_user_created(
-    user_id: str, user_email: str, request: Request | None = None,
+    user_id: str,
+    user_email: str,
+    request: Request | None = None,
 ) -> None:
     """Convenience: log user creation."""
     audit_logger.log_user_created(user_id, user_email, request)
 
 
 def log_password_reset_requested(
-    email: str, request: Request | None = None, user_id: str | None = None,
+    email: str,
+    request: Request | None = None,
+    user_id: str | None = None,
 ) -> None:
     """Convenience: log password reset request."""
     audit_logger.log_password_reset("request", email, user_id, request)
 
 
 def log_password_reset_confirmed(
-    user_id: str, email: str, request: Request | None = None,
+    user_id: str,
+    email: str,
+    request: Request | None = None,
 ) -> None:
     """Convenience: log password reset confirmation."""
     audit_logger.log_password_reset("confirm", email, user_id, request)

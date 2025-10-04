@@ -221,11 +221,17 @@ class EnhancedMonitor:
             )
 
     def record_metric(
-        self, name: str, value: float, tags: dict[str, str] | None = None,
+        self,
+        name: str,
+        value: float,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Record a metric point."""
         metric = MetricPoint(
-            timestamp=datetime.now(UTC), metric_name=name, value=value, tags=tags or {},
+            timestamp=datetime.now(UTC),
+            metric_name=name,
+            value=value,
+            tags=tags or {},
         )
 
         with self._lock:

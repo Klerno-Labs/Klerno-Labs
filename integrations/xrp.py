@@ -67,7 +67,8 @@ def fetch_account_tx(account: str, limit: int = 10) -> list[dict]:
     Read - only. No keys. Safe to try.
     """
     url = os.getenv(
-        "XRPL_RPC_URL", "https://s1.ripple.com:51234",
+        "XRPL_RPC_URL",
+        "https://s1.ripple.com:51234",
     )  # public Ripple server
     payload = {
         "method": "account_tx",

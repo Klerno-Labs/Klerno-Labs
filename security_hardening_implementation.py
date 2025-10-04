@@ -2,10 +2,8 @@
 """Immediate security hardening implementation."""
 
 import json
-import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List
 
 
 def implement_immediate_security_hardening():
@@ -936,7 +934,7 @@ def main():
         json.dump(hardening_results, f, indent=2)
 
     # Print summary
-    print(f"\n🔒 SECURITY HARDENING COMPLETE")
+    print("\n🔒 SECURITY HARDENING COMPLETE")
     print("=" * 50)
     print(f"Security Enhancements: {len(hardening_results['security_enhancements'])}")
     print(
@@ -946,12 +944,12 @@ def main():
         f"Implementation Status: {'✅ Complete' if hardening_results['implementation_status']['implementation_complete'] else '❌ Incomplete'}"
     )
 
-    print(f"\n🛡️ Security Features Implemented:")
+    print("\n🛡️ Security Features Implemented:")
     for enhancement in hardening_results["security_enhancements"]:
         print(f"   • {enhancement['name']}: {enhancement['description']}")
 
-    print(f"\n📊 Implementation saved to: security_implementations/")
-    print(f"📋 Hardening report saved to: security_hardening_report.json")
+    print("\n📊 Implementation saved to: security_implementations/")
+    print("📋 Hardening report saved to: security_hardening_report.json")
 
     # Calculate updated security score
     security_improvements = {
@@ -967,8 +965,8 @@ def main():
         100, 85 + (total_improvement * 0.15)
     )  # 15% improvement factor
 
-    print(f"\n📈 SECURITY SCORE UPDATE:")
-    print(f"Previous Score: 85/100 (GOOD)")
+    print("\n📈 SECURITY SCORE UPDATE:")
+    print("Previous Score: 85/100 (GOOD)")
     print(f"Estimated New Score: {new_security_score:.0f}/100")
 
     if new_security_score >= 95:

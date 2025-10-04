@@ -214,7 +214,8 @@ class AdvancedCache(Generic[T]):
             try:
                 servers = os.getenv("MEMCACHED_SERVERS", "localhost:11211").split(",")
                 self.memcache_client = memcache.Client(
-                    [s.strip() for s in servers], debug=0,
+                    [s.strip() for s in servers],
+                    debug=0,
                 )
                 # Cast to IMemcacheClient for static typing
                 self.memcache_client = cast("IMemcacheClient", self.memcache_client)
@@ -647,7 +648,11 @@ class LoadBalancer:
         self.health_checker_running = False
 
     def add_backend(
-        self, host: str, port: int, weight: int = 1, max_connections: int = 100,
+        self,
+        host: str,
+        port: int,
+        weight: int = 1,
+        max_connections: int = 100,
     ) -> None:
         """Add backend server."""
         backend = {
@@ -773,7 +778,8 @@ class LoadBalancer:
                     return sum(times) / len(times) if times else 0.0
 
                 backend = min(
-                    healthy_backends, key=lambda b: avg_response_time_for_backend(b),
+                    healthy_backends,
+                    key=lambda b: avg_response_time_for_backend(b),
                 )
 
             else:
@@ -847,13 +853,17 @@ class LoadBalancer:
 
 
 def cached(
-    ttl: int = 300, max_size: int = 1000, strategy: CacheStrategy = CacheStrategy.LRU,
+    ttl: int = 300,
+    max_size: int = 1000,
+    strategy: CacheStrategy = CacheStrategy.LRU,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Advanced caching decorator."""
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         cache_config = CacheConfig(
-            strategy=strategy, max_size=max_size, ttl_seconds=ttl,
+            strategy=strategy,
+            max_size=max_size,
+            ttl_seconds=ttl,
         )
         cache: AdvancedCache[Any] = AdvancedCache(cache_config)
 
@@ -1259,12 +1269,14 @@ class PerformanceOptimizer:
                 1000
                 / float(
                     benchmark_results.get("cache_performance", {}).get(
-                        "duration_seconds", 1.0,
+                        "duration_seconds",
+                        1.0,
                     ),
                 ),
             )
             cpu_score = min(
-                100, 1.0 / benchmark_results["cpu_performance"]["duration_seconds"],
+                100,
+                1.0 / benchmark_results["cpu_performance"]["duration_seconds"],
             )
             memory_score = min(
                 100,
@@ -1352,7 +1364,9 @@ class PerformanceOptimizer:
                 "optimizations_applied": optimizations,
                 "current_stats": current_stats,
                 "new_max_connections": getattr(
-                    self.db_pool, "max_connections", max_connections,
+                    self.db_pool,
+                    "max_connections",
+                    max_connections,
                 ),
             }
 
@@ -1563,7 +1577,8 @@ class PerformanceOptimizer:
         return baseline
 
     def _get_recommendations(
-        self, latest_metrics: PerformanceMetrics | None,
+        self,
+        latest_metrics: PerformanceMetrics | None,
     ) -> list[str]:
         """Get performance improvement recommendations."""
         if not latest_metrics:

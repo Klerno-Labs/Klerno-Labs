@@ -80,7 +80,8 @@ async def create_xrp_payment_request(
                 "success": True,
                 "request_id": payment["request_id"],
                 "destination_address": payment.get(
-                    "recipient", settings.XRP_WALLET_ADDRESS,
+                    "recipient",
+                    settings.XRP_WALLET_ADDRESS,
                 ),
                 "destination_tag": payment.get("destination_tag", "12345"),
                 "amount": amount_xrp,

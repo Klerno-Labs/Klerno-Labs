@@ -44,13 +44,20 @@ class TestAuthenticationFlow:
         assert data["token_type"] == "bearer"
 
     def test_protected_endpoint_access(
-        self, test_client, api_utils, db_utils, test_db, mock_user,
+        self,
+        test_client,
+        api_utils,
+        db_utils,
+        test_db,
+        mock_user,
     ):
         """Test access to protected endpoints with authentication."""
         # Create and authenticate user
         db_utils.create_test_user(test_db, mock_user)
         token = api_utils.authenticate_user(
-            test_client, mock_user["email"], "testpassword",
+            test_client,
+            mock_user["email"],
+            "testpassword",
         )
 
         # Access protected endpoint
@@ -65,7 +72,11 @@ class TestTransactionProcessing:
 
     @pytest.mark.asyncio
     async def test_transaction_creation_flow(
-        self, async_client, db_utils, test_db, mock_user,
+        self,
+        async_client,
+        db_utils,
+        test_db,
+        mock_user,
     ):
         """Test complete transaction creation process."""
         # Create user
@@ -89,7 +100,11 @@ class TestTransactionProcessing:
 
     @pytest.mark.asyncio
     async def test_compliance_analysis_integration(
-        self, async_client, db_utils, test_db, mock_user,
+        self,
+        async_client,
+        db_utils,
+        test_db,
+        mock_user,
     ):
         """Test integration between transaction creation and compliance analysis."""
         # Create user
@@ -127,7 +142,8 @@ class TestXRPLIntegration:
     async def test_xrpl_account_creation(self, async_client, mock_xrpl_client):
         """Test XRPL account creation integration."""
         with patch(
-            "app.integrations.xrp.get_xrpl_client", return_value=mock_xrpl_client,
+            "app.integrations.xrp.get_xrpl_client",
+            return_value=mock_xrpl_client,
         ):
             response = await async_client.post("/xrpl/create-account")
 
@@ -140,7 +156,8 @@ class TestXRPLIntegration:
     async def test_xrpl_balance_check(self, async_client, mock_xrpl_client):
         """Test XRPL balance checking integration."""
         with patch(
-            "app.integrations.xrp.get_xrpl_client", return_value=mock_xrpl_client,
+            "app.integrations.xrp.get_xrpl_client",
+            return_value=mock_xrpl_client,
         ):
             response = await async_client.get("/xrpl/balance/rTest123")
 
@@ -182,7 +199,12 @@ class TestAdminWorkflows:
     """Test admin functionality workflows."""
 
     def test_admin_user_management(
-        self, test_client, db_utils, test_db, mock_admin_user, mock_user,
+        self,
+        test_client,
+        db_utils,
+        test_db,
+        mock_admin_user,
+        mock_user,
     ):
         """Test admin user management capabilities."""
         # Create admin user
@@ -199,7 +221,11 @@ class TestAdminWorkflows:
         assert len(data) >= 2  # At least admin and regular user
 
     def test_admin_transaction_monitoring(
-        self, test_client, db_utils, test_db, mock_admin_user,
+        self,
+        test_client,
+        db_utils,
+        test_db,
+        mock_admin_user,
     ):
         """Test admin transaction monitoring."""
         # Create admin user
@@ -221,7 +247,8 @@ class TestISO20022Integration:
     async def test_iso_message_parsing(self, async_client, sample_iso20022_message):
         """Test ISO 20022 message parsing workflow."""
         response = await async_client.post(
-            "/iso20022/parse", json={"message": sample_iso20022_message},
+            "/iso20022/parse",
+            json={"message": sample_iso20022_message},
         )
 
         assert response.status_code == 200
@@ -232,11 +259,14 @@ class TestISO20022Integration:
 
     @pytest.mark.asyncio
     async def test_iso_compliance_integration(
-        self, async_client, sample_iso20022_message,
+        self,
+        async_client,
+        sample_iso20022_message,
     ):
         """Test ISO 20022 message compliance analysis integration."""
         response = await async_client.post(
-            "/iso20022/analyze-compliance", json={"message": sample_iso20022_message},
+            "/iso20022/analyze-compliance",
+            json={"message": sample_iso20022_message},
         )
 
         assert response.status_code == 200
@@ -280,14 +310,17 @@ class TestEndToEndWorkflows:
         }
 
         transaction_response = await async_client.post(
-            "/transactions", json=transaction_data, headers=headers,
+            "/transactions",
+            json=transaction_data,
+            headers=headers,
         )
         assert transaction_response.status_code == 201
         transaction_id = transaction_response.json()["id"]
 
         # 4. Check compliance analysis results
         compliance_response = await async_client.get(
-            f"/transactions/{transaction_id}/compliance-tags", headers=headers,
+            f"/transactions/{transaction_id}/compliance-tags",
+            headers=headers,
         )
         assert compliance_response.status_code == 200
 

@@ -1,6 +1,5 @@
 # app / security_middleware.py
-"""Enhanced security middleware for TLS enforcement and security headers.
-"""
+"""Enhanced security middleware for TLS enforcement and security headers."""
 
 from __future__ import annotations
 
@@ -14,8 +13,7 @@ from starlette.responses import RedirectResponse, Response
 
 
 class TLSEnforcementMiddleware(BaseHTTPMiddleware):
-    """Enforces HTTPS in production environments by redirecting HTTP to HTTPS.
-    """
+    """Enforces HTTPS in production environments by redirecting HTTP to HTTPS."""
 
     def __init__(self, app: Any, enforce_tls: bool | None = None) -> None:
         super().__init__(app)
@@ -27,7 +25,9 @@ class TLSEnforcementMiddleware(BaseHTTPMiddleware):
             self.enforce_tls = enforce_tls
 
     async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]],
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         # Skip TLS enforcement for health checks and development
         if not self.enforce_tls or request.url.path in ["/health", "/healthz"]:
@@ -67,8 +67,7 @@ class TLSEnforcementMiddleware(BaseHTTPMiddleware):
 
 
 class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Enhanced security headers middleware with production - grade configurations.
-    """
+    """Enhanced security headers middleware with production - grade configurations."""
 
     def __init__(self, app: Any) -> None:
         super().__init__(app)
@@ -76,7 +75,9 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
         self.is_production = self.app_env in ("production", "prod")
 
     async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]],
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         response = await call_next(request)
 

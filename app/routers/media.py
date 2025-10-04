@@ -1,57 +1,115 @@
-from __future__ import annotations
+"""
+Media router for handling media file uploads, serving, and management.
+"""
 
-import hashlib
+import mimetypes
 from pathlib import Path
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 
-router = APIRouter()
+router = APIRouter(prefix="/media", tags=["media"])
 
-
-def _choose_hero_variant(accept: str) -> tuple[str, str]:
-    base = Path("static") / "images" / "hero-bg"
-    # Order by client support preference then fallback
-    candidates: list[tuple[str, str]] = []
-    acc = accept.lower()
-    if "image/avif" in acc:
-        candidates.append((str(base.with_suffix(".avif")), "image/avif"))
-    if "image/webp" in acc:
-        candidates.append((str(base.with_suffix(".webp")), "image/webp"))
-    # Always include JPEG fallback last
-    candidates.append((str(base.with_suffix(".jpg")), "image/jpeg"))
-
-    for path, mime in candidates:
-        if Path(path).exists():
-            return path, mime
-    # Last resort: JPEG path (may 404 if missing)
-    return str(base.with_suffix(".jpg")), "image/jpeg"
+# Media storage configuration
+MEDIA_ROOT = Path("static/media")
+ALLOWED_EXTENSIONS = {
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".svg",
+    ".webp",
+    ".mp4",
+    ".webm",
+    ".mp3",
+    ".wav",
+}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
-@router.get("/images/hero-bg", include_in_schema=False)
-async def hero_bg(request: Request) -> Response:
-    try:
-        accept = request.headers.get("accept", "")
-        path, mime = _choose_hero_variant(accept)
-        # Read file
-        with Path(path).open("rb") as f:
-            data = f.read()
-        # Compute a weak ETag from content bytes
-        etag = 'W/"' + hashlib.sha1(data, usedforsecurity=False).hexdigest()[:16] + '"'  # nosec: B324 - ETag generation only
+@router.post("/upload")
+async def upload_media(file: UploadFile = File(...)):
+    """Upload a media file."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
 
-        # Handle conditional request
-        inm = request.headers.get("if-none-match")
-        headers = {
-            "Cache-Control": "public, max-age=31536000, immutable",
-            "ETag": etag,
-        }
-        if inm and inm == etag:
-            return Response(status_code=304, headers=headers)
-        return Response(content=data, media_type=mime, headers=headers)
-    except Exception:
-        # Fail-open to a 1x1 transparent PNG to avoid layout shifts if the file is missing in rare cases
-        tiny_png = (
-            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
-            b"\x00\x00\x00\x0bIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\x0d\n\x2d\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+    # Check file extension
+    file_ext = Path(file.filename).suffix.lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type {file_ext} not allowed. Allowed types: {', '.join(ALLOWED_EXTENSIONS)}",
         )
-        headers = {"Cache-Control": "no-store"}
-        return Response(content=tiny_png, media_type="image/png", headers=headers)
+
+    # Ensure media directory exists
+    MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+
+    # Save file
+    file_path = MEDIA_ROOT / file.filename
+    try:
+        content = await file.read()
+        if len(content) > MAX_FILE_SIZE:
+            raise HTTPException(status_code=400, detail="File too large")
+
+        with file_path.open("wb") as f:
+            f.write(content)
+
+        return {"filename": file.filename, "size": len(content), "path": str(file_path)}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to save file: {str(e)}"
+        ) from e
+
+
+@router.get("/files")
+async def list_media_files():
+    """List all uploaded media files."""
+    if not MEDIA_ROOT.exists():
+        return {"files": []}
+
+    files = []
+    for file_path in MEDIA_ROOT.iterdir():
+        if file_path.is_file():
+            stat = file_path.stat()
+            files.append(
+                {
+                    "filename": file_path.name,
+                    "size": stat.st_size,
+                    "modified": stat.st_mtime,
+                }
+            )
+
+    return {"files": files}
+
+
+@router.get("/serve/{filename}")
+async def serve_media(filename: str):
+    """Serve a media file."""
+    file_path = MEDIA_ROOT / filename
+
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Determine content type
+    content_type, _ = mimetypes.guess_type(str(file_path))
+    if not content_type:
+        content_type = "application/octet-stream"
+
+    return FileResponse(path=str(file_path), media_type=content_type, filename=filename)
+
+
+@router.delete("/files/{filename}")
+async def delete_media_file(filename: str):
+    """Delete a media file."""
+    file_path = MEDIA_ROOT / filename
+
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    try:
+        file_path.unlink()
+        return {"message": f"File {filename} deleted successfully"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete file: {str(e)}"
+        ) from e

@@ -15,7 +15,10 @@ class T:
 
 def test_fee_detection():
     tx = T(
-        memo="network fee", amount=Decimal(-1), fee=Decimal("0.1"), direction="out",
+        memo="network fee",
+        amount=Decimal(-1),
+        fee=Decimal("0.1"),
+        direction="out",
     )
     assert tag_category(tx) == "fee"
 

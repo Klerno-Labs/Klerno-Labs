@@ -9,7 +9,9 @@ from fastapi.testclient import TestClient
 
 # create a small temp sqlite DB with legacy schema
 with tempfile.NamedTemporaryFile(
-    prefix="klerno_test_", suffix=".db", delete=False,
+    prefix="klerno_test_",
+    suffix=".db",
+    delete=False,
 ) as _tmp:
     db_path = _tmp.name
 
@@ -136,7 +138,8 @@ except Exception:
 
 # Try JSON
 resp2 = client.post(
-    "/auth/login", json={"username": "test@example.com", "password": "testpassword"},
+    "/auth/login",
+    json={"username": "test@example.com", "password": "testpassword"},
 )
 print("status json", resp2.status_code)
 try:

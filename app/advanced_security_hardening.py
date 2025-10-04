@@ -164,10 +164,12 @@ class ThreatDetector:
                 re.IGNORECASE,
             ),
             "xss": re.compile(
-                r"(<script.*?>|javascript:|onload=|onerror=)", re.IGNORECASE,
+                r"(<script.*?>|javascript:|onload=|onerror=)",
+                re.IGNORECASE,
             ),
             "path_traversal": re.compile(
-                r"(\.\./|\.\.\\\\|%2e%2e%2f|%2e%2e%5c)", re.IGNORECASE,
+                r"(\.\./|\.\.\\\\|%2e%2e%2f|%2e%2e%5c)",
+                re.IGNORECASE,
             ),
             "command_injection": re.compile(r"(;|\||&|\$\(|\`)", re.IGNORECASE),
         }
@@ -319,7 +321,8 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
 
             # 2. IP Whitelisting for sensitive endpoints
             if path.startswith("/admin/") and not self.ip_whitelist.is_whitelisted(
-                ip, "admin",
+                ip,
+                "admin",
             ):
                 return JSONResponse(
                     status_code=403,
@@ -338,7 +341,10 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
                     and endpoint != "api"
                     and path.startswith(endpoint)
                     and self.rate_limiter.is_rate_limited(
-                        ip, endpoint, limits["limit"], limits["window"],
+                        ip,
+                        endpoint,
+                        limits["limit"],
+                        limits["window"],
                     )
                 ):
                     rate_limited = True
@@ -348,7 +354,10 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
             if not rate_limited and path.startswith("/api/"):
                 api_limits = self.rate_limits["api"]
                 if self.rate_limiter.is_rate_limited(
-                    ip, "api", api_limits["limit"], api_limits["window"],
+                    ip,
+                    "api",
+                    api_limits["limit"],
+                    api_limits["window"],
                 ):
                     rate_limited = True
 
@@ -356,7 +365,10 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
             if not rate_limited:
                 general_limits = self.rate_limits["general"]
                 if self.rate_limiter.is_rate_limited(
-                    ip, "general", general_limits["limit"], general_limits["window"],
+                    ip,
+                    "general",
+                    general_limits["limit"],
+                    general_limits["window"],
                 ):
                     rate_limited = True
 
@@ -370,7 +382,8 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
             content_length = request.headers.get("content-length")
             if content_length and int(content_length) > 10 * 1024 * 1024:  # 10MB limit
                 return JSONResponse(
-                    status_code=413, content={"error": "Request too large"},
+                    status_code=413,
+                    content={"error": "Request too large"},
                 )
 
             # Process request

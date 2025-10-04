@@ -56,7 +56,8 @@ async def stripe_webhook(request: Request):
     secret = (os.getenv("STRIPE_WEBHOOK_SECRET", "") or "").strip()
     if not sig_header or not secret:
         raise HTTPException(
-            status_code=400, detail="missing webhook signature or secret",
+            status_code=400,
+            detail="missing webhook signature or secret",
         )
 
     try:

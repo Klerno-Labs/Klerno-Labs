@@ -42,7 +42,6 @@ else:
             external package. It is intentionally minimal.
             """
 
-
         BaseSettings = _FallbackBaseSettings
         SettingsConfigDict = dict
 
@@ -98,7 +97,9 @@ class Settings(BaseSettings):
     admin_email: str = Field("")
 
     model_config = SettingsConfigDict(
-        env_file=".env", case_sensitive=False, extra="ignore",
+        env_file=".env",
+        case_sensitive=False,
+        extra="ignore",
     )
 
     @field_validator("cors_origins", mode="before")

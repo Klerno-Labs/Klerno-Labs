@@ -305,9 +305,9 @@ class ISO20022MessageBuilder:
             ET.SubElement(cdtr_acct_id, "IBAN").text = instruction.creditor_account
 
             # Purpose
-            ET.SubElement(cdt_trf_tx_inf, "Purp").text = (
-                instruction.payment_purpose.value
-            )
+            ET.SubElement(
+                cdt_trf_tx_inf, "Purp"
+            ).text = instruction.payment_purpose.value
 
             # Remittance Information
             if instruction.remittance_info:
@@ -343,9 +343,9 @@ class ISO20022MessageBuilder:
         for status in payment_statuses:
             tx_inf_and_sts = ET.SubElement(pmt_sts_rpt, "TxInfAndSts")
             ET.SubElement(tx_inf_and_sts, "StsId").text = status.status_id
-            ET.SubElement(tx_inf_and_sts, "OrgnlInstrId").text = (
-                status.original_instruction_id
-            )
+            ET.SubElement(
+                tx_inf_and_sts, "OrgnlInstrId"
+            ).text = status.original_instruction_id
             ET.SubElement(tx_inf_and_sts, "TxSts").text = status.status_code
 
             if status.status_reason:
@@ -503,7 +503,8 @@ class ISO20022MessageBuilder:
             status = ISO20022PaymentStatus(
                 status_id=status_data_item.get("status_id", f"STS-{idx}"),
                 original_instruction_id=status_data_item.get(
-                    "original_instruction_id", "",
+                    "original_instruction_id",
+                    "",
                 ),
                 status_code=status_data_item.get("status_code", "ACSC"),
                 status_reason=status_data_item.get("status_reason"),
@@ -529,7 +530,10 @@ class ISO20022MessageBuilder:
         transactions = statement_data.get("transactions", [])
 
         return self.create_camt053_message(
-            message_id, creation_datetime, account_id, transactions,
+            message_id,
+            creation_datetime,
+            account_id,
+            transactions,
         )
 
 
@@ -671,7 +675,8 @@ class ISO20022Validator:
             return False
 
     def validate_payment_instruction(
-        self, instruction: ISO20022PaymentInstruction,
+        self,
+        instruction: ISO20022PaymentInstruction,
     ) -> list[str]:
         """Validate payment instruction compliance."""
         errors = []
@@ -782,7 +787,9 @@ class ISO20022Parser:
                     "message_id": self._get_text(grp_hdr, "MsgId", namespace),
                     "creation_datetime": self._get_text(grp_hdr, "CreDtTm", namespace),
                     "number_of_transactions": self._get_text(
-                        grp_hdr, "NbOfTxs", namespace,
+                        grp_hdr,
+                        "NbOfTxs",
+                        namespace,
                     ),
                     "control_sum": self._get_text(grp_hdr, "CtrlSum", namespace),
                 }
@@ -798,7 +805,8 @@ class ISO20022Parser:
                 cdt_path = ".//ns:CdtTrfTxInf" if namespace else ".//CdtTrfTxInf"
                 for cdt_trf in pmt_inf.findall(cdt_path, namespace):
                     instruction = self._parse_credit_transfer_instruction(
-                        cdt_trf, namespace,
+                        cdt_trf,
+                        namespace,
                     )
                     parsed_instructions.append(instruction)
 
@@ -878,7 +886,9 @@ class ISO20022Parser:
                 result["original_message"] = {
                     "original_message_id": self._get_text(org, "OrgnlMsgId", namespace),
                     "original_message_name": self._get_text(
-                        org, "OrgnlMsgNmId", namespace,
+                        org,
+                        "OrgnlMsgNmId",
+                        namespace,
                     ),
                 }
 
@@ -894,12 +904,14 @@ class ISO20022Parser:
                     "additional_info": additional_info_list,
                 }
                 sts_rsn = tx.find(
-                    ".//ns:StsRsnInf" if namespace else ".//StsRsnInf", namespace,
+                    ".//ns:StsRsnInf" if namespace else ".//StsRsnInf",
+                    namespace,
                 )
                 if sts_rsn is not None:
                     # Try nested code and proprietary fields
                     rsn = sts_rsn.find(
-                        ".//ns:Rsn" if namespace else ".//Rsn", namespace,
+                        ".//ns:Rsn" if namespace else ".//Rsn",
+                        namespace,
                     )
                     if rsn is not None:
                         cd = (
@@ -936,7 +948,9 @@ class ISO20022Parser:
                 entry = {
                     "status_id": self._get_text(tx, "StsId", namespace),
                     "original_instruction_id": self._get_text(
-                        tx, "OrgnlInstrId", namespace,
+                        tx,
+                        "OrgnlInstrId",
+                        namespace,
                     ),
                     "status": self._get_text(tx, "TxSts", namespace),
                     # Back - compat simple reason text if present
@@ -992,12 +1006,15 @@ class ISO20022Parser:
                 acct = stmt.find(".//ns:Acct" if namespace else ".//Acct", namespace)
                 if acct is not None:
                     result["statement"]["account"] = self._get_text(
-                        acct, "IBAN", namespace,
+                        acct,
+                        "IBAN",
+                        namespace,
                     )
 
                 # Balances
                 for bal in stmt.findall(
-                    ".//ns:Bal" if namespace else ".//Bal", namespace,
+                    ".//ns:Bal" if namespace else ".//Bal",
+                    namespace,
                 ):
                     # Type may be in simple Tp or nested CdOrPrtry
                     tp = bal.find("ns:Tp", namespace) if namespace else bal.find("Tp")
@@ -1052,10 +1069,12 @@ class ISO20022Parser:
 
                 # Entries
                 for ntry in stmt.findall(
-                    ".//ns:Ntry" if namespace else ".//Ntry", namespace,
+                    ".//ns:Ntry" if namespace else ".//Ntry",
+                    namespace,
                 ):
                     amt_el = ntry.find(
-                        ".//ns:Amt" if namespace else ".//Amt", namespace,
+                        ".//ns:Amt" if namespace else ".//Amt",
+                        namespace,
                     )
                     currency = amt_el.get("Ccy", "") if amt_el is not None else ""
                     amount_val = (
@@ -1137,7 +1156,9 @@ def create_payment_message(
 
     # Default initiating party (should be configured)
     initiating_party = ISO20022PartyIdentification(
-        name="Klerno Labs Platform", identification="KLERNO001", country="US",
+        name="Klerno Labs Platform",
+        identification="KLERNO001",
+        country="US",
     )
 
     return iso20022_builder.create_pain001_message(
@@ -1278,7 +1299,8 @@ class ISO20022Manager:
             }
 
             message = self.create_payment_instruction(
-                MessageType.PAIN_001, payment_data,
+                MessageType.PAIN_001,
+                payment_data,
             )
             validation = self.validate_message(message)
             return bool(validation.get("valid", False))

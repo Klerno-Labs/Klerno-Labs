@@ -51,7 +51,11 @@ class IDatabaseManager(Protocol):
 
 class IErrorHandler(Protocol):
     def handle_error(
-        self, exc: Any, context: str | None = None, *args: Any, **kwargs: Any,
+        self,
+        exc: Any,
+        context: str | None = None,
+        *args: Any,
+        **kwargs: Any,
     ) -> Any: ...
 
     # Circuit breaker decorator or context manager factory
@@ -66,7 +70,9 @@ class ICICDPipeline(Protocol):
     def run(self, *args: Any, **kwargs: Any) -> Any: ...
 
     def run_pipeline(
-        self, project_path: str, target_env: str = "development",
+        self,
+        project_path: str,
+        target_env: str = "development",
     ) -> Any: ...
 
 
@@ -99,7 +105,9 @@ class IAnalytics(Protocol):
     def get_analytics_dashboard(self) -> dict[str, Any]: ...
 
     def generate_report(
-        self, report_id: str, parameters: dict[str, Any] | None = None,
+        self,
+        report_id: str,
+        parameters: dict[str, Any] | None = None,
     ) -> Any: ...
 
     def shutdown(self, *args: Any, **kwargs: Any) -> Any: ...

@@ -34,10 +34,13 @@ def load_token(token_file: str) -> str | None:
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument(
-        "--url", required=True, help="Base URL of the deployment (https://...)",
+        "--url",
+        required=True,
+        help="Base URL of the deployment (https://...)",
     )
     p.add_argument(
-        "--token-file", help="Optional token JSON file (saved by login_probe)",
+        "--token-file",
+        help="Optional token JSON file (saved by login_probe)",
     )
     args = p.parse_args()
 

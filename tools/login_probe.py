@@ -96,7 +96,8 @@ def main(save_token: bool = False, use_keyring: bool = False) -> int:
                             exp_ts = _parse_jwt_exp(at)
                             if exp_ts:
                                 saved["access_token_expiry"] = datetime.fromtimestamp(
-                                    exp_ts, tz=UTC,
+                                    exp_ts,
+                                    tz=UTC,
                                 ).isoformat()
 
                         if use_keyring and keyring:

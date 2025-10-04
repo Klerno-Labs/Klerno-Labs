@@ -1,5 +1,4 @@
-"""Comprehensive end - to - end tests that validate the entire application setup.
-"""
+"""Comprehensive end - to - end tests that validate the entire application setup."""
 
 import os
 from unittest.mock import patch

@@ -334,7 +334,10 @@ class PerformanceProfiler:
             }
 
     def record_metric(
-        self, operation: str, duration_ms: float, metadata: dict[str, Any] | None = None,
+        self,
+        operation: str,
+        duration_ms: float,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """Record a performance metric."""
         try:
@@ -419,11 +422,15 @@ class PerformanceProfiler:
             operation_stats[metric.operation].append(metric.duration_ms)
 
         top_by_frequency = sorted(
-            operation_stats.items(), key=lambda x: len(x[1]), reverse=True,
+            operation_stats.items(),
+            key=lambda x: len(x[1]),
+            reverse=True,
         )[:10]
 
         top_by_duration = sorted(
-            operation_stats.items(), key=lambda x: sum(x[1]) / len(x[1]), reverse=True,
+            operation_stats.items(),
+            key=lambda x: sum(x[1]) / len(x[1]),
+            reverse=True,
         )[:10]
 
         return {

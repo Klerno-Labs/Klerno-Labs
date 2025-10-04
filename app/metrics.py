@@ -128,7 +128,14 @@ def setup_metrics(app) -> None:  # pragma: no cover
         )
 
     # Publish to module-level globals for helper functions
-    global _prom_available, _registry, _req_counter, _latency_hist, _rl_allow_counter, _rl_deny_counter, _csp_violation_counter
+    global \
+        _prom_available, \
+        _registry, \
+        _req_counter, \
+        _latency_hist, \
+        _rl_allow_counter, \
+        _rl_deny_counter, \
+        _csp_violation_counter
     _prom_available = prom_available
     _registry = registry
     _req_counter = req_counter
@@ -148,7 +155,9 @@ def setup_metrics(app) -> None:  # pragma: no cover
                 path = "/_various"
             try:
                 req_counter.labels(
-                    request.method, path, str(response.status_code),
+                    request.method,
+                    path,
+                    str(response.status_code),
                 ).inc()
                 latency_hist.labels(request.method, path).observe(elapsed)
             except Exception:

@@ -58,7 +58,10 @@ def main():
     pw_hash = hash_pw(password)
     try:
         user = store.create_user(
-            email=email, password_hash=pw_hash, role="admin", subscription_active=True,
+            email=email,
+            password_hash=pw_hash,
+            role="admin",
+            subscription_active=True,
         )
         # store.create_user may return dict-like or a model; handle both safely
         if isinstance(user, dict):

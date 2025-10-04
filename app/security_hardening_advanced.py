@@ -256,7 +256,10 @@ class AdvancedSecurityHardening:
         return ip_address in self.blocked_ips
 
     def block_ip(
-        self, ip_address: str, reason: str, duration: timedelta | None = None,
+        self,
+        ip_address: str,
+        reason: str,
+        duration: timedelta | None = None,
     ) -> None:
         """Block an IP address."""
         self.blocked_ips.add(ip_address)
@@ -292,7 +295,9 @@ class AdvancedSecurityHardening:
             logger.error(f"Error blocking IP {ip_address}: {e}")
 
     def check_rate_limit(
-        self, ip_address: str, max_requests: int | None = None,
+        self,
+        ip_address: str,
+        max_requests: int | None = None,
     ) -> bool:
         """Check if IP is within rate limits."""
         max_requests = max_requests or self.max_requests_per_minute
@@ -638,7 +643,8 @@ class AdvancedSecurityHardening:
             # Auto-block very high risk requests
             if analysis["risk_score"] >= 90:
                 self.block_ip(
-                    ip_address, f"Automated block: risk score {analysis['risk_score']}",
+                    ip_address,
+                    f"Automated block: risk score {analysis['risk_score']}",
                 )
                 analysis["blocked"] = True
                 analysis["actions_taken"].append("IP auto-blocked for high risk")

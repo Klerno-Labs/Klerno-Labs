@@ -116,7 +116,8 @@ class TestRunner:
 
         # Initialize coverage
         cov = coverage.Coverage(
-            source=["app"], omit=["*/tests/*", "*/test_*", "*/__pycache__/*"],
+            source=["app"],
+            omit=["*/tests/*", "*/test_*", "*/__pycache__/*"],
         )
         cov.start()
 
@@ -199,7 +200,9 @@ class TestRunner:
                     cmd.extend(["--timeout", str(suite.timeout_seconds)])
 
                 process = await asyncio.create_subprocess_exec(
-                    *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                    *cmd,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
                 )
 
                 stdout, stderr = await process.communicate()
@@ -675,7 +678,9 @@ class TestRunner:
             return {"overall_coverage": 0.0, "error": str(e)}
 
     def _calculate_test_summary(
-        self, results: list[TestResult], coverage_report: dict[str, Any],
+        self,
+        results: list[TestResult],
+        coverage_report: dict[str, Any],
     ) -> dict[str, Any]:
         """Calculate test summary statistics."""
         total_tests = len(results)
@@ -720,7 +725,9 @@ class TestRunner:
         }
 
     def _store_test_results(
-        self, results: list[TestResult], summary: dict[str, Any],
+        self,
+        results: list[TestResult],
+        summary: dict[str, Any],
     ) -> None:
         """Store test results in database."""
         try:
@@ -903,7 +910,8 @@ class ContinuousTestingPipeline:
         """Run quick test subset."""
         # Run only unit tests and basic security tests
         unit_suite = next(
-            (s for s in self.test_runner.test_suites if s.name == "unit_tests"), None,
+            (s for s in self.test_runner.test_suites if s.name == "unit_tests"),
+            None,
         )
         security_suite = next(
             (s for s in self.test_runner.test_suites if s.name == "security_tests"),

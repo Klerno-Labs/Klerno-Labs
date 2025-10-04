@@ -132,7 +132,8 @@ class GuardianEngine:
         pass
 
     async def detect_anomalies(
-        self, transactions: list[dict[str, Any]],
+        self,
+        transactions: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         # Very small anomaly detector: flag txs with amount far above median
         amounts = [abs(Decimal(str(t.get("amount", 0)))) for t in transactions]
@@ -150,7 +151,8 @@ class GuardianEngine:
         return anomalies
 
     async def detect_patterns(
-        self, transactions: list[dict[str, Any]],
+        self,
+        transactions: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         # Return a list[Any] of pattern dicts used by tests. Detect simple
         # structured layering: repeated transfers of the same amount to
@@ -182,7 +184,8 @@ class GuardianEngine:
 
     # Backwards-compatible instance method name expected by older code/tests
     async def analyze_patterns(
-        self, transactions: list[dict[str, Any]],
+        self,
+        transactions: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         return await self.detect_patterns(transactions)
 

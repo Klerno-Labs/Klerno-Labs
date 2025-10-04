@@ -73,7 +73,9 @@ async def health_check() -> HealthResponse:
     """Liveness probe."""
     uptime = (datetime.now(UTC) - START_TIME).total_seconds()
     return HealthResponse(
-        status="ok", timestamp=datetime.now(UTC).isoformat(), uptime_seconds=uptime,
+        status="ok",
+        timestamp=datetime.now(UTC).isoformat(),
+        uptime_seconds=uptime,
     )
 
 
@@ -86,7 +88,9 @@ async def healthz_check() -> HealthResponse:
 @router.get("/status", response_model=StatusResponse)
 async def status() -> StatusResponse:
     return StatusResponse(
-        status="running", version="1.0.0", environment=settings.environment,
+        status="running",
+        version="1.0.0",
+        environment=settings.environment,
     )
 
 
@@ -139,7 +143,9 @@ async def readiness() -> ReadyResponse | JSONResponse:
         return JSONResponse(
             status_code=503,
             content=ReadyResponse(
-                status="not_ready", db=db_status, uptime_seconds=uptime,
+                status="not_ready",
+                db=db_status,
+                uptime_seconds=uptime,
             ).model_dump(),
         )
     return ReadyResponse(status="ready", db=db_status, uptime_seconds=uptime)
@@ -274,4 +280,3 @@ async def csp_recent(limit: int = 50) -> Any:
     # Convert to list and return newest first
     items = list(CSP_REPORTS)[-lim:][::-1]
     return items
-

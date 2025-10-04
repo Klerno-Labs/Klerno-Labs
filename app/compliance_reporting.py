@@ -258,7 +258,10 @@ class ComplianceReportingEngine:
 
         # Generate monitoring data
         monitoring_data = self._generate_monitoring_data(
-            user_id, start_date, end_date, risk_threshold,
+            user_id,
+            start_date,
+            end_date,
+            risk_threshold,
         )
 
         # Create CSV report
@@ -273,7 +276,10 @@ class ComplianceReportingEngine:
         return report
 
     def generate_suspicious_activity_report(
-        self, user_id: str, start_date: datetime, end_date: datetime,
+        self,
+        user_id: str,
+        start_date: datetime,
+        end_date: datetime,
     ) -> ComplianceReport:
         """Generate Suspicious Activity Report (SAR)."""
         report_id = str(uuid.uuid4())
@@ -317,7 +323,10 @@ class ComplianceReportingEngine:
         return report
 
     def get_compliance_metrics(
-        self, user_id: str, start_date: datetime, end_date: datetime,
+        self,
+        user_id: str,
+        start_date: datetime,
+        end_date: datetime,
     ) -> ComplianceMetrics:
         """Get compliance metrics for a date range."""
         # Mock implementation - replace with real data queries
@@ -436,7 +445,10 @@ class ComplianceReportingEngine:
         conn.close()
 
     def _generate_aml_data(
-        self, user_id: str, start_date: datetime, end_date: datetime,
+        self,
+        user_id: str,
+        start_date: datetime,
+        end_date: datetime,
     ) -> dict[str, Any]:
         """Generate AML report data."""
         # Mock AML data - replace with real queries
@@ -553,7 +565,10 @@ class ComplianceReportingEngine:
         return data
 
     def _generate_sar_data(
-        self, user_id: str, start_date: datetime, end_date: datetime,
+        self,
+        user_id: str,
+        start_date: datetime,
+        end_date: datetime,
     ) -> dict[str, Any]:
         """Generate Suspicious Activity Report data."""
         # Mock SAR data
@@ -649,7 +664,9 @@ class ComplianceReportingEngine:
         return str(file_path)
 
     def _create_monitoring_csv(
-        self, report: ComplianceReport, data: list[dict[str, Any]],
+        self,
+        report: ComplianceReport,
+        data: list[dict[str, Any]],
     ) -> str:
         """Create CSV file for monitoring report."""
         from pathlib import Path
@@ -692,23 +709,31 @@ compliance_engine = ComplianceReportingEngine()
 
 
 def generate_aml_report(
-    user_id: str, start_date: datetime, end_date: datetime,
+    user_id: str,
+    start_date: datetime,
+    end_date: datetime,
 ) -> ComplianceReport:
     """Generate AML compliance report."""
     return compliance_engine.generate_aml_report(user_id, start_date, end_date)
 
 
 def generate_transaction_monitoring_report(
-    user_id: str, start_date: datetime, end_date: datetime,
+    user_id: str,
+    start_date: datetime,
+    end_date: datetime,
 ) -> ComplianceReport:
     """Generate transaction monitoring report."""
     return compliance_engine.generate_transaction_monitoring_report(
-        user_id, start_date, end_date,
+        user_id,
+        start_date,
+        end_date,
     )
 
 
 def get_compliance_metrics(
-    user_id: str, start_date: datetime, end_date: datetime,
+    user_id: str,
+    start_date: datetime,
+    end_date: datetime,
 ) -> ComplianceMetrics:
     """Get compliance metrics."""
     return compliance_engine.get_compliance_metrics(user_id, start_date, end_date)

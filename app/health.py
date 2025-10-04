@@ -135,7 +135,8 @@ class HealthChecker:
 
             # Correct Redis URL (no spaces) and use the imported redis_lib
             redis_client = redis_lib.Redis.from_url(
-                "redis://redis:6379/0", decode_responses=True,
+                "redis://redis:6379/0",
+                decode_responses=True,
             )
             redis_client = cast("IRedisLike", redis_client)
 
@@ -163,7 +164,8 @@ class HealthChecker:
                 "message": "Cache connection successful",
                 "response_time_ms": round(response_time, 2),
                 "memory_usage_mb": round(
-                    info_obj.get("used_memory", 0) / 1024 / 1024, 2,
+                    info_obj.get("used_memory", 0) / 1024 / 1024,
+                    2,
                 ),
                 "connected_clients": info_obj.get("connected_clients", 0),
                 "total_commands_processed": info_obj.get("total_commands_processed", 0),
@@ -190,7 +192,8 @@ class HealthChecker:
 
                 timeout = ClientTimeout(total=5)
                 async with session.get(
-                    "https://s2.ripple.com:51234", timeout=timeout,
+                    "https://s2.ripple.com:51234",
+                    timeout=timeout,
                 ) as response:
                     response_time = (time.time() - start_time) * 1000
                     checks["xrpl"] = {
@@ -324,10 +327,12 @@ class HealthChecker:
                 "threads": psutil.Process().num_threads(),
                 "memory_info": {
                     "rss_mb": round(
-                        psutil.Process().memory_info().rss / 1024 / 1024, 2,
+                        psutil.Process().memory_info().rss / 1024 / 1024,
+                        2,
                     ),
                     "vms_mb": round(
-                        psutil.Process().memory_info().vms / 1024 / 1024, 2,
+                        psutil.Process().memory_info().vms / 1024 / 1024,
+                        2,
                     ),
                 },
                 "cpu_percent": psutil.Process().cpu_percent(),

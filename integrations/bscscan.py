@@ -85,7 +85,8 @@ def fetch_account_tx_bscscan(
 
     normal = (
         _get({"module": "account", "action": "txlist", **common}, api_key).get(
-            "result", [],
+            "result",
+            [],
         )
         or []
     )

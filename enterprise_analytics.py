@@ -122,10 +122,12 @@ class EnterpriseAnalytics:
 
         # Start background workers
         self._analytics_thread = threading.Thread(
-            target=self._analytics_worker, daemon=True,
+            target=self._analytics_worker,
+            daemon=True,
         )
         self._cleanup_thread = threading.Thread(
-            target=self._cleanup_worker, daemon=True,
+            target=self._cleanup_worker,
+            daemon=True,
         )
 
         self._analytics_thread.start()
@@ -587,7 +589,9 @@ class EnterpriseAnalytics:
             return 0.0
 
     def calculate_conversion_rate(
-        self, start_time: datetime, end_time: datetime,
+        self,
+        start_time: datetime,
+        end_time: datetime,
     ) -> float:
         """Calculate conversion rate"""
         try:
@@ -630,7 +634,10 @@ class EnterpriseAnalytics:
             return 0.0
 
     def _calculate_generic_metric(
-        self, metric_id: str, start_time: datetime, end_time: datetime,
+        self,
+        metric_id: str,
+        start_time: datetime,
+        end_time: datetime,
     ) -> float:
         """Calculate generic metric from stored values"""
         try:
@@ -682,7 +689,9 @@ class EnterpriseAnalytics:
             logger.error(f"[ANALYTICS] Failed to store metric value: {e}")
 
     def generate_report(
-        self, report_id: str, parameters: dict[str, Any] | None = None,
+        self,
+        report_id: str,
+        parameters: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Generate a report"""
         if report_id not in self.reports:
@@ -749,7 +758,11 @@ class EnterpriseAnalytics:
 
             # Store execution record
             self._store_report_execution(
-                report_id, execution_time, "error", result, str(e),
+                report_id,
+                execution_time,
+                "error",
+                result,
+                str(e),
             )
 
             logger.error(f"[ANALYTICS] Failed to generate report {report_id}: {e}")
@@ -1121,13 +1134,18 @@ if __name__ == "__main__":
     if analytics:
         # Track some test events
         analytics.track_event(
-            "page_view", user_id="user123", properties={"page": "/dashboard"},
+            "page_view",
+            user_id="user123",
+            properties={"page": "/dashboard"},
         )
         analytics.track_event(
-            "api_request", properties={"response_time": 150, "endpoint": "/api/users"},
+            "api_request",
+            properties={"response_time": 150, "endpoint": "/api/users"},
         )
         analytics.track_event(
-            "conversion", user_id="user123", properties={"value": 100},
+            "conversion",
+            user_id="user123",
+            properties={"value": 100},
         )
 
         # Wait a bit for processing

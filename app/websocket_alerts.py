@@ -117,7 +117,10 @@ async def send_compliance_alert(
 ) -> Any:
     """Send compliance alert to user (noop shim)."""
     await websocket_manager.send_compliance_alert(
-        user_id, compliance_issue, transaction_data, severity,
+        user_id,
+        compliance_issue,
+        transaction_data,
+        severity,
     )
 
 
@@ -130,7 +133,11 @@ async def send_threshold_alert(
 ) -> Any:
     """Send threshold alert to user (noop shim)."""
     await websocket_manager.send_threshold_alert(
-        user_id, threshold_type, current_value, threshold_value, severity,
+        user_id,
+        threshold_type,
+        current_value,
+        threshold_value,
+        severity,
     )
 
 

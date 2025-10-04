@@ -1,5 +1,4 @@
-"""Tests for advanced analytics functionality
-"""
+"""Tests for advanced analytics functionality"""
 
 import pytest
 

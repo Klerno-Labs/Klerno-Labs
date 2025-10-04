@@ -1,5 +1,4 @@
-"""Test cases for resilience system components.
-"""
+"""Test cases for resilience system components."""
 
 import contextlib
 import time

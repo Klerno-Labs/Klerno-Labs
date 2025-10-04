@@ -70,7 +70,9 @@ def configure_logging() -> None:
         logs_path.mkdir(parents=True, exist_ok=True)
 
     file_handler = logging.FileHandler(
-        str(logs_path / "app.log"), mode="a", encoding="utf-8",
+        str(logs_path / "app.log"),
+        mode="a",
+        encoding="utf-8",
     )
 
     if settings.app_env == "production":
@@ -79,14 +81,17 @@ def configure_logging() -> None:
     else:
         # Human-readable format for development
         formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S",
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            datefmt="%H:%M:%S",
         )
         console_handler.setFormatter(formatter)
         file_handler.setFormatter(json_formatter)
 
     # Configure root logger
     logging.basicConfig(
-        level=log_level, handlers=[console_handler, file_handler], force=True,
+        level=log_level,
+        handlers=[console_handler, file_handler],
+        force=True,
     )
 
     # Configure structlog

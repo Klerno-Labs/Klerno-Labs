@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Advanced performance profiler for FastAPI application."""
 
-import asyncio
+import contextlib
 import cProfile
 import io
 import json
@@ -9,8 +9,7 @@ import pstats
 import statistics
 import threading
 import time
-from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import requests
 
@@ -24,17 +23,15 @@ class FastAPIProfiler:
 
     def profile_endpoint(
         self, endpoint: str, method: str = "GET", runs: int = 100
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Profile a specific endpoint with detailed metrics."""
 
         print(f"🔍 Profiling {method} {endpoint} ({runs} runs)...")
 
         # Warm up
         for _ in range(5):
-            try:
+            with contextlib.suppress(Exception):
                 requests.get(f"{self.base_url}{endpoint}", timeout=5)
-            except:
-                pass
 
         # Profile with cProfile
         profiler = cProfile.Profile()
@@ -55,7 +52,7 @@ class FastAPIProfiler:
             except Exception as e:
                 status_code = 0
                 response_size = 0
-                print(f"Request {i+1} failed: {e}")
+                print(f"Request {i + 1} failed: {e}")
 
             if i == 0:
                 profiler.disable()
@@ -101,7 +98,7 @@ class FastAPIProfiler:
 
         return result
 
-    def _extract_profile_data(self, profiler: cProfile.Profile) -> Dict[str, Any]:
+    def _extract_profile_data(self, profiler: cProfile.Profile) -> dict[str, Any]:
         """Extract meaningful data from cProfile results."""
 
         # Capture profiler output
@@ -141,7 +138,7 @@ class FastAPIProfiler:
 
     def benchmark_concurrent_load(
         self, endpoint: str, concurrent_users: int = 10, requests_per_user: int = 50
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Benchmark concurrent load on an endpoint."""
 
         print(f"🚀 Load testing {endpoint} with {concurrent_users} concurrent users...")
@@ -224,7 +221,7 @@ class FastAPIProfiler:
             "error_count": len(errors),
         }
 
-    def memory_profile_endpoint(self, endpoint: str, runs: int = 100) -> Dict[str, Any]:
+    def memory_profile_endpoint(self, endpoint: str, runs: int = 100) -> dict[str, Any]:
         """Profile memory usage during endpoint execution."""
 
         print(f"🧠 Memory profiling {endpoint} ({runs} runs)...")
@@ -245,10 +242,8 @@ class FastAPIProfiler:
             for i in range(runs):
                 pre_request_memory = process.memory_info().rss / 1024 / 1024
 
-                try:
+                with contextlib.suppress(Exception):
                     requests.get(f"{self.base_url}{endpoint}", timeout=5)
-                except:
-                    pass
 
                 post_request_memory = process.memory_info().rss / 1024 / 1024
                 memory_samples.append(post_request_memory - pre_request_memory)
@@ -277,7 +272,7 @@ class FastAPIProfiler:
                 "suggestion": "Install psutil: pip install psutil",
             }
 
-    def comprehensive_analysis(self, endpoints: List[str]) -> Dict[str, Any]:
+    def comprehensive_analysis(self, endpoints: list[str]) -> dict[str, Any]:
         """Run comprehensive performance analysis on multiple endpoints."""
 
         print("🎯 COMPREHENSIVE PERFORMANCE ANALYSIS")
@@ -321,7 +316,7 @@ class FastAPIProfiler:
 
         return results
 
-    def _generate_summary(self, results: Dict[str, Any]) -> Dict[str, Any]:
+    def _generate_summary(self, results: dict[str, Any]) -> dict[str, Any]:
         """Generate performance summary and recommendations."""
 
         endpoint_performances = []
@@ -377,7 +372,9 @@ class FastAPIProfiler:
             else (
                 "GOOD"
                 if overall_avg_ms < 50
-                else "ACCEPTABLE" if overall_avg_ms < 100 else "NEEDS_IMPROVEMENT"
+                else "ACCEPTABLE"
+                if overall_avg_ms < 100
+                else "NEEDS_IMPROVEMENT"
             )
         )
 
@@ -390,7 +387,7 @@ class FastAPIProfiler:
             "recommendations": self._generate_recommendations(results),
         }
 
-    def _generate_recommendations(self, results: Dict[str, Any]) -> List[str]:
+    def _generate_recommendations(self, results: dict[str, Any]) -> list[str]:
         """Generate performance improvement recommendations."""
 
         recommendations = []
@@ -450,9 +447,9 @@ def main():
 
     # Test if server is running
     try:
-        response = requests.get("http://localhost:8000/health", timeout=5)
+        requests.get("http://localhost:8000/health", timeout=5)
         print("✅ Server is running")
-    except:
+    except Exception:
         print("❌ Server not running. Please start the server first.")
         print("Run: python start_local.py or uvicorn main:app --reload")
         return
@@ -476,7 +473,7 @@ def main():
         json.dump(results, f, indent=2)
 
     # Print summary
-    print(f"\n🎯 PERFORMANCE ANALYSIS COMPLETE")
+    print("\n🎯 PERFORMANCE ANALYSIS COMPLETE")
     print("=" * 50)
 
     summary = results["summary"]
@@ -492,7 +489,7 @@ def main():
         worst = summary["worst_performing_endpoint"]
         print(f"Slowest Endpoint: {worst['endpoint']} ({worst['avg_ms']:.2f}ms)")
 
-    print(f"\n💡 Recommendations:")
+    print("\n💡 Recommendations:")
     for rec in summary["recommendations"]:
         print(f"   • {rec}")
 

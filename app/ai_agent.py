@@ -1,5 +1,4 @@
-"""Safe Auto - Improver (proposal - only).
-"""
+"""Safe Auto - Improver (proposal - only)."""
 
 from __future__ import annotations
 
