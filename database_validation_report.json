@@ -1,0 +1,516 @@
+{
+  "analysis_timestamp": "2025-10-04T21:00:00Z",
+  "structure_analysis": {
+    "database_path": "./data/klerno.db",
+    "issues": [
+      "Table naming inconsistency: 'txs' exists but Alembic expects 'transactions'",
+      "Unexpected tables found: ['alembic_version']"
+    ],
+    "tables": {
+      "list": [
+        "txs",
+        "sqlite_sequence",
+        "users",
+        "user_settings",
+        "sqlite_stat1",
+        "alembic_version"
+      ],
+      "txs": {
+        "columns": 15,
+        "schema": [
+          [
+            0,
+            "id",
+            "INTEGER",
+            0,
+            null,
+            1
+          ],
+          [
+            1,
+            "tx_id",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            2,
+            "timestamp",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            3,
+            "chain",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            4,
+            "from_addr",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            5,
+            "to_addr",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            6,
+            "amount",
+            "REAL",
+            0,
+            null,
+            0
+          ],
+          [
+            7,
+            "symbol",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            8,
+            "direction",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            9,
+            "memo",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            10,
+            "fee",
+            "REAL",
+            0,
+            null,
+            0
+          ],
+          [
+            11,
+            "category",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            12,
+            "risk_score",
+            "REAL",
+            0,
+            null,
+            0
+          ],
+          [
+            13,
+            "risk_flags",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            14,
+            "notes",
+            "TEXT",
+            0,
+            null,
+            0
+          ]
+        ],
+        "row_count": 0
+      },
+      "users": {
+        "columns": 17,
+        "schema": [
+          [
+            0,
+            "id",
+            "INTEGER",
+            0,
+            null,
+            1
+          ],
+          [
+            1,
+            "email",
+            "TEXT",
+            1,
+            null,
+            0
+          ],
+          [
+            2,
+            "password_hash",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            3,
+            "role",
+            "TEXT",
+            1,
+            "'viewer'",
+            0
+          ],
+          [
+            4,
+            "subscription_active",
+            "INTEGER",
+            1,
+            "0",
+            0
+          ],
+          [
+            5,
+            "created_at",
+            "TEXT",
+            1,
+            "datetime('now')",
+            0
+          ],
+          [
+            6,
+            "oauth_provider",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            7,
+            "oauth_id",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            8,
+            "display_name",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            9,
+            "avatar_url",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            10,
+            "wallet_addresses",
+            "TEXT",
+            0,
+            "'[]'",
+            0
+          ],
+          [
+            11,
+            "totp_secret",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            12,
+            "mfa_enabled",
+            "INTEGER",
+            1,
+            "0",
+            0
+          ],
+          [
+            13,
+            "mfa_type",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            14,
+            "recovery_codes",
+            "TEXT",
+            0,
+            "'[]'",
+            0
+          ],
+          [
+            15,
+            "has_hardware_key",
+            "INTEGER",
+            1,
+            "0",
+            0
+          ],
+          [
+            16,
+            "is_admin",
+            "INTEGER",
+            0,
+            "0",
+            0
+          ]
+        ],
+        "row_count": 5
+      },
+      "user_settings": {
+        "columns": 7,
+        "schema": [
+          [
+            0,
+            "user_id",
+            "INTEGER",
+            0,
+            null,
+            1
+          ],
+          [
+            1,
+            "x_api_key",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            2,
+            "risk_threshold",
+            "REAL",
+            0,
+            null,
+            0
+          ],
+          [
+            3,
+            "time_range_days",
+            "INTEGER",
+            0,
+            null,
+            0
+          ],
+          [
+            4,
+            "ui_prefs",
+            "TEXT",
+            0,
+            null,
+            0
+          ],
+          [
+            5,
+            "created_at",
+            "TEXT",
+            1,
+            "datetime('now')",
+            0
+          ],
+          [
+            6,
+            "updated_at",
+            "TEXT",
+            1,
+            "datetime('now')",
+            0
+          ]
+        ],
+        "row_count": 0
+      },
+      "alembic_version": {
+        "columns": 1,
+        "schema": [
+          [
+            0,
+            "version_num",
+            "VARCHAR(32)",
+            1,
+            null,
+            1
+          ]
+        ],
+        "row_count": 1
+      }
+    },
+    "indexes": {
+      "txs": [
+        [
+          0,
+          "idx_txs_chain",
+          0,
+          "c",
+          0
+        ],
+        [
+          1,
+          "idx_txs_timestamp_desc",
+          0,
+          "c",
+          0
+        ],
+        [
+          2,
+          "idx_txs_amount",
+          0,
+          "c",
+          0
+        ],
+        [
+          3,
+          "idx_txs_category",
+          0,
+          "c",
+          0
+        ],
+        [
+          4,
+          "idx_txs_risk_score",
+          0,
+          "c",
+          0
+        ],
+        [
+          5,
+          "idx_txs_timestamp",
+          0,
+          "c",
+          0
+        ],
+        [
+          6,
+          "idx_txs_to_addr",
+          0,
+          "c",
+          0
+        ],
+        [
+          7,
+          "idx_txs_from_addr",
+          0,
+          "c",
+          0
+        ]
+      ],
+      "users": [
+        [
+          0,
+          "idx_users_oauth_id",
+          0,
+          "c",
+          0
+        ],
+        [
+          1,
+          "idx_users_oauth_provider",
+          0,
+          "c",
+          0
+        ],
+        [
+          2,
+          "idx_users_created_at",
+          0,
+          "c",
+          0
+        ],
+        [
+          3,
+          "idx_users_role",
+          0,
+          "c",
+          0
+        ],
+        [
+          4,
+          "idx_users_email",
+          0,
+          "c",
+          0
+        ],
+        [
+          5,
+          "sqlite_autoindex_users_1",
+          1,
+          "u",
+          0
+        ]
+      ],
+      "user_settings": [
+        [
+          0,
+          "idx_user_settings_user_id",
+          0,
+          "c",
+          0
+        ]
+      ],
+      "alembic_version": [
+        [
+          0,
+          "sqlite_autoindex_alembic_version_1",
+          1,
+          "pk",
+          0
+        ]
+      ]
+    },
+    "recommendations": [
+      "Consider renaming 'txs' to 'transactions' or updating Alembic migrations",
+      "Review if these tables are needed or can be removed"
+    ],
+    "database_size_mb": 0.09
+  },
+  "migration_analysis": {
+    "alembic_status": "current_version_0001_initial_core_tables",
+    "migration_issues": [],
+    "recommendations": []
+  },
+  "optimization_queries": [
+    "CREATE INDEX IF NOT EXISTS idx_txs_timestamp ON txs(timestamp);",
+    "CREATE INDEX IF NOT EXISTS idx_txs_chain ON txs(chain);",
+    "CREATE INDEX IF NOT EXISTS idx_txs_from_addr ON txs(from_addr);",
+    "CREATE INDEX IF NOT EXISTS idx_txs_to_addr ON txs(to_addr);",
+    "CREATE INDEX IF NOT EXISTS idx_txs_category ON txs(category);",
+    "CREATE INDEX IF NOT EXISTS idx_txs_risk_score ON txs(risk_score);",
+    "CREATE INDEX IF NOT EXISTS idx_users_oauth_provider ON users(oauth_provider);",
+    "CREATE INDEX IF NOT EXISTS idx_users_oauth_id ON users(oauth_id);",
+    "CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);",
+    "CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);",
+    "CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);",
+    "VACUUM;",
+    "ANALYZE;"
+  ],
+  "summary": {
+    "total_issues": 2,
+    "total_recommendations": 2,
+    "database_health": "needs_attention"
+  }
+}
