@@ -12,7 +12,14 @@ class ThemeController {
 
   init() {
     this.applyTheme(this.currentTheme);
-    this.createThemeToggle();
+    // Reuse an existing toggle in the DOM (e.g., navbar) to avoid duplicates
+    const existing = document.querySelector('.theme-toggle');
+    if (existing) {
+      this.toggleElement = existing;
+      this.updateToggleIcon();
+    } else {
+      this.createThemeToggle();
+    }
     this.bindEvents();
   }
 
@@ -47,6 +54,7 @@ class ThemeController {
   }
 
   createThemeToggle() {
+    // Create and append a floating toggle only if one doesn't already exist
     const toggle = document.createElement('button');
     toggle.className = 'theme-toggle';
     toggle.setAttribute('aria-label', 'Toggle theme');
