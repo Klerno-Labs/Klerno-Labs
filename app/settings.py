@@ -183,11 +183,9 @@ def get_settings() -> Settings:
         for _e in ("PORT", "LOCAL_PORT"):
             os.environ.pop(_e, None)
         os.environ.setdefault("APP_PORT", "8000")
-    # Use model_construct to avoid requiring explicit construction args at
-    # import-time while preserving a Settings-typed global for tests and
-    # runtime. model_construct avoids validation and is suitable here because
-    # the application often relies on environment variable-driven defaults.
-    return Settings.model_construct()
+    # Construct Settings normally so validators run (important for tests that
+    # assert warnings/failures based on environment and for enforcing defaults).
+    return Settings()
 
 
 settings: Settings = get_settings()

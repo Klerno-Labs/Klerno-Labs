@@ -32,121 +32,77 @@ except Exception:
 
 logger = logging.getLogger(__name__)
 
-# Provide a minimal module object so `integrations` is always a module-like
-# object (avoids assigning None to a variable that later holds ModuleType).
+# Provide a minimal module object so `integrations` is always present; we'll
+# reconcile it with the real top-level package below.
 integrations: Any = types.ModuleType("integrations")
 auth: Any = None
 create_access_token: Callable[..., str] | None = None
 verify_token: Callable[..., dict[Any, Any]] | None = None
 ACCESS_TOKEN_EXPIRE_MINUTES: int | None = None
-try:
-    from . import integrations as integrations
-except Exception:
-    # If integrations cannot be imported at package import time, keep going.
-    # Some repository layouts keep an `integrations` package at the top level
-    # (outside `app`). Try importing that as a fallback so tests that patch
-    # `app.integrations.xrp.fetch_account_tx` still work even when the
-    # package layout is mixed during consolidation.
+
+
+def _ensure_integrations_aliases() -> None:
+    """Ensure `app.integrations` and key submodules resolve for patchers.
+
+    Strategy:
+    - Import top-level `integrations` package.
+    - Register it as `app.integrations` in sys.modules.
+    - For each known submodule (xrp, bsc, bscscan):
+      - Try import `integrations.<sub>` and expose it under both namespaces.
+      - If import fails, create a tiny stub module exposing common attributes.
+    This keeps unittest.mock.patch("app.integrations.xrp.*") robust.
+    """
+
+    import importlib
+    import sys
+    import types as _types
+
     try:
-        import integrations as integrations
-
-        # Expose the top-level integrations package under the app namespace so
-        # import resolution and unittest.mock.patch("app.integrations.xrp.*") work
-        # even though there is no physical app/integrations/ package on disk.
-        try:
-            import sys as _sys
-
-            _sys.modules.setdefault("app.integrations", integrations)
-        except Exception:
-            pass
-
-        # Ensure common submodules are imported and reachable as attributes so
-        # attribute traversal (pkgutil.resolve_name) can find them without needing
-        # a successful intermediate import of app.integrations.
-        try:
-            import importlib as _importlib
-
-            for _sub in ("xrp", "bsc", "bscscan"):
-                try:
-                    real = _importlib.import_module(f"integrations.{_sub}")
-                    # Register under both namespaces to aid patchers
-                    _sys.modules[f"app.integrations.{_sub}"] = real
-                    setattr(integrations, _sub, real)
-                except Exception:
-                    # If a submodule fails to import, skip silently; fallback
-                    # shim below will still provide placeholders when needed.
-                    pass
-        except Exception:
-            pass
+        top = importlib.import_module("integrations")
     except Exception:
-        # Provide a lightweight shim module so tests can patch attributes
-        # like `app.integrations.xrp.get_xrpl_client` without raising
-        # AttributeError during resolution. We create simple module
-        # placeholders for common integration submodules.
-        import types
+        # Fallback: keep a simple empty module
+        top = _types.ModuleType("integrations")
+        sys.modules.setdefault("integrations", top)
 
-        integrations = types.ModuleType("integrations")
-        import sys
+    # Expose under app namespace
+    sys.modules.setdefault("app.integrations", top)
 
-        for _sub in ("xrp", "bsc", "bscscan"):
-            submod = types.ModuleType(f"integrations.{_sub}")
-            # Also create corresponding `app.integrations.<sub>` module names
-            app_sub_name = f"app.integrations.{_sub}"
-            app_sub = types.ModuleType(app_sub_name)
-            # Provide small function stubs on common integration modules so
-            # tests that patch these attributes don't raise AttributeError.
+    def _stub_xrp_module(name: str) -> types.ModuleType:
+        m = _types.ModuleType(name)
 
-            if _sub == "xrp":
+        def _stub_get_xrpl_client(*_a: Any, **_kw: Any) -> None:  # type: ignore[override]
+            return None
 
-                def _stub_get_xrpl_client(*args, **kwargs) -> None:
-                    return None
+        def _stub_fetch_account_tx(account: str, limit: int = 10):
+            return []
 
-                def _stub_fetch_account_tx(account: str, limit: int = 10):
-                    return []
+        setattr(m, "get_xrpl_client", _stub_get_xrpl_client)
+        setattr(m, "fetch_account_tx", _stub_fetch_account_tx)
+        return m
 
-                for m in (submod, app_sub):
-                    # use setattr to keep static checkers happier about dynamic attrs
-                    m.get_xrpl_client = _stub_get_xrpl_client  # type: ignore[attr-defined]
-                    m.fetch_account_tx = _stub_fetch_account_tx  # type: ignore[attr-defined]
-
-            setattr(integrations, _sub, submod)
-            setattr(integrations, _sub, submod)
-            setattr(app_sub, _sub, submod)
-
-            # Register the top-level and app submodules so unittest.mock.patch can find them
-            try:
-                sys.modules[f"integrations.{_sub}"] = submod
-                sys.modules[f"app.integrations.{_sub}"] = app_sub
-            except Exception as e:
-                logger.debug(f"Failed to register module integrations.{_sub}: {e}")
-
+    for sub in ("xrp", "bsc", "bscscan"):
         try:
-            sys.modules["integrations"] = integrations
-            sys.modules["app.integrations"] = integrations
-        except Exception as e:
-            logger.debug(f"Failed to register integrations module: {e}")
-
-        # Ensure `app.integrations` attribute points at our shim module
-        integrations.__name__ = "integrations"
-        integrations.__package__ = "integrations"
-        # Register the same module object as `app.integrations` in globals
-        globals()["integrations"] = integrations
-
-        # Ensure submodules (e.g., xrp) are accessible as attributes on app.integrations
+            mod = importlib.import_module(f"integrations.{sub}")
+        except Exception:
+            # Create a minimal stub for xrp; others can be empty placeholders
+            if sub == "xrp":
+                mod = _stub_xrp_module(f"integrations.{sub}")
+            else:
+                mod = _types.ModuleType(f"integrations.{sub}")
+        # Register under both namespaces and as attribute on top
+        sys.modules[f"integrations.{sub}"] = mod
+        sys.modules[f"app.integrations.{sub}"] = mod
         try:
-            import sys as _sys
-
-            for _sub in ("xrp", "bsc", "bscscan"):
-                mod = _sys.modules.get(f"app.integrations.{_sub}") or _sys.modules.get(
-                    f"integrations.{_sub}",
-                )
-                if mod is not None:
-                    setattr(integrations, _sub, mod)
-                else:
-                    # ensure attribute exists even if module missing
-                    setattr(integrations, _sub, getattr(integrations, _sub, None))
+            setattr(top, sub, mod)
         except Exception:
             pass
+
+    # Finally, ensure the package-level attribute points at our `top` module
+    globals()["integrations"] = top
+
+
+# Initialize aliases at import time
+_ensure_integrations_aliases()
 
 # Ensure auth submodule is available as attribute on the package so
 # imports/patches like 'app.auth.ACCESS_TOKEN_EXPIRE_MINUTES' resolve.
@@ -235,33 +191,5 @@ if not isinstance(integrations, types.ModuleType):
     for _sub in ("xrp", "bsc", "bscscan"):
         setattr(integrations, _sub, types.ModuleType(f"integrations.{_sub}"))
 
-# Reconcile with any real integrations package on disk: prefer the real
-# `integrations.xrp` module if it exists and register it so patchers find
-# the expected attributes. This makes tests robust both when `integrations`
-# is a real package and when we had to provide a shim.
-try:
-    import importlib
-    import sys as _sys
-
-    real_xrp: types.ModuleType | None = None
-    try:
-        real_xrp = importlib.import_module("integrations.xrp")
-    except Exception:
-        try:
-            real_xrp = importlib.import_module("app.integrations.xrp")
-        except Exception:
-            real_xrp = None
-
-    if real_xrp is not None:
-        try:
-            # Ensure both top-level and app-level references point to the real module
-            _sys.modules["integrations.xrp"] = real_xrp
-            _sys.modules["app.integrations.xrp"] = real_xrp
-            # Also ensure attribute is set on the integrations package object that
-            # our app exposes so getattr(app.integrations, "xrp") succeeds.
-            with contextlib.suppress(Exception):
-                integrations.xrp = real_xrp
-        except Exception:
-            pass
-except Exception:
-    pass
+# No trailing reconciliation needed; `_ensure_integrations_aliases` already
+# registered both namespaces and attributes for known submodules.
