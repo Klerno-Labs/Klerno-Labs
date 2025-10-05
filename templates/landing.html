@@ -12,7 +12,7 @@
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://klerno.com/">
+<meta property="og:url" content="{{ request.base_url }}">
 <meta property="og:title" content="Klerno Labs - Elite Blockchain Security & Risk Analysis">
 <meta property="og:description"
   content="Enterprise-grade blockchain security and risk analysis for major cryptocurrencies. Real-time monitoring, compliance tools, and AI-powered threat detection.">
@@ -20,7 +20,7 @@
 
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:url" content="https://klerno.com/">
+<meta property="twitter:url" content="{{ request.base_url }}">
 <meta property="twitter:title" content="Klerno Labs - Elite Blockchain Security & Risk Analysis">
 <meta property="twitter:description"
   content="Enterprise-grade blockchain security and risk analysis for major cryptocurrencies. Real-time monitoring, compliance tools, and AI-powered threat detection.">
@@ -32,8 +32,8 @@
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "Klerno Labs",
-  "url": "https://klerno.com",
-  "logo": "https://klerno.com/static/klerno-logo.png",
+  "url": "{{ request.base_url | trim('/') }}",
+  "logo": "{{ request.base_url }}static/klerno-logo.png",
   "description": "Enterprise-grade blockchain security and risk analysis for XRPL, Bitcoin, Ethereum, and major cryptocurrencies.",
   "foundingDate": "2024",
   "industry": "Financial Technology",

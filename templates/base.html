@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="color-scheme" content="dark light" />
     <title>{{ title or "Klerno Labs" }}</title>
+    <base href="{{ request.base_url }}">
 
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -123,7 +124,8 @@
                         </li>
                         {% endif %}
                         <li class="nav-item">
-                            <button class="theme-toggle btn btn-sm btn-elite-secondary" type="button" title="Toggle theme" aria-label="Toggle theme"
+                            <button class="theme-toggle btn btn-sm btn-elite-secondary" type="button"
+                                title="Toggle theme" aria-label="Toggle theme"
                                 style="margin-left: var(--space-2); display: inline-flex; align-items: center; gap: var(--space-2);">
                                 <!-- Icon will be injected by theme-controller.js -->
                                 <span style="font-size: var(--text-sm);">Theme</span>
