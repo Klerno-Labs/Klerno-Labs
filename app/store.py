@@ -597,11 +597,41 @@ class UserDict(TypedDict):
     mfa_type: NotRequired[str | None]
 
 
+def _row_as_dict(row: Any) -> dict[str, Any]:
+    """Best-effort conversion of DB row objects to a plain dict.
+
+    Supports:
+    - dict-like rows (psycopg2 RealDictRow)
+    - sqlite3.Row (mapping-like with .keys())
+    - sequence rows (falls back to index-based keys "0", "1", ...)
+    """
+    try:
+        if row is None:
+            return {}
+        if isinstance(row, dict):
+            return dict(row)
+        # sqlite3.Row exposes keys(); prefer mapping-style conversion
+        keys = getattr(row, "keys", None)
+        if callable(keys):
+            try:
+                return {k: row[k] for k in row.keys()}
+            except Exception:
+                # fall through to index-based
+                pass
+        # Fallback: index-based mapping with stringified indices
+        try:
+            return {str(i): row[i] for i in range(len(row))}
+        except Exception:
+            return {}
+    except Exception:
+        return {}
+
+
 def _rows_to_dicts(rows: Iterable[Any]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for r in rows:
         # r can be psycopg2 RealDictRow (dict) or sqlite3.Row (mapping - like)
-        d = dict(r) if isinstance(r, dict) else {k: r[k] for k in r}
+        d = _row_as_dict(r)
 
         # normalize risk_flags to a list
         raw = d.get("risk_flags")
@@ -773,7 +803,7 @@ def get_by_id(tx_id: int) -> dict[str, Any] | None:
         con.close()
         if not row:
             return None
-        return dict(row) if isinstance(row, dict) else {k: row[k] for k in row}
+        return _row_as_dict(row)
     except Exception:
         with contextlib.suppress(Exception):
             con.close()
@@ -1281,7 +1311,7 @@ def get_settings_for_user(user_id: int) -> dict[str, Any]:
         if not row:
             return {}
         if not isinstance(row, dict):
-            row = {k: row[k] for k in row}
+            row = _row_as_dict(row)
         out: dict[str, Any] = {
             "x_api_key": row.get("x_api_key") or None,
             "risk_threshold": (
