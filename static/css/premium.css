@@ -15,7 +15,7 @@
     --klerno-success: #10b981;
     --klerno-warning: #f59e0b;
     --klerno-error: #ef4444;
-    
+
     /* Neutral Palette */
     --klerno-white: #ffffff;
     --klerno-gray-50: #f9fafb;
@@ -28,11 +28,11 @@
     --klerno-gray-700: #374151;
     --klerno-gray-800: #1f2937;
     --klerno-gray-900: #111827;
-    
+
     /* Typography */
     --klerno-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --klerno-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-    
+
     /* Spacing */
     --klerno-space-xs: 0.25rem;
     --klerno-space-sm: 0.5rem;
@@ -41,21 +41,21 @@
     --klerno-space-xl: 2rem;
     --klerno-space-2xl: 3rem;
     --klerno-space-3xl: 4rem;
-    
+
     /* Border Radius */
     --klerno-radius-sm: 0.25rem;
     --klerno-radius-md: 0.5rem;
     --klerno-radius-lg: 0.75rem;
     --klerno-radius-xl: 1rem;
     --klerno-radius-2xl: 1.5rem;
-    
+
     /* Shadows */
     --klerno-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --klerno-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --klerno-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --klerno-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     --klerno-shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-    
+
     /* Transitions */
     --klerno-transition-fast: 150ms ease-in-out;
     --klerno-transition-medium: 250ms ease-in-out;
@@ -449,20 +449,20 @@ body {
     .klerno-grid-4 {
         grid-template-columns: 1fr;
     }
-    
+
     .klerno-nav {
         flex-direction: column;
         gap: var(--klerno-space-md);
     }
-    
+
     .klerno-nav-links {
         gap: var(--klerno-space-md);
     }
-    
+
     .klerno-stat-value {
         font-size: 2rem;
     }
-    
+
     .klerno-container {
         padding: 0 var(--klerno-space-md);
     }
@@ -535,17 +535,17 @@ body {
         --klerno-gray-200: #4b5563;
         --klerno-white: #1f2937;
     }
-    
+
     body {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         color: #e2e8f0;
     }
-    
+
     .klerno-header {
         background: rgba(15, 23, 42, 0.95);
         border-bottom-color: #334155;
     }
-    
+
     .klerno-card {
         background: #1e293b;
         border-color: #334155;

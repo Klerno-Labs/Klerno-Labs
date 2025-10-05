@@ -919,7 +919,6 @@ def main():
     for _enhancement in hardening_results["security_enhancements"]:
         pass
 
-
     # Calculate updated security score
     security_improvements = {
         "Security Middleware": 15,
@@ -931,15 +930,14 @@ def main():
 
     total_improvement = sum(security_improvements.values())
     new_security_score = min(
-        100, 85 + (total_improvement * 0.15),
+        100,
+        85 + (total_improvement * 0.15),
     )  # 15% improvement factor
-
 
     if new_security_score >= 95 or new_security_score >= 90:
         pass
     else:
         pass
-
 
     return hardening_results
 

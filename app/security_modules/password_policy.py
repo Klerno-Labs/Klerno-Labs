@@ -41,7 +41,10 @@ except Exception:
 
         def hash(self, password: str) -> str:
             return hashlib.pbkdf2_hmac(
-                "sha256", password.encode(), b"salt", 100000,
+                "sha256",
+                password.encode(),
+                b"salt",
+                100000,
             ).hex()
 
         def verify(self, hash_val: str, password: str) -> bool:
@@ -104,7 +107,9 @@ class PasswordSecurityPolicy:
         self.failed_attempts: dict[str, int] = {}
 
     def validate(
-        self, password: str, username: str | None = None,
+        self,
+        password: str,
+        username: str | None = None,
     ) -> tuple[bool, list[str]]:
         """Comprehensive password validation
         Returns: (is_valid, list_of_errors).
@@ -133,7 +138,8 @@ class PasswordSecurityPolicy:
             errors.append("Password must contain at least one number")
 
         if self.config.require_symbols and not re.search(
-            r'[!@#$%^&*(),.?" :{}|<>]', password,
+            r'[!@#$%^&*(),.?" :{}|<>]',
+            password,
         ):
             errors.append("Password must contain at least one special character")
 

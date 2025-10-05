@@ -78,7 +78,7 @@ def main() -> int:
             return 4
 
     ok_all = all(ok for _, ok, _ in checks)
-    for _name, ok, _sample in checks:
+    for _name, _ok, _sample in checks:
         pass
 
     return 0 if ok_all else 5

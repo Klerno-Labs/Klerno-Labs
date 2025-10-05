@@ -596,7 +596,9 @@ def retry_on_failure(
                         time.sleep(current_delay)
                         current_delay *= backoff
                     else:
-                        logger.exception(f"[RETRY] All {max_retries + 1} attempts failed")
+                        logger.exception(
+                            f"[RETRY] All {max_retries + 1} attempts failed"
+                        )
                         if last_exception is not None:
                             # Re-raise the last exception without chaining to avoid confusing tracebacks
                             raise last_exception from None

@@ -58,7 +58,7 @@
 
 .card-micro:hover {
     transform: translateY(-8px) scale(1.02);
-    box-shadow: 
+    box-shadow:
         0 32px 64px rgba(0, 0, 0, 0.08),
         0 16px 32px rgba(0, 0, 0, 0.04);
 }

@@ -334,9 +334,7 @@ class TestScalabilityLimits:
         successful_requests = [
             r for r in results if isinstance(r, dict) and r["success"]
         ]
-        [
-            r for r in results if isinstance(r, dict) and not r["success"]
-        ]
+        [r for r in results if isinstance(r, dict) and not r["success"]]
 
         success_rate = len(successful_requests) / len(results)
         avg_response_time = (
@@ -346,4 +344,3 @@ class TestScalabilityLimits:
         # Scalability assertions
         assert success_rate > 0.90  # At least 90% success rate under max load
         assert avg_response_time < 5.0  # Average response time under 5 seconds
-

@@ -264,7 +264,6 @@ class CryptoISO20022Manager:
             "recommendations": self._get_compliance_recommendations(config),
         }
 
-
     def _calculate_compliance_score(self, config: CryptoNetworkConfig) -> float:
         """Calculate compliance score based on regulatory features."""
         total_features = len(config.regulatory_compliance)
@@ -355,7 +354,6 @@ class CryptoISO20022Manager:
                 and config.regulatory_compliance.get("FATF_TRAVEL_RULE", False),
             },
         }
-
 
     def get_all_supported_cryptos(self) -> dict[str, dict[str, Any]]:
         """Get information about all supported cryptocurrencies."""

@@ -14,7 +14,6 @@ class ValidationError(Exception):
     """Custom validation error."""
 
 
-
 class InputSanitizer:
     """Comprehensive input sanitization utilities."""
 
@@ -72,7 +71,9 @@ class InputSanitizer:
 
     @staticmethod
     def sanitize_integer(
-        value: str | int, min_val: int | None = None, max_val: int | None = None,
+        value: str | int,
+        min_val: int | None = None,
+        max_val: int | None = None,
     ) -> int:
         """Validate and sanitize integer input."""
         try:
@@ -188,7 +189,8 @@ class SearchQueryModel(SecureBaseModel):
 
 
 def validate_request_size(
-    content_length: str | None, max_size: int = 10 * 1024 * 1024,
+    content_length: str | None,
+    max_size: int = 10 * 1024 * 1024,
 ) -> None:
     """Validate request content size to prevent DoS attacks."""
     if content_length:

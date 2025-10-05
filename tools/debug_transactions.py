@@ -75,4 +75,3 @@ with TestClient(app) as client:
             txid = None
         if txid:
             r2 = client.get(f"/transactions/{txid}")
-

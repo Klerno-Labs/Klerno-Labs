@@ -157,7 +157,9 @@ class NotificationManager:
         )
 
     @staticmethod
-    async def broadcast_notification(notification: dict, exclude_user: str | None = None) -> None:
+    async def broadcast_notification(
+        notification: dict, exclude_user: str | None = None
+    ) -> None:
         """Broadcast notification to all users."""
         await manager.broadcast(
             {

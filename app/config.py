@@ -106,7 +106,9 @@ class Settings(BaseSettings):
     def validate_app_env(self, v: str) -> str:
         """Validate application environment."""
         if v.lower() not in {"dev", "test", "production", "development", "local"}:
-            msg = "APP_ENV must be 'dev', 'test', 'production', 'development', or 'local'"
+            msg = (
+                "APP_ENV must be 'dev', 'test', 'production', 'development', or 'local'"
+            )
             raise ValueError(
                 msg,
             )

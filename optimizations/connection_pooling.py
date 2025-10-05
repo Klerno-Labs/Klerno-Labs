@@ -22,7 +22,8 @@ class DatabaseConnectionPool:
 
     @contextmanager
     def get_connection(
-        self, timeout: float = 30.0,
+        self,
+        timeout: float = 30.0,
     ) -> Generator[sqlite3.Connection, None, None]:
         """Get connection from pool with automatic return."""
         conn = None

@@ -63,7 +63,7 @@ class PremiumThemeSystem {
         // Detect system theme preference
         if (window.matchMedia) {
             const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            
+
             const handleSystemThemeChange = (e) => {
                 if (!this.getSavedTheme()) {
                     this.applyTheme(e.matches ? 'dark' : 'light');
@@ -71,7 +71,7 @@ class PremiumThemeSystem {
             };
 
             mediaQuery.addListener(handleSystemThemeChange);
-            
+
             // Apply system theme if no saved preference
             if (!this.getSavedTheme()) {
                 this.applyTheme(mediaQuery.matches ? 'dark' : 'light');

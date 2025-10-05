@@ -19,7 +19,7 @@ class RealTimeEngine {
         this.messageQueue = [];
         this.currentRoom = null;
         this.userPresence = new Map();
-        
+
         this.init();
     }
 
@@ -27,7 +27,7 @@ class RealTimeEngine {
         this.connect();
         this.setupEventListeners();
         this.startHeartbeat();
-        
+
         // Auto-reconnect on visibility change
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && !this.isConnected) {
@@ -49,7 +49,7 @@ class RealTimeEngine {
     connect() {
         try {
             this.websocket = new WebSocket(this.wsUrl);
-            
+
             this.websocket.onopen = (event) => {
                 console.log('🔗 Connected to real-time server');
                 this.isConnected = true;
@@ -58,7 +58,7 @@ class RealTimeEngine {
                 this.emit('connected', { userId: this.userId });
                 this.updateConnectionStatus('connected');
             };
-            
+
             this.websocket.onmessage = (event) => {
                 try {
                     const message = JSON.parse(event.data);
@@ -67,7 +67,7 @@ class RealTimeEngine {
                     console.error('Error parsing WebSocket message:', error);
                 }
             };
-            
+
             this.websocket.onclose = (event) => {
                 console.log('🔌 Disconnected from real-time server');
                 this.isConnected = false;
@@ -75,13 +75,13 @@ class RealTimeEngine {
                 this.updateConnectionStatus('disconnected');
                 this.attemptReconnect();
             };
-            
+
             this.websocket.onerror = (error) => {
                 console.error('WebSocket error:', error);
                 this.emit('error', error);
                 this.updateConnectionStatus('error');
             };
-            
+
         } catch (error) {
             console.error('Failed to create WebSocket connection:', error);
             this.attemptReconnect();
@@ -104,9 +104,9 @@ class RealTimeEngine {
 
         this.reconnectAttempts++;
         this.updateConnectionStatus('reconnecting');
-        
+
         console.log(`🔄 Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
-        
+
         setTimeout(() => {
             this.connect();
         }, this.reconnectDelay * this.reconnectAttempts);
@@ -130,33 +130,33 @@ class RealTimeEngine {
 
     handleMessage(message) {
         const { type } = message;
-        
+
         switch (type) {
             case 'pong':
                 // Heartbeat response
                 break;
-                
+
             case 'user_presence':
                 this.handleUserPresence(message);
                 break;
-                
+
             case 'chat_message':
                 this.handleChatMessage(message);
                 break;
-                
+
             case 'data_update':
                 this.handleDataUpdate(message);
                 break;
-                
+
             case 'user_activity':
                 this.handleUserActivity(message);
                 break;
-                
+
             case 'room_member_joined':
             case 'room_member_left':
                 this.handleRoomEvent(message);
                 break;
-                
+
             default:
                 this.emit(type, message);
         }
@@ -164,7 +164,7 @@ class RealTimeEngine {
 
     handleUserPresence(message) {
         const { user_id, action, status } = message;
-        
+
         if (action === 'joined') {
             this.userPresence.set(user_id, { status: 'online', lastSeen: new Date() });
             this.showUserNotification(`${user_id} joined`, 'success');
@@ -172,7 +172,7 @@ class RealTimeEngine {
             this.userPresence.set(user_id, { status: 'offline', lastSeen: new Date() });
             this.showUserNotification(`${user_id} left`, 'info');
         }
-        
+
         this.updateUserPresenceUI();
         this.emit('user_presence', message);
     }
@@ -180,7 +180,7 @@ class RealTimeEngine {
     handleChatMessage(message) {
         this.displayChatMessage(message);
         this.emit('chat_message', message);
-        
+
         // Show notification if not in focus
         if (document.hidden) {
             this.showNotification(`New message from ${message.user_id}`, message.content);
@@ -250,7 +250,7 @@ class RealTimeEngine {
             statusElement.textContent = status;
             statusElement.className = `connection-status ${status}`;
         }
-        
+
         // Update connection indicator
         const indicator = document.getElementById('connection-indicator');
         if (indicator) {
@@ -261,9 +261,9 @@ class RealTimeEngine {
     updateUserPresenceUI() {
         const presenceContainer = document.getElementById('user-presence');
         if (!presenceContainer) return;
-        
+
         presenceContainer.innerHTML = '';
-        
+
         this.userPresence.forEach((presence, userId) => {
             const userElement = document.createElement('div');
             userElement.className = `user-presence ${presence.status}`;
@@ -280,7 +280,7 @@ class RealTimeEngine {
     displayChatMessage(message) {
         const chatContainer = document.getElementById('chat-messages');
         if (!chatContainer) return;
-        
+
         const messageElement = document.createElement('div');
         messageElement.className = 'chat-message';
         messageElement.innerHTML = `
@@ -290,7 +290,7 @@ class RealTimeEngine {
             </div>
             <div class="message-content">${this.escapeHtml(message.content)}</div>
         `;
-        
+
         chatContainer.appendChild(messageElement);
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
@@ -306,7 +306,7 @@ class RealTimeEngine {
     showUserActivity(activity) {
         const activityFeed = document.getElementById('activity-feed');
         if (!activityFeed) return;
-        
+
         const activityElement = document.createElement('div');
         activityElement.className = 'activity-item';
         activityElement.innerHTML = `
@@ -317,9 +317,9 @@ class RealTimeEngine {
                 <span class="activity-time">${new Date(activity.timestamp).toLocaleTimeString()}</span>
             </div>
         `;
-        
+
         activityFeed.insertBefore(activityElement, activityFeed.firstChild);
-        
+
         // Keep only recent activities
         while (activityFeed.children.length > 50) {
             activityFeed.removeChild(activityFeed.lastChild);
@@ -343,13 +343,13 @@ class RealTimeEngine {
         const notification = document.createElement('div');
         notification.className = `user-notification ${type}`;
         notification.textContent = message;
-        
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.classList.add('show');
         }, 100);
-        
+
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => document.body.removeChild(notification), 300);
@@ -418,7 +418,7 @@ class RealTimeEngine {
                 this.sendUserActivity({ type: 'page_visible' });
             }
         });
-        
+
         // Track user interactions
         ['click', 'scroll', 'keypress'].forEach(eventType => {
             document.addEventListener(eventType, this.throttle(() => {
@@ -444,7 +444,7 @@ class RealTimeEngine {
 // Initialize real-time engine
 document.addEventListener('DOMContentLoaded', () => {
     window.realTime = new RealTimeEngine();
-    
+
     // Setup chat interface if present
     const chatInput = document.getElementById('chat-input');
     if (chatInput) {

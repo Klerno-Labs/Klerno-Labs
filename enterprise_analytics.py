@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     # Static analysis: declare heavy third-party names as Any so type checkers
     # don't require installed stubs during CI or local checks.
     from app._typing_shims import ISyncConnection
+
     np: Any
     pd: Any
 else:
@@ -557,7 +558,9 @@ class EnterpriseAnalytics:
             return float(result)
 
         except Exception as e:
-            logger.exception(f"[ANALYTICS] Failed to calculate avg session duration: {e}")
+            logger.exception(
+                f"[ANALYTICS] Failed to calculate avg session duration: {e}"
+            )
             return 0.0
 
     def api_response_time_p95(self, start_time: datetime, end_time: datetime) -> float:
@@ -586,7 +589,9 @@ class EnterpriseAnalytics:
             return 0.0
 
         except Exception as e:
-            logger.exception(f"[ANALYTICS] Failed to calculate API response time P95: {e}")
+            logger.exception(
+                f"[ANALYTICS] Failed to calculate API response time P95: {e}"
+            )
             return 0.0
 
     def calculate_conversion_rate(

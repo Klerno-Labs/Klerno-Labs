@@ -191,7 +191,9 @@ class EnterpriseIntegrationHub:
             return success_count == total_systems
 
         except Exception as e:
-            logger.exception(f"[ENTERPRISE] Failed to initialize enterprise systems: {e}")
+            logger.exception(
+                f"[ENTERPRISE] Failed to initialize enterprise systems: {e}"
+            )
 
             if self.error_handler:
                 self.error_handler.handle_error(e, "enterprise_initialization")
@@ -369,7 +371,9 @@ class EnterpriseIntegrationHub:
                 time.sleep(self.config.analytics_update_interval)
 
             except Exception as e:
-                logger.exception(f"[ENTERPRISE] Performance monitoring worker error: {e}")
+                logger.exception(
+                    f"[ENTERPRISE] Performance monitoring worker error: {e}"
+                )
                 time.sleep(self.config.analytics_update_interval)
 
     def _integration_health_worker(self) -> None:

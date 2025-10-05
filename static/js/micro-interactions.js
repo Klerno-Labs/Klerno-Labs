@@ -276,7 +276,7 @@ class MicroInteractionsEngine {
     // Public API methods
     animateElement(element, animation) {
         element.classList.add(animation);
-        
+
         return new Promise(resolve => {
             element.addEventListener('animationend', () => {
                 element.classList.remove(animation);
@@ -289,10 +289,10 @@ class MicroInteractionsEngine {
         const loader = document.createElement('div');
         loader.className = 'loading-dots';
         loader.innerHTML = '<div></div><div></div><div></div><div></div>';
-        
+
         element.style.position = 'relative';
         element.appendChild(loader);
-        
+
         return () => loader.remove();
     }
 
@@ -300,10 +300,10 @@ class MicroInteractionsEngine {
         const skeleton = element.cloneNode(true);
         skeleton.classList.add('skeleton');
         skeleton.textContent = '';
-        
+
         element.parentNode.insertBefore(skeleton, element);
         element.style.display = 'none';
-        
+
         return () => {
             skeleton.remove();
             element.style.display = '';

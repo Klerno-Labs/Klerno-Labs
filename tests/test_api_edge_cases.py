@@ -48,7 +48,9 @@ class TestAPIEdgeCases:
     def test_empty_request_body(self, client) -> None:
         """Test handling of empty request bodies."""
         response = client.post(
-            "/iso20022/parse", content="", headers={"Content-Type": "application/json"},
+            "/iso20022/parse",
+            content="",
+            headers={"Content-Type": "application/json"},
         )
         assert response.status_code in [400, 422]
 
@@ -304,7 +306,6 @@ def test_comprehensive_api_health() -> None:
     client.get("/nonexistent")  # Generate an error
     response = client.get("/healthz")  # Should still work
     assert response.status_code == 200
-
 
 
 if __name__ == "__main__":

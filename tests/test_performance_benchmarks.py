@@ -40,7 +40,6 @@ class TestPerformanceBenchmarks:
         statistics.median(response_times)
         p95_time = sorted(response_times)[int(len(response_times) * 0.95)]
 
-
         # Performance assertions
         assert avg_time < 100, f"Average response time too high: {avg_time:.2f}ms"
         assert p95_time < 500, f"95th percentile too high: {p95_time:.2f}ms"
@@ -84,7 +83,6 @@ class TestPerformanceBenchmarks:
         throughput = total_requests / total_time
         avg_time = statistics.mean(all_times)
         sorted(all_times)[int(len(all_times) * 0.95)]
-
 
         # Performance assertions
         assert throughput > 50, f"Throughput too low: {throughput:.2f} req/s"
@@ -152,7 +150,6 @@ class TestPerformanceBenchmarks:
         """Test API response size efficiency."""
         endpoints = ["/healthz", "/status", "/health"]
 
-
         for endpoint in endpoints:
             response = client.get(endpoint)
             if response.status_code == 200:
@@ -165,11 +162,10 @@ class TestPerformanceBenchmarks:
                     else {}
                 )
 
-
                 # Response sizes should be reasonable
-                assert response_size < 10000, (
-                    f"{endpoint} response too large: {response_size} bytes"
-                )
+                assert (
+                    response_size < 10000
+                ), f"{endpoint} response too large: {response_size} bytes"
 
     def test_cold_start_performance(self, client) -> None:
         """Test cold start performance (first request after initialization)."""
@@ -181,7 +177,6 @@ class TestPerformanceBenchmarks:
         cold_start_time = (time.perf_counter() - start_time) * 1000
 
         assert response.status_code == 200
-
 
         # Cold start should not be excessive
         assert cold_start_time < 5000, f"Cold start too slow: {cold_start_time:.2f}ms"
@@ -197,8 +192,6 @@ def generate_performance_report():
         response = client.get("/healthz")
         assert response.status_code == 200
     return ((time.perf_counter() - start_time) / 10) * 1000
-
-
 
 
 if __name__ == "__main__":

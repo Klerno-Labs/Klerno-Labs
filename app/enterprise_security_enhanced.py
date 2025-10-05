@@ -477,7 +477,9 @@ class AuditLogger:
         )
 
     @staticmethod
-    def log_authentication(email: str, success: bool, client_ip: str | None = None) -> None:
+    def log_authentication(
+        email: str, success: bool, client_ip: str | None = None
+    ) -> None:
         """Log authentication attempts."""
         AuditLogger.log_security_event(
             "authentication",

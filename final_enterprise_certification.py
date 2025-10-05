@@ -247,7 +247,8 @@ def run_final_validation_tests():
         # Run main test suite
         test_result = subprocess.run(
             ["python", "-m", "pytest", "-q", "--tb=short"],
-            check=False, capture_output=True,
+            check=False,
+            capture_output=True,
             text=True,
             timeout=120,
         )
@@ -264,7 +265,8 @@ def run_final_validation_tests():
         # Run performance tests
         perf_result = subprocess.run(
             ["python", "-m", "pytest", "test_performance_benchmarks.py", "-v"],
-            check=False, capture_output=True,
+            check=False,
+            capture_output=True,
             text=True,
             timeout=60,
         )
@@ -321,8 +323,6 @@ def main():
 
     # Print achievement summary
     print_achievement_summary(report)
-
-
 
     return report
 

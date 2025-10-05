@@ -17,7 +17,10 @@ class AuthenticationManager:
     """JWT-based authentication manager."""
 
     def __init__(
-        self, secret_key: str, algorithm: str = "HS256", expiration_hours: int = 24,
+        self,
+        secret_key: str,
+        algorithm: str = "HS256",
+        expiration_hours: int = 24,
     ) -> None:
         """Initialize authentication manager."""
         self.secret_key = secret_key
@@ -34,14 +37,18 @@ class AuthenticationManager:
         """Verify password against hash."""
         try:
             return bcrypt.checkpw(
-                password.encode("utf-8"), hashed_password.encode("utf-8"),
+                password.encode("utf-8"),
+                hashed_password.encode("utf-8"),
             )
         except Exception as e:
             logger.exception(f"Password verification error: {e}")
             return False
 
     def create_access_token(
-        self, user_id: str, username: str, roles: list | None = None,
+        self,
+        user_id: str,
+        username: str,
+        roles: list | None = None,
     ) -> str:
         """Create JWT access token."""
         if roles is None:
@@ -84,11 +91,13 @@ class AuthenticationManager:
 
         except jwt.ExpiredSignatureError as e:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired",
             ) from e
         except jwt.InvalidTokenError as e:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token",
             ) from e
         except Exception as e:
             logger.exception(f"Token verification error: {e}")
@@ -122,12 +131,15 @@ class AuthenticationManager:
 class JWTBearer(HTTPBearer):
     """JWT Bearer token authentication."""
 
-    def __init__(self, auth_manager: AuthenticationManager, auto_error: bool = True) -> None:
+    def __init__(
+        self, auth_manager: AuthenticationManager, auto_error: bool = True
+    ) -> None:
         super().__init__(auto_error=auto_error)
         self.auth_manager = auth_manager
 
     async def __call__(
-        self, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
+        self,
+        credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
     ):
         if credentials:
             if not credentials.scheme == "Bearer":

@@ -200,7 +200,9 @@ class EnterpriseHealthMonitor:
         except Exception as e:
             logger.exception(f"[HEALTH] Database initialization failed: {e}")
 
-    def register_health_check(self, service_name: str, check_function: Callable) -> None:
+    def register_health_check(
+        self, service_name: str, check_function: Callable
+    ) -> None:
         """Register a custom health check."""
         with self._lock:
             self.health_checks[service_name] = check_function
@@ -700,7 +702,9 @@ class EnterpriseHealthMonitor:
                         )
 
             except Exception as e:
-                logger.exception(f"[HEALTH] Alert rule check failed for {rule_name}: {e}")
+                logger.exception(
+                    f"[HEALTH] Alert rule check failed for {rule_name}: {e}"
+                )
 
     def _store_alert(self, alert: Alert) -> None:
         """Store alert in database."""

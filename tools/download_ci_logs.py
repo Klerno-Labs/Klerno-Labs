@@ -54,4 +54,3 @@ for c in fails[:3]:
         pass
     else:
         downloaded += 1
-

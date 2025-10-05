@@ -83,7 +83,7 @@ def main() -> None:
         out_lines.append((m, len(refs), example))
 
     # Print CSV-like output
-    for m, _c, _ex in out_lines:
+    for _m, _c, _ex in out_lines:
         pass
 
     # Also write JSON to a file for later processing

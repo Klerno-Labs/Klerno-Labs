@@ -38,9 +38,9 @@ def summarize(out, top_n=20, sample_per_file=3) -> None:
     totals = [(len(v), k) for k, v in errors_by_file.items()]
     totals.sort(reverse=True)
     sum(c for c, _ in totals)
-    for _count, path in totals[:top_n]:
-        sample = errors_by_file[path][:sample_per_file]
-        for _ln, msg in sample:
+    for _count, _path in totals[:top_n]:
+        sample = errors_by_file[_path][:sample_per_file]
+        for _ln, _msg in sample:
             pass
     if len(totals) == 0:
         pass

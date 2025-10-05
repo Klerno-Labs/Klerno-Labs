@@ -9,11 +9,11 @@ Enhanced rate limiting, IP whitelisting, and threat protection
 
 # Initialize global security components early to avoid NameError during import
 # in case other modules call getters during circular imports.
-security_middleware: "AdvancedSecurityMiddleware | None" = None
+security_middleware: AdvancedSecurityMiddleware | None = None
 
 
 # Provide a getter for analytics_dashboard compatibility
-def get_security_middleware() -> "AdvancedSecurityMiddleware":
+def get_security_middleware() -> AdvancedSecurityMiddleware:
     global security_middleware
     if security_middleware is None:
         security_middleware = AdvancedSecurityMiddleware(None)

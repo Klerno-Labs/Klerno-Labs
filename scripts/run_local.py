@@ -35,7 +35,6 @@ def main() -> None:
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
 
-
     # Allow overriding the local port via env var for convenience
     port = int(os.getenv("LOCAL_PORT", "8000"))
     host = "127.0.0.1"

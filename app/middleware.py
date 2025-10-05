@@ -17,7 +17,9 @@ logger = structlog.get_logger("middleware")
 
 # Prometheus metrics
 REQUEST_COUNT = Counter(
-    "http_requests_total", "Total HTTP requests", ["method", "endpoint", "status_code"],
+    "http_requests_total",
+    "Total HTTP requests",
+    ["method", "endpoint", "status_code"],
 )
 
 REQUEST_DURATION = Histogram(
@@ -108,11 +110,15 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             endpoint = self._get_endpoint_path(request)
 
             REQUEST_COUNT.labels(
-                method=request.method, endpoint=endpoint, status_code=500,
+                method=request.method,
+                endpoint=endpoint,
+                status_code=500,
             ).inc()
 
             REQUEST_DURATION.labels(
-                method=request.method, endpoint=endpoint, status_code=500,
+                method=request.method,
+                endpoint=endpoint,
+                status_code=500,
             ).observe(duration)
 
             ACTIVE_REQUESTS.dec()
@@ -124,11 +130,15 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
         # Record metrics
         REQUEST_COUNT.labels(
-            method=request.method, endpoint=endpoint, status_code=response.status_code,
+            method=request.method,
+            endpoint=endpoint,
+            status_code=response.status_code,
         ).inc()
 
         REQUEST_DURATION.labels(
-            method=request.method, endpoint=endpoint, status_code=response.status_code,
+            method=request.method,
+            endpoint=endpoint,
+            status_code=response.status_code,
         ).observe(duration)
 
         # Decrement active requests
@@ -155,7 +165,6 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
         # Replace wallet addresses (common pattern: rXXX...)
         return re.sub(r"/r[a-zA-Z0-9]{25,}", "/{wallet}", path)
-
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -279,5 +288,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 def metrics_endpoint() -> PlainTextResponse:
     """Prometheus metrics endpoint."""
     return PlainTextResponse(
-        generate_latest(), media_type="text/plain; version=0.0.4; charset=utf-8",
+        generate_latest(),
+        media_type="text/plain; version=0.0.4; charset=utf-8",
     )

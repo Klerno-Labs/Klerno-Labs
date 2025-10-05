@@ -46,12 +46,13 @@ class SecurityValidator:
             "authentication_security": auth_results,
             "configuration_security": config_results,
             "overall_security_score": self._calculate_security_score(
-                bandit_results, dependency_results, config_results,
+                bandit_results,
+                dependency_results,
+                config_results,
             ),
             "critical_issues": self._identify_critical_issues(bandit_results),
             "remediation_plan": self._generate_remediation_plan(),
         }
-
 
     def _run_bandit_scan(self) -> dict[str, Any]:
         """Run Bandit security scanner and parse results."""
@@ -69,14 +70,13 @@ class SecurityValidator:
                     "-x",
                     ".venv*,node_modules,__pycache__,*.pyc",
                 ],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=120,
             )
 
-            if (
-                result.returncode in {0, 1}
-            ):  # 1 = vulnerabilities found
+            if result.returncode in {0, 1}:  # 1 = vulnerabilities found
                 try:
                     bandit_data = json.loads(result.stdout)
 
@@ -145,7 +145,8 @@ class SecurityValidator:
         try:
             result = subprocess.run(
                 ["python", "-m", "pip", "show", "safety"],
-                check=False, capture_output=True,
+                check=False,
+                capture_output=True,
                 text=True,
                 timeout=30,
             )
@@ -161,7 +162,8 @@ class SecurityValidator:
                 # Run safety check if available
                 safety_result = subprocess.run(
                     ["python", "-m", "safety", "check", "--json"],
-                    check=False, capture_output=True,
+                    check=False,
+                    capture_output=True,
                     text=True,
                     timeout=60,
                 )
@@ -361,7 +363,10 @@ class SecurityValidator:
         }
 
     def _calculate_security_score(
-        self, bandit_results: dict, dependency_results: dict, config_results: dict,
+        self,
+        bandit_results: dict,
+        dependency_results: dict,
+        config_results: dict,
     ) -> dict[str, Any]:
         """Calculate overall security score."""
         base_score = 100
@@ -370,7 +375,8 @@ class SecurityValidator:
         if bandit_results.get("scan_successful"):
             high_issues = bandit_results.get("scan_summary", {}).get("high_severity", 0)
             medium_issues = bandit_results.get("scan_summary", {}).get(
-                "medium_severity", 0,
+                "medium_severity",
+                0,
             )
             low_issues = bandit_results.get("scan_summary", {}).get("low_severity", 0)
 
@@ -418,7 +424,8 @@ class SecurityValidator:
 
         if bandit_results.get("scan_successful"):
             high_severity_issues = bandit_results.get(
-                "vulnerabilities_by_severity", {},
+                "vulnerabilities_by_severity",
+                {},
             ).get("HIGH", [])
 
             # Focus on the most critical issues
@@ -513,7 +520,6 @@ class SecurityValidator:
         }
 
 
-
 def main():
     """Run comprehensive security validation and generate hardening recommendations."""
     validator = SecurityValidator()
@@ -538,7 +544,6 @@ def main():
             pass
 
     security_report["remediation_plan"]
-
 
     return security_report
 

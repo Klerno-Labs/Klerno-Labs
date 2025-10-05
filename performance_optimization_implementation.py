@@ -121,7 +121,6 @@ def create_performance_optimization_report():
     }
 
 
-
 def implement_response_caching() -> str:
     """Implement response caching for performance optimization."""
     # Simple in-memory cache implementation
@@ -196,7 +195,6 @@ def cached_response(ttl: int = 300):
 '''
 
 
-
 def implement_connection_pooling() -> str:
     """Implement database connection pooling."""
     return '''
@@ -263,7 +261,6 @@ def get_pooled_connection():
 '''
 
 
-
 def implement_compression_middleware() -> str:
     """Implement response compression middleware."""
     return '''
@@ -290,7 +287,6 @@ def add_performance_middleware(app: FastAPI):
 # Usage:
 # add_performance_middleware(app)
 '''
-
 
 
 def generate_performance_monitoring() -> str:
@@ -366,7 +362,6 @@ def timed_endpoint(endpoint_name: str):
 '''
 
 
-
 def main():
     """Generate comprehensive performance optimization implementation."""
     # Generate the performance report
@@ -392,7 +387,6 @@ def main():
 
     for _opt in report["optimization_opportunities"]["immediate_optimizations"]:
         pass
-
 
     return report
 

@@ -23,7 +23,10 @@ class FastAPIProfiler:
         self.results = {}
 
     def profile_endpoint(
-        self, endpoint: str, method: str = "GET", runs: int = 100,
+        self,
+        endpoint: str,
+        method: str = "GET",
+        runs: int = 100,
     ) -> dict[str, Any]:
         """Profile a specific endpoint with detailed metrics."""
         # Warm up
@@ -93,7 +96,6 @@ class FastAPIProfiler:
             "response_size_bytes": response_size,
         }
 
-
     def _extract_profile_data(self, profiler: cProfile.Profile) -> dict[str, Any]:
         """Extract meaningful data from cProfile results."""
         # Capture profiler output
@@ -132,7 +134,10 @@ class FastAPIProfiler:
         }
 
     def benchmark_concurrent_load(
-        self, endpoint: str, concurrent_users: int = 10, requests_per_user: int = 50,
+        self,
+        endpoint: str,
+        concurrent_users: int = 10,
+        requests_per_user: int = 50,
     ) -> dict[str, Any]:
         """Benchmark concurrent load on an endpoint."""
         response_times = []
@@ -275,20 +280,23 @@ class FastAPIProfiler:
         total_start = time.perf_counter()
 
         for endpoint in endpoints:
-
             # Individual endpoint profiling
             results["endpoint_profiles"][endpoint] = self.profile_endpoint(
-                endpoint, runs=50,
+                endpoint,
+                runs=50,
             )
 
             # Load testing
             results["load_test_results"][endpoint] = self.benchmark_concurrent_load(
-                endpoint, concurrent_users=5, requests_per_user=20,
+                endpoint,
+                concurrent_users=5,
+                requests_per_user=20,
             )
 
             # Memory profiling
             results["memory_profiles"][endpoint] = self.memory_profile_endpoint(
-                endpoint, runs=50,
+                endpoint,
+                runs=50,
             )
 
         total_end = time.perf_counter()
@@ -326,7 +334,8 @@ class FastAPIProfiler:
                         "endpoint": endpoint,
                         "rps": load_test["load_test_results"]["requests_per_second"],
                         "success_rate": load_test["load_test_results"].get(
-                            "success_rate", 0,
+                            "success_rate",
+                            0,
                         ),
                     },
                 )
@@ -462,7 +471,6 @@ def main() -> None:
 
     for _rec in summary["recommendations"]:
         pass
-
 
 
 if __name__ == "__main__":

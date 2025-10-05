@@ -13,4 +13,3 @@ importlib.invalidate_caches()
 
 with contextlib.suppress(Exception):
     pass
-

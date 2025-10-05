@@ -8,7 +8,7 @@ class KlernoPremiumUI {
     constructor() {
         this.init();
     }
-    
+
     init() {
         this.initAnimations();
         this.initInteractions();
@@ -21,18 +21,18 @@ class KlernoPremiumUI {
         this.initNotifications();
         this.initLazyLoading();
     }
-    
+
     // ===================================================================
     // PREMIUM ANIMATIONS
     // ===================================================================
-    
+
     initAnimations() {
         // Intersection Observer for scroll animations
         const observerOptions = {
             threshold: 0.1,
             rootMargin: '0px 0px -50px 0px'
         };
-        
+
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -40,17 +40,17 @@ class KlernoPremiumUI {
                 }
             });
         }, observerOptions);
-        
+
         // Observe all animatable elements
         document.querySelectorAll('.klerno-card, .klerno-stat-card').forEach(el => {
             observer.observe(el);
         });
     }
-    
+
     // ===================================================================
     // INTERACTIVE FEATURES
     // ===================================================================
-    
+
     initInteractions() {
         // Premium hover effects
         document.querySelectorAll('.klerno-card').forEach(card => {
@@ -58,18 +58,18 @@ class KlernoPremiumUI {
                 e.target.style.transform = 'translateY(-8px) scale(1.02)';
                 e.target.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
             });
-            
+
             card.addEventListener('mouseleave', (e) => {
                 e.target.style.transform = 'translateY(0) scale(1)';
             });
         });
-        
+
         // Button ripple effects
         document.querySelectorAll('.klerno-btn').forEach(btn => {
             btn.addEventListener('click', this.createRipple);
         });
     }
-    
+
     createRipple(e) {
         const button = e.currentTarget;
         const ripple = document.createElement('span');
@@ -77,7 +77,7 @@ class KlernoPremiumUI {
         const size = Math.max(rect.width, rect.height);
         const x = e.clientX - rect.left - size / 2;
         const y = e.clientY - rect.top - size / 2;
-        
+
         ripple.style.cssText = `
             position: absolute;
             width: ${size}px;
@@ -90,30 +90,30 @@ class KlernoPremiumUI {
             animation: ripple 0.6s linear;
             pointer-events: none;
         `;
-        
+
         button.style.position = 'relative';
         button.style.overflow = 'hidden';
         button.appendChild(ripple);
-        
+
         setTimeout(() => ripple.remove(), 600);
     }
-    
+
     // ===================================================================
     // PREMIUM TOOLTIPS
     // ===================================================================
-    
+
     initTooltips() {
         document.querySelectorAll('[data-tooltip]').forEach(el => {
             el.addEventListener('mouseenter', this.showTooltip);
             el.addEventListener('mouseleave', this.hideTooltip);
         });
     }
-    
+
     showTooltip(e) {
         const tooltip = document.createElement('div');
         tooltip.className = 'klerno-tooltip';
         tooltip.textContent = e.target.dataset.tooltip;
-        
+
         tooltip.style.cssText = `
             position: absolute;
             background: rgba(17, 24, 39, 0.9);
@@ -129,38 +129,38 @@ class KlernoPremiumUI {
             transition: all 0.2s ease;
             backdrop-filter: blur(8px);
         `;
-        
+
         document.body.appendChild(tooltip);
-        
+
         const rect = e.target.getBoundingClientRect();
         tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
         tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
-        
+
         requestAnimationFrame(() => {
             tooltip.style.opacity = '1';
             tooltip.style.transform = 'translateY(0)';
         });
-        
+
         e.target._tooltip = tooltip;
     }
-    
+
     hideTooltip(e) {
         if (e.target._tooltip) {
             e.target._tooltip.remove();
             e.target._tooltip = null;
         }
     }
-    
+
     // ===================================================================
     // ANIMATED COUNTERS
     // ===================================================================
-    
+
     initCounters() {
         document.querySelectorAll('.klerno-stat-value[data-count]').forEach(counter => {
             const target = parseInt(counter.dataset.count);
             let current = 0;
             const increment = target / 60; // 60 frames
-            
+
             const updateCounter = () => {
                 current += increment;
                 if (current < target) {
@@ -170,7 +170,7 @@ class KlernoPremiumUI {
                     counter.textContent = target.toLocaleString();
                 }
             };
-            
+
             // Start animation when element is in view
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
@@ -180,20 +180,20 @@ class KlernoPremiumUI {
                     }
                 });
             });
-            
+
             observer.observe(counter);
         });
     }
-    
+
     // ===================================================================
     // PROGRESS BARS
     // ===================================================================
-    
+
     initProgressBars() {
         document.querySelectorAll('.klerno-progress-bar').forEach(bar => {
             const progress = bar.querySelector('.klerno-progress-fill');
             const percentage = progress.dataset.percentage;
-            
+
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting && !progress.dataset.animated) {
@@ -202,15 +202,15 @@ class KlernoPremiumUI {
                     }
                 });
             });
-            
+
             observer.observe(bar);
         });
     }
-    
+
     // ===================================================================
     // SMOOTH SCROLLING
     // ===================================================================
-    
+
     initSmoothScrolling() {
         document.querySelectorAll('a[href^="#"]').forEach(link => {
             link.addEventListener('click', (e) => {
@@ -225,50 +225,50 @@ class KlernoPremiumUI {
             });
         });
     }
-    
+
     // ===================================================================
     // PARALLAX EFFECTS
     // ===================================================================
-    
+
     initParallax() {
         const parallaxElements = document.querySelectorAll('.klerno-parallax');
-        
+
         window.addEventListener('scroll', () => {
             const scrolled = window.pageYOffset;
             const rate = scrolled * -0.5;
-            
+
             parallaxElements.forEach(el => {
                 el.style.transform = `translate3d(0, ${rate}px, 0)`;
             });
         });
     }
-    
+
     // ===================================================================
     // THEME TOGGLE
     // ===================================================================
-    
+
     initThemeToggle() {
         const themeToggle = document.querySelector('.klerno-theme-toggle');
         if (themeToggle) {
             themeToggle.addEventListener('click', () => {
                 document.body.classList.toggle('dark-theme');
-                localStorage.setItem('theme', 
+                localStorage.setItem('theme',
                     document.body.classList.contains('dark-theme') ? 'dark' : 'light'
                 );
             });
         }
-        
+
         // Load saved theme
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
             document.body.classList.add('dark-theme');
         }
     }
-    
+
     // ===================================================================
     // NOTIFICATIONS
     // ===================================================================
-    
+
     showNotification(message, type = 'info', duration = 5000) {
         const notification = document.createElement('div');
         notification.className = `klerno-notification klerno-notification-${type}`;
@@ -278,7 +278,7 @@ class KlernoPremiumUI {
                 <button class="klerno-notification-close">&times;</button>
             </div>
         `;
-        
+
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -293,30 +293,30 @@ class KlernoPremiumUI {
             transition: transform 0.3s ease;
             min-width: 300px;
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Slide in
         requestAnimationFrame(() => {
             notification.style.transform = 'translateX(0)';
         });
-        
+
         // Close button
         notification.querySelector('.klerno-notification-close').addEventListener('click', () => {
             this.hideNotification(notification);
         });
-        
+
         // Auto-hide
         setTimeout(() => {
             this.hideNotification(notification);
         }, duration);
     }
-    
+
     hideNotification(notification) {
         notification.style.transform = 'translateX(100%)';
         setTimeout(() => notification.remove(), 300);
     }
-    
+
     initNotifications() {
         // Create notification container if it doesn't exist
         if (!document.querySelector('.klerno-notifications')) {
@@ -332,11 +332,11 @@ class KlernoPremiumUI {
             document.body.appendChild(container);
         }
     }
-    
+
     // ===================================================================
     // LAZY LOADING
     // ===================================================================
-    
+
     initLazyLoading() {
         const lazyImages = document.querySelectorAll('img[data-src]');
         const imageObserver = new IntersectionObserver((entries) => {
@@ -349,7 +349,7 @@ class KlernoPremiumUI {
                 }
             });
         });
-        
+
         lazyImages.forEach(img => imageObserver.observe(img));
     }
 }
@@ -366,14 +366,14 @@ style.textContent = `
             opacity: 0;
         }
     }
-    
+
     .klerno-progress-bar {
         background: #e5e7eb;
         border-radius: 9999px;
         overflow: hidden;
         height: 8px;
     }
-    
+
     .klerno-progress-fill {
         background: linear-gradient(90deg, var(--klerno-primary), var(--klerno-secondary));
         height: 100%;
@@ -381,14 +381,14 @@ style.textContent = `
         transition: width 2s cubic-bezier(0.4, 0, 0.2, 1);
         border-radius: inherit;
     }
-    
+
     .klerno-notification-content {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
     }
-    
+
     .klerno-notification-close {
         background: none;
         border: none;
@@ -402,16 +402,16 @@ style.textContent = `
         align-items: center;
         justify-content: center;
     }
-    
+
     .klerno-notification-close:hover {
         color: #374151;
     }
-    
+
     img.lazy {
         opacity: 0;
         transition: opacity 0.3s;
     }
-    
+
     img.lazy.loaded {
         opacity: 1;
     }

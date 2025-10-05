@@ -287,7 +287,8 @@ class ISO20022MessageBuilder:
 
             # Purpose
             ET.SubElement(
-                cdt_trf_tx_inf, "Purp",
+                cdt_trf_tx_inf,
+                "Purp",
             ).text = instruction.payment_purpose.value
 
             # Remittance Information
@@ -325,7 +326,8 @@ class ISO20022MessageBuilder:
             tx_inf_and_sts = ET.SubElement(pmt_sts_rpt, "TxInfAndSts")
             ET.SubElement(tx_inf_and_sts, "StsId").text = status.status_id
             ET.SubElement(
-                tx_inf_and_sts, "OrgnlInstrId",
+                tx_inf_and_sts,
+                "OrgnlInstrId",
             ).text = status.original_instruction_id
             ET.SubElement(tx_inf_and_sts, "TxSts").text = status.status_code
 

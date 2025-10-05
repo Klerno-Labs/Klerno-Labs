@@ -330,7 +330,6 @@ class QueryOptimizer:
             ),
         ]
 
-
     @staticmethod
     async def analyze_query_performance(
         pool: AsyncConnectionPool,

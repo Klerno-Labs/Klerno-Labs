@@ -445,7 +445,7 @@ class StunningDataVisualizationEngine {
     getGradient(ctx, index, isArea = false) {
         const color = this.getColorByIndex(index);
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        
+
         if (isArea) {
             gradient.addColorStop(0, color + '40');
             gradient.addColorStop(1, color + '00');
@@ -453,7 +453,7 @@ class StunningDataVisualizationEngine {
             gradient.addColorStop(0, color);
             gradient.addColorStop(1, color + '80');
         }
-        
+
         return gradient;
     }
 
@@ -486,14 +486,14 @@ class StunningDataVisualizationEngine {
         // Create dashboard grid
         const dashboard = document.createElement('div');
         dashboard.className = 'dashboard-grid';
-        
+
         config.widgets.forEach((widget, index) => {
             const widgetElement = this.createWidget(widget, `widget-${index}`);
             dashboard.appendChild(widgetElement);
         });
 
         container.appendChild(dashboard);
-        
+
         // Initialize charts in widgets
         config.widgets.forEach((widget, index) => {
             if (widget.type === 'chart') {

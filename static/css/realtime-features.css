@@ -442,13 +442,13 @@
         grid-template-columns: 1fr;
         grid-template-rows: 1fr auto;
     }
-    
+
     .realtime-sidebar {
         border-left: none;
         border-top: 1px solid var(--klerno-border);
         max-height: 300px;
     }
-    
+
     .connection-status {
         top: auto;
         bottom: 1rem;
@@ -456,7 +456,7 @@
         left: 1rem;
         text-align: center;
     }
-    
+
     .user-notification {
         right: 1rem;
         left: 1rem;
@@ -491,7 +491,7 @@
     .chat-message {
         border: 2px solid;
     }
-    
+
     .status-indicator {
         border-width: 3px;
     }

@@ -171,9 +171,7 @@ async def favicon(request: Request) -> Any:
         try:
             with Path(icon_path).open("rb") as f:
                 content = f.read()
-            etag = md5(
-                content, usedforsecurity=False
-            ).hexdigest()  # nosec: B324 - ETag generation only
+            etag = md5(content, usedforsecurity=False).hexdigest()  # nosec: B324 - ETag generation only
             headers["ETag"] = etag
             inm = request.headers.get("if-none-match")
             if inm and inm.strip('"') == etag:
@@ -186,9 +184,7 @@ async def favicon(request: Request) -> Any:
     transparent_png = b64decode(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
     )
-    etag = md5(
-        transparent_png, usedforsecurity=False
-    ).hexdigest()  # nosec: B324 - ETag generation only
+    etag = md5(transparent_png, usedforsecurity=False).hexdigest()  # nosec: B324 - ETag generation only
     headers["ETag"] = etag
     inm = request.headers.get("if-none-match")
     if inm and inm.strip('"') == etag:

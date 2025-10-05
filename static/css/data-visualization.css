@@ -330,25 +330,25 @@
     .analytics-dashboard {
         padding: 1rem;
     }
-    
+
     .dashboard-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-    
+
     .dashboard-widget.large,
     .dashboard-widget.full {
         grid-column: span 1;
     }
-    
+
     .metric-value {
         font-size: 2rem;
     }
-    
+
     .widget-header {
         padding: 1rem;
     }
-    
+
     .widget-content {
         padding: 1rem;
     }
@@ -368,14 +368,14 @@
     .analytics-dashboard {
         background: white;
     }
-    
+
     .dashboard-widget {
         break-inside: avoid;
         box-shadow: none;
         border: 1px solid #ddd;
         margin-bottom: 1rem;
     }
-    
+
     .widget-actions {
         display: none;
     }
@@ -397,7 +397,7 @@
     .dashboard-widget {
         border: 2px solid;
     }
-    
+
     .metric-value {
         -webkit-text-fill-color: unset;
         background: none;

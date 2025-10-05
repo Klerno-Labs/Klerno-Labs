@@ -132,7 +132,9 @@ class TestRequestResponseFlow:
         assert isinstance(data, dict)
 
     @patch("app.integrations.xrp.fetch_account_tx")
-    def test_xrpl_integration_flow(self, mock_fetch, client, mock_enforce_api_key) -> None:
+    def test_xrpl_integration_flow(
+        self, mock_fetch, client, mock_enforce_api_key
+    ) -> None:
         """Test XRPL integration flow."""
         # Mock successful XRPL response
         mock_fetch.return_value = []

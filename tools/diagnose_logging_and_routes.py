@@ -68,7 +68,6 @@ except Exception:
     pass
 
 
-
 def main() -> int:
     """Run diagnostic and capture output into .run/diagnostic-startup.txt for CI artifacts.
 

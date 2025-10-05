@@ -27,7 +27,6 @@ def safe_print(*args: Any, **kwargs: Any) -> None:
                 safe_args.append(str(arg))
 
 
-
 def format_status(status: str, message: str) -> str:
     """Return a one-line status message with a safe prefix."""
     status_symbols = {

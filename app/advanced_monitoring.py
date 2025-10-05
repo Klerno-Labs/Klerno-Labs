@@ -8,7 +8,7 @@ import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, DefaultDict
+from typing import Any
 
 import psutil
 from fastapi import Request
@@ -178,11 +178,11 @@ class UserAnalytics:
 
     def __init__(self) -> None:
         self.active_sessions: dict[str, UserSession] = {}
-        self.conversion_funnels: DefaultDict[str, list[dict[str, Any]]] = defaultdict(
+        self.conversion_funnels: defaultdict[str, list[dict[str, Any]]] = defaultdict(
             list
         )
-        self.page_analytics: DefaultDict[str, int] = defaultdict(int)
-        self.user_flows: DefaultDict[str, list[str]] = defaultdict(list)
+        self.page_analytics: defaultdict[str, int] = defaultdict(int)
+        self.user_flows: defaultdict[str, list[str]] = defaultdict(list)
 
     def start_session(self, session_id: str, ip: str, user_agent: str) -> None:
         """Start a new user session."""

@@ -13,7 +13,9 @@ logger = logging.getLogger(__name__)
 class RateLimiter:
     """In-memory rate limiter with sliding window."""
 
-    def __init__(self, requests_per_window: int = 100, window_seconds: int = 60) -> None:
+    def __init__(
+        self, requests_per_window: int = 100, window_seconds: int = 60
+    ) -> None:
         """Initialize rate limiter."""
         self.requests_per_window = requests_per_window
         self.window_seconds = window_seconds
@@ -59,7 +61,9 @@ class RateLimiter:
 class RateLimitMiddleware:
     """Rate limiting middleware for FastAPI."""
 
-    def __init__(self, requests_per_window: int = 100, window_seconds: int = 60) -> None:
+    def __init__(
+        self, requests_per_window: int = 100, window_seconds: int = 60
+    ) -> None:
         """Initialize rate limit middleware."""
         self.rate_limiter = RateLimiter(requests_per_window, window_seconds)
 

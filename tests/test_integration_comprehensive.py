@@ -170,7 +170,9 @@ class TestXRPLIntegration:
 class TestPaywallIntegration:
     """Test paywall and subscription integration."""
 
-    def test_free_tier_limitations(self, test_client, db_utils, test_db, mock_user) -> None:
+    def test_free_tier_limitations(
+        self, test_client, db_utils, test_db, mock_user
+    ) -> None:
         """Test free tier access limitations."""
         # Create free tier user
         db_utils.create_test_user(test_db, mock_user)
@@ -244,7 +246,9 @@ class TestISO20022Integration:
     """Test ISO 20022 message processing integration."""
 
     @pytest.mark.asyncio
-    async def test_iso_message_parsing(self, async_client, sample_iso20022_message) -> None:
+    async def test_iso_message_parsing(
+        self, async_client, sample_iso20022_message
+    ) -> None:
         """Test ISO 20022 message parsing workflow."""
         response = await async_client.post(
             "/iso20022/parse",

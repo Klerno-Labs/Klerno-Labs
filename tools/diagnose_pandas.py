@@ -2,12 +2,12 @@ import sys
 import traceback
 from pathlib import Path
 
-for p in sys.path:
+for _p in sys.path:
     pass
 
 root = Path(sys.path[0] or ".")
-for p in root.iterdir():
-    if p.name.lower().startswith("pandas"):
+for _p in root.iterdir():
+    if _p.name.lower().startswith("pandas"):
         pass
 
 try:

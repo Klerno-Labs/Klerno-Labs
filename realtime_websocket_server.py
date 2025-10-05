@@ -41,7 +41,10 @@ class ConnectionManager:
         self.user_presence[user_id] = {
             "status": "online",
             "last_seen": datetime.now().isoformat(),
-            "connections": [*self.user_presence.get(user_id, {}).get("connections", []), connection_id],
+            "connections": [
+                *self.user_presence.get(user_id, {}).get("connections", []),
+                connection_id,
+            ],
         }
 
         # Notify others about user joining
@@ -114,7 +117,10 @@ class ConnectionManager:
             await self.disconnect(connection_id)
 
     async def broadcast_to_room(
-        self, message: dict, room_id: str, exclude_user: str | None = None,
+        self,
+        message: dict,
+        room_id: str,
+        exclude_user: str | None = None,
     ) -> None:
         """Broadcast message to all users in a specific room."""
         if room_id in self.room_connections:

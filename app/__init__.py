@@ -5,6 +5,7 @@ external code can reliably access subpackages like ``app.integrations``
 via the top-level ``app`` package (some tests patch those import paths).
 """
 
+import contextlib
 import logging
 import types
 from collections.abc import Callable
@@ -258,10 +259,8 @@ try:
             _sys.modules["app.integrations.xrp"] = real_xrp
             # Also ensure attribute is set on the integrations package object that
             # our app exposes so getattr(app.integrations, "xrp") succeeds.
-            try:
-                setattr(integrations, "xrp", real_xrp)
-            except Exception:
-                pass
+            with contextlib.suppress(Exception):
+                integrations.xrp = real_xrp  # type: ignore[attr-defined]
         except Exception:
             pass
 except Exception:

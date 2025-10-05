@@ -95,7 +95,9 @@ cache: ICache = _get_cache()
 class PerformanceMiddleware(BaseHTTPMiddleware):
     """Middleware for performance monitoring and optimization."""
 
-    def __init__(self, app, cache_enabled: bool = True, metrics_enabled: bool = True) -> None:
+    def __init__(
+        self, app, cache_enabled: bool = True, metrics_enabled: bool = True
+    ) -> None:
         super().__init__(app)
         self.cache_enabled = cache_enabled
         self.metrics_enabled = metrics_enabled

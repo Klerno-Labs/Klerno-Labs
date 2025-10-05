@@ -55,4 +55,3 @@ async def hero_bg(request: Request) -> Response:
         )
         headers = {"Cache-Control": "no-store"}
         return Response(content=tiny_png, media_type="image/png", headers=headers)
-

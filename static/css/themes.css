@@ -17,7 +17,7 @@
     --klerno-success: #10b981;
     --klerno-warning: #f59e0b;
     --klerno-error: #ef4444;
-    
+
     /* Neutral Palette */
     --klerno-white: #ffffff;
     --klerno-black: #000000;
@@ -31,7 +31,7 @@
     --klerno-gray-700: #374151;
     --klerno-gray-800: #1f2937;
     --klerno-gray-900: #111827;
-    
+
     /* Semantic Colors */
     --klerno-background: #ffffff;
     --klerno-surface: #f9fafb;
@@ -42,7 +42,7 @@
     --klerno-text-secondary: #6b7280;
     --klerno-text-tertiary: #9ca3af;
     --klerno-text-inverse: #ffffff;
-    
+
     /* Shadows */
     --klerno-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --klerno-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
@@ -50,7 +50,7 @@
     --klerno-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --klerno-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     --klerno-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    
+
     /* Gradients */
     --klerno-gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     --klerno-gradient-secondary: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
@@ -71,7 +71,7 @@
     --klerno-success: #34d399;
     --klerno-warning: #fbbf24;
     --klerno-error: #f87171;
-    
+
     /* Dark Neutral Palette */
     --klerno-white: #111827;
     --klerno-black: #ffffff;
@@ -85,7 +85,7 @@
     --klerno-gray-700: #e5e7eb;
     --klerno-gray-800: #f3f4f6;
     --klerno-gray-900: #f9fafb;
-    
+
     /* Dark Semantic Colors */
     --klerno-background: #0f172a;
     --klerno-surface: #1e293b;
@@ -96,7 +96,7 @@
     --klerno-text-secondary: #cbd5e1;
     --klerno-text-tertiary: #94a3b8;
     --klerno-text-inverse: #0f172a;
-    
+
     /* Dark Shadows */
     --klerno-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     --klerno-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
@@ -104,7 +104,7 @@
     --klerno-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
     --klerno-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
     --klerno-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-    
+
     /* Dark Gradients */
     --klerno-gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     --klerno-gradient-secondary: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
@@ -125,7 +125,7 @@
     --klerno-success: #047857;
     --klerno-warning: #d97706;
     --klerno-error: #dc2626;
-    
+
     /* Enterprise Neutral Palette */
     --klerno-white: #ffffff;
     --klerno-black: #000000;
@@ -139,7 +139,7 @@
     --klerno-gray-700: #334155;
     --klerno-gray-800: #1e293b;
     --klerno-gray-900: #0f172a;
-    
+
     /* Enterprise Semantic Colors */
     --klerno-background: #ffffff;
     --klerno-surface: #f8fafc;
@@ -150,7 +150,7 @@
     --klerno-text-secondary: #475569;
     --klerno-text-tertiary: #64748b;
     --klerno-text-inverse: #ffffff;
-    
+
     /* Enterprise Shadows */
     --klerno-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --klerno-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
@@ -158,7 +158,7 @@
     --klerno-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --klerno-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     --klerno-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    
+
     /* Enterprise Gradients */
     --klerno-gradient-primary: linear-gradient(135deg, #1e40af 0%, #7c3aed 100%);
     --klerno-gradient-secondary: linear-gradient(135deg, #059669 0%, #047857 100%);
@@ -179,7 +179,7 @@
     --klerno-success: #00ff88;
     --klerno-warning: #ffaa00;
     --klerno-error: #ff0080;
-    
+
     /* Cyberpunk Dark Palette */
     --klerno-white: #0a0a0a;
     --klerno-black: #00d4ff;
@@ -193,7 +193,7 @@
     --klerno-gray-700: #dadada;
     --klerno-gray-800: #eaeaea;
     --klerno-gray-900: #fafafa;
-    
+
     /* Cyberpunk Semantic Colors */
     --klerno-background: #0a0a0a;
     --klerno-surface: #1a1a2e;
@@ -204,7 +204,7 @@
     --klerno-text-secondary: #e94560;
     --klerno-text-tertiary: #0f3460;
     --klerno-text-inverse: #0a0a0a;
-    
+
     /* Cyberpunk Shadows with Glow */
     --klerno-shadow-xs: 0 0 5px rgba(0, 212, 255, 0.3);
     --klerno-shadow-sm: 0 0 10px rgba(0, 212, 255, 0.4);
@@ -212,7 +212,7 @@
     --klerno-shadow-lg: 0 0 30px rgba(0, 212, 255, 0.6);
     --klerno-shadow-xl: 0 0 40px rgba(0, 212, 255, 0.7);
     --klerno-shadow-2xl: 0 0 60px rgba(0, 212, 255, 0.8);
-    
+
     /* Cyberpunk Gradients */
     --klerno-gradient-primary: linear-gradient(135deg, #00d4ff 0%, #ff0080 100%);
     --klerno-gradient-secondary: linear-gradient(135deg, #00ff88 0%, #ffaa00 100%);
@@ -224,7 +224,7 @@
    THEME TRANSITIONS & ANIMATIONS
    ================================================================= */
 * {
-    transition: 
+    transition:
         background-color 0.3s ease,
         border-color 0.3s ease,
         color 0.3s ease,
@@ -404,15 +404,15 @@
     .brand-title {
         font-size: 2rem;
     }
-    
+
     .brand-tagline {
         font-size: 1rem;
     }
-    
+
     .theme-selector {
         flex-direction: column;
     }
-    
+
     .premium-card {
         padding: 1rem;
     }
@@ -425,7 +425,7 @@
         --klerno-text-primary: #000000;
         --klerno-background: #ffffff;
     }
-    
+
     [data-theme="dark"] {
         --klerno-border: #ffffff;
         --klerno-text-primary: #ffffff;

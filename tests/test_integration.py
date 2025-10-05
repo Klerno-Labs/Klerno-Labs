@@ -9,11 +9,7 @@ from fastapi.testclient import TestClient
 # Set test environment before importing the app
 os.environ["APP_ENV"] = "test"
 
-from app.exceptions import (
-    AuthenticationException,
-    KlernoException,
-    ValidationException,
-)
+from app.exceptions import AuthenticationException, KlernoException, ValidationException
 from app.logging_config import configure_logging, get_logger
 from app.main import app
 from app.settings import get_settings

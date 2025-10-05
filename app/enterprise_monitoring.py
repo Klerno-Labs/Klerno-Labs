@@ -371,7 +371,9 @@ class AlertManager:
                         source="alert_rules",
                     )
             except Exception as e:
-                self.logger.exception(f"Error evaluating alert rule {rule['name']}: {e}")
+                self.logger.exception(
+                    f"Error evaluating alert rule {rule['name']}: {e}"
+                )
 
     def _evaluate_rule(self, rule: dict, metrics: list[Metric]) -> bool:
         """Evaluate an alert rule condition."""

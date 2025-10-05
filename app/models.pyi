@@ -18,6 +18,7 @@ class User:
     id: int | None
     email: str
     password_hash: str | None
+    hashed_password: str | None
     role: Any
     is_active: bool
     is_admin: bool
@@ -119,3 +120,11 @@ class ReportRequest:
         wallet_addresses: list[str] = ...,
         **kwargs: Any,
     ) -> None: ...
+
+    address: str | None
+    chain: str | None
+    start: datetime | None
+    end: datetime | None
+    min_amount: Decimal | None
+    max_amount: Decimal | None
+    wallet_addresses: list[str]

@@ -45,7 +45,7 @@ class AdvancedErrorHandler {
                 error: event.reason,
                 timestamp: new Date().toISOString()
             });
-            
+
             // Prevent console spam
             event.preventDefault();
         });
@@ -58,11 +58,11 @@ class AdvancedErrorHandler {
         window.fetch = async (...args) => {
             try {
                 const response = await originalFetch(...args);
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                
+
                 return response;
             } catch (error) {
                 return this.handleNetworkError(error, args);
@@ -81,7 +81,7 @@ class AdvancedErrorHandler {
                     timestamp: new Date().toISOString()
                 });
             });
-            
+
             return originalOpen.apply(this, args);
         };
     }
@@ -98,16 +98,16 @@ class AdvancedErrorHandler {
     // Handle different types of errors
     handleError(errorInfo) {
         console.error('Error captured:', errorInfo);
-        
+
         // Add to error queue
         this.errorQueue.push(errorInfo);
-        
+
         // Show user-friendly notification
         this.showErrorNotification(errorInfo);
-        
+
         // Report to error tracking service
         this.reportError(errorInfo);
-        
+
         // Attempt recovery if possible
         this.attemptRecovery(errorInfo);
     }
@@ -119,7 +119,7 @@ class AdvancedErrorHandler {
 
         if (retryCount < this.maxRetries) {
             this.retryAttempts.set(retryKey, retryCount + 1);
-            
+
             return new Promise((resolve) => {
                 setTimeout(async () => {
                     try {
@@ -141,7 +141,7 @@ class AdvancedErrorHandler {
     handleResourceError(element) {
         const src = element.src || element.href;
         const tagName = element.tagName.toLowerCase();
-        
+
         switch (tagName) {
             case 'img':
                 this.handleImageError(element);
@@ -180,11 +180,11 @@ class AdvancedErrorHandler {
         const fallback = document.createElement('style');
         fallback.textContent = `
             body { font-family: Arial, sans-serif; }
-            .error-notice { 
-                background: #fee; 
-                border: 1px solid #fcc; 
-                padding: 10px; 
-                margin: 10px 0; 
+            .error-notice {
+                background: #fee;
+                border: 1px solid #fcc;
+                padding: 10px;
+                margin: 10px 0;
             }
         `;
         document.head.appendChild(fallback);
@@ -239,9 +239,9 @@ class AdvancedErrorHandler {
                 <button class="error-dismiss" onclick="this.parentElement.parentElement.remove()">×</button>
             </div>
         `;
-        
+
         this.getNotificationContainer().appendChild(notification);
-        
+
         // Auto-remove after 10 seconds
         setTimeout(() => {
             notification.remove();
@@ -264,7 +264,7 @@ class AdvancedErrorHandler {
                 </div>
             </div>
         `;
-        
+
         document.body.insertBefore(errorBanner, document.body.firstChild);
     }
 
@@ -278,9 +278,9 @@ class AdvancedErrorHandler {
                 <button onclick="location.reload()" class="reconnect-btn">Try to Reconnect</button>
             </div>
         `;
-        
+
         document.body.insertBefore(offlineBanner, document.body.firstChild);
-        
+
         // Remove when back online
         window.addEventListener('online', () => {
             offlineBanner.remove();
@@ -297,7 +297,7 @@ class AdvancedErrorHandler {
                 <button onclick="this.parentElement.parentElement.remove()" class="dismiss-btn">Dismiss</button>
             </div>
         `;
-        
+
         document.body.insertBefore(retryBanner, document.body.firstChild);
     }
 
@@ -325,7 +325,7 @@ class AdvancedErrorHandler {
                 </div>
             </div>
         `;
-        
+
         document.body.appendChild(modal);
     }
 
@@ -363,7 +363,7 @@ class AdvancedErrorHandler {
             'promise': 'An operation didn't complete successfully. You may want to try again.',
             'resource': 'Some content failed to load. The page should still be functional.'
         };
-        
+
         return friendlyMessages[errorInfo.type] || 'An unexpected error occurred.';
     }
 

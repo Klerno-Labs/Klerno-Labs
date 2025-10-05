@@ -114,16 +114,16 @@ class AdvancedPerformanceEngine {
 
     async loadComponent(element) {
         const componentName = element.dataset.lazyComponent;
-        
+
         try {
             // Dynamic import for component
             const module = await import(`/static/components/${componentName}.js`);
             const ComponentClass = module.default;
-            
+
             // Initialize component
             const component = new ComponentClass();
             component.render(element);
-            
+
             element.classList.add('component-loaded');
             this.metrics.lazyLoadedElements++;
         } catch (error) {
@@ -198,7 +198,7 @@ class AdvancedPerformanceEngine {
     setupCodeSplitting() {
         // Route-based code splitting
         this.setupRouteBasedSplitting();
-        
+
         // Feature-based code splitting
         this.setupFeatureBasedSplitting();
     }
@@ -225,7 +225,7 @@ class AdvancedPerformanceEngine {
         window.addEventListener('popstate', async (event) => {
             const route = this.getCurrentRoute();
             const module = await loadRouteModule(route);
-            
+
             if (module) {
                 module.init();
             }
@@ -235,14 +235,14 @@ class AdvancedPerformanceEngine {
     setupFeatureBasedSplitting() {
         // Load features on demand
         const featureButtons = document.querySelectorAll('[data-feature]');
-        
+
         featureButtons.forEach(button => {
             button.addEventListener('click', async (e) => {
                 const feature = button.dataset.feature;
-                
+
                 if (!button.classList.contains('feature-loaded')) {
                     button.classList.add('loading');
-                    
+
                     try {
                         const module = await import(`/static/features/${feature}.js`);
                         module.default.init();
@@ -272,7 +272,7 @@ class AdvancedPerformanceEngine {
 
         // Memory cache for API responses
         this.setupAPICache();
-        
+
         // Local storage optimization
         this.optimizeLocalStorage();
     }
@@ -301,7 +301,7 @@ class AdvancedPerformanceEngine {
 
             try {
                 const response = await originalFetch(url, options);
-                
+
                 if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
                     const data = await response.clone().json();
                     apiCache.set(cacheKey, {
@@ -360,10 +360,10 @@ class AdvancedPerformanceEngine {
     setupPerformanceMonitoring() {
         // Web Vitals tracking
         this.trackWebVitals();
-        
+
         // Custom performance metrics
         this.trackCustomMetrics();
-        
+
         // Real-time performance dashboard
         this.createPerformanceDashboard();
     }
@@ -414,7 +414,7 @@ class AdvancedPerformanceEngine {
             const navigation = performance.getEntriesByType('navigation')[0];
             this.metrics.loadTime = navigation.loadEventEnd - navigation.loadEventStart;
             this.metrics.domContentLoaded = navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart;
-            
+
             this.reportMetric('LoadTime', this.metrics.loadTime);
             this.reportMetric('DOMContentLoaded', this.metrics.domContentLoaded);
         });
@@ -530,7 +530,7 @@ class AdvancedPerformanceEngine {
         const element = document.getElementById(`${name.toLowerCase()}-value`);
         if (element) {
             element.textContent = Math.round(value) + (name === 'CLS' ? '' : 'ms');
-            
+
             // Color code based on performance
             if (name === 'FCP' && value < 1800) element.style.color = '#4ade80';
             else if (name === 'LCP' && value < 2500) element.style.color = '#4ade80';
@@ -553,10 +553,10 @@ class AdvancedPerformanceEngine {
     optimizeRenderPath() {
         // Reduce layout thrashing
         this.batchDOMUpdates();
-        
+
         // Optimize animations for 60fps
         this.optimizeAnimations();
-        
+
         // Reduce paint complexity
         this.optimizePainting();
     }
@@ -567,7 +567,7 @@ class AdvancedPerformanceEngine {
 
         window.batchedUpdate = (updateFn) => {
             updates.push(updateFn);
-            
+
             if (!isScheduled) {
                 isScheduled = true;
                 requestAnimationFrame(() => {
@@ -582,10 +582,10 @@ class AdvancedPerformanceEngine {
     optimizeAnimations() {
         // Use transform and opacity for animations
         const animatedElements = document.querySelectorAll('[data-animate]');
-        
+
         animatedElements.forEach(element => {
             element.style.willChange = 'transform, opacity';
-            
+
             // Clean up after animation
             element.addEventListener('animationend', () => {
                 element.style.willChange = 'auto';
@@ -596,7 +596,7 @@ class AdvancedPerformanceEngine {
     optimizePainting() {
         // Create separate layers for heavy elements
         const heavyElements = document.querySelectorAll('.heavy-paint');
-        
+
         heavyElements.forEach(element => {
             element.style.transform = 'translateZ(0)';
             element.style.backfaceVisibility = 'hidden';
