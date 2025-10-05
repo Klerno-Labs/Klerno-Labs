@@ -66,7 +66,7 @@ python -m pip install -r dev-requirements.txt
 
 [![Core CI](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/core-ci.yml/badge.svg)](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/core-ci.yml)
 [![Enterprise](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/enterprise.yml/badge.svg)](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/enterprise.yml)
-[![Coverage](https://codecov.io/gh/Klerno-Labs/Klerno-Labs/branch/main/graph/badge.svg)](https://codecov.io/gh/Klerno-Labs/Klerno-Labs)
+[![Coverage](https://codecov.io/gh/Klerno-Labs/Klerno-Labs/branch/ci/enterprise-run-migrations-pr25/graph/badge.svg)](https://codecov.io/gh/Klerno-Labs/Klerno-Labs)
 
 ### Pre-commit (optional but recommended)
 

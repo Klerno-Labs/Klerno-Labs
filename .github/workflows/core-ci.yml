@@ -99,6 +99,8 @@ jobs:
           flags: unittests
           fail_ci_if_error: false
           verbose: true
+        # For private repositories, add CODECOV_TOKEN in repository secrets.
+        # Public repositories do not require a token.
 
       - name: Upload diagnostic bundle (on failure)
         if: failure()
