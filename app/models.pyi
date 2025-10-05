@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
+
 class User:
     def __init__(
         self,
@@ -24,6 +25,8 @@ class User:
     created_at: datetime | None
     last_login: datetime | None
     is_premium: bool
+
+
 
 class Transaction:
     def __init__(
@@ -57,6 +60,8 @@ class Transaction:
 
 # mark package as typed via presence of .pyi
 
+
+
 class TaggedTransaction:
     tx_id: str
     timestamp: datetime
@@ -75,6 +80,8 @@ class TaggedTransaction:
     risk_score: float | None
     risk_flags: list[str]
     def model_dump(self) -> dict[str, Any]: ...
+
+
 
 class ReportSummary:
     def __init__(
@@ -105,6 +112,8 @@ class ReportSummary:
     legacy_high_risk_count: int | None
 
 # mark package as typed via presence of .pyi
+
+
 
 class ReportRequest:
     def __init__(

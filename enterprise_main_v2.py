@@ -283,6 +283,7 @@ app.mount("/vendor", StaticFiles(directory="static/vendor"), name="vendor")
 
 
 # Simple monitoring middleware
+ 
 @app.middleware("http")
 async def simple_monitoring_middleware(request: Request, call_next):
     """Simple monitoring middleware for basic metrics."""
@@ -301,8 +302,9 @@ async def simple_monitoring_middleware(request: Request, call_next):
 
     return response
 
-
 # Security headers middleware - small, non-breaking defaults to improve app security
+
+
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -340,9 +342,9 @@ async def health_check():
         "environment": getattr(config, "environment", ""),
     }
 
-
-
 # Enterprise Dashboard endpoint
+
+
 @app.get("/enterprise/dashboard")
 async def enterprise_dashboard():
     """Enterprise dashboard with comprehensive metrics."""
@@ -364,7 +366,6 @@ async def enterprise_dashboard():
     }
 
 
-
 # Enterprise Status endpoint
 @app.get("/enterprise/status")
 async def enterprise_status():
@@ -379,9 +380,9 @@ async def enterprise_status():
         "config": get_config().get_feature_summary(),
     }
 
-
-
 # Import routes from clean app
+
+
 @app.get("/")
 async def landing_page(request: Request):
     """Enhanced landing page with enterprise features."""

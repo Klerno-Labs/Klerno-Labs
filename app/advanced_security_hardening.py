@@ -1,15 +1,24 @@
-# Provide a getter for analytics_dashboard compatibility
-def get_security_middleware() -> Any:
-    global security_middleware
-    if not security_middleware:
-        security_middleware = AdvancedSecurityMiddleware(None)
-    return security_middleware
-
+from __future__ import annotations
 
 """
 Advanced Security Hardening for Klerno Labs
 Enhanced rate limiting, IP whitelisting, and threat protection
 """
+
+"""Module-level globals and utilities."""
+
+# Initialize global security components early to avoid NameError during import
+# in case other modules call getters during circular imports.
+security_middleware: "AdvancedSecurityMiddleware | None" = None
+
+
+# Provide a getter for analytics_dashboard compatibility
+def get_security_middleware() -> "AdvancedSecurityMiddleware":
+    global security_middleware
+    if security_middleware is None:
+        security_middleware = AdvancedSecurityMiddleware(None)
+    return security_middleware
+
 
 import contextlib
 import ipaddress
@@ -440,9 +449,6 @@ def create_security_config() -> dict[str, Any]:
         },
     }
 
-
-# Initialize global security components
-security_middleware = None
 
 
 def initialize_security() -> Any:
