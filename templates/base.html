@@ -22,9 +22,6 @@
     <!-- Elite Design System -->
     <link rel="stylesheet" href="/static/css/design-system.css" />
 
-    <!-- Performance Utilities -->
-    <link rel="stylesheet" href="/static/css/performance-utils.css" />
-
     <!-- PWA Manifest -->
     <link rel="manifest" href="/static/manifest.json" />
     <meta name="theme-color" content="#667eea" />
@@ -179,7 +176,9 @@
         onerror="this.removeAttribute('onerror'); this.src=this.dataset.fallback">
         </script>
 
-    <!-- Application JavaScript -->
+    <!-- Theme toggle + micro-interactions -->
+    <script src="/static/js/theme-controller.js"></script>
+    <script src="/static/js/micro-interactions.js"></script>
     <script src="/static/js/app-enhanced.js"></script>
 
     <!-- Service Worker Registration -->

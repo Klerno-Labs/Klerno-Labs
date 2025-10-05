@@ -209,8 +209,9 @@ async def dashboard_page(request: Request) -> Any:
 
 @app.get("/")
 async def landing_page(request: Request) -> Any:
-    """Unified landing page."""
-    return templates.TemplateResponse("landing.html", {"request": request})
+    """Unified landing page (professional variant)."""
+    # Prefer the professional landing if available for a more polished look
+    return templates.TemplateResponse("landing-professional.html", {"request": request})
 
 
 from .routers import (  # import after app creation to avoid circulars  # noqa: E402
