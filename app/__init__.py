@@ -260,7 +260,7 @@ try:
             # Also ensure attribute is set on the integrations package object that
             # our app exposes so getattr(app.integrations, "xrp") succeeds.
             with contextlib.suppress(Exception):
-                integrations.xrp = real_xrp  # type: ignore[attr-defined]
+                integrations.xrp = real_xrp
         except Exception:
             pass
 except Exception:

@@ -439,8 +439,7 @@ def request_password_reset(
     if tokens is None:
         tokens = {}
         # Dynamic attribute for ephemeral password reset tokens (test helper)
-    # Use setattr so static analyzers don't complain about unknown attrs.
-    store._reset_tokens = tokens
+        store._reset_tokens = tokens
 
     tokens[reset_token] = {
         "user_id": user["id"],

@@ -521,7 +521,7 @@ def cached(
                 return result
 
             # Attach cache for inspection using setattr
-            async_wrapper._cache = cache
+            async_wrapper._cache = cache  # type: ignore[attr-defined]
             return async_wrapper
 
         @wraps(func)
@@ -540,7 +540,7 @@ def cached(
             return result
 
         # Attach cache for inspection using setattr
-        sync_wrapper._cache = cache
+        sync_wrapper._cache = cache  # type: ignore[attr-defined]
         return sync_wrapper
 
     return decorator
