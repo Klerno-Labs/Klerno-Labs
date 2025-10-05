@@ -450,7 +450,6 @@ def create_security_config() -> dict[str, Any]:
     }
 
 
-
 def initialize_security() -> Any:
     """Initialize security components."""
     global security_middleware

@@ -2,9 +2,9 @@ name: Core CI
 
 on:
   push:
-    branches: [main, master, chore/dev-dx]
+    branches: ["**"]
   pull_request:
-    branches: [main, master, chore/dev-dx]
+    branches: ["**"]
 
 jobs:
   lint-and-test:
@@ -32,6 +32,8 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt >/dev/null
           if [ -f dev-requirements.txt ]; then python -m pip install -r dev-requirements.txt >/dev/null || true; fi
+          # Ensure core tools are available even if not pinned in dev-requirements
+          python -m pip install pytest mypy ruff flake8 >/dev/null || true
 
       - name: Lint (ruff)
         run: npx ruff check . || python -m ruff check . || true
