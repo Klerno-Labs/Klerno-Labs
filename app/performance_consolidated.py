@@ -1,5 +1,5 @@
 """Klerno Labs - Consolidated Performance System
-Enterprise-grade performance optimization and monitoring
+Enterprise-grade performance optimization and monitoring.
 """
 
 from __future__ import annotations
@@ -11,15 +11,18 @@ import os
 import threading
 import time
 from collections import OrderedDict, defaultdict, deque
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from functools import wraps
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from fastapi import Request
 
 logger = logging.getLogger(__name__)
 
@@ -386,7 +389,7 @@ class PerformanceProfiler:
                     ),
                 )
         except Exception as e:
-            logger.error(f"Failed to persist metric: {e}")
+            logger.exception(f"Failed to persist metric: {e}")
 
     def get_metrics_summary(self, hours: int = 24) -> dict[str, Any]:
         """Get performance metrics summary."""
@@ -492,7 +495,9 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
 # =============================================================================
 
 
-def cached(ttl: int = 3600, max_size: int = 1000) -> None:
+def cached(
+    ttl: int = 3600, max_size: int = 1000
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to cache function results."""
 
     def decorator(func: Callable) -> Callable:
@@ -516,11 +521,11 @@ def cached(ttl: int = 3600, max_size: int = 1000) -> None:
                 return result
 
             # Attach cache for inspection using setattr
-            async_wrapper._cache = cache
+            setattr(async_wrapper, "_cache", cache)
             return async_wrapper
 
         @wraps(func)
-        def sync_wrapper(*args, **kwargs) -> None:
+        def sync_wrapper(*args, **kwargs) -> Any:
             # Create cache key from args and kwargs
             key = f"{func.__name__}:{hash(str(args) + str(sorted(kwargs.items())))}"
 
@@ -535,13 +540,15 @@ def cached(ttl: int = 3600, max_size: int = 1000) -> None:
             return result
 
         # Attach cache for inspection using setattr
-        sync_wrapper._cache = cache
+        setattr(sync_wrapper, "_cache", cache)
         return sync_wrapper
 
     return decorator
 
 
-def track_performance(operation_name: str | None = None) -> None:
+def track_performance(
+    operation_name: str | None = None,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to track function performance."""
 
     def decorator(func: Callable) -> Callable:
@@ -553,8 +560,7 @@ def track_performance(operation_name: str | None = None) -> None:
             async def async_wrapper(*args, **kwargs) -> Any:
                 start_time = time.time()
                 try:
-                    result = await func(*args, **kwargs)
-                    return result
+                    return await func(*args, **kwargs)
                 finally:
                     duration_ms = (time.time() - start_time) * 1000
                     # Global profiler would be injected here
@@ -563,11 +569,10 @@ def track_performance(operation_name: str | None = None) -> None:
             return async_wrapper
 
         @wraps(func)
-        def sync_wrapper(*args, **kwargs) -> None:
+        def sync_wrapper(*args, **kwargs) -> Any:
             start_time = time.time()
             try:
-                result = func(*args, **kwargs)
-                return result
+                return func(*args, **kwargs)
             finally:
                 duration_ms = (time.time() - start_time) * 1000
                 logger.debug(f"Performance: {op_name} took {duration_ms:.2f}ms")

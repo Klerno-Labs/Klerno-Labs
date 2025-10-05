@@ -1,12 +1,12 @@
-"""Tests for advanced analytics functionality"""
+"""Tests for advanced analytics functionality."""
 
 import pytest
 
 from app.analytics import AdvancedAnalytics, AnalyticsMetrics, InsightsEngine
 
 
-def test_empty_analytics():
-    """Test analytics with no data"""
+def test_empty_analytics() -> None:
+    """Test analytics with no data."""
     # Clear transactions table for this test (use correct table name)
     import sqlite3
 
@@ -38,8 +38,8 @@ def test_empty_analytics():
         pass
 
 
-def test_risk_bucket_calculation():
-    """Test risk bucket categorization"""
+def test_risk_bucket_calculation() -> None:
+    """Test risk bucket categorization."""
     analytics = AdvancedAnalytics()
 
     # Test risk thresholds
@@ -48,8 +48,8 @@ def test_risk_bucket_calculation():
     assert analytics.risk_thresholds["high"] == 1.0
 
 
-def test_insights_generation():
-    """Test AI insights generation"""
+def test_insights_generation() -> None:
+    """Test AI insights generation."""
     insights_engine = InsightsEngine()
 
     # Test with high risk metrics
@@ -80,8 +80,8 @@ def test_insights_generation():
     assert len(high_priority_insights) > 0
 
 
-def test_insights_low_risk():
-    """Test insights with low risk metrics"""
+def test_insights_low_risk() -> None:
+    """Test insights with low risk metrics."""
     insights_engine = InsightsEngine()
 
     low_risk_metrics = AnalyticsMetrics(
@@ -107,8 +107,8 @@ def test_insights_low_risk():
     assert len(high_risk_insights) == 0
 
 
-def test_network_hub_insights():
-    """Test network hub detection insights"""
+def test_network_hub_insights() -> None:
+    """Test network hub detection insights."""
     insights_engine = InsightsEngine()
 
     metrics_with_hub = AnalyticsMetrics(

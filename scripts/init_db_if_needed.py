@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import os
-import sys
 
 import sqlalchemy as sa
 from sqlalchemy import (
@@ -100,13 +99,12 @@ def main(url: str | None = None) -> int:
         # ensure variables are referenced so linters don't flag them
         _ = (users, transactions, txs)
         meta.create_all(engine)
-        print(f"Initialized tables (if missing) on {url}")
         return 0
-    except Exception as exc:  # pragma: no cover - CI helper
-        print("Failed to create tables:", exc, file=sys.stderr)
+    except Exception:  # pragma: no cover - CI helper
         return 2
 
     if __name__ == "__main__":
         # When invoked as a script, call main() without args so it reads
         # DATABASE_URL from the environment as before.
         raise SystemExit(main())
+    return None

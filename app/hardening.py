@@ -4,12 +4,15 @@ from __future__ import annotations
 import hmac
 import os
 import secrets
-from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from starlette.responses import Response
 
 REQ_ID_HEADER = "X-Request-ID"
 CSRF_COOKIE = "csrf_token"
@@ -131,7 +134,8 @@ def rate_limit(spec: str) -> Callable[..., Awaitable[bool]]:
         # Require redis URL to actually enable limiter
         if not os.getenv("REDIS_URL"):
             # RateLimiter without Redis will fail; fall back to no-op
-            raise RuntimeError("No REDIS_URL set; skipping real limiter.")
+            msg = "No REDIS_URL set; skipping real limiter."
+            raise RuntimeError(msg)
 
         return RateLimiter(times=times, seconds=seconds)
     except Exception:

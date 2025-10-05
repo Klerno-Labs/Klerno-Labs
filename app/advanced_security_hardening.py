@@ -1,5 +1,5 @@
 # Provide a getter for analytics_dashboard compatibility
-def get_security_middleware() -> None:
+def get_security_middleware() -> Any:
     global security_middleware
     if not security_middleware:
         security_middleware = AdvancedSecurityMiddleware(None)
@@ -43,16 +43,20 @@ class SecurityEvent:
 
 
 class AdvancedRateLimiter:
-    """Advanced rate limiting with different strategies"""
+    """Advanced rate limiting with different strategies."""
 
     def __init__(self) -> None:
-        self.requests = defaultdict(deque)  # IP -> deque of timestamps
-        self.blocked_ips = defaultdict(float)  # IP -> unblock_time
-        self.failed_attempts = defaultdict(int)  # IP -> failed_count
-        self.suspicious_patterns = defaultdict(list[Any])  # IP -> patterns
+        self.requests: dict[str, deque[float]] = defaultdict(
+            deque
+        )  # IP -> deque of timestamps
+        self.blocked_ips: dict[str, float] = defaultdict(float)  # IP -> unblock_time
+        self.failed_attempts: dict[str, int] = defaultdict(int)  # IP -> failed_count
+        self.suspicious_patterns: dict[str, list[Any]] = defaultdict(
+            list
+        )  # IP -> patterns
 
     def is_rate_limited(self, ip: str, endpoint: str, limit: int, window: int) -> bool:
-        """Check if IP is rate limited for specific endpoint"""
+        """Check if IP is rate limited for specific endpoint."""
         now = time.time()
 
         # Check if IP is temporarily blocked
@@ -76,22 +80,22 @@ class AdvancedRateLimiter:
         return False
 
     def block_ip(self, ip: str, duration: int) -> None:
-        """Temporarily block an IP address"""
+        """Temporarily block an IP address."""
         self.blocked_ips[ip] = time.time() + duration
 
     def add_failed_attempt(self, ip: str) -> int:
-        """Track failed login attempts"""
+        """Track failed login attempts."""
         self.failed_attempts[ip] += 1
         return self.failed_attempts[ip]
 
     def clear_failed_attempts(self, ip: str) -> None:
-        """Clear failed attempts for successful login"""
+        """Clear failed attempts for successful login."""
         if ip in self.failed_attempts:
             del self.failed_attempts[ip]
 
 
 class IPWhitelist:
-    """Advanced IP whitelisting with CIDR support"""
+    """Advanced IP whitelisting with CIDR support."""
 
     def __init__(self) -> None:
         self.whitelist: set[str] = set()
@@ -106,7 +110,7 @@ class IPWhitelist:
         self.add_network("192.168.0.0/16")  # Private network
 
     def add_ip(self, ip: str, category: str = "general") -> None:
-        """Add IP to whitelist"""
+        """Add IP to whitelist."""
         if category == "admin":
             self.admin_whitelist.add(ip)
         elif category == "api":
@@ -115,12 +119,12 @@ class IPWhitelist:
             self.whitelist.add(ip)
 
     def add_network(self, network: str) -> None:
-        """Add network CIDR to whitelist"""
+        """Add network CIDR to whitelist."""
         with contextlib.suppress(ValueError):
             self.whitelist_networks.append(ipaddress.IPv4Network(network))
 
     def is_whitelisted(self, ip: str, category: str = "general") -> bool:
-        """Check if IP is whitelisted"""
+        """Check if IP is whitelisted."""
         # Check direct IP whitelist
         if category == "admin" and ip in self.admin_whitelist:
             return True
@@ -142,7 +146,7 @@ class IPWhitelist:
 
 
 class ThreatDetector:
-    """Advanced threat detection and analysis"""
+    """Advanced threat detection and analysis."""
 
     def __init__(self) -> None:
         self.malicious_ips: set[str] = set()
@@ -176,7 +180,7 @@ class ThreatDetector:
         self.security_events: list[SecurityEvent] = []
 
     def detect_threats(self, request: Request) -> list[SecurityEvent]:
-        """Detect various threats in the request"""
+        """Detect various threats in the request."""
         threats = []
         ip = self.get_client_ip(request)
 
@@ -226,7 +230,7 @@ class ThreatDetector:
         return threats
 
     def get_client_ip(self, request: Request) -> str:
-        """Get real client IP considering proxies"""
+        """Get real client IP considering proxies."""
         # Check X-Forwarded-For header first (for proxies/load balancers)
         forwarded_for = request.headers.get("x-forwarded-for")
         if forwarded_for:
@@ -242,17 +246,17 @@ class ThreatDetector:
         return request.client.host if request.client else "127.0.0.1"
 
     def add_malicious_ip(self, ip: str) -> None:
-        """Add IP to malicious list[Any]"""
+        """Add IP to malicious list[Any]."""
         self.malicious_ips.add(ip)
 
     def get_recent_events(self, hours: int = 24) -> list[SecurityEvent]:
-        """Get recent security events"""
+        """Get recent security events."""
         cutoff = time.time() - (hours * 3600)
         return [event for event in self.security_events if event.timestamp > cutoff]
 
 
 class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
-    """Comprehensive security middleware"""
+    """Comprehensive security middleware."""
 
     def __init__(self, app) -> None:
         super().__init__(app)
@@ -280,7 +284,7 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
         }
 
     async def dispatch(self, request: Request, call_next) -> Any:
-        """Main security dispatch"""
+        """Main security dispatch."""
         start_time = time.time()
         ip = self.threat_detector.get_client_ip(request)
         path = request.url.path
@@ -337,8 +341,7 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
             # Check specific endpoint limits
             for endpoint, limits in self.rate_limits.items():
                 if (
-                    endpoint != "general"
-                    and endpoint != "api"
+                    endpoint not in {"general", "api"}
                     and path.startswith(endpoint)
                     and self.rate_limiter.is_rate_limited(
                         ip,
@@ -412,14 +415,13 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
 
             return response
 
-        except Exception as e:
+        except Exception:
             # Log security middleware errors
-            print(f"Security middleware error: {e}")
             return await call_next(request)
 
 
-def create_security_config() -> None:
-    """Create security configuration"""
+def create_security_config() -> dict[str, Any]:
+    """Create security configuration."""
     return {
         "rate_limiting": {
             "enabled": True,
@@ -443,8 +445,8 @@ def create_security_config() -> None:
 security_middleware = None
 
 
-def initialize_security() -> None:
-    """Initialize security components"""
+def initialize_security() -> Any:
+    """Initialize security components."""
     global security_middleware
     if not security_middleware:
         security_middleware = AdvancedSecurityMiddleware(None)

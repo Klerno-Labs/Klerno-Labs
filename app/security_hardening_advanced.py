@@ -1,5 +1,5 @@
 """Klerno Labs - Advanced Security Hardening Module
-Enterprise-grade security for 0.01% quality applications
+Enterprise-grade security for 0.01% quality applications.
 """
 
 import base64
@@ -12,11 +12,12 @@ from collections import defaultdict, deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cryptography.fernet import Fernet
 
-from app._typing_shims import ISyncConnection
+if TYPE_CHECKING:
+    from app._typing_shims import ISyncConnection
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class ThreatIntelligence:
 class AdvancedSecurityHardening:
     """Advanced security hardening with real-time threat detection."""
 
-    def __init__(self, db_path: str = "./data/security.db"):
+    def __init__(self, db_path: str = "./data/security.db") -> None:
         self.db_path = db_path
         # rate_limits stores timestamps (floats) per IP
         self.rate_limits: dict[str, deque[float]] = defaultdict(deque)
@@ -230,7 +231,7 @@ class AdvancedSecurityHardening:
             )
 
         except Exception as e:
-            logger.error(f"Error loading threat intelligence: {e}")
+            logger.exception(f"Error loading threat intelligence: {e}")
 
     def encrypt_sensitive_data(self, data: str) -> str:
         """Encrypt sensitive data."""
@@ -238,7 +239,7 @@ class AdvancedSecurityHardening:
             encrypted = self.cipher.encrypt(data.encode())
             return base64.b64encode(encrypted).decode()
         except Exception as e:
-            logger.error(f"Encryption error: {e}")
+            logger.exception(f"Encryption error: {e}")
             return data
 
     def decrypt_sensitive_data(self, encrypted_data: str) -> str:
@@ -248,7 +249,7 @@ class AdvancedSecurityHardening:
             decrypted = self.cipher.decrypt(encrypted_bytes)
             return decrypted.decode()
         except Exception as e:
-            logger.error(f"Decryption error: {e}")
+            logger.exception(f"Decryption error: {e}")
             return encrypted_data
 
     def is_ip_blocked(self, ip_address: str) -> bool:
@@ -292,7 +293,7 @@ class AdvancedSecurityHardening:
             logger.warning(f"🚫 Blocked IP {ip_address}: {reason}")
 
         except Exception as e:
-            logger.error(f"Error blocking IP {ip_address}: {e}")
+            logger.exception(f"Error blocking IP {ip_address}: {e}")
 
     def check_rate_limit(
         self,
@@ -509,7 +510,7 @@ class AdvancedSecurityHardening:
                 )
 
         except Exception as e:
-            logger.error(f"Error logging security event: {e}")
+            logger.exception(f"Error logging security event: {e}")
 
     def log_failed_auth_attempt(
         self,
@@ -548,7 +549,7 @@ class AdvancedSecurityHardening:
             conn.close()
 
         except Exception as e:
-            logger.error(f"Error logging failed auth attempt: {e}")
+            logger.exception(f"Error logging failed auth attempt: {e}")
 
         # Check for brute force
         attempts_count = len(self.failed_attempts[ip_address])
@@ -730,7 +731,7 @@ class AdvancedSecurityHardening:
             }
 
         except Exception as e:
-            logger.error(f"Error getting security dashboard data: {e}")
+            logger.exception(f"Error getting security dashboard data: {e}")
             return {"error": str(e)}
 
 

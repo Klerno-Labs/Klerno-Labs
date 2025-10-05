@@ -1,4 +1,4 @@
-"""Enterprise Integration Orchestrator
+"""Enterprise Integration Orchestrator.
 
 Comprehensive integration and verification system for all enterprise - grade features.
 Ensures ISO20022 compliance, top 0.01% quality standards, and maximum security.
@@ -53,7 +53,7 @@ class QualityMetrics:
 class EnterpriseIntegrationOrchestrator:
     """Main orchestrator for enterprise integration and verification."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.iso20022_manager = ISO20022Manager()
         self.monitoring = MonitoringOrchestrator()
         self.security = AdvancedSecurityOrchestrator()
@@ -61,9 +61,9 @@ class EnterpriseIntegrationOrchestrator:
         self.test_runner = TestRunner()
         self.resilience = ResilienceOrchestrator()
 
-        self.integration_status = {}
-        self.quality_metrics = None
-        self.verification_results = {}
+        self.integration_status: dict[str, IntegrationStatus] = {}
+        self.quality_metrics: QualityMetrics | None = None
+        self.verification_results: dict[str, Any] = {}
         self.enterprise_features_enabled = False
 
         self._setup_integration_checks()
@@ -126,7 +126,7 @@ class EnterpriseIntegrationOrchestrator:
             }
 
         except Exception as e:
-            logger.error(f"Failed to initialize enterprise features: {e}")
+            logger.exception(f"Failed to initialize enterprise features: {e}")
             return {
                 "status": "failed",
                 "error": str(e),
@@ -176,7 +176,7 @@ class EnterpriseIntegrationOrchestrator:
             }
 
         except Exception as e:
-            logger.error(f"ISO20022 initialization failed: {e}")
+            logger.exception(f"ISO20022 initialization failed: {e}")
             return {"status": "failed", "error": str(e)}
 
     async def _initialize_monitoring(self) -> dict[str, Any]:
@@ -219,7 +219,7 @@ class EnterpriseIntegrationOrchestrator:
             }
 
         except Exception as e:
-            logger.error(f"Monitoring initialization failed: {e}")
+            logger.exception(f"Monitoring initialization failed: {e}")
             return {"status": "failed", "error": str(e)}
 
     async def _initialize_security(self) -> dict[str, Any]:
@@ -253,7 +253,7 @@ class EnterpriseIntegrationOrchestrator:
             }
 
         except Exception as e:
-            logger.error(f"Security initialization failed: {e}")
+            logger.exception(f"Security initialization failed: {e}")
             return {"status": "failed", "error": str(e)}
 
     async def _initialize_performance(self) -> dict[str, Any]:
@@ -287,7 +287,7 @@ class EnterpriseIntegrationOrchestrator:
             }
 
         except Exception as e:
-            logger.error(f"Performance initialization failed: {e}")
+            logger.exception(f"Performance initialization failed: {e}")
             return {"status": "failed", "error": str(e)}
 
     async def _initialize_resilience(self) -> dict[str, Any]:
@@ -328,7 +328,7 @@ class EnterpriseIntegrationOrchestrator:
             }
 
         except Exception as e:
-            logger.error(f"Resilience initialization failed: {e}")
+            logger.exception(f"Resilience initialization failed: {e}")
             return {"status": "failed", "error": str(e)}
 
     async def run_integration_verification(self) -> dict[str, Any]:
@@ -353,7 +353,7 @@ class EnterpriseIntegrationOrchestrator:
                 )
 
             except Exception as e:
-                logger.error(f"Integration check failed for {component}: {e}")
+                logger.exception(f"Integration check failed for {component}: {e}")
                 verification_results[component] = {"status": "failed", "error": str(e)}
 
         # Calculate overall integration score
@@ -651,7 +651,7 @@ class EnterpriseIntegrationOrchestrator:
         total_score = 0
         valid_components = 0
 
-        for _component, result in verification_results.items():
+        for result in verification_results.values():
             if result.get("status") != "failed":
                 total_score += result.get("health_score", 0)
                 valid_components += 1
@@ -723,7 +723,7 @@ class EnterpriseIntegrationOrchestrator:
             return self.quality_metrics
 
         except Exception as e:
-            logger.error(f"Quality validation failed: {e}")
+            logger.exception(f"Quality validation failed: {e}")
             raise
 
     async def _assess_code_quality(self) -> float:
@@ -741,7 +741,7 @@ class EnterpriseIntegrationOrchestrator:
             return sum(quality_metrics.values()) / len(quality_metrics)
 
         except Exception as e:
-            logger.error(f"Code quality assessment failed: {e}")
+            logger.exception(f"Code quality assessment failed: {e}")
             return 0.0
 
     async def run_final_verification(self) -> dict[str, Any]:
@@ -768,7 +768,8 @@ class EnterpriseIntegrationOrchestrator:
 
             # Run full test suite
             full_test_results = await cast(
-                "Any", self.test_runner
+                "Any",
+                self.test_runner,
             ).run_full_test_suite()
 
             # Generate compliance report
@@ -833,7 +834,7 @@ class EnterpriseIntegrationOrchestrator:
             return final_result
 
         except Exception as e:
-            logger.error(f"Final verification failed: {e}")
+            logger.exception(f"Final verification failed: {e}")
             return {
                 "verification_status": "ERROR",
                 "error": str(e),
@@ -852,7 +853,9 @@ class EnterpriseIntegrationOrchestrator:
                 for component, status in self.integration_status.items()
             },
             "quality_metrics": (
-                asdict(self.quality_metrics) if self.quality_metrics else None
+                asdict(self.quality_metrics)
+                if self.quality_metrics is not None
+                else None
             ),
             "verification_results": self.verification_results,
             "system_health": self._get_overall_system_health(),

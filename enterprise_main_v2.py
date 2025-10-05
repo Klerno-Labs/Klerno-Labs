@@ -1,5 +1,5 @@
 """Klerno Labs - Enterprise Edition Main Application
-TOP 0.1% Application with Enterprise Features Integration
+TOP 0.1% Application with Enterprise Features Integration.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 # Import Any for runtime typing of session middleware variable
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +20,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app._typing_shims import IAdminModule, IAuthModule, IStore
+if TYPE_CHECKING:
+    from app._typing_shims import IAdminModule, IAuthModule, IStore
 
 # Explicitly declare SessionMiddleware as a runtime variable so static
 # type-checkers don't treat the imported symbol as a type declaration.
@@ -115,7 +116,7 @@ ENTERPRISE_FEATURES = {
 _loaded_enterprise_modules: list[str] = []
 
 
-def initialize_enterprise_features():
+def initialize_enterprise_features() -> None:
     """Initialize enterprise features based on configuration."""
     config = get_config()
 
@@ -210,7 +211,7 @@ def initialize_enterprise_features():
         logger.info(f"ENTERPRISE MODE: {feature_count} features available")
 
     except Exception as e:
-        logger.error(f"Enterprise initialization error: {e}")
+        logger.exception(f"Enterprise initialization error: {e}")
 
 
 # Application lifespan
@@ -220,7 +221,6 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Klerno Labs Enterprise Platform...")
     # Early diagnostic print to ensure we see something in stdout when the
     # process starts. This helps in environments where output is suppressed.
-    print("[DIAG] enterprise_main_v2: lifespan start")
 
     # Initialize clean app database if the store module is available
     if store is not None and getattr(store, "init_db", None) is not None:
@@ -297,7 +297,7 @@ async def simple_monitoring_middleware(request: Request, call_next):
                 f"{request.method} {request.url.path} - {response.status_code} - {duration:.2f}ms",
             )
         except Exception as e:
-            logger.error(f"Monitoring error: {e}")
+            logger.exception(f"Monitoring error: {e}")
 
     return response
 
@@ -328,7 +328,7 @@ async def health_check():
     """Enterprise health check with detailed system status."""
     config = get_config()
 
-    health_data = {
+    return {
         "status": "healthy",
         "timestamp": datetime.now(UTC).isoformat(),
         "version": "2.0.0-Enterprise",
@@ -340,7 +340,6 @@ async def health_check():
         "environment": getattr(config, "environment", ""),
     }
 
-    return health_data
 
 
 # Enterprise Dashboard endpoint
@@ -352,7 +351,7 @@ async def enterprise_dashboard():
 
     config = get_config()
 
-    dashboard_data = {
+    return {
         "timestamp": datetime.now(UTC).isoformat(),
         "features": get_enabled_features(),
         "config": config.get_feature_summary(),
@@ -364,7 +363,6 @@ async def enterprise_dashboard():
         },
     }
 
-    return dashboard_data
 
 
 # Enterprise Status endpoint
@@ -374,14 +372,13 @@ async def enterprise_status():
     if not is_enterprise_enabled():
         raise HTTPException(status_code=404, detail="Enterprise features not enabled")
 
-    status_data = {
+    return {
         "enterprise_mode": is_enterprise_enabled(),
         "available_features": ENTERPRISE_FEATURES,
         "enabled_features": get_enabled_features(),
         "config": get_config().get_feature_summary(),
     }
 
-    return status_data
 
 
 # Import routes from clean app
@@ -446,7 +443,7 @@ async def offline_page():
 from fastapi import APIRouter
 
 
-def _register_auth_router():
+def _register_auth_router() -> None:
     if auth is not None and getattr(auth, "router", None) is not None:
         app.include_router(auth.router)
         return
@@ -473,7 +470,7 @@ def _register_auth_router():
     app.include_router(shim)
 
 
-def _register_admin_router():
+def _register_admin_router() -> None:
     if admin is not None and getattr(admin, "router", None) is not None:
         app.include_router(admin.router)
         return
@@ -501,19 +498,10 @@ if __name__ == "__main__":
     config = get_config()
 
     # Log startup banner
-    print("=" * 80)
-    print("KLERNO LABS ENTERPRISE EDITION")
-    print("   TOP 0.1% Advanced Transaction Analysis Platform")
-    print("=" * 80)
-    print(f"Mode: {'ENTERPRISE' if config.enterprise_mode else 'SIMPLE'}")
-    print(f"Environment: {config.environment}")
-    print(f"Features configured: {len(get_enabled_features())}")
-    print("=" * 80)
 
     # Start server with protective try/except to ensure we log any startup
     # exception to the enterprise log file for offline diagnostics.
     try:
-        print("[DIAG] Starting uvicorn...")
         uvicorn.run(
             "enterprise_main_v2:app",
             host="127.0.0.1",
@@ -528,9 +516,6 @@ if __name__ == "__main__":
 
         try:
             # Cast the opened file to TextIO for static analysis
-            from typing import TextIO as _TextIO
-            from typing import cast
-
             with LOG_FILE.open("a", encoding="utf-8") as fh_file:
                 fh_t = cast("_TextIO", fh_file)
                 fh_t.write("\n=== STARTUP EXCEPTION ===\n")
@@ -538,5 +523,4 @@ if __name__ == "__main__":
                 fh_t.write("\n=== END STARTUP EXCEPTION ===\n")
         except Exception:
             # If logging to file fails, print to stdout as a last resort
-            print("Failed to write startup exception to log file")
             traceback.print_exc()

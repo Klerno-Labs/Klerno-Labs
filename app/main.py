@@ -5,10 +5,9 @@ from __future__ import annotations
 import contextlib
 import importlib
 import os
-from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
@@ -19,6 +18,9 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from .logging_config import configure_logging, get_logger
 from .settings import settings
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Awaitable, Callable
 
 configure_logging()
 logger = get_logger("app.main")
@@ -70,8 +72,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 reason="weak_jwt_secret",
                 environment=env_eff,
             )
+            msg = "Insecure JWT_SECRET configured for non-development environment"
             raise RuntimeError(
-                "Insecure JWT_SECRET configured for non-development environment",
+                msg,
             )
         if os.getenv("DEV_ADMIN_PASSWORD") in weak_secrets:
             logger.warning(
@@ -278,8 +281,7 @@ def compat_admin_users() -> Any:
     try:
         from .admin import _list_users
 
-        users = _list_users()
-        return users
+        return _list_users()
     except Exception:
         # Fallback: empty list
         # Try a direct DB query against legacy schema as a last resort
@@ -334,7 +336,7 @@ with contextlib.suppress(Exception):
     # adjusted package __path__ (avoids hitting a package-level shim).
     auth_mod = importlib.import_module("app.auth")
     app.include_router(auth_mod.router)
-    print("[OK] Auth router loaded")
+    logger.info("Auth router loaded successfully")
 
 
 # Backwards-compatible simple aliases for older endpoints expected by tests
@@ -499,7 +501,8 @@ async def enterprise_validate_xml(request: Request):
     try:
         body = await request.body()
         if not body:
-            raise ValueError("empty body")
+            msg = "empty body"
+            raise ValueError(msg)
         return {"status": "success", "validation_result": {"valid": True}}
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid XML") from e
@@ -606,22 +609,20 @@ try:
             return _auth_mod.login_api(login_payload, response)
 
     except Exception as _e:
-        print(f"[WARN] auth.login_api forwarder failed to register: {_e}")
-except Exception as e:
-    print(
-        f"[WARN] importing app.auth failed while registering login_api forwarder: {e}",
-    )
+        logger.warning(f"auth.login_api forwarder failed to register: {_e}")
+except Exception:
+    pass
 
 try:
     from . import admin
 
     try:
         app.include_router(admin.router)
-        print("[OK] Admin router loaded")
+        logger.info("Admin router loaded successfully")
     except Exception as e:
-        print(f"[WARN] Admin router not included: {e}")
+        logger.warning(f"Admin router not included: {e}")
 except Exception as e:
-    print(f"[WARN] Admin module import failed: {e}")
+    logger.warning(f"Admin module import failed: {e}")
 
 # Include smaller feature routers used by tests (minimal, non-invasive)
 try:
@@ -634,9 +635,8 @@ try:
             app.include_router(pr)
         if pkr:
             app.include_router(pkr)
-        print("[OK] Paywall routers loaded")
-    except Exception as e:
-        print(f"[WARN] Paywall routers not included: {e}")
+    except Exception:
+        pass
 except Exception:
     pass
 
@@ -647,11 +647,10 @@ try:
         tr = getattr(transactions, "router", None)
         if tr:
             app.include_router(tr)
-            print("[OK] Transactions router loaded")
         else:
-            print("[WARN] Transactions router missing")
-    except Exception as e:
-        print(f"[WARN] Transactions router not included: {e}")
+            pass
+    except Exception:
+        pass
 except Exception:
     pass
 
@@ -668,9 +667,8 @@ try:
             app.include_router(analytics_router)
         with contextlib.suppress(Exception):
             app.include_router(compliance_router)
-        print("[OK] Analytics / Compliance routers loaded")
-    except Exception as e:
-        print(f"[WARN] Analytics/Compliance routers not included: {e}")
+    except Exception:
+        pass
 except Exception:
     pass
 
@@ -681,11 +679,10 @@ try:
         xr = getattr(xrpl, "router", None)
         if xr:
             app.include_router(xr)
-            print("[OK] XRPL router loaded")
         else:
-            print("[WARN] XRPL router missing")
-    except Exception as e:
-        print(f"[WARN] XRPL router not included: {e}")
+            pass
+    except Exception:
+        pass
 except Exception:
     pass
 
@@ -734,7 +731,6 @@ async def integrations_xrpl_fetch(account: str, limit: int = 10):
             return _fetch(account, limit=limit)
         except Exception as e:
             last_exc = e
-            print(f"[DEBUG] failed to import {mod_path}: {e}")
             continue
 
     # If we get here, both import attempts failed
@@ -763,6 +759,8 @@ if __name__ == "__main__":
 # Expose certain integration helpers at module-level so tests that patch
 # "app.main.fetch_account_tx" continue to work. We lazily import to avoid
 # pulling integration dependencies during test collection when not needed.
+# Keep a dynamically-resolved callable reference; typed as Any to avoid
+# duplicate symbol/type issues across lazy assignment and fallback stub.
 fetch_account_tx: Any = None
 for mod_path in ("integrations.xrp", "app.integrations.xrp"):
     try:
@@ -777,11 +775,16 @@ for mod_path in ("integrations.xrp", "app.integrations.xrp"):
 
 if fetch_account_tx is None:
 
-    def fetch_account_tx(account: str, limit: int = 10) -> list[dict]:
+    def _fallback_fetch_account_tx(
+        account: str, limit: int = 10
+    ) -> list[dict[str, Any]]:
         """Fallback stub used when the integrations package isn't available.
 
         This matches the real function signature so runtime callers can import
         the symbol even when the package is absent.
         """
-        raise RuntimeError("integrations.xrp.fetch_account_tx not available")
-        raise RuntimeError("integrations.xrp.fetch_account_tx not available")
+        msg = "integrations.xrp.fetch_account_tx not available"
+        raise RuntimeError(msg)
+
+    # Export fallback under the expected name without redeclaration confusion
+    fetch_account_tx = _fallback_fetch_account_tx

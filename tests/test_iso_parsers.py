@@ -32,7 +32,7 @@ def _build_sample_pain001_xml():
     )
 
 
-def test_parse_pain002_minimal():
+def test_parse_pain002_minimal() -> None:
     # Minimal synthetic pain.002 - like structure using builder namespace
     xml = """
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.002.001.12">
@@ -70,7 +70,7 @@ def test_parse_pain002_minimal():
     assert "Processed" in out["transactions"][0]["reasons"]["additional_info"]
 
 
-def test_parse_camt053_minimal():
+def test_parse_camt053_minimal() -> None:
     xml = """
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.10">
  <BkToCstmrStmt>

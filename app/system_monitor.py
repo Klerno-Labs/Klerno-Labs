@@ -11,13 +11,13 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, cast
 
-from app._typing_shims import ISyncConnection
-
 if TYPE_CHECKING:
     # For static checking declare a forward reference for BlockUserRequest
     from typing import TYPE_CHECKING as _T  # noqa: F401
 
     import psutil  # pragma: no cover
+
+    from app._typing_shims import ISyncConnection
 else:
     try:
         import psutil
@@ -75,7 +75,7 @@ class SystemMonitor:
         admin_manager,
         guardian_module,
         risk_threshold=0.9,
-    ):
+    ) -> None:
         """Scan recent transactions, auto - block users with high risk, and log alerts."""
         try:
             import sqlite3
@@ -136,11 +136,11 @@ class SystemMonitor:
                             ),
                         )
         except Exception as e:
-            logger.error("Error in auto_block_suspicious_users: %s", e)
+            logger.exception("Error in auto_block_suspicious_users: %s", e)
 
     """Comprehensive system monitoring for enterprise admin dashboard."""
 
-    def __init__(self, db_path: str = "data/klerno.db", init_db: bool = False):
+    def __init__(self, db_path: str = "data/klerno.db", init_db: bool = False) -> None:
         """Create a SystemMonitor instance.
 
         By default this constructor does not perform any filesystem or
@@ -161,7 +161,7 @@ class SystemMonitor:
         if init_db:
             self.init_monitoring_tables()
 
-    def init_monitoring_tables(self):
+    def init_monitoring_tables(self) -> None:
         """Initialize monitoring database tables."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -236,7 +236,7 @@ class SystemMonitor:
 
                 conn.commit()
         except Exception as e:
-            logger.error("Error initializing monitoring tables: %s", e)
+            logger.exception("Error initializing monitoring tables: %s", e)
 
     def get_system_metrics(self) -> SystemMetrics | None:
         """Get current system performance metrics."""
@@ -287,7 +287,7 @@ class SystemMonitor:
                 uptime_seconds=uptime_seconds,
             )
         except Exception as e:
-            logger.error("Error getting system metrics: %s", e)
+            logger.exception("Error getting system metrics: %s", e)
             return None
 
     def get_application_metrics(self) -> ApplicationMetrics | None:
@@ -330,7 +330,7 @@ class SystemMonitor:
                 cache_hit_rate=85.0,  # Placeholder - would be calculated from cache stats
             )
         except Exception as e:
-            logger.error("Error getting application metrics: %s", e)
+            logger.exception("Error getting application metrics: %s", e)
             return None
 
     def get_security_metrics(self) -> SecurityMetrics | None:
@@ -367,10 +367,10 @@ class SystemMonitor:
                 last_security_scan=datetime.now(UTC),
             )
         except Exception as e:
-            logger.error("Error getting security metrics: %s", e)
+            logger.exception("Error getting security metrics: %s", e)
             return None
 
-    def store_metrics(self):
+    def store_metrics(self) -> None:
         """Store current metrics in database."""
         try:
             system_metrics = self.get_system_metrics()
@@ -442,7 +442,7 @@ class SystemMonitor:
 
                 conn.commit()
         except Exception as e:
-            logger.error("Error storing metrics: %s", e)
+            logger.exception("Error storing metrics: %s", e)
 
     def get_dashboard_data(self, hours: int = 24) -> dict[str, Any]:
         """Get comprehensive dashboard data for admin interface."""
@@ -573,10 +573,10 @@ class SystemMonitor:
                 ],
             }
         except Exception as e:
-            logger.error("Error getting dashboard data: %s", e)
+            logger.exception("Error getting dashboard data: %s", e)
             return {"error": str(e)}
 
-    def add_alert(self, alert_type: str, severity: str, message: str):
+    def add_alert(self, alert_type: str, severity: str, message: str) -> None:
         """Add system alert."""
         try:
             with sqlite3.connect(self.db_path) as conn:
@@ -590,9 +590,9 @@ class SystemMonitor:
                 )
                 conn.commit()
         except Exception as e:
-            logger.error("Error adding alert: %s", e)
+            logger.exception("Error adding alert: %s", e)
 
-    def record_request(self, response_time: float, is_error: bool = False):
+    def record_request(self, response_time: float, is_error: bool = False) -> None:
         """Record API request for metrics."""
         self.request_count += 1
         self.response_times.append(time.time())
@@ -603,19 +603,19 @@ class SystemMonitor:
         if len(self.response_times) > 1000:
             self.response_times = self.response_times[-1000:]
 
-    def add_session(self, session_id: str):
+    def add_session(self, session_id: str) -> None:
         """Add active session."""
         self.active_sessions.add(session_id)
 
-    def remove_session(self, session_id: str):
+    def remove_session(self, session_id: str) -> None:
         """Remove active session."""
         self.active_sessions.discard(session_id)
 
-    def record_failed_login(self):
+    def record_failed_login(self) -> None:
         """Record failed login attempt."""
         self.failed_logins += 1
 
-    async def start_monitoring(self, admin_manager=None, guardian_module=None):
+    async def start_monitoring(self, admin_manager=None, guardian_module=None) -> None:
         """Start background monitoring task with automated incident response."""
         while True:
             try:
@@ -637,6 +637,6 @@ class SystemMonitor:
                         self.add_alert("system", "medium", msg)
                 await asyncio.sleep(60)  # Update every minute
             except Exception as e:
-                logger.error("Error in monitoring loop: %s", e)
+                logger.exception("Error in monitoring loop: %s", e)
                 await asyncio.sleep(60)
                 await asyncio.sleep(60)

@@ -1,5 +1,5 @@
 """Database Optimization and Connection Pooling
-Advanced database performance improvements with connection pooling and query optimization
+Advanced database performance improvements with connection pooling and query optimization.
 """
 
 import asyncio
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ConnectionPoolStats:
-    """Connection pool statistics"""
+    """Connection pool statistics."""
 
     total_connections: int = 0
     active_connections: int = 0
@@ -42,7 +42,7 @@ class ConnectionPoolStats:
 
 
 class AsyncConnectionPool:
-    """Async SQLite connection pool with monitoring"""
+    """Async SQLite connection pool with monitoring."""
 
     def __init__(
         self,
@@ -50,7 +50,7 @@ class AsyncConnectionPool:
         max_connections: int = 10,
         max_idle_time: int = 300,
         slow_query_threshold: float = 1.0,
-    ):
+    ) -> None:
         self.database_path = database_path
         self.max_connections = max_connections
         self.max_idle_time = max_idle_time
@@ -68,8 +68,8 @@ class AsyncConnectionPool:
 
         self._cleanup_task: Task | None = None
 
-    async def start(self):
-        """Start the connection pool"""
+    async def start(self) -> None:
+        """Start the connection pool."""
         # Create initial connections
         for _ in range(min(3, self.max_connections)):
             conn = await self._create_connection()
@@ -82,8 +82,8 @@ class AsyncConnectionPool:
             f"Connection pool started with {len(self.idle_connections)} connections",
         )
 
-    async def stop(self):
-        """Stop the connection pool and close all connections"""
+    async def stop(self) -> None:
+        """Stop the connection pool and close all connections."""
         if self._cleanup_task:
             self._cleanup_task.cancel()
 
@@ -101,7 +101,7 @@ class AsyncConnectionPool:
         logger.info("Connection pool stopped")
 
     async def _create_connection(self) -> IAsyncConnection:
-        """Create a new database connection with optimizations"""
+        """Create a new database connection with optimizations."""
         # runtime import; may not be available in the type-check environment
         try:
             import aiosqlite
@@ -128,7 +128,7 @@ class AsyncConnectionPool:
 
     @asynccontextmanager
     async def get_connection(self):
-        """Get a connection from the pool"""
+        """Get a connection from the pool."""
         connection = None
         time.time()
 
@@ -144,7 +144,8 @@ class AsyncConnectionPool:
                     self.active_connections.append(connection)
                 else:
                     # Wait for connection to become available
-                    raise Exception("No connections available")
+                    msg = "No connections available"
+                    raise Exception(msg)
 
             self.stats.active_connections = len(self.active_connections)
             self.stats.idle_connections = len(self.idle_connections)
@@ -153,7 +154,7 @@ class AsyncConnectionPool:
 
         except Exception as e:
             self.stats.connection_errors += 1
-            logger.error(f"Connection error: {e}")
+            logger.exception(f"Connection error: {e}")
             raise
 
         finally:
@@ -171,7 +172,7 @@ class AsyncConnectionPool:
         query: str,
         params: tuple | None = None,
     ) -> list[dict[str, Any]]:
-        """Execute a query with performance monitoring"""
+        """Execute a query with performance monitoring."""
         start_time = time.time()
 
         try:
@@ -210,14 +211,14 @@ class AsyncConnectionPool:
                 return result
 
         except Exception as e:
-            logger.error(f"Query execution error: {e}")
+            logger.exception(f"Query execution error: {e}")
             raise
 
     async def execute_transaction(
         self,
         queries: list[tuple[str, tuple | None]],
     ) -> bool:
-        """Execute multiple queries in a transaction"""
+        """Execute multiple queries in a transaction."""
         async with self.get_connection() as conn:
             try:
                 await conn.execute("BEGIN")
@@ -233,11 +234,11 @@ class AsyncConnectionPool:
 
             except Exception as e:
                 await conn.rollback()
-                logger.error(f"Transaction error: {e}")
+                logger.exception(f"Transaction error: {e}")
                 raise
 
-    async def _cleanup_idle_connections(self):
-        """Cleanup idle connections periodically"""
+    async def _cleanup_idle_connections(self) -> None:
+        """Cleanup idle connections periodically."""
         while True:
             try:
                 await asyncio.sleep(60)  # Check every minute
@@ -262,16 +263,16 @@ class AsyncConnectionPool:
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Cleanup error: {e}")
+                logger.exception(f"Cleanup error: {e}")
 
 
 class QueryOptimizer:
-    """Query optimization and analysis tools"""
+    """Query optimization and analysis tools."""
 
     @staticmethod
     def create_indexes(_pool: AsyncConnectionPool):
-        """Create performance indexes"""
-        indexes = [
+        """Create performance indexes."""
+        return [
             # User indexes
             ("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)"),
             ("CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active)"),
@@ -329,7 +330,6 @@ class QueryOptimizer:
             ),
         ]
 
-        return indexes
 
     @staticmethod
     async def analyze_query_performance(
@@ -337,7 +337,7 @@ class QueryOptimizer:
         query: str,
         params: tuple | None = None,
     ) -> dict[str, Any]:
-        """Analyze query performance with EXPLAIN QUERY PLAN"""
+        """Analyze query performance with EXPLAIN QUERY PLAN."""
         explain_query = f"EXPLAIN QUERY PLAN {query}"
 
         time.time()
@@ -357,15 +357,15 @@ class QueryOptimizer:
 
 
 class DatabaseService:
-    """High-level database service with caching and optimization"""
+    """High-level database service with caching and optimization."""
 
-    def __init__(self, database_path: str):
+    def __init__(self, database_path: str) -> None:
         self.pool = AsyncConnectionPool(database_path)
         self.query_cache: dict[str, tuple[dict[str, Any] | None, float]] = {}
         self.cache_ttl = 300  # 5 minutes
 
-    async def start(self):
-        """Start database service"""
+    async def start(self) -> None:
+        """Start database service."""
         await self.pool.start()
 
         # Create indexes for performance
@@ -374,14 +374,14 @@ class DatabaseService:
             try:
                 await self.pool.execute_query(index_query)
             except Exception as e:
-                logger.error(f"Index creation error: {e}")
+                logger.exception(f"Index creation error: {e}")
 
-    async def stop(self):
-        """Stop database service"""
+    async def stop(self) -> None:
+        """Stop database service."""
         await self.pool.stop()
 
     async def get_user_by_id(self, user_id: int) -> dict[str, Any] | None:
-        """Get user by ID with caching"""
+        """Get user by ID with caching."""
         cache_key = f"user:{user_id}"
 
         # Check cache first
@@ -409,7 +409,7 @@ class DatabaseService:
         limit: int = 100,
         offset: int = 0,
     ) -> list[dict[str, Any]]:
-        """Get user transactions with pagination"""
+        """Get user transactions with pagination."""
         return await self.pool.execute_query(
             """
             SELECT t.*, COUNT(*) OVER() as total_count
@@ -425,7 +425,7 @@ class DatabaseService:
         self,
         transaction_id: int,
     ) -> dict[str, Any] | None:
-        """Get transaction with compliance tags in a single query"""
+        """Get transaction with compliance tags in a single query."""
         result = await self.pool.execute_query(
             """
             SELECT
@@ -463,7 +463,7 @@ class DatabaseService:
         transaction_data: dict[str, Any],
         compliance_tags: list[tuple[str, float]],
     ) -> int | None:
-        """Create transaction and compliance tags in a single transaction"""
+        """Create transaction and compliance tags in a single transaction."""
         queries: list[tuple[str, tuple[Any, ...] | None]] = [
             (
                 (
@@ -500,7 +500,7 @@ class DatabaseService:
         return result[0]["id"] if result else None
 
     def get_stats(self) -> dict[str, Any]:
-        """Get database performance statistics"""
+        """Get database performance statistics."""
         return {
             "connection_pool": {
                 "total_connections": self.pool.stats.total_connections,
@@ -523,7 +523,7 @@ db_service = DatabaseService("data/klerno.db")
 
 
 def with_db_stats(func):
-    """Decorator to track database operation statistics"""
+    """Decorator to track database operation statistics."""
 
     @wraps(func)
     async def wrapper(*args, **kwargs):
@@ -537,7 +537,7 @@ def with_db_stats(func):
             return result
         except Exception as e:
             execution_time = time.time() - start_time
-            logger.error(
+            logger.exception(
                 f"DB operation {func.__name__} failed after {execution_time:.3f}s: {e}",
             )
             raise

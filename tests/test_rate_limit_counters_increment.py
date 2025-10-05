@@ -1,6 +1,4 @@
-"""
-Test for rate limit counters increment functionality.
-"""
+"""Test for rate limit counters increment functionality."""
 
 from unittest.mock import Mock
 
@@ -10,7 +8,7 @@ from app.middleware import RateLimitMiddleware
 class TestRateLimitCountersIncrement:
     """Test rate limit counter increment behavior."""
 
-    def test_rate_limit_counter_increments_correctly(self):
+    def test_rate_limit_counter_increments_correctly(self) -> None:
         """Test that rate limit counters increment properly."""
         middleware = RateLimitMiddleware(Mock(), requests_per_minute=5)
         current_time = 1000.0
@@ -26,7 +24,7 @@ class TestRateLimitCountersIncrement:
         # Should now be rate limited
         assert middleware._is_rate_limited(ip, current_time + 5)
 
-    def test_rate_limit_cleanup_old_requests(self):
+    def test_rate_limit_cleanup_old_requests(self) -> None:
         """Test that old requests are cleaned up properly."""
         middleware = RateLimitMiddleware(Mock(), requests_per_minute=3)
         current_time = 1000.0

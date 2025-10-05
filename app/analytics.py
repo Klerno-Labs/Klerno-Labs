@@ -1,5 +1,5 @@
 """Advanced Analytics Module for Klerno Labs
-Provides enhanced analytics, insights, and dashboard functionality
+Provides enhanced analytics, insights, and dashboard functionality.
 """
 
 from __future__ import annotations
@@ -18,7 +18,8 @@ def _ensure_numpy() -> None:
         np = importlib.import_module("numpy")
         globals()["np"] = np
     except ImportError as e:
-        raise RuntimeError("numpy is required for analytics computations") from e
+        msg = "numpy is required for analytics computations"
+        raise RuntimeError(msg) from e
     except Exception:
         raise
 
@@ -40,7 +41,8 @@ def _ensure_pandas() -> None:
         pd = importlib.import_module("pandas")
         globals()["pd"] = pd
     except ImportError as e:
-        raise RuntimeError("pandas is required for analytics features") from e
+        msg = "pandas is required for analytics features"
+        raise RuntimeError(msg) from e
     except Exception:
         raise
 
@@ -57,7 +59,7 @@ else:
 
 @dataclass
 class AnalyticsMetrics:
-    """Enhanced analytics metrics structure"""
+    """Enhanced analytics metrics structure."""
 
     total_transactions: int
     total_volume: float
@@ -75,13 +77,13 @@ class AnalyticsMetrics:
 
 
 class AdvancedAnalytics:
-    """Advanced analytics engine for transaction analysis"""
+    """Advanced analytics engine for transaction analysis."""
 
     def __init__(self) -> None:
         self.risk_thresholds = {"low": 0.33, "medium": 0.66, "high": 1.0}
 
     def generate_comprehensive_metrics(self, days: int = 30) -> AnalyticsMetrics:
-        """Generate comprehensive analytics metrics for the dashboard"""
+        """Generate comprehensive analytics metrics for the dashboard."""
         # Get data from the last N days
         cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=days)
         rows = store.list_all(limit=50000)
@@ -135,7 +137,7 @@ class AdvancedAnalytics:
         )
 
     def _get_risk_score(self, row: Any) -> float:
-        """Extract risk score from row with fallback"""
+        """Extract risk score from row with fallback."""
         _ensure_pandas()
         try:
             score = row.get("risk_score", row.get("score", 0))
@@ -146,7 +148,7 @@ class AdvancedAnalytics:
             return 0.0
 
     def _count_unique_addresses(self, df: Any) -> int:
-        """Count unique addresses in the dataset"""
+        """Count unique addresses in the dataset."""
         _ensure_pandas()
         addresses = set()
         for _, row in df.iterrows():
@@ -157,7 +159,7 @@ class AdvancedAnalytics:
         return len(addresses)
 
     def _get_top_risk_addresses(self, df: Any, limit: int = 10) -> list[dict[str, Any]]:
-        """Get top risk addresses with their metrics"""
+        """Get top risk addresses with their metrics."""
         _ensure_pandas()
         _ensure_numpy()
         address_metrics = {}
@@ -186,7 +188,7 @@ class AdvancedAnalytics:
                 metrics["max_risk"] = max(metrics["max_risk"], risk_score)
 
         # Calculate averages and sort by risk
-        for _addr, metrics in address_metrics.items():
+        for metrics in address_metrics.values():
             if metrics["risk_scores"]:
                 metrics["avg_risk"] = np.mean(metrics["risk_scores"])
             del metrics["risk_scores"]  # Remove raw scores to save space
@@ -201,7 +203,7 @@ class AdvancedAnalytics:
         return sorted_addresses[:limit]
 
     def _calculate_risk_trend(self, df: Any) -> list[dict[str, Any]]:
-        """Calculate risk trend over time"""
+        """Calculate risk trend over time."""
         _ensure_pandas()
         if df.empty:
             return []
@@ -237,7 +239,7 @@ class AdvancedAnalytics:
         return sorted(trend, key=lambda x: x["date"])
 
     def _get_category_distribution(self, df: Any) -> dict[str, int]:
-        """Get distribution of transaction categories"""
+        """Get distribution of transaction categories."""
         _ensure_pandas()
         if "category" not in df.columns:
             return {"unknown": len(df)}
@@ -245,7 +247,7 @@ class AdvancedAnalytics:
         return df["category"].fillna("unknown").value_counts().to_dict()
 
     def _get_hourly_activity(self, df: Any) -> list[dict[str, Any]]:
-        """Analyze transaction activity by hour of day"""
+        """Analyze transaction activity by hour of day."""
         _ensure_pandas()
         if df.empty:
             return []
@@ -282,7 +284,7 @@ class AdvancedAnalytics:
         return activity
 
     def _analyze_network_patterns(self, df: Any) -> dict[str, Any]:
-        """Analyze network patterns and connections"""
+        """Analyze network patterns and connections."""
         _ensure_pandas()
         if df.empty:
             return {
@@ -326,7 +328,7 @@ class AdvancedAnalytics:
         }
 
     def _calculate_anomaly_score(self, df: Any) -> float:
-        """Calculate overall anomaly score for the dataset"""
+        """Calculate overall anomaly score for the dataset."""
         _ensure_pandas()
         _ensure_numpy()
         if df.empty or len(df) < 2:
@@ -346,7 +348,7 @@ class AdvancedAnalytics:
         return 0.0
 
     def _empty_metrics(self) -> AnalyticsMetrics:
-        """Return empty metrics structure"""
+        """Return empty metrics structure."""
         return AnalyticsMetrics(
             total_transactions=0,
             total_volume=0.0,
@@ -365,10 +367,10 @@ class AdvancedAnalytics:
 
 
 class InsightsEngine:
-    """AI - powered insights generator"""
+    """AI - powered insights generator."""
 
     def generate_insights(self, metrics: AnalyticsMetrics):
-        """Generate AI-powered insights from analytics data"""
+        """Generate AI-powered insights from analytics data."""
         insights = []
 
         # Short locals to reduce long f-strings and keep line lengths down
@@ -466,11 +468,11 @@ class _LazyProxy:
     eager construction during import.
     """
 
-    def __init__(self, factory):
+    def __init__(self, factory) -> None:
         self._factory = factory
         self._obj = None
 
-    def _ensure(self):
+    def _ensure(self) -> None:
         if self._obj is None:
             self._obj = self._factory()
 
@@ -484,7 +486,8 @@ class _LazyProxy:
         # raise a clear TypeError to match normal Python behavior.
         if callable(self._obj):
             return self._obj(*args, **kwargs)
-        raise TypeError(f"'{type(self._obj).__name__}' object is not callable")
+        msg = f"'{type(self._obj).__name__}' object is not callable"
+        raise TypeError(msg)
 
 
 # Public lazy instances

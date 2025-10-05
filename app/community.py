@@ -1,5 +1,5 @@
 """Community and Collaboration Features for Klerno Labs
-Provides forums, knowledge sharing, and collaborative features
+Provides forums, knowledge sharing, and collaborative features.
 """
 
 from datetime import datetime
@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 
 class PostType(str, Enum):
-    """Types of community posts"""
+    """Types of community posts."""
 
     QUESTION = "question"
     DISCUSSION = "discussion"
@@ -20,7 +20,7 @@ class PostType(str, Enum):
 
 
 class PostStatus(str, Enum):
-    """Status of community posts"""
+    """Status of community posts."""
 
     DRAFT = "draft"
     PUBLISHED = "published"
@@ -29,14 +29,14 @@ class PostStatus(str, Enum):
 
 
 class VoteType(str, Enum):
-    """Vote types"""
+    """Vote types."""
 
     UPVOTE = "upvote"
     DOWNVOTE = "downvote"
 
 
 class CommunityPost(BaseModel):
-    """Community forum post"""
+    """Community forum post."""
 
     id: int
     title: str
@@ -57,7 +57,7 @@ class CommunityPost(BaseModel):
 
 
 class CommunityReply(BaseModel):
-    """Reply to a community post"""
+    """Reply to a community post."""
 
     id: int
     post_id: int
@@ -73,7 +73,7 @@ class CommunityReply(BaseModel):
 
 
 class KnowledgeArticle(BaseModel):
-    """Knowledge base article"""
+    """Knowledge base article."""
 
     id: int
     title: str
@@ -92,7 +92,7 @@ class KnowledgeArticle(BaseModel):
 
 
 class TutorialStep(BaseModel):
-    """Step in a tutorial"""
+    """Step in a tutorial."""
 
     step_number: int
     title: str
@@ -102,7 +102,7 @@ class TutorialStep(BaseModel):
 
 
 class Tutorial(BaseModel):
-    """Interactive tutorial"""
+    """Interactive tutorial."""
 
     id: int
     title: str
@@ -121,7 +121,7 @@ class Tutorial(BaseModel):
 
 
 class UserContribution(BaseModel):
-    """User's community contributions"""
+    """User's community contributions."""
 
     user_id: int
     posts_count: int
@@ -136,23 +136,23 @@ class UserContribution(BaseModel):
 
 
 class CommunityManager:
-    """Manages community features and interactions"""
+    """Manages community features and interactions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.posts: dict[int, CommunityPost] = {}
         self.replies: dict[int, list[CommunityReply]] = {}
         self.knowledge_articles: dict[int, KnowledgeArticle] = {}
         self.tutorials: dict[int, Tutorial] = {}
         self.user_contributions: dict[int, UserContribution] = {}
         self.votes: dict[
-            str, dict[int, VoteType]
+            str, dict[int, VoteType],
         ] = {}  # user_id -> {post_id: vote_type}
 
         # Initialize with sample content
         self._initialize_sample_content()
 
-    def _initialize_sample_content(self):
-        """Initialize with sample community content"""
+    def _initialize_sample_content(self) -> None:
+        """Initialize with sample community content."""
         # Sample knowledge articles
         self.knowledge_articles[1] = KnowledgeArticle(
             id=1,
@@ -384,7 +384,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
         ]
 
     def get_featured_content(self) -> dict[str, list[Any]]:
-        """Get featured community content for the homepage"""
+        """Get featured community content for the homepage."""
         featured_articles = [
             article
             for article in self.knowledge_articles.values()
@@ -404,7 +404,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
         return {"featured_articles": featured_articles, "popular_posts": popular_posts}
 
     def search_content(self, query: str, content_type: str = "all") -> list[Any]:
-        """Search community content"""
+        """Search community content."""
         results = []
         query_lower = query.lower()
 
@@ -429,7 +429,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
         return results
 
     def get_user_contributions(self, user_id: int) -> UserContribution | None:
-        """Get user's community contributions and reputation"""
+        """Get user's community contributions and reputation."""
         return self.user_contributions.get(user_id)
 
     def create_post(
@@ -441,7 +441,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
         author_name: str,
         tags: list[str] | None = None,
     ) -> CommunityPost:
-        """Create a new community post"""
+        """Create a new community post."""
         post_id = max(self.posts, default=0) + 1
 
         post = CommunityPost(
@@ -468,9 +468,10 @@ This has worked well for us and reduces alert fatigue significantly.""",
         author_name: str,
         parent_reply_id: int | None = None,
     ) -> CommunityReply:
-        """Add a reply to a post"""
+        """Add a reply to a post."""
         if post_id not in self.posts:
-            raise ValueError("Post not found")
+            msg = "Post not found"
+            raise ValueError(msg)
 
         reply_id = (
             max([r.id for replies in self.replies.values() for r in replies], default=0)
@@ -497,10 +498,11 @@ This has worked well for us and reduces alert fatigue significantly.""",
 
         return reply
 
-    def vote_on_post(self, user_id: int, post_id: int, vote_type: VoteType):
-        """Vote on a post"""
+    def vote_on_post(self, user_id: int, post_id: int, vote_type: VoteType) -> None:
+        """Vote on a post."""
         if post_id not in self.posts:
-            raise ValueError("Post not found")
+            msg = "Post not found"
+            raise ValueError(msg)
 
         user_votes = self.votes.setdefault(str(user_id), {})
         previous_vote = user_votes.get(post_id)
@@ -524,7 +526,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
             del user_votes[post_id]
 
     def get_trending_topics(self) -> list[dict[str, Any]]:
-        """Get trending topics and tags"""
+        """Get trending topics and tags."""
         tag_counts: dict[str, int] = {}
 
         # Count tags from recent posts (last 30 days)
@@ -550,9 +552,9 @@ This has worked well for us and reduces alert fatigue significantly.""",
 
 
 class CollaborationFeatures:
-    """Features for team collaboration and knowledge sharing"""
+    """Features for team collaboration and knowledge sharing."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.shared_workspaces: dict[int, dict[str, Any]] = {}
         self.team_annotations: dict[str, list[dict[str, Any]]] = {}
 
@@ -563,7 +565,7 @@ class CollaborationFeatures:
         owner_id: int,
         team_members: list[int],
     ) -> dict[str, Any]:
-        """Create a shared workspace for team collaboration"""
+        """Create a shared workspace for team collaboration."""
         workspace_id = max(self.shared_workspaces, default=0) + 1
 
         workspace = {
@@ -588,7 +590,7 @@ class CollaborationFeatures:
         annotation: str,
         annotation_type: str = "note",
     ) -> dict[str, Any]:
-        """Add annotation to a transaction for team collaboration"""
+        """Add annotation to a transaction for team collaboration."""
         if transaction_id not in self.team_annotations:
             self.team_annotations[transaction_id] = []
 
@@ -605,7 +607,7 @@ class CollaborationFeatures:
         return annotation_obj
 
     def get_team_insights(self, workspace_id: int) -> dict[str, Any]:
-        """Get collaborative insights for a team workspace"""
+        """Get collaborative insights for a team workspace."""
         if workspace_id not in self.shared_workspaces:
             return {}
 

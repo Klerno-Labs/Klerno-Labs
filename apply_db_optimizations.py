@@ -3,11 +3,12 @@
 
 import json
 import sqlite3
+from pathlib import Path
 
 
-def apply_optimizations():
+def apply_optimizations() -> None:
     """Apply database optimization queries."""
-    with open("database_validation_report.json") as f:
+    with Path("database_validation_report.json").open() as f:
         report = json.load(f)
 
     conn = sqlite3.connect("./data/klerno.db")
@@ -18,15 +19,11 @@ def apply_optimizations():
         try:
             cursor.execute(query)
             applied += 1
-            print(f"✅ Applied: {query}")
-        except Exception as e:
-            print(f"❌ Failed: {query} - {e}")
+        except Exception:
+            pass
 
     conn.commit()
     conn.close()
-    print(
-        f"\n🎯 Applied {applied}/{len(report['optimization_queries'])} optimization queries"
-    )
 
 
 if __name__ == "__main__":

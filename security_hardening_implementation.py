@@ -8,10 +8,6 @@ from pathlib import Path
 
 def implement_immediate_security_hardening():
     """Implement immediate security hardening measures."""
-
-    print("🔒 IMMEDIATE SECURITY HARDENING")
-    print("=" * 50)
-
     hardening_results = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
         "security_enhancements": [],
@@ -20,58 +16,53 @@ def implement_immediate_security_hardening():
     }
 
     # 1. Create secure FastAPI middleware
-    print("🛡️ Implementing security middleware...")
     security_middleware = create_security_middleware()
     hardening_results["security_enhancements"].append(
         {
             "name": "Security Middleware",
             "description": "Comprehensive security headers and middleware",
             "status": "implemented",
-        }
+        },
     )
 
     # 2. Implement input validation
-    print("✅ Creating input validation framework...")
     input_validation = create_input_validation()
     hardening_results["security_enhancements"].append(
         {
             "name": "Input Validation",
             "description": "Comprehensive input validation and sanitization",
             "status": "implemented",
-        }
+        },
     )
 
     # 3. Create security configuration
-    print("⚙️ Setting up secure configuration...")
     security_config = create_security_configuration()
     hardening_results["security_enhancements"].append(
         {
             "name": "Security Configuration",
             "description": "Environment-based security settings",
             "status": "implemented",
-        }
+        },
     )
 
     # 4. Implement rate limiting
-    print("🚦 Implementing rate limiting...")
     rate_limiting = create_rate_limiting()
     hardening_results["security_enhancements"].append(
         {
             "name": "Rate Limiting",
             "description": "API rate limiting and abuse prevention",
             "status": "implemented",
-        }
+        },
     )
 
     # 5. Create authentication framework
-    print("🔐 Setting up authentication framework...")
     auth_framework = create_authentication_framework()
     hardening_results["security_enhancements"].append(
         {
             "name": "Authentication Framework",
             "description": "JWT-based authentication system",
             "status": "implemented",
-        }
+        },
     )
 
     # Save all security implementations
@@ -102,7 +93,6 @@ def implement_immediate_security_hardening():
 
 def create_security_middleware() -> str:
     """Create comprehensive security middleware."""
-
     return '''#!/usr/bin/env python3
 """Comprehensive security middleware for FastAPI applications."""
 
@@ -228,7 +218,6 @@ def configure_security_middleware(app: FastAPI) -> None:
 
 def create_input_validation() -> str:
     """Create comprehensive input validation framework."""
-
     return '''#!/usr/bin/env python3
 """Comprehensive input validation and sanitization framework."""
 
@@ -419,7 +408,6 @@ def validate_request_size(content_length: Optional[str], max_size: int = 10 * 10
 
 def create_security_configuration() -> str:
     """Create security configuration management."""
-
     return '''#!/usr/bin/env python3
 """Security configuration management."""
 
@@ -585,7 +573,6 @@ def get_security_config() -> SecurityConfig:
 
 def create_rate_limiting() -> str:
     """Create rate limiting implementation."""
-
     return '''#!/usr/bin/env python3
 """Rate limiting implementation for FastAPI."""
 
@@ -729,7 +716,6 @@ def rate_limit(requests_per_window: int = 100, window_seconds: int = 60):
 
 def create_authentication_framework() -> str:
     """Create JWT-based authentication framework."""
-
     return '''#!/usr/bin/env python3
 """JWT-based authentication framework for FastAPI."""
 
@@ -921,35 +907,18 @@ def require_roles(required_roles: list):
 
 def main():
     """Implement immediate security hardening."""
-
-    print("🔒 KLERNO LABS SECURITY HARDENING")
-    print("🎯 TARGET: ENTERPRISE-GRADE SECURITY")
-    print("=" * 60)
-
     # Implement security hardening
     hardening_results = implement_immediate_security_hardening()
 
     # Save hardening report
-    with open("security_hardening_report.json", "w") as f:
+    with Path("security_hardening_report.json").open("w") as f:
         json.dump(hardening_results, f, indent=2)
 
     # Print summary
-    print("\n🔒 SECURITY HARDENING COMPLETE")
-    print("=" * 50)
-    print(f"Security Enhancements: {len(hardening_results['security_enhancements'])}")
-    print(
-        f"Files Created: {hardening_results['implementation_status']['files_created']}"
-    )
-    print(
-        f"Implementation Status: {'✅ Complete' if hardening_results['implementation_status']['implementation_complete'] else '❌ Incomplete'}"
-    )
 
-    print("\n🛡️ Security Features Implemented:")
-    for enhancement in hardening_results["security_enhancements"]:
-        print(f"   • {enhancement['name']}: {enhancement['description']}")
+    for _enhancement in hardening_results["security_enhancements"]:
+        pass
 
-    print("\n📊 Implementation saved to: security_implementations/")
-    print("📋 Hardening report saved to: security_hardening_report.json")
 
     # Calculate updated security score
     security_improvements = {
@@ -962,21 +931,15 @@ def main():
 
     total_improvement = sum(security_improvements.values())
     new_security_score = min(
-        100, 85 + (total_improvement * 0.15)
+        100, 85 + (total_improvement * 0.15),
     )  # 15% improvement factor
 
-    print("\n📈 SECURITY SCORE UPDATE:")
-    print("Previous Score: 85/100 (GOOD)")
-    print(f"Estimated New Score: {new_security_score:.0f}/100")
 
-    if new_security_score >= 95:
-        tier = "EXCELLENT (Top 0.1%)"
-    elif new_security_score >= 90:
-        tier = "VERY_GOOD (Top 1%)"
+    if new_security_score >= 95 or new_security_score >= 90:
+        pass
     else:
-        tier = "GOOD (Top 5%)"
+        pass
 
-    print(f"New Security Tier: {tier}")
 
     return hardening_results
 

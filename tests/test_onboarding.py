@@ -1,12 +1,12 @@
-"""Tests for onboarding and user experience features"""
+"""Tests for onboarding and user experience features."""
 
 import pytest
 
 from app.onboarding import ContextualHelp, GuideType, OnboardingManager, OnboardingStep
 
 
-def test_onboarding_manager_initialization():
-    """Test OnboardingManager initialization"""
+def test_onboarding_manager_initialization() -> None:
+    """Test OnboardingManager initialization."""
     manager = OnboardingManager()
 
     # Should have built - in guides
@@ -18,8 +18,8 @@ def test_onboarding_manager_initialization():
     assert len(manager.user_progress) == 0
 
 
-def test_start_onboarding():
-    """Test starting onboarding for a new user"""
+def test_start_onboarding() -> None:
+    """Test starting onboarding for a new user."""
     manager = OnboardingManager()
 
     user_id = 123
@@ -35,8 +35,8 @@ def test_start_onboarding():
     assert user_id in manager.user_progress
 
 
-def test_advance_onboarding_step():
-    """Test advancing through onboarding steps"""
+def test_advance_onboarding_step() -> None:
+    """Test advancing through onboarding steps."""
     manager = OnboardingManager()
 
     user_id = 123
@@ -56,8 +56,8 @@ def test_advance_onboarding_step():
     assert progress.current_step == OnboardingStep.FIRST_TRANSACTION
 
 
-def test_onboarding_completion():
-    """Test completing onboarding"""
+def test_onboarding_completion() -> None:
+    """Test completing onboarding."""
     manager = OnboardingManager()
 
     user_id = 123
@@ -73,8 +73,8 @@ def test_onboarding_completion():
     assert progress.completed_at is not None
 
 
-def test_get_next_suggested_action():
-    """Test getting next suggested action"""
+def test_get_next_suggested_action() -> None:
+    """Test getting next suggested action."""
     manager = OnboardingManager()
 
     user_id = 123
@@ -97,8 +97,8 @@ def test_get_next_suggested_action():
     assert action.get("action") == "setup_api_key"
 
 
-def test_available_guides():
-    """Test getting available guides for user"""
+def test_available_guides() -> None:
+    """Test getting available guides for user."""
     manager = OnboardingManager()
 
     user_id = 123
@@ -116,8 +116,8 @@ def test_available_guides():
     assert len(guides) > 0
 
 
-def test_contextual_help():
-    """Test contextual help system"""
+def test_contextual_help() -> None:
+    """Test contextual help system."""
     help_system = ContextualHelp()
 
     # Test getting tips for a section
@@ -132,8 +132,8 @@ def test_contextual_help():
     assert missing_tips is None
 
 
-def test_quick_tips():
-    """Test quick tip generation"""
+def test_quick_tips() -> None:
+    """Test quick tip generation."""
     help_system = ContextualHelp()
 
     # Test beginner tip
@@ -152,8 +152,8 @@ def test_quick_tips():
     assert default_tip["level"] == "beginner"  # Should default to beginner
 
 
-def test_guide_structure():
-    """Test guide data structure"""
+def test_guide_structure() -> None:
+    """Test guide data structure."""
     manager = OnboardingManager()
 
     main_guide = manager.guides["main_onboarding"]
@@ -170,8 +170,8 @@ def test_guide_structure():
     assert hasattr(first_step, "target_element")
 
 
-def test_mark_guide_completed():
-    """Test marking guides as completed"""
+def test_mark_guide_completed() -> None:
+    """Test marking guides as completed."""
     manager = OnboardingManager()
 
     user_id = 123

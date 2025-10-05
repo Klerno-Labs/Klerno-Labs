@@ -138,13 +138,14 @@ class Settings(BaseSettings):
             and env_eff not in {"dev", "development", "local", "test"}
             and (len(v) < 16 or v.lower() in WEAK_SECRETS)
         ):
+            msg = "Weak jwt_secret configured for non-development environment"
             raise ValueError(
-                "Weak jwt_secret configured for non-development environment",
+                msg,
             )
         return v
 
     @model_validator(mode="after")
-    def _pytest_port_override(cls, model):
+    def _pytest_port_override(self):
         """Under pytest ensure default port is stable (8000) to satisfy tests that
         instantiate Settings() directly. This avoids accidental overrides from a
         developer's environment (e.g. PORT=8002) leaking into test expectations.
@@ -155,19 +156,19 @@ class Settings(BaseSettings):
 
         if "pytest" in _sys.modules:
             try:
-                model.port = int(_os.environ.get("APP_PORT", "8000"))
+                self.port = int(_os.environ.get("APP_PORT", "8000"))
             except Exception:
-                model.port = 8000
+                self.port = 8000
             # Ensure a deterministic jwt_secret for tests if the current
             # secret is the development placeholder. This avoids flaky token
             # verification in tests when secrets are weak or missing.
             try:
-                cur = getattr(model, "jwt_secret", "")
+                cur = getattr(self, "jwt_secret", "")
                 if not cur or cur in WEAK_SECRETS or cur.startswith("your-secret"):
-                    model.jwt_secret = "test-only-secret-please-change"
+                    self.jwt_secret = "test-only-secret-please-change"
             except Exception:
                 pass
-        return model
+        return self
 
 
 @lru_cache

@@ -1,4 +1,6 @@
-"""Tests for plugin system functionality"""
+"""Tests for plugin system functionality."""
+
+from typing import Never
 
 import pytest
 from fastapi import FastAPI
@@ -7,7 +9,7 @@ from app.plugin_system import BasePlugin, PluginHook, PluginManager, PluginMetad
 
 
 class ExamplePlugin(BasePlugin):
-    """Example plugin implementation (renamed to avoid pytest collection warning)"""
+    """Example plugin implementation (renamed to avoid pytest collection warning)."""
 
     def get_metadata(self) -> PluginMetadata:
         return PluginMetadata(
@@ -18,7 +20,7 @@ class ExamplePlugin(BasePlugin):
             tags=["test"],
         )
 
-    def initialize(self, app: FastAPI, plugin_manager: PluginManager):
+    def initialize(self, app: FastAPI, plugin_manager: PluginManager) -> None:
         self.initialized = True
         # Register a test hook
         plugin_manager.hooks["test_hook"].register(self.test_callback)
@@ -27,8 +29,8 @@ class ExamplePlugin(BasePlugin):
         return {"plugin": "TestPlugin", "data": data}
 
 
-def test_plugin_hook_creation():
-    """Test PluginHook creation and execution"""
+def test_plugin_hook_creation() -> None:
+    """Test PluginHook creation and execution."""
     hook = PluginHook("test_hook", "Test hook description")
 
     assert hook.name == "test_hook"
@@ -37,7 +39,7 @@ def test_plugin_hook_creation():
 
     # Register a callback
 
-    def test_callback(data):
+    def test_callback(data) -> str:
         return f"processed: {data}"
 
     hook.register(test_callback)
@@ -49,8 +51,8 @@ def test_plugin_hook_creation():
     assert results[0] == "processed: test_data"
 
 
-def test_plugin_manager_initialization():
-    """Test PluginManager initialization"""
+def test_plugin_manager_initialization() -> None:
+    """Test PluginManager initialization."""
     app = FastAPI()
     pm = PluginManager(app)
 
@@ -64,8 +66,8 @@ def test_plugin_manager_initialization():
     assert len(pm.plugins) == 0
 
 
-def test_plugin_registration():
-    """Test plugin registration"""
+def test_plugin_registration() -> None:
+    """Test plugin registration."""
     app = FastAPI()
     pm = PluginManager(app)
 
@@ -85,8 +87,8 @@ def test_plugin_registration():
     assert success is False
 
 
-def test_plugin_hook_execution():
-    """Test plugin hook execution through manager"""
+def test_plugin_hook_execution() -> None:
+    """Test plugin hook execution through manager."""
     app = FastAPI()
     pm = PluginManager(app)
 
@@ -103,8 +105,8 @@ def test_plugin_hook_execution():
     assert results[0]["data"] == "test_data"
 
 
-def test_plugin_info():
-    """Test getting plugin information"""
+def test_plugin_info() -> None:
+    """Test getting plugin information."""
     app = FastAPI()
     pm = PluginManager(app)
 
@@ -126,8 +128,8 @@ def test_plugin_info():
     assert info is None
 
 
-def test_plugin_list():
-    """Test listing all plugins"""
+def test_plugin_list() -> None:
+    """Test listing all plugins."""
     app = FastAPI()
     pm = PluginManager(app)
 
@@ -147,8 +149,8 @@ def test_plugin_list():
     assert plugins[0]["name"] == "TestPlugin"
 
 
-def test_plugin_data_storage():
-    """Test plugin data storage and retrieval"""
+def test_plugin_data_storage() -> None:
+    """Test plugin data storage and retrieval."""
     app = FastAPI()
     pm = PluginManager(app)
 
@@ -168,15 +170,16 @@ def test_plugin_data_storage():
     assert value3 == "default"
 
 
-def test_hook_error_handling():
-    """Test hook execution with errors"""
+def test_hook_error_handling() -> None:
+    """Test hook execution with errors."""
     hook = PluginHook("error_hook", "Hook that might error")
 
-    def good_callback(data):
+    def good_callback(data) -> str:
         return "good"
 
-    def bad_callback(data):
-        raise Exception("Test error")
+    def bad_callback(data) -> Never:
+        msg = "Test error"
+        raise Exception(msg)
 
     hook.register(good_callback)
     hook.register(bad_callback)

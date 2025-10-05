@@ -3,11 +3,12 @@ import sqlite3
 import sys
 import tempfile
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from fastapi.testclient import TestClient
 
-from app._typing_shims import ISyncConnection
+if TYPE_CHECKING:
+    from app._typing_shims import ISyncConnection
 
 # Ensure workspace root is on sys.path (like tests/conftest.py)
 ROOT = str(Path(__file__).resolve().parents[1])
@@ -67,18 +68,11 @@ from app.main import app
 
 with TestClient(app) as client:
     resp = client.post("/transactions", json={"amount": 10.0, "currency": "USD"})
-    print("POST status", resp.status_code)
-    print("POST headers:", resp.headers)
-    print("POST content bytes:", resp.content)
-    print("POST text:", resp.text)
     if resp.status_code == 201:
         try:
             txid = resp.json().get("id")
-        except Exception as e:
-            print("Failed to parse JSON:", e)
+        except Exception:
             txid = None
         if txid:
             r2 = client.get(f"/transactions/{txid}")
-            print("GET status", r2.status_code, r2.text)
 
-print("DB file at", db_path)

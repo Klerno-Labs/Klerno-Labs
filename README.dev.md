@@ -195,3 +195,12 @@ function verify(req, secret) {
 ```
 
 Example: set `SMOKE_ALERT_MENTION` to `@dev-team` and `SMOKE_ALERT_SECRET` to a 32+ character random string in repository Secrets.
+
+## Integrations import aliasing
+
+Some tests patch `app.integrations.xrp.*` even though integrations live at the top level (`integrations/`). To keep this stable across layouts and environments, `app.__init__` aliases the top-level `integrations` package under `app.integrations` and registers common submodules (`xrp`, `bsc`, `bscscan`) under both namespaces.
+
+Practical tips:
+- Import from `integrations.<name>` in application code. Tests can safely patch `app.integrations.<name>.<func>`.
+- If you add a new integration module, ensure it’s importable from `integrations.<name>`; the aliasing will expose it at `app.integrations.<name>` automatically.
+- In constrained environments, a minimal shim is created so patching doesn’t fail with AttributeError.

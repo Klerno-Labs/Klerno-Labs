@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 SUSPICIOUS_WORDS = {
     "scam",
@@ -32,10 +34,10 @@ def _norm(s: str | None) -> str:
     return (s or "").strip().lower()
 
 
-def _get(tx, name: str, default=None) -> None:
+def _get(tx, name: str, default=None):
     if hasattr(tx, name):
         return getattr(tx, name)
-    if isinstance(tx, dict[str, Any]):
+    if isinstance(tx, dict):
         return tx.get(name, default)
     return default
 

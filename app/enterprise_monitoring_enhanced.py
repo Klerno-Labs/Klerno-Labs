@@ -1,5 +1,5 @@
 """Klerno Labs - Enterprise Monitoring Dashboard
-Real-time system monitoring with alerting for 0.01% quality applications
+Real-time system monitoring with alerting for 0.01% quality applications.
 """
 
 import asyncio
@@ -11,11 +11,12 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import psutil
 
-from app._typing_shims import ISyncConnection
+if TYPE_CHECKING:
+    from app._typing_shims import ISyncConnection
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ class EnterpriseMonitor:
     metrics and alerting.
     """
 
-    def __init__(self, db_path: str = "./data/monitoring.db"):
+    def __init__(self, db_path: str = "./data/monitoring.db") -> None:
         self.db_path = db_path
         self.metrics_buffer: list[MetricPoint] = []
         self.alerts: dict[str, Alert] = {}
@@ -303,7 +304,7 @@ class EnterpriseMonitor:
                 )
 
         except Exception as e:
-            logger.error(f"Error collecting system metrics: {e}")
+            logger.exception(f"Error collecting system metrics: {e}")
 
         return metrics
 
@@ -356,7 +357,7 @@ class EnterpriseMonitor:
             self.metrics_buffer.clear()
 
         except Exception as e:
-            logger.error(f"Error flushing metrics: {e}")
+            logger.exception(f"Error flushing metrics: {e}")
 
     def check_alerts(self) -> list[dict[str, Any]]:
         """Check all alerts against current metrics."""
@@ -386,16 +387,14 @@ class EnterpriseMonitor:
                 avg_value = result[0]
 
                 # Check if alert condition is met
-                condition_met = False
-                if (
+                condition_met = (
                     (alert.operator == "gt" and avg_value > alert.threshold)
                     or (alert.operator == "lt" and avg_value < alert.threshold)
                     or (
                         alert.operator == "eq"
                         and abs(avg_value - alert.threshold) < 0.01
                     )
-                ):
-                    condition_met = True
+                )
 
                 # Handle alert state changes
                 if condition_met and not alert.active:
@@ -467,7 +466,7 @@ class EnterpriseMonitor:
             conn.close()
 
         except Exception as e:
-            logger.error(f"Error checking alerts: {e}")
+            logger.exception(f"Error checking alerts: {e}")
 
         return triggered_alerts
 
@@ -552,7 +551,7 @@ class EnterpriseMonitor:
             }
 
         except Exception as e:
-            logger.error(f"Error getting dashboard data: {e}")
+            logger.exception(f"Error getting dashboard data: {e}")
             return {"error": str(e)}
 
     async def run_monitoring_loop(self) -> None:
@@ -584,7 +583,7 @@ class EnterpriseMonitor:
                 await asyncio.sleep(self.collection_interval)
 
             except Exception as e:
-                logger.error(f"Error in monitoring loop: {e}")
+                logger.exception(f"Error in monitoring loop: {e}")
                 await asyncio.sleep(5)
 
     def stop(self) -> None:
@@ -598,7 +597,7 @@ class EnterpriseMonitor:
 monitor = EnterpriseMonitor()
 
 
-async def start_monitoring():
+async def start_monitoring() -> None:
     """Start the monitoring system."""
     await monitor.run_monitoring_loop()
 

@@ -1,7 +1,7 @@
 from scripts import check_prod_readiness as cpr
 
 
-def test_non_production_no_jwt(monkeypatch, capsys):
+def test_non_production_no_jwt(monkeypatch, capsys) -> None:
     # No APP_ENV (defaults to non-production) and no JWT_SECRET
     monkeypatch.delenv("APP_ENV", raising=False)
     monkeypatch.delenv("JWT_SECRET", raising=False)
@@ -11,7 +11,7 @@ def test_non_production_no_jwt(monkeypatch, capsys):
     assert "[WARN]" in captured.out
 
 
-def test_production_missing_jwt(monkeypatch, capsys):
+def test_production_missing_jwt(monkeypatch, capsys) -> None:
     monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.delenv("JWT_SECRET", raising=False)
     assert cpr.check_env_vars() is False
@@ -20,7 +20,7 @@ def test_production_missing_jwt(monkeypatch, capsys):
     assert "[FAIL]" in captured.out
 
 
-def test_weak_secret_detected(monkeypatch):
+def test_weak_secret_detected(monkeypatch) -> None:
     monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.setenv("JWT_SECRET", "changeme")
     # Avoid importing the app (which may have side effects) by stubbing
@@ -29,7 +29,7 @@ def test_weak_secret_detected(monkeypatch):
     assert any("Secret strength" in p for p in problems)
 
 
-def test_run_checks_success_and_main_exit(monkeypatch):
+def test_run_checks_success_and_main_exit(monkeypatch) -> None:
     monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.setenv("JWT_SECRET", "A" * 32)
     monkeypatch.setenv("DATABASE_URL", "postgres://user:pass@localhost/db")

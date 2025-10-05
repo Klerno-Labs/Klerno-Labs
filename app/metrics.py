@@ -12,9 +12,12 @@ These are safe no-ops when Prometheus is unavailable or not yet initialized.
 from __future__ import annotations
 
 import time
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Request, Response
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # Module-level handles initialized by setup_metrics; remain None if unavailable.
 _prom_available: bool = False

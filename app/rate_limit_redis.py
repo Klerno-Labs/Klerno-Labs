@@ -22,23 +22,26 @@ from __future__ import annotations
 import contextlib
 import os
 import time
-from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import Request
 from fastapi.responses import JSONResponse, Response
 
-from ._typing_shims import IRedisLike
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from fastapi import Request
+
+    from ._typing_shims import IRedisLike
 
 # Optional metrics helpers; import guarded to avoid hard dependency
 try:  # pragma: no cover - import side effects not critical to tests
     from .metrics import inc_rate_limit_allowed, inc_rate_limit_denied
 except Exception:  # pragma: no cover
 
-    def inc_rate_limit_allowed(backend: str = "redis") -> None:  # type: ignore[no-redef]
+    def inc_rate_limit_allowed(backend: str = "redis") -> None:
         return
 
-    def inc_rate_limit_denied(backend: str = "redis") -> None:  # type: ignore[no-redef]
+    def inc_rate_limit_denied(backend: str = "redis") -> None:
         return
 
 

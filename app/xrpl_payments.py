@@ -52,7 +52,7 @@ def verify_payment(payment_request_or_id, tx_hash: str | None = None) -> Any:
     """
     # If passed a dict[str, Any]-like payment request, return a tuple[Any, ...] as older callers
     # expect (bool, message, details).
-    if isinstance(payment_request_or_id, dict[str, Any]):
+    if isinstance(payment_request_or_id, dict):
         return False, "No matching payment found", None
 
     # Otherwise, caller passed an id; return a dict[str, Any]-shaped result used by

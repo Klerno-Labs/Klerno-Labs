@@ -4,12 +4,15 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse, Response
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from fastapi import Request
 
 
 class TLSEnforcementMiddleware(BaseHTTPMiddleware):

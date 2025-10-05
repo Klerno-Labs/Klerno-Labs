@@ -1,5 +1,5 @@
 """Comprehensive Integration Tests
-Tests complete workflows and component interactions
+Tests complete workflows and component interactions.
 """
 
 from unittest.mock import patch
@@ -10,7 +10,7 @@ import pytest
 class TestAuthenticationFlow:
     """Test complete authentication workflows."""
 
-    def test_user_registration_flow(self, test_client, db_utils, test_db):
+    def test_user_registration_flow(self, test_client, db_utils, test_db) -> None:
         """Test complete user registration process."""
         # Register new user
         response = test_client.post(
@@ -27,7 +27,7 @@ class TestAuthenticationFlow:
         assert data["email"] == "newuser@example.com"
         assert "id" in data
 
-    def test_user_login_flow(self, test_client, db_utils, test_db, mock_user):
+    def test_user_login_flow(self, test_client, db_utils, test_db, mock_user) -> None:
         """Test complete user login process."""
         # Create test user
         db_utils.create_test_user(test_db, mock_user)
@@ -50,7 +50,7 @@ class TestAuthenticationFlow:
         db_utils,
         test_db,
         mock_user,
-    ):
+    ) -> None:
         """Test access to protected endpoints with authentication."""
         # Create and authenticate user
         db_utils.create_test_user(test_db, mock_user)
@@ -77,7 +77,7 @@ class TestTransactionProcessing:
         db_utils,
         test_db,
         mock_user,
-    ):
+    ) -> None:
         """Test complete transaction creation process."""
         # Create user
         db_utils.create_test_user(test_db, mock_user)
@@ -105,7 +105,7 @@ class TestTransactionProcessing:
         db_utils,
         test_db,
         mock_user,
-    ):
+    ) -> None:
         """Test integration between transaction creation and compliance analysis."""
         # Create user
         db_utils.create_test_user(test_db, mock_user)
@@ -139,7 +139,7 @@ class TestXRPLIntegration:
     """Test XRPL integration workflows."""
 
     @pytest.mark.asyncio
-    async def test_xrpl_account_creation(self, async_client, mock_xrpl_client):
+    async def test_xrpl_account_creation(self, async_client, mock_xrpl_client) -> None:
         """Test XRPL account creation integration."""
         with patch(
             "app.integrations.xrp.get_xrpl_client",
@@ -153,7 +153,7 @@ class TestXRPLIntegration:
             assert "secret" in data
 
     @pytest.mark.asyncio
-    async def test_xrpl_balance_check(self, async_client, mock_xrpl_client):
+    async def test_xrpl_balance_check(self, async_client, mock_xrpl_client) -> None:
         """Test XRPL balance checking integration."""
         with patch(
             "app.integrations.xrp.get_xrpl_client",
@@ -170,7 +170,7 @@ class TestXRPLIntegration:
 class TestPaywallIntegration:
     """Test paywall and subscription integration."""
 
-    def test_free_tier_limitations(self, test_client, db_utils, test_db, mock_user):
+    def test_free_tier_limitations(self, test_client, db_utils, test_db, mock_user) -> None:
         """Test free tier access limitations."""
         # Create free tier user
         db_utils.create_test_user(test_db, mock_user)
@@ -182,7 +182,7 @@ class TestPaywallIntegration:
         data = response.json()
         assert "upgrade required" in data["detail"].lower()
 
-    def test_paid_tier_access(self, test_client, db_utils, test_db, mock_user):
+    def test_paid_tier_access(self, test_client, db_utils, test_db, mock_user) -> None:
         """Test paid tier feature access."""
         # Create paid tier user
         paid_user = mock_user.copy()
@@ -205,7 +205,7 @@ class TestAdminWorkflows:
         test_db,
         mock_admin_user,
         mock_user,
-    ):
+    ) -> None:
         """Test admin user management capabilities."""
         # Create admin user
         db_utils.create_test_user(test_db, mock_admin_user)
@@ -226,7 +226,7 @@ class TestAdminWorkflows:
         db_utils,
         test_db,
         mock_admin_user,
-    ):
+    ) -> None:
         """Test admin transaction monitoring."""
         # Create admin user
         db_utils.create_test_user(test_db, mock_admin_user)
@@ -244,7 +244,7 @@ class TestISO20022Integration:
     """Test ISO 20022 message processing integration."""
 
     @pytest.mark.asyncio
-    async def test_iso_message_parsing(self, async_client, sample_iso20022_message):
+    async def test_iso_message_parsing(self, async_client, sample_iso20022_message) -> None:
         """Test ISO 20022 message parsing workflow."""
         response = await async_client.post(
             "/iso20022/parse",
@@ -262,7 +262,7 @@ class TestISO20022Integration:
         self,
         async_client,
         sample_iso20022_message,
-    ):
+    ) -> None:
         """Test ISO 20022 message compliance analysis integration."""
         response = await async_client.post(
             "/iso20022/analyze-compliance",
@@ -279,7 +279,7 @@ class TestEndToEndWorkflows:
     """Test complete end-to-end user workflows."""
 
     @pytest.mark.asyncio
-    async def test_complete_user_journey(self, async_client, db_utils, test_db):
+    async def test_complete_user_journey(self, async_client, db_utils, test_db) -> None:
         """Test complete user journey from registration to transaction analysis."""
         # 1. User registration
         registration_response = await async_client.post(

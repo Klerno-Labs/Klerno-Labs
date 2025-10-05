@@ -1,4 +1,4 @@
-"""Advanced Security Hardening System
+"""Advanced Security Hardening System.
 
 State - of - the - art protection against sophisticated hackers including
 zero - day exploits, advanced persistent threats, and nation - state level attacks.
@@ -454,7 +454,7 @@ class ThreatIntelligence:
                 )
 
         except Exception as e:
-            logger.error(f"Error updating threat feeds: {e}")
+            logger.exception(f"Error updating threat feeds: {e}")
 
 
 class AdvancedFirewall:
@@ -561,7 +561,8 @@ class CryptographicManager:
         # Ensure keys exist (lazy initialize)
         self.ensure_initialized()
         if key_id not in self.encryption_keys:
-            raise ValueError(f"Encryption key {key_id} not found")
+            msg = f"Encryption key {key_id} not found"
+            raise ValueError(msg)
 
         fernet = Fernet(self.encryption_keys[key_id])
         encrypted_data = fernet.encrypt(data.encode())
@@ -575,7 +576,8 @@ class CryptographicManager:
         """Decrypt sensitive data."""
         self.ensure_initialized()
         if key_id not in self.encryption_keys:
-            raise ValueError(f"Encryption key {key_id} not found")
+            msg = f"Encryption key {key_id} not found"
+            raise ValueError(msg)
 
         fernet = Fernet(self.encryption_keys[key_id])
         decrypted_data = fernet.decrypt(bytes.fromhex(encrypted_data))
@@ -585,7 +587,8 @@ class CryptographicManager:
         """Sign data with RSA private key."""
         self.ensure_initialized()
         if key_id not in self.signing_keys:
-            raise ValueError(f"Signing key {key_id} not found")
+            msg = f"Signing key {key_id} not found"
+            raise ValueError(msg)
 
         private_key = self.signing_keys[key_id]
         signature = private_key.sign(
@@ -607,7 +610,8 @@ class CryptographicManager:
         """Verify data signature."""
         self.ensure_initialized()
         if key_id not in self.signing_keys:
-            raise ValueError(f"Signing key {key_id} not found")
+            msg = f"Signing key {key_id} not found"
+            raise ValueError(msg)
 
         try:
             private_key = self.signing_keys[key_id]
@@ -840,19 +844,20 @@ class _LazySecurityOrchestrator:
         if self._obj is None:
             self._obj = self._factory()
 
-    def __getattr__(self, name) -> None:
+    def __getattr__(self, name: str) -> Any:
         self._ensure()
         return getattr(self._obj, name)
 
-    def __call__(self, *args, **kwargs) -> None:
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         self._ensure()
         if callable(self._obj):
             return self._obj(*args, **kwargs)
-        raise TypeError(f"'{type(self._obj).__name__}' object is not callable")
+        msg = f"'{type(self._obj).__name__}' object is not callable"
+        raise TypeError(msg)
 
 
 # Public lazy instance
-security_orchestrator = _LazySecurityOrchestrator(SecurityOrchestrator)
+security_orchestrator: Any = _LazySecurityOrchestrator(SecurityOrchestrator)
 
 
 def analyze_security_request(request_data: dict[str, Any]) -> dict[str, Any]:
@@ -893,7 +898,7 @@ class AdvancedSecurityOrchestrator:
             self.initialized = True
             logger.info("Advanced security systems initialized")
         except Exception as e:
-            logger.error(f"Failed to initialize security systems: {e}")
+            logger.exception(f"Failed to initialize security systems: {e}")
             raise
 
     def enable_behavioral_analysis(self) -> None:
@@ -951,7 +956,7 @@ class AdvancedSecurityOrchestrator:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            logger.error(f"Security assessment failed: {e}")
+            logger.exception(f"Security assessment failed: {e}")
             return {"score": 0, "error": str(e)}
 
     def get_threat_status(self) -> dict[str, Any]:
@@ -1017,5 +1022,5 @@ class AdvancedSecurityOrchestrator:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            logger.error(f"Security audit failed: {e}")
+            logger.exception(f"Security audit failed: {e}")
             return {"score": 0, "error": str(e)}

@@ -7,7 +7,7 @@ import pytest
 from app.performance_consolidated import cached
 
 
-def test_cached_decorator_basic():
+def test_cached_decorator_basic() -> None:
     """Test that cached decorator caches return values."""
     call_count = 0
 
@@ -33,7 +33,7 @@ def test_cached_decorator_basic():
     assert call_count == 2
 
 
-def test_cached_decorator_with_kwargs():
+def test_cached_decorator_with_kwargs() -> None:
     """Test cached decorator works with keyword arguments."""
     call_count = 0
 
@@ -56,7 +56,7 @@ def test_cached_decorator_with_kwargs():
 
 
 @pytest.mark.asyncio
-async def test_cached_decorator_async():
+async def test_cached_decorator_async() -> None:
     """Test cached decorator works with async functions."""
     call_count = 0
 
@@ -78,12 +78,12 @@ async def test_cached_decorator_async():
     assert call_count == 1
 
 
-def test_cache_key_generation():
+def test_cache_key_generation() -> None:
     """Test that cache keys are generated correctly for different argument patterns."""
     call_counts: dict[str, int] = {}
 
     @cached(ttl=60)
-    def test_function(*args, **kwargs):
+    def test_function(*args, **kwargs) -> str:
         key = str((args, tuple(sorted(kwargs.items()))))
         call_counts[key] = call_counts.get(key, 0) + 1
         return f"result_{key}"

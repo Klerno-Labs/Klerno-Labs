@@ -1,4 +1,4 @@
-"""Enterprise Monitoring & Quality Control System
+"""Enterprise Monitoring & Quality Control System.
 
 Top 0.01% quality monitoring with comprehensive observability,
     performance metrics, error tracking, and health checks for
@@ -14,13 +14,14 @@ import statistics
 import threading
 import time
 from collections import defaultdict, deque
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import psutil  # pragma: no cover
 else:
     try:
@@ -129,7 +130,7 @@ class HealthCheck:
 class MetricsCollector:
     """Collects and stores metrics."""
 
-    def __init__(self, max_samples: int = 10000):
+    def __init__(self, max_samples: int = 10000) -> None:
         self.metrics: deque[Metric] = deque(maxlen=max_samples)
         # aggregates maps metric_key -> aggregated stats dict
         self.aggregates: defaultdict[str, dict[str, Any]] = defaultdict(dict)
@@ -280,7 +281,7 @@ class MetricsCollector:
 class AlertManager:
     """Manages alerts and notifications."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.alerts: dict[str, Alert] = {}
         self.alert_rules: list[dict] = []
         self.subscribers: list[Callable] = []
@@ -291,7 +292,8 @@ class AlertManager:
         """Add an alert rule."""
         required_fields = ["name", "condition", "level", "message"]
         if not all(field in rule for field in required_fields):
-            raise ValueError(f"Alert rule must contain: {required_fields}")
+            msg = f"Alert rule must contain: {required_fields}"
+            raise ValueError(msg)
 
         self.alert_rules.append(rule)
         self.logger.info(f"Added alert rule: {rule['name']}")
@@ -328,7 +330,7 @@ class AlertManager:
             try:
                 subscriber(alert)
             except Exception as e:
-                self.logger.error(f"Error notifying alert subscriber: {e}")
+                self.logger.exception(f"Error notifying alert subscriber: {e}")
 
         # Log alert
         self.logger.warning(f"ALERT [{level.value.upper()}] {title}: {description}")
@@ -369,7 +371,7 @@ class AlertManager:
                         source="alert_rules",
                     )
             except Exception as e:
-                self.logger.error(f"Error evaluating alert rule {rule['name']}: {e}")
+                self.logger.exception(f"Error evaluating alert rule {rule['name']}: {e}")
 
     def _evaluate_rule(self, rule: dict, metrics: list[Metric]) -> bool:
         """Evaluate an alert rule condition."""
@@ -392,7 +394,7 @@ class AlertManager:
 class HealthChecker:
     """Performs health checks."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.checks: dict[str, Callable] = {}
         self.results: dict[str, HealthCheck] = {}
         self.lock = threading.Lock()
@@ -453,7 +455,7 @@ class HealthChecker:
             with self.lock:
                 self.results[name] = error_check
 
-            self.logger.error(f"Health check {name} failed: {e}")
+            self.logger.exception(f"Health check {name} failed: {e}")
             return error_check
 
     async def run_all_checks(self) -> dict[str, HealthCheck]:
@@ -486,7 +488,7 @@ class HealthChecker:
 class SystemMonitor:
     """Monitors system resources."""
 
-    def __init__(self, metrics_collector: MetricsCollector):
+    def __init__(self, metrics_collector: MetricsCollector) -> None:
         self.metrics = metrics_collector
         self.monitoring = False
         self.monitor_thread: threading.Thread | None = None
@@ -520,7 +522,7 @@ class SystemMonitor:
                 self._collect_system_metrics()
                 time.sleep(interval_seconds)
             except Exception as e:
-                self.logger.error(f"Error in monitoring loop: {e}")
+                self.logger.exception(f"Error in monitoring loop: {e}")
                 time.sleep(interval_seconds)
 
     def _collect_system_metrics(self) -> None:
@@ -586,7 +588,7 @@ class SystemMonitor:
                 pass  # Not available on Windows
 
         except Exception as e:
-            self.logger.error(f"Error collecting system metrics: {e}")
+            self.logger.exception(f"Error collecting system metrics: {e}")
 
 
 @contextlib.contextmanager
@@ -612,8 +614,7 @@ def time_function(metric_name: str | None = None, tags: dict[str, str] | None = 
             name = metric_name or f"function.{func.__name__}.duration"
             start_time = time.time()
             try:
-                result = func(*args, **kwargs)
-                return result
+                return func(*args, **kwargs)
             finally:
                 duration_ms = (time.time() - start_time) * 1000
                 if hasattr(func, "_metrics_collector"):
@@ -629,7 +630,7 @@ def time_function(metric_name: str | None = None, tags: dict[str, str] | None = 
 class QualityController:
     """Controls quality metrics and standards."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.quality_thresholds = {
             "response_time_p95": 200,  # ms
             "error_rate": 0.001,  # 0.1%
@@ -800,13 +801,13 @@ health_checker.register_check("database", database_health_check)
 health_checker.register_check("api", api_health_check)
 
 
-def start_enterprise_monitoring():
+def start_enterprise_monitoring() -> None:
     """Start enterprise monitoring system."""
     system_monitor.start_monitoring(interval_seconds=30)
     logging.getLogger(__name__).info("Enterprise monitoring system started")
 
 
-def stop_enterprise_monitoring():
+def stop_enterprise_monitoring() -> None:
     """Stop enterprise monitoring system."""
     system_monitor.stop_monitoring()
     logging.getLogger(__name__).info("Enterprise monitoring system stopped")
@@ -850,7 +851,7 @@ def get_monitoring_dashboard() -> dict[str, Any]:
 class MonitoringOrchestrator:
     """Main orchestrator for enterprise monitoring operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics_collector = MetricsCollector()
         self.alert_manager = AlertManager()
         self.health_checker = HealthChecker()
@@ -866,7 +867,7 @@ class MonitoringOrchestrator:
             self.monitoring_active = True
             logger.info("Enterprise monitoring started successfully")
         except Exception as e:
-            logger.error(f"Failed to start monitoring: {e}")
+            logger.exception(f"Failed to start monitoring: {e}")
             raise
 
     def _setup_default_alert_rules(self) -> None:
@@ -936,7 +937,7 @@ class MonitoringOrchestrator:
                 "monitoring_active": self.monitoring_active,
             }
         except Exception as e:
-            logger.error(f"Failed to get current metrics: {e}")
+            logger.exception(f"Failed to get current metrics: {e}")
             return {"error": str(e)}
 
     async def run_health_checks(self) -> dict[str, Any]:
@@ -959,7 +960,7 @@ class MonitoringOrchestrator:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            logger.error(f"Health checks failed: {e}")
+            logger.exception(f"Health checks failed: {e}")
             return {
                 "overall_status": "unhealthy",
                 "error": str(e),
@@ -978,5 +979,5 @@ class MonitoringOrchestrator:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            logger.error(f"Failed to get alert status: {e}")
+            logger.exception(f"Failed to get alert status: {e}")
             return {"active": False, "error": str(e)}

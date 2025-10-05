@@ -17,7 +17,7 @@ def safe_print(*args: Any, **kwargs: Any) -> None:
     always succeeds.
     """
     try:
-        print(*args, **kwargs)
+        pass
     except UnicodeEncodeError:
         safe_args: list[str] = []
         for arg in args:
@@ -26,7 +26,6 @@ def safe_print(*args: Any, **kwargs: Any) -> None:
             else:
                 safe_args.append(str(arg))
 
-        print(*safe_args, **kwargs)
 
 
 def format_status(status: str, message: str) -> str:

@@ -145,7 +145,7 @@ def explain_tx(tx: dict[str, Any]) -> str:
 
 def explain_batch(txs: list[dict[str, Any]]) -> dict[str, Any]:
     """For a list of tx dicts, return:
-    { items: [ {tx_id, explanation}, ... ], summary: "..." }
+    { items: [ {tx_id, explanation}, ... ], summary: "..." }.
     """
     items = []
     for t in txs:
@@ -205,7 +205,8 @@ def ask_to_filters(question: str) -> dict[str, Any]:
     try:
         spec = json.loads(raw)
         if not isinstance(spec, dict):
-            raise ValueError("Spec was not a dict")
+            msg = "Spec was not a dict"
+            raise ValueError(msg)
         return spec
     except Exception:
         return {}

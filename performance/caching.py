@@ -1,5 +1,5 @@
 """Advanced Caching System
-Multi-tier caching with Redis, in-memory cache, and intelligent cache strategies
+Multi-tier caching with Redis, in-memory cache, and intelligent cache strategies.
 """
 
 import asyncio
@@ -18,7 +18,7 @@ import redis.asyncio as redis
 
 @dataclass
 class CacheEntry:
-    """Cache entry with metadata"""
+    """Cache entry with metadata."""
 
     value: Any
     timestamp: datetime
@@ -31,21 +31,21 @@ class CacheEntry:
             self.last_accessed = self.timestamp
 
     def is_expired(self) -> bool:
-        """Check if cache entry is expired"""
+        """Check if cache entry is expired."""
         if self.ttl is None:
             return False
         return (datetime.utcnow() - self.timestamp).total_seconds() > self.ttl
 
-    def access(self):
-        """Record cache access"""
+    def access(self) -> None:
+        """Record cache access."""
         self.access_count += 1
         self.last_accessed = datetime.utcnow()
 
 
 class InMemoryCache:
-    """High-performance in-memory cache with LRU eviction"""
+    """High-performance in-memory cache with LRU eviction."""
 
-    def __init__(self, max_size: int = 10000, default_ttl: int = 3600):
+    def __init__(self, max_size: int = 10000, default_ttl: int = 3600) -> None:
         self.max_size = max_size
         self.default_ttl = default_ttl
         self.cache: dict[str, CacheEntry] = {}
@@ -53,7 +53,7 @@ class InMemoryCache:
         self._lock = asyncio.Lock()
 
     async def get(self, key: str) -> Any | None:
-        """Get value from cache"""
+        """Get value from cache."""
         async with self._lock:
             if key not in self.cache:
                 return None
@@ -74,7 +74,7 @@ class InMemoryCache:
             return entry.value
 
     async def set(self, key: str, value: Any, ttl: int | None = None) -> None:
-        """Set value in cache"""
+        """Set value in cache."""
         async with self._lock:
             if ttl is None:
                 ttl = self.default_ttl
@@ -94,18 +94,18 @@ class InMemoryCache:
             self.access_order.append(key)
 
     async def delete(self, key: str) -> bool:
-        """Delete key from cache"""
+        """Delete key from cache."""
         async with self._lock:
             return await self._remove(key)
 
     async def clear(self) -> None:
-        """Clear all cache entries"""
+        """Clear all cache entries."""
         async with self._lock:
             self.cache.clear()
             self.access_order.clear()
 
     async def _remove(self, key: str) -> bool:
-        """Remove key from cache (internal)"""
+        """Remove key from cache (internal)."""
         if key in self.cache:
             del self.cache[key]
             if key in self.access_order:
@@ -114,13 +114,13 @@ class InMemoryCache:
         return False
 
     async def _evict_lru(self) -> None:
-        """Evict least recently used entry"""
+        """Evict least recently used entry."""
         if self.access_order:
             lru_key = self.access_order[0]
             await self._remove(lru_key)
 
     def get_stats(self) -> dict[str, Any]:
-        """Get cache statistics"""
+        """Get cache statistics."""
         total_accesses = sum(entry.access_count for entry in self.cache.values())
         return {
             "size": len(self.cache),
@@ -133,19 +133,19 @@ class InMemoryCache:
 
 
 class RedisCache:
-    """Redis-based distributed cache"""
+    """Redis-based distributed cache."""
 
     def __init__(
         self,
         redis_url: str = "redis://localhost:6379",
         default_ttl: int = 3600,
-    ):
+    ) -> None:
         self.redis_url = redis_url
         self.default_ttl = default_ttl
         self.redis_client: redis.Redis | None = None
 
-    async def connect(self):
-        """Connect to Redis"""
+    async def connect(self) -> None:
+        """Connect to Redis."""
         try:
             self.redis_client = redis.from_url(self.redis_url, decode_responses=False)
             # redis_client may be None in failure scenarios; guard before calling ping
@@ -155,17 +155,16 @@ class RedisCache:
 
                 client_any = cast("Any", self.redis_client)
                 await client_any.ping()
-        except Exception as e:
-            print(f"Redis connection failed: {e}")
+        except Exception:
             self.redis_client = None
 
-    async def disconnect(self):
-        """Disconnect from Redis"""
+    async def disconnect(self) -> None:
+        """Disconnect from Redis."""
         if self.redis_client:
             await self.redis_client.close()
 
     async def get(self, key: str) -> Any | None:
-        """Get value from Redis cache"""
+        """Get value from Redis cache."""
         if not self.redis_client:
             return None
 
@@ -175,13 +174,13 @@ class RedisCache:
                 # Deserializing internal cache payloads only; not from
                 # untrusted external sources.
                 return pickle.loads(data)  # nosec: B403,B301
-        except Exception as e:
-            print(f"Redis get error: {e}")
+        except Exception:
+            pass
 
         return None
 
     async def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
-        """Set value in Redis cache"""
+        """Set value in Redis cache."""
         if not self.redis_client:
             return False
 
@@ -192,24 +191,22 @@ class RedisCache:
             data = pickle.dumps(value)  # nosec: B403,B301
             await self.redis_client.setex(key, ttl, data)
             return True
-        except Exception as e:
-            print(f"Redis set error: {e}")
+        except Exception:
             return False
 
     async def delete(self, key: str) -> bool:
-        """Delete key from Redis cache"""
+        """Delete key from Redis cache."""
         if not self.redis_client:
             return False
 
         try:
             result = await self.redis_client.delete(key)
             return result > 0
-        except Exception as e:
-            print(f"Redis delete error: {e}")
+        except Exception:
             return False
 
     async def clear_pattern(self, pattern: str) -> int:
-        """Clear keys matching pattern"""
+        """Clear keys matching pattern."""
         if not self.redis_client:
             return 0
 
@@ -217,21 +214,21 @@ class RedisCache:
             keys = await self.redis_client.keys(pattern)
             if keys:
                 return await self.redis_client.delete(*keys)
-        except Exception as e:
-            print(f"Redis clear pattern error: {e}")
+        except Exception:
+            pass
 
         return 0
 
 
 class MultiTierCache:
-    """Multi-tier cache with in-memory L1 and Redis L2"""
+    """Multi-tier cache with in-memory L1 and Redis L2."""
 
     def __init__(
         self,
         redis_url: str = "redis://localhost:6379",
         l1_max_size: int = 1000,
         default_ttl: int = 3600,
-    ):
+    ) -> None:
         self.l1_cache = InMemoryCache(max_size=l1_max_size, default_ttl=default_ttl)
         self.l2_cache = RedisCache(redis_url=redis_url, default_ttl=default_ttl)
         self.default_ttl = default_ttl
@@ -239,16 +236,16 @@ class MultiTierCache:
         # Cache statistics
         self.stats = {"l1_hits": 0, "l2_hits": 0, "misses": 0, "sets": 0}
 
-    async def connect(self):
-        """Initialize cache connections"""
+    async def connect(self) -> None:
+        """Initialize cache connections."""
         await self.l2_cache.connect()
 
-    async def disconnect(self):
-        """Close cache connections"""
+    async def disconnect(self) -> None:
+        """Close cache connections."""
         await self.l2_cache.disconnect()
 
     async def get(self, key: str) -> Any | None:
-        """Get value from multi-tier cache"""
+        """Get value from multi-tier cache."""
         # Try L1 cache first
         value = await self.l1_cache.get(key)
         if value is not None:
@@ -267,7 +264,7 @@ class MultiTierCache:
         return None
 
     async def set(self, key: str, value: Any, ttl: int | None = None) -> None:
-        """Set value in multi-tier cache"""
+        """Set value in multi-tier cache."""
         if ttl is None:
             ttl = self.default_ttl
 
@@ -278,18 +275,18 @@ class MultiTierCache:
         self.stats["sets"] += 1
 
     async def delete(self, key: str) -> bool:
-        """Delete key from both cache tiers"""
+        """Delete key from both cache tiers."""
         l1_deleted = await self.l1_cache.delete(key)
         l2_deleted = await self.l2_cache.delete(key)
         return l1_deleted or l2_deleted
 
     async def clear(self) -> None:
-        """Clear both cache tiers"""
+        """Clear both cache tiers."""
         await self.l1_cache.clear()
         # Note: We don't clear all of Redis, just our keys
 
     def get_stats(self) -> dict[str, Any]:
-        """Get comprehensive cache statistics"""
+        """Get comprehensive cache statistics."""
         total_requests = sum(
             [self.stats["l1_hits"], self.stats["l2_hits"], self.stats["misses"]],
         )
@@ -322,7 +319,7 @@ cache = MultiTierCache()
 
 
 def cache_key(*args, **kwargs) -> str:
-    """Generate cache key from arguments"""
+    """Generate cache key from arguments."""
     key_data = {"args": args, "kwargs": sorted(kwargs.items())}
     key_string = json.dumps(key_data, sort_keys=True, default=str)
     # Use sha256 for cache key hashing (not used as a security primitive).
@@ -330,7 +327,7 @@ def cache_key(*args, **kwargs) -> str:
 
 
 def cached(ttl: int = 3600, key_prefix: str = ""):
-    """Decorator for caching function results"""
+    """Decorator for caching function results."""
 
     def decorator(func: Callable):
         @wraps(func)
@@ -356,7 +353,7 @@ def cached(ttl: int = 3600, key_prefix: str = ""):
 
 @asynccontextmanager
 async def cache_context():
-    """Context manager for cache lifecycle"""
+    """Context manager for cache lifecycle."""
     await cache.connect()
     try:
         yield cache
@@ -366,18 +363,18 @@ async def cache_context():
 
 # Specific cache functions for common use cases
 @cached(ttl=300, key_prefix="user")
-async def get_user_by_id(user_id: int):
-    """Cached user lookup by ID"""
+async def get_user_by_id(user_id: int) -> None:
+    """Cached user lookup by ID."""
     # This would be implemented in your user service
 
 
 @cached(ttl=600, key_prefix="compliance")
-async def get_compliance_tags(transaction_id: int):
-    """Cached compliance tags lookup"""
+async def get_compliance_tags(transaction_id: int) -> None:
+    """Cached compliance tags lookup."""
     # This would be implemented in your compliance service
 
 
 @cached(ttl=1800, key_prefix="analytics")
-async def get_user_analytics(user_id: int, date_range: str):
-    """Cached user analytics"""
+async def get_user_analytics(user_id: int, date_range: str) -> None:
+    """Cached user analytics."""
     # This would be implemented in your analytics service

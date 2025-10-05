@@ -1,5 +1,5 @@
 """Klerno Labs - Consolidated Monitoring System
-Enterprise-grade monitoring, alerting, and observability
+Enterprise-grade monitoring, alerting, and observability.
 """
 
 from __future__ import annotations
@@ -11,12 +11,14 @@ import sqlite3
 import threading
 import time
 from collections import defaultdict, deque
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -260,7 +262,7 @@ class EnhancedMonitor:
                     ),
                 )
         except Exception as e:
-            logger.error(f"Failed to persist metric: {e}")
+            logger.exception(f"Failed to persist metric: {e}")
 
     def _check_alerts(self, metric: MetricPoint) -> None:
         """Check if metric triggers any alerts."""
@@ -422,7 +424,7 @@ class EnhancedMonitor:
                     self._collect_system_metrics()
                     time.sleep(60)  # Collect every minute
                 except Exception as e:
-                    logger.error(f"Monitoring error: {e}")
+                    logger.exception(f"Monitoring error: {e}")
                     time.sleep(60)
 
         thread = threading.Thread(target=monitor_loop, daemon=True)
@@ -468,7 +470,7 @@ class EnhancedMonitor:
             self.record_metric("memory_percent", 0.0)
 
         except Exception as e:
-            logger.error(f"Failed to collect system metrics: {e}")
+            logger.exception(f"Failed to collect system metrics: {e}")
 
 
 # =============================================================================
@@ -489,13 +491,13 @@ class HealthChecker:
 
     def run_all_checks(self) -> dict[str, Any]:
         """Run all registered health checks."""
-        results = {}
+        results: dict[str, dict[str, bool | None | str]] = {}
         overall_healthy = True
 
         for name, check_func in self.health_checks.items():
             try:
                 result = check_func()
-                results[name] = {"healthy": result, "error": None}
+                results[name] = {"healthy": bool(result), "error": None}
                 if not result:
                     overall_healthy = False
             except Exception as e:

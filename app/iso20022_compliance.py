@@ -1,4 +1,4 @@
-"""ISO20022 Compliance Module for Klerno Labs
+"""ISO20022 Compliance Module for Klerno Labs.
 
 Implements full ISO20022 standard compliance for financial messaging
 including payment initiation, status reporting, and compliance validation.
@@ -306,7 +306,7 @@ class ISO20022MessageBuilder:
 
             # Purpose
             ET.SubElement(
-                cdt_trf_tx_inf, "Purp"
+                cdt_trf_tx_inf, "Purp",
             ).text = instruction.payment_purpose.value
 
             # Remittance Information
@@ -344,7 +344,7 @@ class ISO20022MessageBuilder:
             tx_inf_and_sts = ET.SubElement(pmt_sts_rpt, "TxInfAndSts")
             ET.SubElement(tx_inf_and_sts, "StsId").text = status.status_id
             ET.SubElement(
-                tx_inf_and_sts, "OrgnlInstrId"
+                tx_inf_and_sts, "OrgnlInstrId",
             ).text = status.original_instruction_id
             ET.SubElement(tx_inf_and_sts, "TxSts").text = status.status_code
 
@@ -732,7 +732,8 @@ class ISO20022Parser:
             # higher-level logic.
             root = ET.fromstring(xml_content)  # nosec: B314
         except ET.ParseError as e:
-            raise ValueError(f"Invalid XML format: {e}") from e
+            msg = f"Invalid XML format: {e}"
+            raise ValueError(msg) from e
 
         # Determine message type from xmlns or child
         xmlns = root.get("xmlns", "")
@@ -813,7 +814,8 @@ class ISO20022Parser:
             return result
 
         except ET.ParseError as e:
-            raise ValueError(f"Invalid XML format: {e}") from e
+            msg = f"Invalid XML format: {e}"
+            raise ValueError(msg) from e
 
     def _get_text(
         self,
@@ -962,7 +964,8 @@ class ISO20022Parser:
 
             return result
         except ET.ParseError as e:
-            raise ValueError(f"Invalid XML format: {e}") from e
+            msg = f"Invalid XML format: {e}"
+            raise ValueError(msg) from e
 
     def parse_camt053(self, xml_content: str) -> dict[str, Any]:
         """Parse camt.053 BankToCustomerStatement."""
@@ -1138,7 +1141,8 @@ class ISO20022Parser:
 
             return result
         except ET.ParseError as e:
-            raise ValueError(f"Invalid XML format: {e}") from e
+            msg = f"Invalid XML format: {e}"
+            raise ValueError(msg) from e
 
 
 # Global instances
@@ -1225,7 +1229,8 @@ class ISO20022Manager:
             # For other message types, use a generic builder
             return self.message_builder.build_pain001_message(payment_data)
         except Exception as e:
-            raise ValueError(f"Failed to create payment instruction: {e!s}") from e
+            msg = f"Failed to create payment instruction: {e!s}"
+            raise ValueError(msg) from e
 
     def _dict_to_instruction(self, data: dict[str, Any]) -> ISO20022PaymentInstruction:
         """Convert a loose dict[str, Any] into ISO20022PaymentInstruction instance."""

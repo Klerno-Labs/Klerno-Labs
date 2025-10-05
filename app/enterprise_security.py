@@ -36,7 +36,7 @@ SECURITY_EVENTS = {
 
 
 class SecurityManager:
-    """Central security management system"""
+    """Central security management system."""
 
     def __init__(self) -> None:
         self.failed_attempts: dict[str, list[datetime]] = defaultdict(list[Any])
@@ -59,7 +59,7 @@ class SecurityManager:
         details: dict[str, Any],
         request: Request | None = None,
     ) -> None:
-        """Log security events for monitoring"""
+        """Log security events for monitoring."""
         event_data = {
             "timestamp": datetime.now(UTC).isoformat(),
             "event_type": event_type,
@@ -79,7 +79,7 @@ class SecurityManager:
         security_logger.warning(f"SECURITY_EVENT: {event_data}")
 
     def get_client_ip(self, request: Request) -> str:
-        """Get real client IP handling proxies"""
+        """Get real client IP handling proxies."""
         # Check common proxy headers
         forwarded_for = request.headers.get("x-forwarded-for")
         if forwarded_for:
@@ -97,7 +97,7 @@ class SecurityManager:
         window_minutes: int = 15,
         max_attempts: int = 5,
     ) -> bool:
-        """Check for brute force attempts"""
+        """Check for brute force attempts."""
         now = datetime.now(UTC)
         cutoff = now - timedelta(minutes=window_minutes)
 
@@ -109,7 +109,7 @@ class SecurityManager:
         return len(self.failed_attempts[identifier]) >= max_attempts
 
     def record_failed_attempt(self, identifier: str) -> None:
-        """Record a failed authentication attempt"""
+        """Record a failed authentication attempt."""
         self.failed_attempts[identifier].append(datetime.now(UTC))
 
     def is_rate_limited(
@@ -118,7 +118,7 @@ class SecurityManager:
         window_minutes: int = 1,
         max_requests: int = 60,
     ) -> bool:
-        """Check rate limiting"""
+        """Check rate limiting."""
         now = datetime.now(UTC)
         cutoff = now - timedelta(minutes=window_minutes)
 
@@ -134,7 +134,7 @@ class SecurityManager:
         return False
 
     def check_suspicious_input(self, input_data: str) -> bool:
-        """Check for suspicious patterns in input"""
+        """Check for suspicious patterns in input."""
         import re
 
         for pattern in self.suspicious_patterns:
@@ -143,7 +143,7 @@ class SecurityManager:
         return False
 
     def validate_ip_whitelist(self, ip: str) -> bool:
-        """Validate against IP whitelist (if configured)"""
+        """Validate against IP whitelist (if configured)."""
         whitelist = os.getenv("IP_WHITELIST", "").strip()
         if not whitelist:
             return True  # No whitelist configured
@@ -167,7 +167,7 @@ security_manager = SecurityManager()
 
 
 class SecurityMiddleware(BaseHTTPMiddleware):
-    """Security middleware for request filtering and monitoring"""
+    """Security middleware for request filtering and monitoring."""
 
     async def dispatch(
         self,
@@ -259,7 +259,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 
 
 def require_secure_password(password: str) -> bool:
-    """Validate password security requirements"""
+    """Validate password security requirements."""
     if len(password) < 12:
         return False
     if not any(c.isupper() for c in password):
@@ -273,17 +273,17 @@ def require_secure_password(password: str) -> bool:
 
 
 def generate_secure_token(length: int = 32) -> str:
-    """Generate cryptographically secure token"""
+    """Generate cryptographically secure token."""
     return secrets.token_urlsafe(length)
 
 
 def secure_compare(a: str, b: str) -> bool:
-    """Timing - safe string comparison"""
+    """Timing - safe string comparison."""
     return hmac.compare_digest(a.encode(), b.encode())
 
 
 class AdminAccessLogger:
-    """Special logging for admin access"""
+    """Special logging for admin access."""
 
     @staticmethod
     def log_admin_action(
@@ -292,7 +292,7 @@ class AdminAccessLogger:
         details: dict[str, Any],
         request: Request | None = None,
     ) -> None:
-        """Log all admin actions for audit trail"""
+        """Log all admin actions for audit trail."""
         # request may be None in some call sites (e.g., background tasks)
         security_manager.log_security_event(
             SECURITY_EVENTS["ADMIN_ACCESS"],
@@ -304,7 +304,7 @@ class AdminAccessLogger:
 def admin_action_required(
     action_name: str,
 ) -> Callable[[Callable], Callable]:
-    """Decorator to log admin actions"""
+    """Decorator to log admin actions."""
 
     def decorator(func: Callable) -> Callable:
         @wraps(func)
@@ -316,17 +316,13 @@ def admin_action_required(
             for arg in args:
                 if hasattr(arg, "method"):  # Likely a Request object
                     request = arg
-                elif (
-                    isinstance(arg, dict[str, Any]) and "email" in arg
-                ):  # Likely user dict[str, Any]
+                elif isinstance(arg, dict) and "email" in arg:  # Likely user dict
                     user = arg
 
             for value in kwargs.values():
                 if hasattr(value, "method"):  # Likely a Request object
                     request = value
-                elif (
-                    isinstance(value, dict[str, Any]) and "email" in value
-                ):  # Likely user dict[str, Any]
+                elif isinstance(value, dict) and "email" in value:  # Likely user dict
                     user = value
 
             if user:
@@ -348,7 +344,7 @@ def admin_action_required(
 
 
 def validate_production_environment() -> bool:
-    """Validate production environment security"""
+    """Validate production environment security."""
     required_vars = [
         "JWT_SECRET",
         "ADMIN_EMAIL",
@@ -359,22 +355,15 @@ def validate_production_environment() -> bool:
 
     missing_vars = [var for var in required_vars if not os.getenv(var)]
     if missing_vars:
-        print(
-            f"🚨 SECURITY ERROR: Missing required environment variables: {missing_vars}",
-        )
         return False
 
     # Check JWT secret strength
     jwt_secret = os.getenv("JWT_SECRET", "")
-    if len(jwt_secret) < 32:
-        print("🚨 SECURITY ERROR: JWT_SECRET must be at least 32 characters!")
-        return False
-
-    return True
+    return not len(jwt_secret) < 32
 
 
 def get_content_security_policy() -> str:
-    """Generate Content Security Policy header"""
+    """Generate Content Security Policy header."""
     parts = [
         "default - src 'self';",
         (

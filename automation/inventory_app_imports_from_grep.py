@@ -75,4 +75,3 @@ for fn in sorted(p.name for p in app_dir.iterdir() if p.is_file()):
 with OUT.open("w", encoding="utf-8") as fh:
     json.dump(out, fh, indent=2)
 
-print("Wrote", OUT)

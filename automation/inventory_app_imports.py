@@ -83,9 +83,8 @@ def main() -> None:
         out_lines.append((m, len(refs), example))
 
     # Print CSV-like output
-    print("module,ref_count,examples")
-    for m, c, ex in out_lines:
-        print(f"{m},{c},{ex}")
+    for m, _c, _ex in out_lines:
+        pass
 
     # Also write JSON to a file for later processing
     output_path = ROOT / "automation" / "inventory_app_imports.json"
@@ -100,9 +99,8 @@ def main() -> None:
         ]
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         Path(output_path).write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        print("\nWrote automation/inventory_app_imports.json")
-    except Exception as e:
-        print("\nFailed to write JSON:", e)
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":

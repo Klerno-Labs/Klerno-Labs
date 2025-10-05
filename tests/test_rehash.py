@@ -1,7 +1,7 @@
 from app import security_session as sec
 
 
-def test_verify_and_maybe_rehash_forces_rehash(monkeypatch):
+def test_verify_and_maybe_rehash_forces_rehash(monkeypatch) -> None:
     pw = "s3cret-pass"
     # Create a current hash using the module helper
     current_hash = sec.hash_pw(pw)

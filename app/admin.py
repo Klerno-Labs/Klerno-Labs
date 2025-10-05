@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 if TYPE_CHECKING:
     # Avoid importing pandas during static analysis; declare as Any so
@@ -30,7 +30,8 @@ def _ensure_pandas() -> None:
         pd = importlib.import_module("pandas")
         globals()["pd"] = pd
     except ImportError as e:
-        raise RuntimeError("pandas is required for admin analytics") from e
+        msg = "pandas is required for admin analytics"
+        raise RuntimeError(msg) from e
     except Exception:
         raise
 
@@ -134,6 +135,16 @@ def _send_email(subject: str, text: str, to_email: str | None = None) -> dict[st
 
 # ---------- UI ----------
 def admin_home(request: Request, user=Depends(require_admin)) -> Any:
+    """Render the main admin dashboard page.
+
+    Args:
+        request: FastAPI request object
+        user: Authenticated admin user
+
+    Returns:
+        TemplateResponse for admin.html
+
+    """
     return templates.TemplateResponse(
         "admin.html",
         {"request": request, "title": "Admin"},
@@ -228,7 +239,7 @@ def admin_stats(user=Depends(require_admin)) -> dict[str, Any]:
     _ensure_pandas()
     # Use pandas runtime object only; avoid annotating with pd.Timestamp to keep
     # static analysis from requiring pandas at import time.
-    result = {
+    return {
         "backend": backend,
         "db_path": getattr(store, "DB_PATH", "data / klerno.db"),
         "total": total,
@@ -243,7 +254,6 @@ def admin_stats(user=Depends(require_admin)) -> dict[str, Any]:
         "trends": trends,
         "server_time": pd.Timestamp.utcnow().isoformat(),
     }
-    return result
 
 
 @router.get("/api/analytics/real-time")
@@ -296,11 +306,11 @@ def admin_realtime_analytics(user=Depends(require_admin)) -> dict[str, Any]:
         system_metrics["memory_usage"] = psutil.virtual_memory().percent
         system_metrics["cpu_usage"] = psutil.cpu_percent()
     except ImportError:
-        # Fallback metrics if psutil not available
+        # Fallback metrics if psutil not available - non-crypto randomness for demo data  # nosec B311
         import random
 
-        system_metrics["memory_usage"] = round(random.uniform(60, 80), 1)
-        system_metrics["cpu_usage"] = round(random.uniform(10, 30), 1)
+        system_metrics["memory_usage"] = round(random.uniform(60, 80), 1)  # nosec B311
+        system_metrics["cpu_usage"] = round(random.uniform(10, 30), 1)  # nosec B311
 
     # Get hourly transaction rates
     cur.execute(
@@ -408,7 +418,7 @@ def _list_users() -> list[dict[str, Any]]:
 
     out: list[dict[str, Any]] = []
     for r in rows:
-        if isinstance(r, dict[str, Any]):
+        if isinstance(r, dict):
             d = dict(r)
         elif hasattr(r, "keys"):
             d = _to_mapping(r)
@@ -480,7 +490,7 @@ class SeedDemoPayload(BaseModel):
 
 @router.post("/api/data/seed_demo")
 def admin_seed_demo(
-    payload: SeedDemoPayload = Body(default=None),
+    payload: Annotated[SeedDemoPayload, Body()],
     user=Depends(require_admin),
 ):
     data_path = (BASE_DIR / ".." / "data" / "sample_transactions.csv").resolve()
@@ -567,7 +577,7 @@ class TestEmailPayload(BaseModel):
 
 @router.post("/api/email/test")
 def admin_email_test(
-    payload: TestEmailPayload = Body(default=None),
+    payload: Annotated[TestEmailPayload, Body()],
     user=Depends(require_admin),
 ):
     to_addr = payload.email if payload and payload.email else DEFAULT_TO
@@ -606,7 +616,8 @@ def admin_xrpl_ping(payload: XRPLPingPayload, user=Depends(require_admin)):
 
     try:
         if not fetch_account_tx:
-            raise RuntimeError("fetch_account_tx not available")
+            msg = "fetch_account_tx not available"
+            raise RuntimeError(msg)
         raw = fetch_account_tx(payload.account, limit=int(payload.limit or 1))
         n = len(raw or [])
         return {"ok": True, "fetched": n}

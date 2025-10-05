@@ -3,7 +3,8 @@ from pathlib import Path
 
 PR_CHECKS = Path("tools") / "pr_checks.json"
 if not PR_CHECKS.exists():
-    raise SystemExit(f"File not found: {PR_CHECKS}")
+    msg = f"File not found: {PR_CHECKS}"
+    raise SystemExit(msg)
 
 j = json.loads(PR_CHECKS.read_text(encoding="utf-8", errors="replace"))
 for c in j.get("statusCheckRollup", []):
@@ -24,4 +25,3 @@ for c in j.get("statusCheckRollup", []):
             job_id = parts[idx + 1]
         except Exception:
             pass
-    print(run_id, job_id, run_url)

@@ -8,7 +8,6 @@ Example:
 """
 
 import importlib
-import json
 
 modules = [
     "app.compliance_reporting",
@@ -24,4 +23,3 @@ for m in modules:
     except Exception as e:
         errs.append({"module": m, "error": str(e)})
 
-print(json.dumps({"import_errors": errs}, indent=2))

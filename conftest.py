@@ -11,6 +11,6 @@ pytest_plugins = ["asyncio"]
 
 
 @pytest.fixture(autouse=True)
-def disable_rate_limiting_for_tests(monkeypatch):
+def disable_rate_limiting_for_tests(monkeypatch) -> None:
     """Disable rate limiting for all tests."""
     monkeypatch.setenv("ENABLE_RATE_LIMIT", "false")

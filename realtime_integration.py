@@ -25,47 +25,47 @@ templates = Jinja2Templates(directory="templates")
 
 # Real-time WebSocket endpoints
 @app.websocket("/ws")
-async def websocket_main(websocket: WebSocket):
-    """Main WebSocket endpoint"""
+async def websocket_main(websocket: WebSocket) -> None:
+    """Main WebSocket endpoint."""
     await websocket_endpoint(websocket)
 
 
 @app.websocket("/ws/{user_id}")
-async def websocket_user(websocket: WebSocket, user_id: str):
-    """User-specific WebSocket endpoint"""
+async def websocket_user(websocket: WebSocket, user_id: str) -> None:
+    """User-specific WebSocket endpoint."""
     await websocket_endpoint(websocket, user_id)
 
 
 # Real-time dashboard route
 @app.get("/realtime", response_class=HTMLResponse)
 async def realtime_dashboard(request: Request):
-    """Serve the real-time dashboard"""
+    """Serve the real-time dashboard."""
     return templates.TemplateResponse("realtime_dashboard.html", {"request": request})
 
 
 # API endpoints for real-time features
 @app.get("/api/realtime/users")
 async def get_active_users():
-    """Get list of active users"""
+    """Get list of active users."""
     return {"active_users": manager.get_active_users()}
 
 
 @app.get("/api/realtime/rooms/{room_id}/members")
 async def get_room_members(room_id: str):
-    """Get members of a specific room"""
+    """Get members of a specific room."""
     return {"room_id": room_id, "members": manager.get_room_members(room_id)}
 
 
 @app.post("/api/realtime/broadcast")
 async def broadcast_message(message: dict):
-    """Broadcast message to all connected users"""
+    """Broadcast message to all connected users."""
     await manager.broadcast(message)
     return {"status": "Message broadcasted successfully"}
 
 
 @app.post("/api/realtime/rooms/{room_id}/broadcast")
 async def broadcast_to_room(room_id: str, message: dict):
-    """Broadcast message to specific room"""
+    """Broadcast message to specific room."""
     await manager.broadcast_to_room(message, room_id)
     return {"status": f"Message broadcasted to room {room_id}"}
 
@@ -73,13 +73,13 @@ async def broadcast_to_room(room_id: str, message: dict):
 # Real-time data streaming endpoint
 @app.post("/api/realtime/data/update")
 async def update_realtime_data(data: dict):
-    """Update real-time data and broadcast to clients"""
+    """Update real-time data and broadcast to clients."""
     await manager.broadcast(
         {
             "type": "data_update",
             "data": data,
             "timestamp": datetime.now().isoformat(),
-        }
+        },
     )
     return {"status": "Data updated successfully"}
 
@@ -87,7 +87,7 @@ async def update_realtime_data(data: dict):
 # Server-sent events endpoint for fallback
 @app.get("/api/realtime/events")
 async def realtime_events(request: Request):
-    """Server-sent events endpoint for browsers that don't support WebSockets"""
+    """Server-sent events endpoint for browsers that don't support WebSockets."""
 
     async def event_stream():
         while True:
@@ -114,7 +114,7 @@ async def realtime_events(request: Request):
 # Add real-time middleware for tracking
 @app.middleware("http")
 async def realtime_middleware(request: Request, call_next):
-    """Middleware to track user activity and real-time metrics"""
+    """Middleware to track user activity and real-time metrics."""
     start_time = time.time()
 
     # Process request
@@ -134,7 +134,7 @@ async def realtime_middleware(request: Request, call_next):
                 "status_code": response.status_code,
             },
             "timestamp": datetime.now().isoformat(),
-        }
+        },
     )
 
     return response
@@ -142,11 +142,11 @@ async def realtime_middleware(request: Request, call_next):
 
 # Real-time notification system
 class NotificationManager:
-    """Manages real-time notifications"""
+    """Manages real-time notifications."""
 
     @staticmethod
-    async def send_notification(user_id: str, notification: dict):
-        """Send notification to specific user"""
+    async def send_notification(user_id: str, notification: dict) -> None:
+        """Send notification to specific user."""
         await manager.send_to_user(
             {
                 "type": "notification",
@@ -157,8 +157,8 @@ class NotificationManager:
         )
 
     @staticmethod
-    async def broadcast_notification(notification: dict, exclude_user: str = None):
-        """Broadcast notification to all users"""
+    async def broadcast_notification(notification: dict, exclude_user: str | None = None) -> None:
+        """Broadcast notification to all users."""
         await manager.broadcast(
             {
                 "type": "notification",

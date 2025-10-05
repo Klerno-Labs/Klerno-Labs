@@ -330,11 +330,11 @@ class ComplianceReportingEngine:
     ) -> ComplianceMetrics:
         """Get compliance metrics for a date range."""
         # Mock implementation - replace with real data queries
-        import random
+        import random  # nosec B311
 
-        total_transactions = random.randint(1000, 10000)
-        flagged_transactions = random.randint(10, 100)
-        high_risk_transactions = random.randint(5, 50)
+        total_transactions = random.randint(1000, 10000)  # nosec B311
+        flagged_transactions = random.randint(10, 100)  # nosec B311
+        high_risk_transactions = random.randint(5, 50)  # nosec B311
 
         return ComplianceMetrics(
             total_transactions=total_transactions,
@@ -344,9 +344,9 @@ class ComplianceReportingEngine:
                 (total_transactions - flagged_transactions) / total_transactions
             )
             * 100,
-            aml_alerts=random.randint(0, 20),
-            kyc_pending=random.randint(0, 10),
-            sanctions_hits=random.randint(0, 5),
+            aml_alerts=random.randint(0, 20),  # nosec B311
+            kyc_pending=random.randint(0, 10),  # nosec B311
+            sanctions_hits=random.randint(0, 5),  # nosec B311
             risk_distribution={
                 "low": random.randint(800, 900),
                 "medium": random.randint(80, 150),

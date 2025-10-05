@@ -19,7 +19,7 @@ def client():
 class TestPerformanceBenchmarks:
     """Performance benchmark tests."""
 
-    def test_health_endpoint_performance(self, client):
+    def test_health_endpoint_performance(self, client) -> None:
         """Benchmark health endpoint performance."""
         # Warmup
         for _ in range(5):
@@ -37,19 +37,15 @@ class TestPerformanceBenchmarks:
 
         # Calculate statistics
         avg_time = statistics.mean(response_times)
-        median_time = statistics.median(response_times)
+        statistics.median(response_times)
         p95_time = sorted(response_times)[int(len(response_times) * 0.95)]
 
-        print("\n🚀 Health Endpoint Performance:")
-        print(f"   Average: {avg_time:.2f}ms")
-        print(f"   Median:  {median_time:.2f}ms")
-        print(f"   95th %:  {p95_time:.2f}ms")
 
         # Performance assertions
         assert avg_time < 100, f"Average response time too high: {avg_time:.2f}ms"
         assert p95_time < 500, f"95th percentile too high: {p95_time:.2f}ms"
 
-    def test_concurrent_request_performance(self, client):
+    def test_concurrent_request_performance(self, client) -> None:
         """Benchmark concurrent request performance."""
         num_workers = 10
         requests_per_worker = 20
@@ -87,20 +83,14 @@ class TestPerformanceBenchmarks:
         # Calculate throughput and statistics
         throughput = total_requests / total_time
         avg_time = statistics.mean(all_times)
-        p95_time = sorted(all_times)[int(len(all_times) * 0.95)]
+        sorted(all_times)[int(len(all_times) * 0.95)]
 
-        print(f"\n⚡ Concurrent Performance ({num_workers} workers):")
-        print(f"   Total requests: {total_requests}")
-        print(f"   Total time: {total_time:.2f}s")
-        print(f"   Throughput: {throughput:.2f} req/s")
-        print(f"   Avg response: {avg_time:.2f}ms")
-        print(f"   95th percentile: {p95_time:.2f}ms")
 
         # Performance assertions
         assert throughput > 50, f"Throughput too low: {throughput:.2f} req/s"
         assert avg_time < 200, f"Average response time too high: {avg_time:.2f}ms"
 
-    def test_memory_efficiency(self, client):
+    def test_memory_efficiency(self, client) -> None:
         """Test memory efficiency under load."""
         import gc
 
@@ -118,15 +108,11 @@ class TestPerformanceBenchmarks:
         final_objects = len(gc.get_objects())
 
         object_growth = final_objects - initial_objects
-        print("\n💾 Memory Efficiency:")
-        print(f"   Initial objects: {initial_objects}")
-        print(f"   Final objects: {final_objects}")
-        print(f"   Object growth: {object_growth}")
 
         # Should not have excessive object growth
         assert object_growth < 10000, f"Too many objects created: {object_growth}"
 
-    def test_database_operation_performance(self, client):
+    def test_database_operation_performance(self, client) -> None:
         """Test database operation performance."""
         # Test endpoints that might involve database operations
         endpoints = [
@@ -158,42 +144,34 @@ class TestPerformanceBenchmarks:
                 avg_time = statistics.mean(response_times)
                 results[endpoint] = avg_time
 
-        print("\n🗄️ Database Operation Performance:")
         for endpoint, avg_time in results.items():
-            print(f"   {endpoint}: {avg_time:.2f}ms")
             # Database operations should be reasonably fast
             assert avg_time < 1000, f"{endpoint} too slow: {avg_time:.2f}ms"
 
-    def test_api_response_size_efficiency(self, client):
+    def test_api_response_size_efficiency(self, client) -> None:
         """Test API response size efficiency."""
         endpoints = ["/healthz", "/status", "/health"]
 
-        print("\n📦 Response Size Analysis:")
 
         for endpoint in endpoints:
             response = client.get(endpoint)
             if response.status_code == 200:
                 response_size = len(response.content)
-                json_data = (
+                (
                     response.json()
                     if response.headers.get("content-type", "").startswith(
-                        "application/json"
+                        "application/json",
                     )
                     else {}
                 )
 
-                print(f"   {endpoint}:")
-                print(f"     Size: {response_size} bytes")
-                print(
-                    f"     Fields: {len(json_data) if isinstance(json_data, dict) else 'N/A'}"
-                )
 
                 # Response sizes should be reasonable
                 assert response_size < 10000, (
                     f"{endpoint} response too large: {response_size} bytes"
                 )
 
-    def test_cold_start_performance(self, client):
+    def test_cold_start_performance(self, client) -> None:
         """Test cold start performance (first request after initialization)."""
         # Create a fresh client to simulate cold start
         fresh_client = TestClient(app)
@@ -204,8 +182,6 @@ class TestPerformanceBenchmarks:
 
         assert response.status_code == 200
 
-        print("\n🚀 Cold Start Performance:")
-        print(f"   First request: {cold_start_time:.2f}ms")
 
         # Cold start should not be excessive
         assert cold_start_time < 5000, f"Cold start too slow: {cold_start_time:.2f}ms"
@@ -213,10 +189,6 @@ class TestPerformanceBenchmarks:
 
 def generate_performance_report():
     """Generate a comprehensive performance report."""
-    print("\n" + "=" * 60)
-    print("🏁 PERFORMANCE BENCHMARK REPORT")
-    print("=" * 60)
-
     client = TestClient(app)
 
     # Run quick performance tests
@@ -224,15 +196,9 @@ def generate_performance_report():
     for _ in range(10):
         response = client.get("/healthz")
         assert response.status_code == 200
-    avg_response_time = ((time.perf_counter() - start_time) / 10) * 1000
+    return ((time.perf_counter() - start_time) / 10) * 1000
 
-    print(f"✅ Basic health check: {avg_response_time:.2f}ms average")
-    print("✅ Application status: Responsive")
-    print(
-        f"✅ Performance tier: {'Excellent' if avg_response_time < 50 else 'Good' if avg_response_time < 100 else 'Acceptable'}"
-    )
 
-    return avg_response_time
 
 
 if __name__ == "__main__":

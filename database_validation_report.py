@@ -56,17 +56,17 @@ def analyze_database_structure() -> dict[str, Any]:
         # 1. Table naming inconsistency
         if "txs" in tables and "transactions" not in tables:
             report["issues"].append(
-                "Table naming inconsistency: 'txs' exists but Alembic expects 'transactions'"
+                "Table naming inconsistency: 'txs' exists but Alembic expects 'transactions'",
             )
             report["recommendations"].append(
-                "Consider renaming 'txs' to 'transactions' or updating Alembic migrations"
+                "Consider renaming 'txs' to 'transactions' or updating Alembic migrations",
             )
 
         # 2. Missing indexes for performance
         if "txs" in report["indexes"] and len(report["indexes"]["txs"]) < 2:
             report["issues"].append("txs table lacks performance indexes")
             report["recommendations"].append(
-                "Add indexes on txs(timestamp), txs(chain), txs(from_addr), txs(to_addr)"
+                "Add indexes on txs(timestamp), txs(chain), txs(from_addr), txs(to_addr)",
             )
 
         # 3. Check for users table completeness
@@ -78,7 +78,7 @@ def analyze_database_structure() -> dict[str, Any]:
             missing = [col for col in required_columns if col not in existing_columns]
             if missing:
                 report["issues"].append(
-                    f"Users table missing required columns: {missing}"
+                    f"Users table missing required columns: {missing}",
                 )
 
         # 4. Check for orphaned or unused tables
@@ -91,7 +91,7 @@ def analyze_database_structure() -> dict[str, Any]:
         if unexpected:
             report["issues"].append(f"Unexpected tables found: {unexpected}")
             report["recommendations"].append(
-                "Review if these tables are needed or can be removed"
+                "Review if these tables are needed or can be removed",
             )
 
         # 5. Database size and optimization
@@ -104,7 +104,7 @@ def analyze_database_structure() -> dict[str, Any]:
         report["database_size_mb"] = round(db_size_mb, 2)
         if db_size_mb > 100:
             report["recommendations"].append(
-                "Database is large - consider archiving old data or implementing data retention policies"
+                "Database is large - consider archiving old data or implementing data retention policies",
             )
 
         # 6. Check for proper foreign key constraints
@@ -112,21 +112,21 @@ def analyze_database_structure() -> dict[str, Any]:
         fk_violations = cursor.fetchall()
         if fk_violations:
             report["issues"].append(
-                f"Foreign key violations found: {len(fk_violations)} issues"
+                f"Foreign key violations found: {len(fk_violations)} issues",
             )
             report["recommendations"].append("Fix foreign key constraint violations")
 
         conn.close()
 
     except Exception as e:
-        report["issues"].append(f"Database analysis error: {str(e)}")
+        report["issues"].append(f"Database analysis error: {e!s}")
 
     return report
 
 
 def generate_optimization_queries() -> list[str]:
     """Generate SQL queries for database optimization."""
-    queries = [
+    return [
         # Add missing indexes for performance
         "CREATE INDEX IF NOT EXISTS idx_txs_timestamp ON txs(timestamp);",
         "CREATE INDEX IF NOT EXISTS idx_txs_chain ON txs(chain);",
@@ -145,7 +145,6 @@ def generate_optimization_queries() -> list[str]:
         "VACUUM;",
         "ANALYZE;",
     ]
-    return queries
 
 
 def check_migration_consistency() -> dict[str, Any]:
@@ -162,7 +161,7 @@ def check_migration_consistency() -> dict[str, Any]:
         cursor = conn.cursor()
 
         cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'"
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'",
         )
         alembic_table = cursor.fetchone()
 
@@ -170,7 +169,7 @@ def check_migration_consistency() -> dict[str, Any]:
             report["alembic_status"] = "not_initialized"
             report["migration_issues"].append("Alembic version table does not exist")
             report["recommendations"].append(
-                "Run 'alembic stamp head' to initialize migration tracking"
+                "Run 'alembic stamp head' to initialize migration tracking",
             )
         else:
             cursor.execute("SELECT version_num FROM alembic_version")
@@ -183,20 +182,17 @@ def check_migration_consistency() -> dict[str, Any]:
         conn.close()
 
     except Exception as e:
-        report["migration_issues"].append(f"Migration check error: {str(e)}")
+        report["migration_issues"].append(f"Migration check error: {e!s}")
 
     return report
 
 
 def main():
     """Run complete database validation."""
-    print("🔍 Analyzing database structure...")
     structure_report = analyze_database_structure()
 
-    print("🗄️ Checking migration consistency...")
     migration_report = check_migration_consistency()
 
-    print("⚡ Generating optimization queries...")
     optimization_queries = generate_optimization_queries()
 
     # Combine reports
@@ -219,34 +215,22 @@ def main():
     }
 
     # Save report
-    with open("database_validation_report.json", "w") as f:
+    with Path("database_validation_report.json").open("w") as f:
         json.dump(full_report, f, indent=2)
 
     # Print summary
-    print("\n📊 DATABASE VALIDATION REPORT")
-    print("=" * 50)
-    print(f"Database path: {structure_report['database_path']}")
-    print(f"Database size: {structure_report.get('database_size_mb', 0)} MB")
-    print(f"Tables found: {len(structure_report['tables']['list'])}")
-    print(f"Total issues: {full_report['summary']['total_issues']}")
-    print(f"Health status: {full_report['summary']['database_health'].upper()}")
 
     if structure_report["issues"]:
-        print("\n🚨 ISSUES FOUND:")
-        for i, issue in enumerate(structure_report["issues"], 1):
-            print(f"  {i}. {issue}")
+        for _i, _issue in enumerate(structure_report["issues"], 1):
+            pass
 
     if migration_report["migration_issues"]:
-        print("\n🔄 MIGRATION ISSUES:")
-        for i, issue in enumerate(migration_report["migration_issues"], 1):
-            print(f"  {i}. {issue}")
+        for _i, _issue in enumerate(migration_report["migration_issues"], 1):
+            pass
 
     if full_report["summary"]["total_recommendations"] > 0:
-        print(
-            f"\n💡 {full_report['summary']['total_recommendations']} recommendations available in database_validation_report.json"
-        )
+        pass
 
-    print("\n📄 Full report saved to: database_validation_report.json")
     return full_report
 
 

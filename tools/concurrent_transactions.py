@@ -5,11 +5,12 @@ import sqlite3
 # prepare temp DB
 import tempfile
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from httpx import ASGITransport, AsyncClient
 
-from app._typing_shims import ISyncConnection
+if TYPE_CHECKING:
+    from app._typing_shims import ISyncConnection
 
 with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
     db_path = tmp.name
@@ -61,7 +62,7 @@ if ROOT not in sys.path:
 from app.main import app
 
 
-async def run_batch(n=50):
+async def run_batch(n=50) -> None:
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://test",
@@ -76,9 +77,8 @@ async def run_batch(n=50):
 
         tasks = [op(i) for i in range(n)]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        for i, r in enumerate(results):
-            print(i, type(r), r if isinstance(r, tuple) else repr(r))
+        for _i, _r in enumerate(results):
+            pass
 
 
 asyncio.run(run_batch(50))
-print("DB file", db_path)

@@ -35,7 +35,7 @@ def mock_enforce_api_key():
 class TestHealthEndpoints:
     """Test health check endpoints."""
 
-    def test_health_endpoint_with_auth(self, client, mock_enforce_api_key):
+    def test_health_endpoint_with_auth(self, client, mock_enforce_api_key) -> None:
         """Test authenticated health endpoint."""
         response = client.get("/health", headers={"X-API-Key": "test-key"})
         assert response.status_code == 200
@@ -43,7 +43,7 @@ class TestHealthEndpoints:
         assert "status" in data
         assert data["status"] == "ok"
 
-    def test_healthz_endpoint(self, client):
+    def test_healthz_endpoint(self, client) -> None:
         """Test public health endpoint."""
         response = client.get("/healthz")
         assert response.status_code == 200
@@ -54,7 +54,7 @@ class TestHealthEndpoints:
 class TestAnalysisEndpoints:
     """Test transaction analysis endpoints."""
 
-    def test_analyze_sample(self, client, mock_enforce_api_key):
+    def test_analyze_sample(self, client, mock_enforce_api_key) -> None:
         """Test sample transaction analysis."""
         response = client.post("/analyze/sample", headers={"X-API-Key": "test-key"})
         assert response.status_code == 200
@@ -66,7 +66,7 @@ class TestXRPLIntegration:
     """Test XRPL integration endpoints."""
 
     @patch("app.main.fetch_account_tx")
-    def test_xrpl_fetch(self, mock_fetch, client, mock_enforce_api_key):
+    def test_xrpl_fetch(self, mock_fetch, client, mock_enforce_api_key) -> None:
         """Test XRPL transaction fetching."""
         mock_fetch.return_value = []
 
@@ -83,17 +83,17 @@ class TestXRPLIntegration:
 class TestErrorHandling:
     """Test error handling scenarios."""
 
-    def test_invalid_endpoint(self, client):
+    def test_invalid_endpoint(self, client) -> None:
         """Test accessing invalid endpoint."""
         response = client.get("/invalid /endpoint")
         assert response.status_code == 404
 
-    def test_method_not_allowed(self, client, mock_enforce_api_key):
+    def test_method_not_allowed(self, client, mock_enforce_api_key) -> None:
         """Test invalid HTTP method."""
         response = client.delete("/health", headers={"X-API-Key": "test-key"})
         assert response.status_code == 405
 
-    def test_unauthorized_access(self, client):
+    def test_unauthorized_access(self, client) -> None:
         """Test accessing protected endpoint without auth."""
         response = client.post("/analyze/sample")  # This requires API key
         # Should return 401 for missing auth
@@ -103,7 +103,7 @@ class TestErrorHandling:
 class TestCORS:
     """Test CORS headers."""
 
-    def test_cors_preflight(self, client):
+    def test_cors_preflight(self, client) -> None:
         """Test CORS preflight request."""
         response = client.options(
             "/healthz",
@@ -119,7 +119,7 @@ class TestCORS:
 class TestRequestResponseFlow:
     """Test complete request /response flows."""
 
-    def test_get_sample_data(self, client, mock_enforce_api_key):
+    def test_get_sample_data(self, client, mock_enforce_api_key) -> None:
         """Test getting sample data."""
         response = client.post(
             "/analyze/sample",
@@ -132,7 +132,7 @@ class TestRequestResponseFlow:
         assert isinstance(data, dict)
 
     @patch("app.integrations.xrp.fetch_account_tx")
-    def test_xrpl_integration_flow(self, mock_fetch, client, mock_enforce_api_key):
+    def test_xrpl_integration_flow(self, mock_fetch, client, mock_enforce_api_key) -> None:
         """Test XRPL integration flow."""
         # Mock successful XRPL response
         mock_fetch.return_value = []
@@ -151,7 +151,7 @@ class TestRequestResponseFlow:
 class TestDataValidation:
     """Test data validation in requests."""
 
-    def test_invalid_query_parameters(self, client, mock_enforce_api_key):
+    def test_invalid_query_parameters(self, client, mock_enforce_api_key) -> None:
         """Test handling of invalid query parameters."""
         response = client.get(
             "/integrations/xrpl/fetch",
@@ -162,7 +162,7 @@ class TestDataValidation:
         # Should handle validation errors gracefully
         assert response.status_code in [200, 400, 422]
 
-    def test_missing_required_parameters(self, client, mock_enforce_api_key):
+    def test_missing_required_parameters(self, client, mock_enforce_api_key) -> None:
         """Test handling of missing required parameters."""
         response = client.get(
             "/integrations/xrpl/fetch",
@@ -177,7 +177,7 @@ class TestDataValidation:
 class TestRateLimiting:
     """Test rate limiting functionality."""
 
-    def test_rate_limiting(self, client, mock_enforce_api_key):
+    def test_rate_limiting(self, client, mock_enforce_api_key) -> None:
         """Test rate limiting enforcement."""
         # This test would verify rate limiting once implemented
         for _i in range(100):

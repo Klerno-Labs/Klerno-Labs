@@ -4,7 +4,7 @@ from app.compliance import AddressBook, tag_categories, tag_category
 
 
 class T:
-    def __init__(self, **kw):
+    def __init__(self, **kw) -> None:
         self.memo = kw.get("memo", "")
         self.fee = kw.get("fee", Decimal(0))
         self.amount = kw.get("amount", Decimal(0))
@@ -13,7 +13,7 @@ class T:
         self.to_address = kw.get("to_address")
 
 
-def test_fee_detection():
+def test_fee_detection() -> None:
     tx = T(
         memo="network fee",
         amount=Decimal(-1),
@@ -23,12 +23,12 @@ def test_fee_detection():
     assert tag_category(tx) == "fee"
 
 
-def test_keyword_boundary():
+def test_keyword_boundary() -> None:
     tx = T(memo="gasoline purchase", amount=Decimal(-10), fee=Decimal(0))
     assert tag_category(tx) != "fee"
 
 
-def test_internal_transfer():
+def test_internal_transfer() -> None:
     book = AddressBook(owned={"rA", "rB"})
     tx = T(memo="move funds", from_address="rA", to_address="rB")
     cats = tag_categories(tx, address_book=book)

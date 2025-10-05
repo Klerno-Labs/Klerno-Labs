@@ -10,11 +10,11 @@ from .store import UserDict
 # Lazy settings proxy so importing this module doesn't eagerly initialize
 # the app settings at import time.
 class _LazySettings:
-    def __init__(self, factory):
+    def __init__(self, factory) -> None:
         self._factory = factory
         self._obj = None
 
-    def _ensure(self):
+    def _ensure(self) -> None:
         if self._obj is None:
             self._obj = self._factory()
 

@@ -36,7 +36,7 @@ def settings():
 class TestApplicationSetup:
     """Test overall application configuration and setup."""
 
-    def test_settings_configuration(self, settings):
+    def test_settings_configuration(self, settings) -> None:
         """Test that settings are properly configured."""
         assert settings.app_env == "test"
         assert isinstance(settings.debug, bool)
@@ -50,7 +50,7 @@ class TestApplicationSetup:
         # CORS origins should be a list
         assert isinstance(settings.cors_origins, list)
 
-    def test_logging_configuration(self):
+    def test_logging_configuration(self) -> None:
         """Test that logging is properly configured."""
         # Reconfigure logging for test
         configure_logging()
@@ -65,7 +65,7 @@ class TestApplicationSetup:
         assert hasattr(logger, "warning")
         assert hasattr(logger, "debug")
 
-    def test_exception_handling_setup(self):
+    def test_exception_handling_setup(self) -> None:
         """Test that custom exceptions work properly."""
         # Test base exception
         exc = KlernoException("Test message", "TEST_CODE", 400)
@@ -86,7 +86,7 @@ class TestApplicationSetup:
 class TestMiddlewareIntegration:
     """Test middleware functionality."""
 
-    def test_security_headers_middleware(self, client):
+    def test_security_headers_middleware(self, client) -> None:
         """Test that security headers are added."""
         response = client.get("/healthz")
 
@@ -102,7 +102,7 @@ class TestMiddlewareIntegration:
         for header in expected_headers:
             assert header in response.headers, f"Missing security header: {header}"
 
-    def test_request_id_generation(self, client):
+    def test_request_id_generation(self, client) -> None:
         """Test that request IDs are generated and returned."""
         response = client.get("/healthz")
         assert "X-Request-ID" in response.headers
@@ -119,7 +119,7 @@ class TestMiddlewareIntegration:
 class TestAPIEndpointsIntegration:
     """Test API endpoints with full middleware stack."""
 
-    def test_health_endpoint_comprehensive(self, client):
+    def test_health_endpoint_comprehensive(self, client) -> None:
         """Test health endpoint with all middleware."""
         response = client.get("/healthz")
 
@@ -138,7 +138,7 @@ class TestAPIEndpointsIntegration:
         assert data["status"] == "ok"
 
     @patch("app.security.enforce_api_key", return_value=True)
-    def test_protected_endpoint_flow(self, mock_auth, client):
+    def test_protected_endpoint_flow(self, mock_auth, client) -> None:
         """Test complete flow for protected endpoints."""
         response = client.get("/health", headers={"X - API - Key": "test - key"})
 
@@ -153,7 +153,7 @@ class TestAPIEndpointsIntegration:
         data = response.json()
         assert isinstance(data, dict)
 
-    def test_error_handling_integration(self, client):
+    def test_error_handling_integration(self, client) -> None:
         """Test that errors are handled properly with middleware."""
         # Test 404
         response = client.get("/nonexistent")
@@ -169,7 +169,7 @@ class TestAPIEndpointsIntegration:
 class TestComplianceAndSecurity:
     """Test compliance and security features."""
 
-    def test_cors_configuration(self, client):
+    def test_cors_configuration(self, client) -> None:
         """Test CORS is properly configured."""
         response = client.get("/healthz", headers={"Origin": "http://localhost:3000"})
 
@@ -179,7 +179,7 @@ class TestComplianceAndSecurity:
         # In a real implementation, we'd check for CORS headers
         # This is a basic test to ensure the endpoint works with Origin header
 
-    def test_content_type_security(self, client):
+    def test_content_type_security(self, client) -> None:
         """Test content type security measures."""
         response = client.get("/healthz")
 
@@ -189,14 +189,14 @@ class TestComplianceAndSecurity:
         # Response should be proper JSON
         assert response.headers.get("content-type").startswith("application/json")
 
-    def test_frame_protection(self, client):
+    def test_frame_protection(self, client) -> None:
         """Test frame protection headers."""
         response = client.get("/healthz")
 
         # Should deny framing
         assert response.headers.get("X-Frame-Options") == "DENY"
 
-    def test_https_enforcement(self, client):
+    def test_https_enforcement(self, client) -> None:
         """Test HTTPS enforcement headers."""
         response = client.get("/healthz")
 
@@ -210,7 +210,7 @@ class TestComplianceAndSecurity:
 class TestPerformanceAndMonitoring:
     """Test performance and monitoring features."""
 
-    def test_metrics_endpoint_exists(self, client):
+    def test_metrics_endpoint_exists(self, client) -> None:
         """Test that metrics endpoint is available."""
         # Import metrics endpoint function
         from app.middleware import metrics_endpoint
@@ -222,7 +222,7 @@ class TestPerformanceAndMonitoring:
         response = metrics_endpoint()
         assert response.media_type == "text/plain; version=0.0.4; charset=utf-8"
 
-    def test_response_time_tracking(self, client):
+    def test_response_time_tracking(self, client) -> None:
         """Test that response times are reasonable."""
         import time
 
@@ -234,7 +234,7 @@ class TestPerformanceAndMonitoring:
         assert duration < 1.0
         assert response.status_code == 200
 
-    def test_concurrent_requests(self, client):
+    def test_concurrent_requests(self, client) -> None:
         """Test that the application handles concurrent requests."""
         import concurrent.futures
         import time
@@ -264,7 +264,7 @@ class TestPerformanceAndMonitoring:
 class TestDataValidationIntegration:
     """Test data validation across the application."""
 
-    def test_settings_validation(self):
+    def test_settings_validation(self) -> None:
         """Test that settings validation works."""
         from app.settings import Settings
 
@@ -281,7 +281,7 @@ class TestDataValidationIntegration:
         ]  # Allow both since test env sets APP_ENV=test
         assert default_settings.port == 8000
 
-    def test_json_response_validation(self, client):
+    def test_json_response_validation(self, client) -> None:
         """Test that JSON responses are properly formatted."""
         response = client.get("/healthz")
 
@@ -298,7 +298,7 @@ class TestDataValidationIntegration:
 class TestFullApplicationIntegration:
     """Integration tests that verify the complete application works together."""
 
-    def test_application_startup_shutdown(self):
+    def test_application_startup_shutdown(self) -> None:
         """Test that application can start and stop properly."""
         # This tests the entire application lifecycle
         test_client = TestClient(app)
@@ -309,7 +309,7 @@ class TestFullApplicationIntegration:
 
         # Cleanup is handled automatically by TestClient
 
-    def test_error_recovery(self, client):
+    def test_error_recovery(self, client) -> None:
         """Test that application recovers from errors."""
         # Test that after an error, normal requests still work
 
@@ -324,7 +324,7 @@ class TestFullApplicationIntegration:
         # Request IDs should be different
         assert response1.headers["X-Request-ID"] != response2.headers["X-Request-ID"]
 
-    def test_environment_configuration(self):
+    def test_environment_configuration(self) -> None:
         """Test that environment configuration works properly."""
         settings = get_settings()
 

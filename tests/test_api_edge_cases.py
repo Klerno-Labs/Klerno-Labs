@@ -19,7 +19,7 @@ def client():
 class TestAPIEdgeCases:
     """Test API edge cases and boundary conditions."""
 
-    def test_malformed_json_request(self, client):
+    def test_malformed_json_request(self, client) -> None:
         """Test handling of malformed JSON in request body."""
         response = client.post(
             "/iso20022/parse",
@@ -28,14 +28,14 @@ class TestAPIEdgeCases:
         )
         assert response.status_code in [400, 422, 500]
 
-    def test_very_large_request_body(self, client):
+    def test_very_large_request_body(self, client) -> None:
         """Test handling of very large request bodies."""
         large_data = {"data": "x" * 10000}  # 10KB of data
         response = client.post("/iso20022/parse", json=large_data)
         # Should handle large payloads gracefully
         assert response.status_code in [200, 413, 422]
 
-    def test_unicode_characters_in_request(self, client):
+    def test_unicode_characters_in_request(self, client) -> None:
         """Test handling of various Unicode characters."""
         unicode_data = {
             "text": "Hello 世界 🌍 emoji test éñöç",
@@ -45,14 +45,14 @@ class TestAPIEdgeCases:
         response = client.post("/iso20022/parse", json=unicode_data)
         assert response.status_code in [200, 400, 422]
 
-    def test_empty_request_body(self, client):
+    def test_empty_request_body(self, client) -> None:
         """Test handling of empty request bodies."""
         response = client.post(
-            "/iso20022/parse", content="", headers={"Content-Type": "application/json"}
+            "/iso20022/parse", content="", headers={"Content-Type": "application/json"},
         )
         assert response.status_code in [400, 422]
 
-    def test_null_values_in_request(self, client):
+    def test_null_values_in_request(self, client) -> None:
         """Test handling of null values in request data."""
         null_data = {"field1": None, "field2": "", "field3": [], "field4": {}}
         response = client.post("/iso20022/parse", json=null_data)
@@ -62,7 +62,7 @@ class TestAPIEdgeCases:
 class TestConcurrentRequests:
     """Test concurrent request handling."""
 
-    def test_concurrent_health_checks(self, client):
+    def test_concurrent_health_checks(self, client) -> None:
         """Test multiple concurrent health check requests."""
 
         def make_request():
@@ -79,7 +79,7 @@ class TestConcurrentRequests:
         request_ids = [r.headers.get("X-Request-ID") for r in responses]
         assert len(set(request_ids)) == len(request_ids)
 
-    def test_mixed_endpoint_concurrency(self, client):
+    def test_mixed_endpoint_concurrency(self, client) -> None:
         """Test concurrent requests to different endpoints."""
         endpoints = ["/healthz", "/health", "/status", "/ready"]
 
@@ -104,7 +104,7 @@ class TestConcurrentRequests:
 class TestErrorRecovery:
     """Test error recovery and resilience."""
 
-    def test_database_connection_error_recovery(self, client):
+    def test_database_connection_error_recovery(self, client) -> None:
         """Test recovery from database connection errors."""
         # This test simulates database issues and recovery
         # First, make a normal request
@@ -116,7 +116,7 @@ class TestErrorRecovery:
         response2 = client.get("/healthz")
         assert response2.status_code == 200
 
-    def test_multiple_error_requests(self, client):
+    def test_multiple_error_requests(self, client) -> None:
         """Test that multiple error requests don't break the system."""
         # Make several requests to non-existent endpoints
         for _ in range(5):
@@ -126,7 +126,7 @@ class TestErrorRecovery:
         response = client.get("/healthz")
         assert response.status_code == 200
 
-    def test_invalid_content_type_handling(self, client):
+    def test_invalid_content_type_handling(self, client) -> None:
         """Test handling of invalid content types."""
         # Send binary data with JSON content type
         response = client.post(
@@ -140,7 +140,7 @@ class TestErrorRecovery:
 class TestSecurityBoundaries:
     """Test security boundary conditions."""
 
-    def test_script_injection_attempts(self, client):
+    def test_script_injection_attempts(self, client) -> None:
         """Test handling of script injection attempts."""
         malicious_payloads = [
             "<script>alert('xss')</script>",
@@ -155,7 +155,7 @@ class TestSecurityBoundaries:
             # Should not execute malicious code
             assert response.status_code in [200, 400, 422]
 
-    def test_header_injection_attempts(self, client):
+    def test_header_injection_attempts(self, client) -> None:
         """Test header injection attempts."""
         malicious_headers = {
             "X-Forwarded-For": "127.0.0.1\r\nX-Injected-Header: evil",
@@ -174,7 +174,7 @@ class TestSecurityBoundaries:
 class TestPerformanceBoundaries:
     """Test performance boundary conditions."""
 
-    def test_response_time_consistency(self, client):
+    def test_response_time_consistency(self, client) -> None:
         """Test that response times are consistent."""
         response_times = []
 
@@ -193,7 +193,7 @@ class TestPerformanceBoundaries:
         assert avg_time < 1.0  # Average under 1 second
         assert max_time < 5.0  # Max under 5 seconds
 
-    def test_memory_usage_stability(self, client):
+    def test_memory_usage_stability(self, client) -> None:
         """Test that memory usage remains stable under load."""
         # Make many requests to check for memory leaks
         for _ in range(100):
@@ -204,7 +204,7 @@ class TestPerformanceBoundaries:
 class TestAPICompatibility:
     """Test API compatibility and versioning."""
 
-    def test_backwards_compatibility(self, client):
+    def test_backwards_compatibility(self, client) -> None:
         """Test that API maintains backwards compatibility."""
         # Test legacy endpoints that should still work
         legacy_endpoints = ["/health", "/status", "/ready", "/metrics"]
@@ -214,7 +214,7 @@ class TestAPICompatibility:
             # Should either work or return a proper error (not 500)
             assert response.status_code < 500
 
-    def test_content_negotiation(self, client):
+    def test_content_negotiation(self, client) -> None:
         """Test content negotiation for different accept headers."""
         accept_headers = ["application/json", "text/html", "text/plain", "*/*"]
 
@@ -226,13 +226,13 @@ class TestAPICompatibility:
 class TestDataValidationEdgeCases:
     """Test edge cases in data validation."""
 
-    def test_extremely_long_strings(self, client):
+    def test_extremely_long_strings(self, client) -> None:
         """Test handling of extremely long string inputs."""
         long_string = "a" * 10000
         response = client.post("/iso20022/parse", json={"very_long_field": long_string})
         assert response.status_code in [200, 400, 422]
 
-    def test_deeply_nested_json(self, client):
+    def test_deeply_nested_json(self, client) -> None:
         """Test handling of deeply nested JSON structures."""
         # Create deeply nested structure
         nested_data = {"level": 1}
@@ -244,7 +244,7 @@ class TestDataValidationEdgeCases:
         response = client.post("/iso20022/parse", json=nested_data)
         assert response.status_code in [200, 400, 422]
 
-    def test_special_numeric_values(self, client):
+    def test_special_numeric_values(self, client) -> None:
         """Test handling of special numeric values."""
         # Test special numeric values in requests
         {
@@ -268,7 +268,7 @@ class TestRateLimitingEdgeCases:
     """Test rate limiting edge cases."""
 
     @patch.dict("os.environ", {"ENABLE_RATE_LIMIT": "true"})
-    def test_rate_limit_boundary(self, client):
+    def test_rate_limit_boundary(self, client) -> None:
         """Test rate limiting at boundary conditions."""
         # Make rapid requests to test rate limiting
         responses = []
@@ -286,7 +286,7 @@ class TestRateLimitingEdgeCases:
         assert all(code in [200, 429] for code in status_codes)
 
 
-def test_comprehensive_api_health():
+def test_comprehensive_api_health() -> None:
     """Comprehensive API health test covering multiple scenarios."""
     client = TestClient(app)
 
@@ -305,7 +305,6 @@ def test_comprehensive_api_health():
     response = client.get("/healthz")  # Should still work
     assert response.status_code == 200
 
-    print("✅ Comprehensive API health test passed")
 
 
 if __name__ == "__main__":

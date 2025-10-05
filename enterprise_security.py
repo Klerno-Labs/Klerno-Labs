@@ -1,5 +1,5 @@
 """Enterprise Security System Wrapper
-Provides enterprise-grade security capabilities for the TOP 0.1% application
+Provides enterprise-grade security capabilities for the TOP 0.1% application.
 """
 
 """Compatibility shim for enterprise security.

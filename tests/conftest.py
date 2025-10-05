@@ -6,14 +6,15 @@ import tempfile
 from collections.abc import AsyncGenerator, Generator
 from datetime import datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 
-from app._typing_shims import ISyncConnection
+if TYPE_CHECKING:
+    from app._typing_shims import ISyncConnection
 
 # Ensure the workspace root (two levels up from this tests folder) is on sys.path
 # so tests that import `app` (which lives at the workspace root) can find it.
@@ -340,7 +341,8 @@ class DatabaseTestUtils:
         conn.close()
         # Ensure we return an int (sqlite may expose lastrowid as Optional)
         if transaction_id is None:
-            raise RuntimeError("Failed to create transaction; lastrowid is None")
+            msg = "Failed to create transaction; lastrowid is None"
+            raise RuntimeError(msg)
         return int(transaction_id)
 
 

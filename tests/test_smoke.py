@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
-def test_root_returns_html():
+def test_root_returns_html() -> None:
     client = TestClient(app)
     resp = client.get("/")
     assert resp.status_code == 200
@@ -11,7 +11,7 @@ def test_root_returns_html():
     assert "Klerno" in resp.text or "Landing" in resp.text or "Welcome" in resp.text
 
 
-def test_health_ok():
+def test_health_ok() -> None:
     client = TestClient(app)
     resp = client.get("/health")
     assert resp.status_code == 200
@@ -19,14 +19,15 @@ def test_health_ok():
     assert data.get("status") == "ok"
 
 
-def test_status_endpoint():
+def test_status_endpoint() -> None:
     client = TestClient(app)
     resp = client.get("/status")
     assert resp.status_code == 200
     data = resp.json()
     # Minimal sanity checks
     assert data.get("status") in {"running", "ok"}
-    assert isinstance(data.get("version"), str) and data["version"].strip() != ""
+    assert isinstance(data.get("version"), str)
+    assert data["version"].strip() != ""
 
 
 import importlib
@@ -36,7 +37,7 @@ from app import store
 from app.security_session import hash_pw
 
 
-def test_smoke_login(tmp_path, monkeypatch):
+def test_smoke_login(tmp_path, monkeypatch) -> None:
     # Use a temporary sqlite DB for isolated test
     dbfile = tmp_path / "test_klerno.db"
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{dbfile}")

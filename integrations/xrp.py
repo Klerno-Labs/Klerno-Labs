@@ -100,7 +100,7 @@ def get_xrpl_client():
 
     # Minimal local stub: raise if network calls attempted; tests patch this
     class _Stub:
-        def is_connected(self):
+        def is_connected(self) -> bool:
             return False
 
         def get_account_info(self, account: str) -> dict:

@@ -55,7 +55,7 @@ class CryptoNetworkConfig:
 class CryptoISO20022Manager:
     """Manages ISO20022 compliance for all supported cryptocurrencies."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.iso_manager = ISO20022Manager()
         self.crypto_configs: dict[SupportedCryptos, CryptoNetworkConfig] = (
             self._initialize_crypto_configs()
@@ -247,7 +247,7 @@ class CryptoISO20022Manager:
 
         config = self.crypto_configs[crypto]
 
-        compliance_check = {
+        return {
             "cryptocurrency": crypto.value,
             "name": config.name,
             "iso20022_compliant": True,
@@ -264,7 +264,6 @@ class CryptoISO20022Manager:
             "recommendations": self._get_compliance_recommendations(config),
         }
 
-        return compliance_check
 
     def _calculate_compliance_score(self, config: CryptoNetworkConfig) -> float:
         """Calculate compliance score based on regulatory features."""
@@ -317,22 +316,25 @@ class CryptoISO20022Manager:
     ) -> dict[str, Any]:
         """Generate ISO20022 compliant payment message for cryptocurrency."""
         if crypto not in self.crypto_configs:
-            raise ValueError(f"Unsupported cryptocurrency: {crypto}")
+            msg = f"Unsupported cryptocurrency: {crypto}"
+            raise ValueError(msg)
 
         config = self.crypto_configs[crypto]
 
         # Validate amount
         if amount < config.minimum_amount:
+            msg = f"Amount below minimum for {crypto}: {config.minimum_amount}"
             raise ValueError(
-                f"Amount below minimum for {crypto}: {config.minimum_amount}",
+                msg,
             )
         if amount > config.maximum_amount:
+            msg = f"Amount exceeds maximum for {crypto}: {config.maximum_amount}"
             raise ValueError(
-                f"Amount exceeds maximum for {crypto}: {config.maximum_amount}",
+                msg,
             )
 
         # Create ISO20022 payment instruction
-        payment_data = {
+        return {
             "message_type": MessageType.PAIN_001.value,
             "message_id": f"CRYPTO-{crypto.value}-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}",
             "creation_date": datetime.now(UTC).isoformat(),
@@ -354,7 +356,6 @@ class CryptoISO20022Manager:
             },
         }
 
-        return payment_data
 
     def get_all_supported_cryptos(self) -> dict[str, dict[str, Any]]:
         """Get information about all supported cryptocurrencies."""

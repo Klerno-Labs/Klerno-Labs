@@ -1,4 +1,4 @@
-def test_landing_and_paywall_redirect(test_client):
+def test_landing_and_paywall_redirect(test_client) -> None:
     """Smoke test: landing page renders and paywall redirect logic.
 
     Lightweight: no real users or payments. Verifies templates and redirect

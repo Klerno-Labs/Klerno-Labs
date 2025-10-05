@@ -1,5 +1,5 @@
 """Klerno Labs - Enterprise Configuration System
-Controls enterprise features for TOP 0.1% application status
+Controls enterprise features for TOP 0.1% application status.
 """
 
 import os

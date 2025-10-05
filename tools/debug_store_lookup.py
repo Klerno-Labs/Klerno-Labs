@@ -3,9 +3,10 @@ import sqlite3
 import sys
 import tempfile
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
-from app._typing_shims import ISyncConnection
+if TYPE_CHECKING:
+    from app._typing_shims import ISyncConnection
 
 # Ensure repo root on sys.path
 ROOT = str(Path(__file__).resolve().parents[1])
@@ -43,8 +44,6 @@ os.environ["DB_PATH"] = db_path
 from app import store
 
 user = store.get_user_by_email("test@example.com")
-print("user:", user)
-print("user keys:", list(user.keys()) if user else None)
 
 # cleanup
 from contextlib import suppress

@@ -1,5 +1,5 @@
 """Klerno Labs Enterprise Integration Hub
-Master orchestration system for all enterprise components
+Master orchestration system for all enterprise components.
 """
 
 import asyncio
@@ -11,15 +11,8 @@ import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from ._typing_shims import (
-    IAnalytics,
-    ICICDPipeline,
-    IDatabaseManager,
-    IErrorHandler,
-    IHealthMonitor,
-)
 from .enterprise_analytics_reporting import get_analytics_system
 from .enterprise_cicd_pipeline import CICDPipeline
 
@@ -28,6 +21,15 @@ from .enterprise_database_async import get_database_manager
 from .enterprise_error_handling import get_error_handler
 from .enterprise_health_dashboard import get_health_monitor
 
+if TYPE_CHECKING:
+    from ._typing_shims import (
+        IAnalytics,
+        ICICDPipeline,
+        IDatabaseManager,
+        IErrorHandler,
+        IHealthMonitor,
+    )
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SystemStatus:
-    """System component status"""
+    """System component status."""
 
     component_name: str
     status: str  # running, stopped, error, starting
@@ -47,7 +49,7 @@ class SystemStatus:
 
 @dataclass
 class IntegrationConfig:
-    """Enterprise integration configuration"""
+    """Enterprise integration configuration."""
 
     enable_database_pooling: bool = True
     enable_error_handling: bool = True
@@ -68,9 +70,9 @@ class IntegrationConfig:
 
 
 class EnterpriseIntegrationHub:
-    """Master orchestration system for all enterprise components"""
+    """Master orchestration system for all enterprise components."""
 
-    def __init__(self, config: IntegrationConfig | None = None):
+    def __init__(self, config: IntegrationConfig | None = None) -> None:
         self.config = config or IntegrationConfig()
         self.system_status: dict[str, SystemStatus] = {}
         self.is_running = False
@@ -94,7 +96,7 @@ class EnterpriseIntegrationHub:
         logger.info("[ENTERPRISE] Integration Hub initialized")
 
     async def initialize_all_systems(self) -> bool:
-        """Initialize all enterprise systems"""
+        """Initialize all enterprise systems."""
         logger.info("[ENTERPRISE] Starting enterprise systems initialization...")
 
         success_count = 0
@@ -189,7 +191,7 @@ class EnterpriseIntegrationHub:
             return success_count == total_systems
 
         except Exception as e:
-            logger.error(f"[ENTERPRISE] Failed to initialize enterprise systems: {e}")
+            logger.exception(f"[ENTERPRISE] Failed to initialize enterprise systems: {e}")
 
             if self.error_handler:
                 self.error_handler.handle_error(e, "enterprise_initialization")
@@ -202,7 +204,7 @@ class EnterpriseIntegrationHub:
         status: str,
         metrics: dict[str, Any] | None = None,
     ) -> None:
-        """Update system component status"""
+        """Update system component status."""
         self.system_status[component] = SystemStatus(
             component_name=component,
             status=status,
@@ -211,7 +213,7 @@ class EnterpriseIntegrationHub:
         )
 
     def _start_background_workers(self) -> None:
-        """Start background monitoring workers"""
+        """Start background monitoring workers."""
         # Health monitoring worker
         health_worker = threading.Thread(
             target=self._health_monitoring_worker,
@@ -242,7 +244,7 @@ class EnterpriseIntegrationHub:
         logger.info(f"[ENTERPRISE] Started {len(self._workers)} background workers")
 
     def _health_monitoring_worker(self) -> None:
-        """Background worker for health monitoring"""
+        """Background worker for health monitoring."""
         while not self._shutdown_event.is_set():
             try:
                 if self.health_monitor:
@@ -281,11 +283,11 @@ class EnterpriseIntegrationHub:
                 time.sleep(self.config.health_check_interval)
 
             except Exception as e:
-                logger.error(f"[ENTERPRISE] Health monitoring worker error: {e}")
+                logger.exception(f"[ENTERPRISE] Health monitoring worker error: {e}")
                 time.sleep(self.config.health_check_interval)
 
     def _performance_monitoring_worker(self) -> None:
-        """Background worker for performance monitoring"""
+        """Background worker for performance monitoring."""
         while not self._shutdown_event.is_set():
             try:
                 # Collect performance metrics from all systems
@@ -367,11 +369,11 @@ class EnterpriseIntegrationHub:
                 time.sleep(self.config.analytics_update_interval)
 
             except Exception as e:
-                logger.error(f"[ENTERPRISE] Performance monitoring worker error: {e}")
+                logger.exception(f"[ENTERPRISE] Performance monitoring worker error: {e}")
                 time.sleep(self.config.analytics_update_interval)
 
     def _integration_health_worker(self) -> None:
-        """Background worker for integration health checks"""
+        """Background worker for integration health checks."""
         while not self._shutdown_event.is_set():
             try:
                 # Check each system's health
@@ -392,11 +394,11 @@ class EnterpriseIntegrationHub:
                 time.sleep(60)  # Check every minute
 
             except Exception as e:
-                logger.error(f"[ENTERPRISE] Integration health worker error: {e}")
+                logger.exception(f"[ENTERPRISE] Integration health worker error: {e}")
                 time.sleep(60)
 
     def _check_component_health(self, component: str) -> float:
-        """Check health of a specific component"""
+        """Check health of a specific component."""
         try:
             if component == "database" and self.database_manager:
                 # Check database connectivity and performance
@@ -457,11 +459,11 @@ class EnterpriseIntegrationHub:
             return 100.0
 
         except Exception as e:
-            logger.error(f"[ENTERPRISE] Failed to check {component} health: {e}")
+            logger.exception(f"[ENTERPRISE] Failed to check {component} health: {e}")
             return 0.0
 
     def _trigger_alert(self, severity: str, message: str) -> None:
-        """Trigger system alert"""
+        """Trigger system alert."""
         if not self.config.enable_alerts:
             return
 
@@ -487,14 +489,14 @@ class EnterpriseIntegrationHub:
                     actions=["log", "notify"],
                 )
             except Exception as e:
-                logger.error(f"[ENTERPRISE] Failed to store alert: {e}")
+                logger.exception(f"[ENTERPRISE] Failed to store alert: {e}")
 
         # Track in analytics
         if self.analytics_system:
             self.analytics_system.track_event("system_alert", properties=alert_data)
 
     def get_enterprise_dashboard(self) -> dict[str, Any]:
-        """Get comprehensive enterprise dashboard"""
+        """Get comprehensive enterprise dashboard."""
         uptime = (datetime.now() - self.start_time).total_seconds()
 
         dashboard = {
@@ -527,14 +529,14 @@ class EnterpriseIntegrationHub:
                 health_data = self.health_monitor.get_dashboard_data()
                 dashboard["health_data"] = health_data
             except Exception as e:
-                logger.error(f"[ENTERPRISE] Failed to get health data: {e}")
+                logger.exception(f"[ENTERPRISE] Failed to get health data: {e}")
 
         if self.analytics_system:
             try:
                 analytics_data = self.analytics_system.get_analytics_dashboard()
                 dashboard["analytics_data"] = analytics_data
             except Exception as e:
-                logger.error(f"[ENTERPRISE] Failed to get analytics data: {e}")
+                logger.exception(f"[ENTERPRISE] Failed to get analytics data: {e}")
 
         return dashboard
 
@@ -543,7 +545,7 @@ class EnterpriseIntegrationHub:
         operation_type: str,
         operation_data: dict[str, Any],
     ) -> dict[str, Any]:
-        """Execute enterprise operation with full monitoring"""
+        """Execute enterprise operation with full monitoring."""
         operation_id = f"{operation_type}_{int(time.time() * 1000)}"
         start_time = time.time()
 
@@ -626,7 +628,7 @@ class EnterpriseIntegrationHub:
                     f"enterprise_operation_{operation_type}",
                 )
 
-            logger.error(f"[ENTERPRISE] Operation {operation_id} failed: {e}")
+            logger.exception(f"[ENTERPRISE] Operation {operation_id} failed: {e}")
 
             return {
                 "operation_id": operation_id,
@@ -640,13 +642,14 @@ class EnterpriseIntegrationHub:
         operation_type: str,
         operation_data: dict[str, Any],
     ) -> Any:
-        """Internal operation execution"""
+        """Internal operation execution."""
         if operation_type == "database_query":
             if self.database_manager:
                 query = operation_data.get("query")
                 params = operation_data.get("params", ())
                 if not isinstance(query, str):
-                    raise ValueError("Invalid query provided")
+                    msg = "Invalid query provided"
+                    raise ValueError(msg)
                 return await self.database_manager.execute_query(query, params)
 
         elif operation_type == "run_cicd_pipeline":
@@ -654,7 +657,8 @@ class EnterpriseIntegrationHub:
                 project_path = operation_data.get("project_path")
                 target_env = operation_data.get("target_env", "development")
                 if not isinstance(project_path, str):
-                    raise ValueError("Invalid project_path")
+                    msg = "Invalid project_path"
+                    raise ValueError(msg)
                 return self.cicd_pipeline.run_pipeline(project_path, target_env)
 
         elif operation_type == "generate_report":
@@ -662,7 +666,8 @@ class EnterpriseIntegrationHub:
                 report_id = operation_data.get("report_id")
                 parameters = operation_data.get("parameters", {})
                 if not isinstance(report_id, str):
-                    raise ValueError("Invalid report_id")
+                    msg = "Invalid report_id"
+                    raise ValueError(msg)
                 return self.analytics_system.generate_report(report_id, parameters)
 
         elif operation_type == "health_check":
@@ -670,10 +675,12 @@ class EnterpriseIntegrationHub:
                 return self.health_monitor.get_dashboard_data()
 
         else:
-            raise ValueError(f"Unknown operation type: {operation_type}")
+            msg = f"Unknown operation type: {operation_type}"
+            raise ValueError(msg)
+        return None
 
     async def shutdown(self) -> None:
-        """Shutdown all enterprise systems"""
+        """Shutdown all enterprise systems."""
         logger.info("[ENTERPRISE] Starting enterprise shutdown...")
 
         self.is_running = False
@@ -733,7 +740,7 @@ enterprise_hub: EnterpriseIntegrationHub | None = None
 
 
 def get_enterprise_hub() -> EnterpriseIntegrationHub:
-    """Get global enterprise hub instance"""
+    """Get global enterprise hub instance."""
     global enterprise_hub
 
     if enterprise_hub is None:
@@ -743,7 +750,7 @@ def get_enterprise_hub() -> EnterpriseIntegrationHub:
 
 
 async def initialize_enterprise() -> EnterpriseIntegrationHub | None:
-    """Initialize complete enterprise system"""
+    """Initialize complete enterprise system."""
     try:
         hub = get_enterprise_hub()
         success = await hub.initialize_all_systems()
@@ -755,12 +762,12 @@ async def initialize_enterprise() -> EnterpriseIntegrationHub | None:
         return None
 
     except Exception as e:
-        logger.error(f"[ENTERPRISE] Enterprise initialization error: {e}")
+        logger.exception(f"[ENTERPRISE] Enterprise initialization error: {e}")
         return None
 
 
 def setup_signal_handlers(hub: EnterpriseIntegrationHub) -> None:
-    """Setup graceful shutdown signal handlers"""
+    """Setup graceful shutdown signal handlers."""
 
     def signal_handler(signum: int, frame: Any) -> None:
         logger.info(f"[ENTERPRISE] Received signal {signum}, initiating shutdown...")

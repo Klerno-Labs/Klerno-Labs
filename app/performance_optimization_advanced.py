@@ -1,5 +1,5 @@
 """Klerno Labs - Advanced Performance Optimization
-Enterprise-grade performance optimization for 0.01% quality applications
+Enterprise-grade performance optimization for 0.01% quality applications.
 """
 
 import asyncio
@@ -17,11 +17,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import psutil
 
-from app._typing_shims import ISyncConnection
+if TYPE_CHECKING:
+    from app._typing_shims import ISyncConnection
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,9 @@ class CacheEntry:
 class AdvancedCache:
     """Multi-tier cache with intelligent eviction and compression."""
 
-    def __init__(self, max_size_mb: int = 100, compression_threshold: int = 1024):
+    def __init__(
+        self, max_size_mb: int = 100, compression_threshold: int = 1024
+    ) -> None:
         self.max_size_bytes = max_size_mb * 1024 * 1024
         self.compression_threshold = compression_threshold
         self.cache: dict[str, CacheEntry] = {}
@@ -229,7 +232,7 @@ class AdvancedCache:
                 return True
 
         except Exception as e:
-            logger.error(f"Cache set error: {e}")
+            logger.exception(f"Cache set error: {e}")
             self.set_times.append((time.time() - start_time) * 1000)
             return False
 
@@ -279,7 +282,7 @@ class AdvancedCache:
 class PerformanceProfiler:
     """Advanced performance profiler with detailed analytics."""
 
-    def __init__(self, db_path: str = "./data/performance.db"):
+    def __init__(self, db_path: str = "./data/performance.db") -> None:
         self.db_path = db_path
         self.metrics: list[PerformanceMetric] = []
         self.operation_times: defaultdict[str, deque[float]] = defaultdict(
@@ -357,7 +360,7 @@ class PerformanceProfiler:
     def _start_system_monitoring(self) -> None:
         """Start background system monitoring."""
 
-        def monitor_system():
+        def monitor_system() -> None:
             while True:
                 try:
                     # Collect system metrics
@@ -372,6 +375,26 @@ class PerformanceProfiler:
                     # Log to database periodically
                     now = datetime.now()
                     if now.second % 30 == 0:  # Every 30 seconds
+                        # Safely extract IO metrics regardless of dict or namedtuple types
+                        rb = 0
+                        wb = 0
+                        bs = 0
+                        br = 0
+                        if disk_io:
+                            if isinstance(disk_io, dict):
+                                rb = int(disk_io.get("read_bytes", 0) or 0)
+                                wb = int(disk_io.get("write_bytes", 0) or 0)
+                            else:
+                                rb = int(getattr(disk_io, "read_bytes", 0) or 0)
+                                wb = int(getattr(disk_io, "write_bytes", 0) or 0)
+                        if network_io:
+                            if isinstance(network_io, dict):
+                                bs = int(network_io.get("bytes_sent", 0) or 0)
+                                br = int(network_io.get("bytes_recv", 0) or 0)
+                            else:
+                                bs = int(getattr(network_io, "bytes_sent", 0) or 0)
+                                br = int(getattr(network_io, "bytes_recv", 0) or 0)
+
                         self._log_system_metrics(
                             {
                                 "timestamp": now,
@@ -379,64 +402,20 @@ class PerformanceProfiler:
                                 "memory_percent": memory.percent,
                                 "memory_available_mb": memory.available / 1024 / 1024,
                                 "disk_io_read_mb": (
-                                    float(
-                                        (
-                                            getattr(disk_io, "read_bytes", None)
-                                            if not isinstance(disk_io, dict)
-                                            else disk_io.get("read_bytes", 0)
-                                        )
-                                        or 0,
-                                    )
-                                    / 1024
-                                    / 1024
-                                    if disk_io
-                                    else 0
+                                    float(rb) / 1024 / 1024 if disk_io else 0
                                 ),
                                 "disk_io_write_mb": (
-                                    float(
-                                        (
-                                            getattr(disk_io, "write_bytes", None)
-                                            if not isinstance(disk_io, dict)
-                                            else disk_io.get("write_bytes", 0)
-                                        )
-                                        or 0,
-                                    )
-                                    / 1024
-                                    / 1024
-                                    if disk_io
-                                    else 0
+                                    float(wb) / 1024 / 1024 if disk_io else 0
                                 ),
-                                "network_bytes_sent": (
-                                    float(
-                                        (
-                                            getattr(network_io, "bytes_sent", None)
-                                            if not isinstance(network_io, dict)
-                                            else network_io.get("bytes_sent", 0)
-                                        )
-                                        or 0,
-                                    )
-                                    if network_io
-                                    else 0
-                                ),
-                                "network_bytes_recv": (
-                                    float(
-                                        (
-                                            getattr(network_io, "bytes_recv", None)
-                                            if not isinstance(network_io, dict)
-                                            else network_io.get("bytes_recv", 0)
-                                        )
-                                        or 0,
-                                    )
-                                    if network_io
-                                    else 0
-                                ),
+                                "network_bytes_sent": float(bs) if network_io else 0,
+                                "network_bytes_recv": float(br) if network_io else 0,
                             },
                         )
 
                     time.sleep(5)
 
                 except Exception as e:
-                    logger.error(f"System monitoring error: {e}")
+                    logger.exception(f"System monitoring error: {e}")
                     time.sleep(10)
 
         # Start monitoring thread
@@ -472,7 +451,7 @@ class PerformanceProfiler:
             conn.close()
 
         except Exception as e:
-            logger.error(f"Error logging system metrics: {e}")
+            logger.exception(f"Error logging system metrics: {e}")
 
     def measure_performance(self, operation: str):
         """Decorator to measure function performance."""
@@ -534,8 +513,7 @@ class PerformanceProfiler:
                 error_details = {}
 
                 try:
-                    result = func(*args, **kwargs)
-                    return result
+                    return func(*args, **kwargs)
                 except Exception as e:
                     status = "error"
                     error_details = {"error": str(e), "type": type(e).__name__}
@@ -613,7 +591,7 @@ class PerformanceProfiler:
             self.metrics.clear()
 
         except Exception as e:
-            logger.error(f"Error flushing performance metrics: {e}")
+            logger.exception(f"Error flushing performance metrics: {e}")
 
     def get_performance_summary(self, hours: int = 1) -> dict[str, Any]:
         """Get performance summary for the last N hours."""
@@ -718,7 +696,7 @@ class PerformanceProfiler:
             }
 
         except Exception as e:
-            logger.error(f"Error getting performance summary: {e}")
+            logger.exception(f"Error getting performance summary: {e}")
             return {"error": str(e)}
 
 

@@ -1,5 +1,5 @@
 """Performance Middleware for FastAPI
-Advanced middleware for performance monitoring and optimization
+Advanced middleware for performance monitoring and optimization.
 """
 
 import asyncio
@@ -61,10 +61,10 @@ def _get_metrics() -> IMetrics:
     except Exception:
 
         class _NoopMetrics:
-            def increment(self, *args, **kwargs):
+            def increment(self, *args, **kwargs) -> None:
                 return None
 
-            def histogram(self, *args, **kwargs):
+            def histogram(self, *args, **kwargs) -> None:
                 return None
 
         return _NoopMetrics()
@@ -78,10 +78,10 @@ def _get_cache() -> ICache:
     except Exception:
 
         class _NoopCache:
-            async def get(self, *args, **kwargs):
+            async def get(self, *args, **kwargs) -> None:
                 return None
 
-            async def set(self, *args, **kwargs):
+            async def set(self, *args, **kwargs) -> None:
                 return None
 
         return _NoopCache()
@@ -93,16 +93,16 @@ cache: ICache = _get_cache()
 
 
 class PerformanceMiddleware(BaseHTTPMiddleware):
-    """Middleware for performance monitoring and optimization"""
+    """Middleware for performance monitoring and optimization."""
 
-    def __init__(self, app, cache_enabled: bool = True, metrics_enabled: bool = True):
+    def __init__(self, app, cache_enabled: bool = True, metrics_enabled: bool = True) -> None:
         super().__init__(app)
         self.cache_enabled = cache_enabled
         self.metrics_enabled = metrics_enabled
         self.slow_request_threshold = 2.0  # seconds
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """Process request with performance monitoring"""
+        """Process request with performance monitoring."""
         start_time = time.time()
         request_id = id(request)
 
@@ -234,7 +234,7 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
                     tags={"endpoint": path, "method": method, "status_code": "500"},
                 )
 
-            logger.error(
+            logger.exception(
                 f"Request failed: {method} {path} - {response_time:.3f}s - {e!s}",
                 extra={
                     "request_id": request_id,
@@ -246,7 +246,7 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
             raise
 
     def _is_cacheable(self, path: str) -> bool:
-        """Check if path is cacheable"""
+        """Check if path is cacheable."""
         cacheable_paths = ["/dashboard", "/analytics", "/health", "/static"]
 
         # Don't cache API endpoints that might have user-specific data
@@ -265,7 +265,7 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
         return False
 
     async def _get_cached_response(self, request: Request) -> Response | None:
-        """Get cached response if available"""
+        """Get cached response if available."""
         cache_key = self._get_cache_key(request)
         cached_data = await cache.get(cache_key)
 
@@ -280,7 +280,7 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
         return None
 
     async def _cache_response(self, request: Request, response: Response) -> None:
-        """Cache response data"""
+        """Cache response data."""
         try:
             # Read response content
             content = b""
@@ -320,14 +320,14 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
                 response.body_iterator = iter([content])  # type: ignore[attr-defined]
 
         except Exception as e:
-            logger.error(f"Cache write error: {e}")
+            logger.exception(f"Cache write error: {e}")
 
     def _get_cache_key(self, request: Request) -> str:
-        """Generate cache key for request"""
+        """Generate cache key for request."""
         return f"response:{request.method}:{request.url.path}:{request.url.query}"
 
     def _get_cache_ttl(self, path: str) -> int:
-        """Get cache TTL based on path"""
+        """Get cache TTL based on path."""
         ttl_map = {
             "/dashboard": 300,  # 5 minutes
             "/analytics": 600,  # 10 minutes
@@ -343,15 +343,15 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
 
 
 class AsyncOptimizationMiddleware(BaseHTTPMiddleware):
-    """Middleware for async optimization"""
+    """Middleware for async optimization."""
 
-    def __init__(self, app, max_request_concurrency: int = 100):
+    def __init__(self, app, max_request_concurrency: int = 100) -> None:
         super().__init__(app)
         self.semaphore = asyncio.Semaphore(max_request_concurrency)
         self.active_requests = 0
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """Process request with concurrency control"""
+        """Process request with concurrency control."""
         async with self.semaphore:
             self.active_requests += 1
 

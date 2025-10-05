@@ -34,9 +34,8 @@ def _get(params: dict[str, Any], api_key: str | None) -> dict[str, Any]:
         p["apikey"] = key
     r = requests.get(BASE_URL, params=p, timeout=15)
     r.raise_for_status()
-    data = r.json()
+    return r.json()
     # BscScan returns {"status":"1","message":"OK","result":[...]} on success
-    return data
 
 
 def _wei_to_bnb(x: str) -> float:
@@ -71,7 +70,7 @@ def fetch_account_tx_bscscan(
     """Fetch recent normal, token, and internal transactions for an address.
     Returns raw payloads as dict: {
         "normal": [...], "token": [...], "internal": [...]
-    }
+    }.
     """
     offset = max(1, min(limit, 10000))
     common = {

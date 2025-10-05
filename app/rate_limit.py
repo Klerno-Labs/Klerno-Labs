@@ -11,20 +11,24 @@ import contextlib
 import os
 import threading
 import time
-from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
-from fastapi import Request
 from fastapi.responses import JSONResponse, Response
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from fastapi import Request
 
 # Optional metrics helpers; safe to import even if metrics unavailable
 try:  # pragma: no cover - import side effects tested elsewhere
     from .metrics import inc_rate_limit_allowed, inc_rate_limit_denied
 except Exception:  # pragma: no cover
 
-    def inc_rate_limit_allowed(backend: str = "memory") -> None:  # type: ignore[no-redef]
+    def inc_rate_limit_allowed(backend: str = "memory") -> None:
         return
 
-    def inc_rate_limit_denied(backend: str = "memory") -> None:  # type: ignore[no-redef]
+    def inc_rate_limit_denied(backend: str = "memory") -> None:
         return
 
 

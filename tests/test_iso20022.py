@@ -12,7 +12,7 @@ from app.iso20022_compliance import (
 )
 
 
-def test_build_and_parse_pain001_roundtrip():
+def test_build_and_parse_pain001_roundtrip() -> None:
     builder = ISO20022MessageBuilder()
     parser = ISO20022Parser()
 
@@ -44,7 +44,7 @@ def test_build_and_parse_pain001_roundtrip():
     assert parsed["payment_instructions"][0]["instruction_id"] == "INSTR - 1"
 
 
-def test_manager_validate_dict_and_xml():
+def test_manager_validate_dict_and_xml() -> None:
     mgr = ISO20022Manager()
 
     # dict validation
@@ -80,7 +80,7 @@ def test_manager_validate_dict_and_xml():
     assert vr2["valid"] is True
 
 
-def test_validator_amount_precision():
+def test_validator_amount_precision() -> None:
     from app.iso20022_compliance import iso20022_validator
 
     assert iso20022_validator.validate_amount("1.123456789012345678")

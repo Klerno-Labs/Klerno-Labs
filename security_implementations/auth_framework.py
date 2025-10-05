@@ -17,8 +17,8 @@ class AuthenticationManager:
     """JWT-based authentication manager."""
 
     def __init__(
-        self, secret_key: str, algorithm: str = "HS256", expiration_hours: int = 24
-    ):
+        self, secret_key: str, algorithm: str = "HS256", expiration_hours: int = 24,
+    ) -> None:
         """Initialize authentication manager."""
         self.secret_key = secret_key
         self.algorithm = algorithm
@@ -34,17 +34,16 @@ class AuthenticationManager:
         """Verify password against hash."""
         try:
             return bcrypt.checkpw(
-                password.encode("utf-8"), hashed_password.encode("utf-8")
+                password.encode("utf-8"), hashed_password.encode("utf-8"),
             )
         except Exception as e:
-            logger.error(f"Password verification error: {e}")
+            logger.exception(f"Password verification error: {e}")
             return False
 
     def create_access_token(
-        self, user_id: str, username: str, roles: list = None
+        self, user_id: str, username: str, roles: list | None = None,
     ) -> str:
         """Create JWT access token."""
-
         if roles is None:
             roles = ["user"]
 
@@ -61,17 +60,16 @@ class AuthenticationManager:
 
         try:
             token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
-            return token
+            return str(token) if isinstance(token, bytes) else token
         except Exception as e:
-            logger.error(f"Token creation error: {e}")
+            logger.exception(f"Token creation error: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Could not create access token",
-            )
+            ) from e
 
     def verify_token(self, token: str) -> dict[str, Any]:
         """Verify and decode JWT token."""
-
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
 
@@ -84,24 +82,23 @@ class AuthenticationManager:
 
             return payload
 
-        except jwt.ExpiredSignatureError:
+        except jwt.ExpiredSignatureError as e:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired"
-            )
-        except jwt.InvalidTokenError:
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired",
+            ) from e
+        except jwt.InvalidTokenError as e:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-            )
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token",
+            ) from e
         except Exception as e:
-            logger.error(f"Token verification error: {e}")
+            logger.exception(f"Token verification error: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not verify token",
-            )
+            ) from e
 
     def create_refresh_token(self, user_id: str) -> str:
         """Create JWT refresh token."""
-
         expiration = datetime.utcnow() + timedelta(days=30)  # Longer expiration
 
         payload = {
@@ -113,24 +110,24 @@ class AuthenticationManager:
 
         try:
             token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
-            return token
+            return str(token) if isinstance(token, bytes) else token
         except Exception as e:
-            logger.error(f"Refresh token creation error: {e}")
+            logger.exception(f"Refresh token creation error: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Could not create refresh token",
-            )
+            ) from e
 
 
 class JWTBearer(HTTPBearer):
     """JWT Bearer token authentication."""
 
-    def __init__(self, auth_manager: AuthenticationManager, auto_error: bool = True):
+    def __init__(self, auth_manager: AuthenticationManager, auto_error: bool = True) -> None:
         super().__init__(auto_error=auto_error)
         self.auth_manager = auth_manager
 
     async def __call__(
-        self, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())
+        self, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
     ):
         if credentials:
             if not credentials.scheme == "Bearer":
@@ -139,13 +136,11 @@ class JWTBearer(HTTPBearer):
                     detail="Invalid authentication scheme",
                 )
 
-            token_data = self.auth_manager.verify_token(credentials.credentials)
-            return token_data
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authorization credentials",
-            )
+            return self.auth_manager.verify_token(credentials.credentials)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization credentials",
+        )
 
 
 def require_roles(required_roles: list):

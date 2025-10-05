@@ -1,5 +1,5 @@
 """Plugin System for Klerno Labs
-Provides extensible API functionality through a plugin architecture
+Provides extensible API functionality through a plugin architecture.
 """
 
 import importlib.util as importlib_util
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class PluginMetadata(BaseModel):
-    """Metadata for a plugin"""
+    """Metadata for a plugin."""
 
     name: str
     version: str
@@ -29,31 +29,31 @@ class PluginMetadata(BaseModel):
 
 
 class PluginHook:
-    """Represents a hook point in the system"""
+    """Represents a hook point in the system."""
 
-    def __init__(self, name: str, description: str = ""):
+    def __init__(self, name: str, description: str = "") -> None:
         self.name = name
         self.description = description
         self.callbacks: list[Callable] = []
 
     def register(self, callback: Callable) -> None:
-        """Register a callback for this hook"""
+        """Register a callback for this hook."""
         self.callbacks.append(callback)
 
     def execute(self, *args: Any, **kwargs: Any) -> list[Any]:
-        """Execute all callbacks for this hook"""
+        """Execute all callbacks for this hook."""
         results = []
         for callback in self.callbacks:
             try:
                 result = callback(*args, **kwargs)
                 results.append(result)
             except Exception as e:
-                logger.error(f"Error executing hook {self.name}: {e}")
+                logger.exception(f"Error executing hook {self.name}: {e}")
         return results
 
 
 class BasePlugin(ABC):
-    """Base class for all plugins"""
+    """Base class for all plugins."""
 
     def __init__(self) -> None:
         self.metadata: PluginMetadata | None = None
@@ -61,14 +61,14 @@ class BasePlugin(ABC):
 
     @abstractmethod
     def get_metadata(self) -> PluginMetadata:
-        """Return plugin metadata"""
+        """Return plugin metadata."""
 
     @abstractmethod
     def initialize(self, app: FastAPI, plugin_manager: "PluginManager") -> None:
-        """Initialize the plugin"""
+        """Initialize the plugin."""
 
     def register_hook(self, hook_name: str, callback: Callable) -> None:
-        """Register a callback for a specific hook"""
+        """Register a callback for a specific hook."""
         if hook_name in self.hooks:
             self.hooks[hook_name].register(callback)
 
@@ -79,16 +79,17 @@ class BasePlugin(ABC):
         endpoint: Callable,
         **kwargs: Any,
     ) -> None:
-        """Helper to add API routes with plugin prefix"""
+        """Helper to add API routes with plugin prefix."""
         if self.metadata is None:
-            raise RuntimeError("Plugin metadata not set; cannot add API route")
+            msg = "Plugin metadata not set; cannot add API route"
+            raise RuntimeError(msg)
 
         plugin_path = f"/plugins/{self.metadata.name.lower()}{path}"
         app.add_api_route(plugin_path, endpoint, **kwargs)
 
 
 class PluginManager:
-    """Manages plugin lifecycle and hooks"""
+    """Manages plugin lifecycle and hooks."""
 
     def __init__(self, app: FastAPI) -> None:
         self.app = app
@@ -100,7 +101,7 @@ class PluginManager:
         self._initialize_core_hooks()
 
     def _initialize_core_hooks(self) -> None:
-        """Initialize core system hooks"""
+        """Initialize core system hooks."""
         self.hooks.update(
             {
                 "transaction_analyzed": PluginHook(
@@ -133,7 +134,7 @@ class PluginManager:
         )
 
     def register_plugin(self, plugin_class: type) -> bool:
-        """Register a plugin class"""
+        """Register a plugin class."""
         try:
             plugin = plugin_class()
             metadata = plugin.get_metadata()
@@ -153,11 +154,11 @@ class PluginManager:
             return True
 
         except Exception as e:
-            logger.error(f"Failed to register plugin {plugin_class.__name__}: {e}")
+            logger.exception(f"Failed to register plugin {plugin_class.__name__}: {e}")
             return False
 
     def load_plugins_from_directory(self, directory: str | Path) -> None:
-        """Load all plugins from a directory"""
+        """Load all plugins from a directory."""
         dir_path = Path(directory)
         if not dir_path.exists():
             logger.warning(f"Plugin directory {directory} does not exist")
@@ -168,11 +169,12 @@ class PluginManager:
                 self._load_plugin_file(str(p))
 
     def _load_plugin_file(self, filepath: str) -> None:
-        """Load a plugin from a Python file"""
+        """Load a plugin from a Python file."""
         try:
             spec = importlib_util.spec_from_file_location("plugin", filepath)
             if spec is None:
-                raise ImportError("Failed to create module spec for plugin")
+                msg = "Failed to create module spec for plugin"
+                raise ImportError(msg)
 
             module = importlib_util.module_from_spec(spec)
 
@@ -180,11 +182,13 @@ class PluginManager:
             # loader that doesn't expose exec_module. Guard against that.
             loader = getattr(spec, "loader", None)
             if loader is None or not hasattr(loader, "exec_module"):
-                raise ImportError("Plugin spec does not have a usable loader")
+                msg = "Plugin spec does not have a usable loader"
+                raise ImportError(msg)
 
             exec_fn = loader.exec_module
             if not callable(exec_fn):
-                raise ImportError("Plugin loader.exec_module is not callable")
+                msg = "Plugin loader.exec_module is not callable"
+                raise ImportError(msg)
 
             # Execute plugin module in isolated namespace
             exec_fn(module)
@@ -199,16 +203,16 @@ class PluginManager:
                     self.register_plugin(obj)
 
         except Exception as e:
-            logger.error(f"Failed to load plugin from {filepath}: {e}")
+            logger.exception(f"Failed to load plugin from {filepath}: {e}")
 
     def execute_hook(self, hook_name: str, *args: Any, **kwargs: Any) -> list[Any]:
-        """Execute all callbacks for a hook"""
+        """Execute all callbacks for a hook."""
         if hook_name in self.hooks:
             return self.hooks[hook_name].execute(*args, **kwargs)
         return []
 
     def get_plugin_info(self, plugin_name: str) -> dict[str, Any] | None:
-        """Get information about a specific plugin"""
+        """Get information about a specific plugin."""
         if plugin_name in self.plugins:
             plugin = self.plugins[plugin_name]
             # Normalize metadata to a mapping so callers always receive a dict
@@ -244,7 +248,7 @@ class PluginManager:
         return None
 
     def list_plugins(self) -> list[dict[str, Any]]:
-        """List all registered plugins"""
+        """List all registered plugins."""
         out: list[dict[str, Any]] = []
         for name, plugin in self.plugins.items():
             metadata: dict[str, Any] | None = None
@@ -262,13 +266,13 @@ class PluginManager:
         return out
 
     def set_plugin_data(self, plugin_name: str, key: str, value: Any) -> None:
-        """Store data for a plugin"""
+        """Store data for a plugin."""
         if plugin_name not in self.plugin_data:
             self.plugin_data[plugin_name] = {}
         self.plugin_data[plugin_name][key] = value
 
     def get_plugin_data(self, plugin_name: str, key: str, default: Any = None) -> Any:
-        """Get data for a plugin"""
+        """Get data for a plugin."""
         return self.plugin_data.get(plugin_name, {}).get(key, default)
 
 
@@ -276,7 +280,7 @@ class PluginManager:
 
 
 class SampleAnalyticsPlugin(BasePlugin):
-    """Sample analytics plugin demonstrating the plugin system"""
+    """Sample analytics plugin demonstrating the plugin system."""
 
     def get_metadata(self) -> PluginMetadata:
         return PluginMetadata(
@@ -289,7 +293,7 @@ class SampleAnalyticsPlugin(BasePlugin):
         )
 
     def initialize(self, app: FastAPI, plugin_manager: PluginManager) -> None:
-        """Initialize the sample analytics plugin"""
+        """Initialize the sample analytics plugin."""
         # Register hook callbacks
         plugin_manager.hooks["transaction_analyzed"].register(
             self.on_transaction_analyzed,
@@ -308,7 +312,7 @@ class SampleAnalyticsPlugin(BasePlugin):
         self,
         transaction_data: dict[str, Any],
     ) -> dict[str, Any]:
-        """Called when a transaction is analyzed"""
+        """Called when a transaction is analyzed."""
         # Add custom analysis
         custom_score = (
             transaction_data.get("amount", 0) * 0.001
@@ -320,7 +324,7 @@ class SampleAnalyticsPlugin(BasePlugin):
         }
 
     async def get_custom_analytics(self) -> dict[str, Any]:
-        """Custom analytics endpoint"""
+        """Custom analytics endpoint."""
         return {
             "plugin": "SampleAnalytics",
             "message": "Custom analytics data from plugin",
@@ -332,7 +336,7 @@ class SampleAnalyticsPlugin(BasePlugin):
 
 
 class CompliancePlugin(BasePlugin):
-    """Sample compliance plugin for regulatory reporting"""
+    """Sample compliance plugin for regulatory reporting."""
 
     def get_metadata(self) -> PluginMetadata:
         return PluginMetadata(
@@ -345,7 +349,7 @@ class CompliancePlugin(BasePlugin):
         )
 
     def initialize(self, app: FastAPI, plugin_manager: PluginManager) -> None:
-        """Initialize the compliance plugin"""
+        """Initialize the compliance plugin."""
         plugin_manager.hooks["alert_generated"].register(self.on_alert_generated)
         plugin_manager.hooks["report_generated"].register(self.on_report_generated)
 
@@ -358,7 +362,7 @@ class CompliancePlugin(BasePlugin):
         )
 
     def on_alert_generated(self, alert_data: dict[str, Any]) -> dict[str, Any]:
-        """Process compliance requirements when alerts are generated"""
+        """Process compliance requirements when alerts are generated."""
         return {
             "plugin": "ComplianceReporting",
             "compliance_checked": True,
@@ -366,7 +370,7 @@ class CompliancePlugin(BasePlugin):
         }
 
     def on_report_generated(self, report_data: dict[str, Any]) -> dict[str, Any]:
-        """Add compliance information to reports"""
+        """Add compliance information to reports."""
         return {
             "plugin": "ComplianceReporting",
             "compliance_summary": "All transactions reviewed for regulatory compliance",
@@ -374,7 +378,7 @@ class CompliancePlugin(BasePlugin):
         }
 
     def _check_regulatory_requirements(self, alert_data: dict[str, Any]) -> list[str]:
-        """Check alert against regulatory requirements"""
+        """Check alert against regulatory requirements."""
         flags = []
         risk_score = alert_data.get("risk_score", 0)
 
@@ -386,7 +390,7 @@ class CompliancePlugin(BasePlugin):
         return flags
 
     async def generate_compliance_report(self) -> dict[str, Any]:
-        """Generate a compliance - focused report"""
+        """Generate a compliance - focused report."""
         return {
             "plugin": "ComplianceReporting",
             "report_type": "regulatory_compliance",
@@ -404,7 +408,7 @@ plugin_manager: PluginManager | None = None
 
 
 def initialize_plugin_system(app: FastAPI) -> PluginManager:
-    """Initialize the plugin system"""
+    """Initialize the plugin system."""
     global plugin_manager
     plugin_manager = PluginManager(app)
 
@@ -421,5 +425,5 @@ def initialize_plugin_system(app: FastAPI) -> PluginManager:
 
 
 def get_plugin_manager() -> PluginManager | None:
-    """Get the global plugin manager instance"""
+    """Get the global plugin manager instance."""
     return plugin_manager

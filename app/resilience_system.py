@@ -1,4 +1,4 @@
-"""Advanced Error Handling & Resilience System
+"""Advanced Error Handling & Resilience System.
 
 Implements circuit breakers, retry mechanisms, graceful degradation,
     failover systems, disaster recovery, and self - healing capabilities
@@ -10,17 +10,19 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
-import random
+import random  # nosec B311
 import threading
 import time
 import traceback
 from collections import defaultdict, deque
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from functools import wraps
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 # weakref not used
 
@@ -95,7 +97,7 @@ class CircuitBreakerConfig:
 class CircuitBreaker:
     """Advanced circuit breaker implementation."""
 
-    def __init__(self, name: str, config: CircuitBreakerConfig):
+    def __init__(self, name: str, config: CircuitBreakerConfig) -> None:
         self.name = name
         self.config = config
         self.state = CircuitState.CLOSED
@@ -122,8 +124,9 @@ class CircuitBreaker:
                     self.success_count = 0
                     logger.info(f"Circuit breaker {self.name} moved to HALF_OPEN")
                 else:
+                    msg = f"Circuit breaker {self.name} is OPEN"
                     raise CircuitBreakerOpenError(
-                        f"Circuit breaker {self.name} is OPEN",
+                        msg,
                     )
 
             try:
@@ -146,8 +149,9 @@ class CircuitBreaker:
                     self.success_count = 0
                     logger.info(f"Circuit breaker {self.name} moved to HALF_OPEN")
                 else:
+                    msg = f"Circuit breaker {self.name} is OPEN"
                     raise CircuitBreakerOpenError(
-                        f"Circuit breaker {self.name} is OPEN",
+                        msg,
                     )
 
             try:
@@ -260,7 +264,7 @@ class CircuitBreakerOpenError(Exception):
 class RetryManager:
     """Advanced retry mechanism with various strategies."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Map function name -> stats dict
         self.retry_stats: defaultdict[str, dict[str, int]] = defaultdict(
             lambda: {
@@ -321,7 +325,7 @@ class RetryManager:
                 if policy.retry_on_exceptions and not any(
                     isinstance(e, exc_type) for exc_type in policy.retry_on_exceptions
                 ):
-                    raise e
+                    raise
 
                 if attempt < policy.max_attempts - 1:
                     delay = self._calculate_delay(attempt, policy)
@@ -335,14 +339,15 @@ class RetryManager:
                     await asyncio.sleep(delay)
                 else:
                     self.retry_stats[func_name]["failed_retries"] += 1
-                    logger.error(
+                    logger.exception(
                         f"All {policy.max_attempts} attempts failed for {func_name}",
                     )
 
         # Ensure we never raise None which would be an invalid exception.
         if last_exception:
             raise last_exception
-        raise RuntimeError(f"All {policy.max_attempts} retry attempts failed")
+        msg = f"All {policy.max_attempts} retry attempts failed"
+        raise RuntimeError(msg)
 
     def _execute_with_retry_sync(
         self,
@@ -371,7 +376,7 @@ class RetryManager:
                 if policy.retry_on_exceptions and not any(
                     isinstance(e, exc_type) for exc_type in policy.retry_on_exceptions
                 ):
-                    raise e
+                    raise
 
                 if attempt < policy.max_attempts - 1:
                     delay = self._calculate_delay(attempt, policy)
@@ -385,13 +390,14 @@ class RetryManager:
                     time.sleep(delay)
                 else:
                     self.retry_stats[func_name]["failed_retries"] += 1
-                    logger.error(
+                    logger.exception(
                         f"All {policy.max_attempts} attempts failed for {func_name}",
                     )
 
         if last_exception:
             raise last_exception
-        raise RuntimeError(f"All {policy.max_attempts} retry attempts failed")
+        msg = f"All {policy.max_attempts} retry attempts failed"
+        raise RuntimeError(msg)
 
     def _calculate_delay(self, attempt: int, policy: RetryPolicy) -> float:
         """Calculate retry delay with exponential backoff and jitter."""
@@ -420,11 +426,11 @@ class RetryManager:
 class FailoverManager:
     """Manages service failover and redundancy."""
 
-    def __init__(self):
-        self.services = {}
-        self.health_checks = {}
-        self.failover_groups = {}
-        self.active_services = {}
+    def __init__(self) -> None:
+        self.services: dict[str, dict[str, Any]] = {}
+        self.health_checks: dict[str, Callable | None] = {}
+        self.failover_groups: dict[str, list[str]] = {}
+        self.active_services: dict[str, str] = {}
         self.lock = threading.RLock()
 
     def register_service(
@@ -457,7 +463,8 @@ class FailoverManager:
         """Get currently active endpoint for service."""
         with self.lock:
             if service_name not in self.services:
-                raise ValueError(f"Service {service_name} not registered")
+                msg = f"Service {service_name} not registered"
+                raise ValueError(msg)
 
             return self.active_services[service_name]
 
@@ -485,7 +492,7 @@ class FailoverManager:
             result = await health_check_func(self.active_services[service_name])
             return HealthStatus(result.get("status", "healthy"))
         except Exception as e:
-            logger.error(f"Health check failed for {service_name}: {e}")
+            logger.exception(f"Health check failed for {service_name}: {e}")
             return HealthStatus.UNHEALTHY
 
     async def _perform_failover(self, service_name: str) -> bool:
@@ -582,10 +589,10 @@ class FailoverManager:
 class GracefulDegradationManager:
     """Manages graceful service degradation."""
 
-    def __init__(self):
-        self.degradation_rules = {}
-        self.current_degradations = {}
-        self.feature_flags = {}
+    def __init__(self) -> None:
+        self.degradation_rules: dict[str, dict[str, Any]] = {}
+        self.current_degradations: dict[str, str] = {}
+        self.feature_flags: dict[str, bool] = {}
         self.lock = threading.RLock()
 
     def register_degradation_rule(
@@ -639,7 +646,7 @@ class GracefulDegradationManager:
 
                         return level
             except Exception as e:
-                logger.error(
+                logger.exception(
                     f"Error evaluating degradation condition for {service_name}: {e}",
                 )
 
@@ -659,13 +666,15 @@ class GracefulDegradationManager:
         current_level = await self.evaluate_degradation(service_name, context)
 
         if service_name not in self.degradation_rules:
-            raise ValueError(f"Service {service_name} not registered for degradation")
+            msg = f"Service {service_name} not registered for degradation"
+            raise ValueError(msg)
 
         rule = self.degradation_rules[service_name]
         degradation_func = rule["levels"].get(current_level)
 
         if not degradation_func:
-            raise ValueError(f"No degradation function for level {current_level}")
+            msg = f"No degradation function for level {current_level}"
+            raise ValueError(msg)
 
         return await degradation_func(context, **kwargs)
 
@@ -678,10 +687,10 @@ class GracefulDegradationManager:
 class SelfHealingManager:
     """Manages self - healing capabilities."""
 
-    def __init__(self):
-        self.healing_rules = {}
-        self.healing_history = []
-        self.auto_healing_enabled = True
+    def __init__(self) -> None:
+        self.healing_rules: dict[str, dict[str, Any]] = {}
+        self.healing_history: list[dict[str, Any]] = []
+        self.auto_healing_enabled: bool = True
         self.lock = threading.RLock()
 
     def register_healing_rule(
@@ -774,7 +783,7 @@ class SelfHealingManager:
             return result
 
         except Exception as heal_error:
-            logger.error(
+            logger.exception(
                 f"Self - healing action failed for pattern {pattern}: {heal_error}",
             )
             return False
@@ -820,8 +829,8 @@ class SelfHealingManager:
 class ResilienceOrchestrator:
     """Main orchestrator for resilience features."""
 
-    def __init__(self):
-        self.circuit_breakers = {}
+    def __init__(self) -> None:
+        self.circuit_breakers: dict[str, CircuitBreaker] = {}
         self.retry_manager = RetryManager()
         self.failover_manager = FailoverManager()
         self.degradation_manager = GracefulDegradationManager()
@@ -883,7 +892,9 @@ class ResilienceOrchestrator:
             try:
                 await self.failover_manager._perform_failover(service_name)
             except Exception as failover_error:
-                logger.error(f"Failover failed for {service_name}: {failover_error}")
+                logger.exception(
+                    f"Failover failed for {service_name}: {failover_error}"
+                )
 
     def _classify_error_severity(self, error: Exception) -> ErrorSeverity:
         """Classify error severity based on type and message."""

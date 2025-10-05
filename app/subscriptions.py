@@ -32,15 +32,16 @@ Manages user subscriptions, tier pricing, and access control.
 import sqlite3
 from enum import Enum
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from fastapi import Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app._typing_shims import ISyncConnection
-
 from .config import settings
 from .security_session import get_current_user
+
+if TYPE_CHECKING:
+    from app._typing_shims import ISyncConnection
 
 
 class SubscriptionTier(str, Enum):
@@ -180,7 +181,7 @@ def init_subscription_db() -> None:
     )
 
     # Insert default tiers if not exist
-    for _tier_id, tier in DEFAULT_TIERS.items():
+    for tier in DEFAULT_TIERS.values():
         cursor.execute(
             """
             INSERT OR IGNORE INTO subscription_tiers
@@ -201,7 +202,7 @@ def init_subscription_db() -> None:
     conn.close()
 
 
-def get_db_connection() -> None:
+def get_db_connection() -> Any:
     """Get a database connection."""
     if settings.USE_SQLITE:
         # Ensure directory exists using pathlib
@@ -211,7 +212,8 @@ def get_db_connection() -> None:
         return conn
     # Use PostgreSQL instead (not implemented in this example)
     # In a real application, you'd use SQLAlchemy or another ORM
-    raise NotImplementedError("PostgreSQL support not implemented")
+    msg = "PostgreSQL support not implemented"
+    raise NotImplementedError(msg)
 
 
 # import typing helpers at module top; duplicate removed
@@ -254,7 +256,8 @@ def get_tier_details(tier_id: str | SubscriptionTier) -> TierDetails:
         if isinstance(tier_key, SubscriptionTier) and tier_key in DEFAULT_TIERS:
             _tier_cache[tier_key] = DEFAULT_TIERS[tier_key]
             return DEFAULT_TIERS[tier_key]
-        raise ValueError(f"Subscription tier {tier_id} not found")
+        msg = f"Subscription tier {tier_id} not found"
+        raise ValueError(msg)
 
     tier = TierDetails(
         id=row["id"],
@@ -625,7 +628,7 @@ async def require_active_subscription(
 
 def check_transaction_limit(user_id: str) -> tuple[bool, int, int]:
     """Check if user has exceeded transaction limit.
-    Returns: (allowed, used_count, limit)
+    Returns: (allowed, used_count, limit).
     """
     subscription = get_user_subscription(user_id)
     if not subscription:

@@ -19,14 +19,14 @@ def setup_temp_db():
     return db_path
 
 
-def teardown_db(path):
+def teardown_db(path) -> None:
     try:
         Path(path).unlink()
     except Exception:
         pass
 
 
-def test_form_login_and_cookie():
+def test_form_login_and_cookie() -> None:
     db_path = setup_temp_db()
 
     import app.main as main_mod

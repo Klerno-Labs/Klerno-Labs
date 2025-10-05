@@ -18,7 +18,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     op.create_table(
         "users",
         sa.Column("id", sa.Integer, primary_key=True),
@@ -59,7 +59,7 @@ def upgrade():
     )
 
 
-def downgrade():
+def downgrade() -> None:
     with op.batch_alter_table("transactions"):
         op.drop_index("idx_transactions_created_at")
     op.drop_table("transactions")

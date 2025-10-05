@@ -16,7 +16,7 @@ def analyze_tx(tx: dict[str, Any], user=Depends(require_user)):
     fee: number | None
     amount: number | None
     direction: "in" | "out" | ...
-    from_address / to_address: optional
+    from_address / to_address: optional.
     """
 
     class Tx:

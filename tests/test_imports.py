@@ -2,7 +2,7 @@ import importlib
 import sys
 
 
-def test_analytics_imports_without_pandas():
+def test_analytics_imports_without_pandas() -> None:
     """Import app.analytics and ensure pandas isn't imported at module import time."""
     # remove pandas if present
     sys.modules.pop("pandas", None)
@@ -15,7 +15,7 @@ def test_analytics_imports_without_pandas():
     )
 
 
-def test_enterprise_analytics_imports_without_pandas():
+def test_enterprise_analytics_imports_without_pandas() -> None:
     sys.modules.pop("pandas", None)
     mod = importlib.import_module("enterprise_analytics")
     assert (

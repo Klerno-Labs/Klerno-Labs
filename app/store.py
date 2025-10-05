@@ -225,12 +225,14 @@ def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> 
             if PSYCOPG_LIBRARY == "psycopg":
                 # psycopg3: connect with the URL directly
                 if psycopg is None:
-                    raise RuntimeError("psycopg (psycopg3) expected but not available")
+                    msg = "psycopg (psycopg3) expected but not available"
+                    raise RuntimeError(msg)
                 return psycopg.connect(DATABASE_URL)
             # psycopg2
             if psycopg is None or RealDictCursor is None:
+                msg = "psycopg2 and RealDictCursor required but not available"
                 raise RuntimeError(
-                    "psycopg2 and RealDictCursor required but not available",
+                    msg,
                 )
             return psycopg.connect(DATABASE_URL, cursor_factory=RealDictCursor)
         except Exception as e:
@@ -244,13 +246,14 @@ def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> 
     # If we get here, raise the last exception to surface connection issues
     if last_exc is not None:
         raise last_exc
-    raise RuntimeError("failed to create postgres connection")
+    msg = "failed to create postgres connection"
+    raise RuntimeError(msg)
 
 
 def _conn() -> Any:
     """Return a DB connection:
     - Postgres if DATABASE_URL & psycopg2 are available
-    - else SQLite
+    - else SQLite.
     """
     return _postgres_conn() if USING_POSTGRES else _sqlite_conn()
 
@@ -520,8 +523,8 @@ def init_db() -> None:
                     cur.execute(
                         f"ALTER TABLE users ADD COLUMN {coldef[0]};",
                     )  # nosec: B608 - migration column definition is an internal constant
-    except Exception as e:
-        print(f"Migration warning: {e}")
+    except Exception:
+        pass
 
     # Create indexes for new OAuth columns (after migration)
     # Create indexes for new OAuth columns (after migration) if possible
@@ -1262,7 +1265,7 @@ def update_user_subscription(user_id: int | str, active: bool = True) -> bool:
 
 def get_settings_for_user(user_id: int) -> dict[str, Any]:
     """Return user's saved settings or {} if none.
-    Keys: x_api_key (str), risk_threshold (float|None), time_range_days (int|None), ui_prefs (dict)
+    Keys: x_api_key (str), risk_threshold (float|None), time_range_days (int|None), ui_prefs (dict).
     """
     try:
         con = _conn()
@@ -1303,9 +1306,8 @@ def get_settings_for_user(user_id: int) -> dict[str, Any]:
         except Exception:
             out["ui_prefs"] = {}
         return out
-    except Exception as e:
+    except Exception:
         # If table doesn't exist or column missing, return empty settings
-        print(f"Database error in get_settings_for_user: {e}")
         return {
             "x_api_key": None,
             "risk_threshold": None,

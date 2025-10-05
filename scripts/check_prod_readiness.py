@@ -18,15 +18,15 @@ WEAK_SECRETS = {"changeme", "secret", "dev", "your-secret-key-change-in-producti
 
 
 def warn(msg: str) -> None:
-    print(f"[WARN] {msg}")
+    sys.stdout.write(f"[WARN] {msg}\n")
 
 
 def fail(msg: str) -> None:
-    print(f"[FAIL] {msg}")
+    sys.stdout.write(f"[FAIL] {msg}\n")
 
 
 def ok(msg: str) -> None:
-    print(f"[OK] {msg}")
+    sys.stdout.write(f"[OK] {msg}\n")
 
 
 def _env_bool(name: str) -> bool:
@@ -138,7 +138,6 @@ def run_checks() -> list[str]:
 
 
 def main() -> int:
-    print("Running production readiness checks...\n")
     problems = run_checks()
     summary = {"ok": len(problems) == 0, "problems": problems}
     sys.stdout.write(json.dumps(summary, indent=2))

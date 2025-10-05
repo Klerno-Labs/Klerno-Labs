@@ -16,7 +16,7 @@ FROM_NAME = os.getenv("SENDGRID_NAME", "Klerno Labs")
 _cached_sg: Any = None
 
 
-def _get_sendgrid_client() -> None:
+def _get_sendgrid_client() -> Any:
     """Create and cache a SendGrid client on first use.
 
     Import SendGrid lazily so importing this module doesn't fail when the
@@ -27,14 +27,15 @@ def _get_sendgrid_client() -> None:
     if _cached_sg is None:
         key = os.getenv("SENDGRID_API_KEY") or _SENDGRID_KEY
         if not key:
+            msg = "SendGrid API key not configured. Set SENDGRID_API_KEY to use mailer"
             raise RuntimeError(
-                "SendGrid API key not configured. Set SENDGRID_API_KEY to use mailer",
+                msg,
             )
-    # Import lazily to avoid import-time dependency on sendgrid
-    import importlib
+        # Import lazily to avoid import-time dependency on sendgrid
+        import importlib
 
-    _sendgrid_module = importlib.import_module("sendgrid")
-    _cached_sg = _sendgrid_module.SendGridAPIClient(key)
+        _sendgrid_module = importlib.import_module("sendgrid")
+        _cached_sg = _sendgrid_module.SendGridAPIClient(key)
     return _cached_sg
 
 
@@ -46,8 +47,9 @@ def send_email(to_email: str, subject: str, content: str) -> None:
     the SendGrid API on success, and raises a RuntimeError on misconfiguration.
     """
     if not FROM_EMAIL:
+        msg = "Sender address not configured. Set SENDGRID_FROM to use mailer"
         raise RuntimeError(
-            "Sender address not configured. Set SENDGRID_FROM to use mailer",
+            msg,
         )
 
     sg = _get_sendgrid_client()

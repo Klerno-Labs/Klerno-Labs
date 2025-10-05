@@ -48,8 +48,6 @@ con.close()
 os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
 os.environ["DB_PATH"] = db_path
 
-print("DEBUG: env DATABASE_URL before import:", os.environ.get("DATABASE_URL"))
-print("DEBUG: env DB_PATH before import:", os.environ.get("DB_PATH"))
 
 import importlib
 
@@ -105,8 +103,8 @@ try:
     )
     con.commit()
     con.close()
-except Exception as e:
-    print("Seed error:", type(e).__name__, str(e))
+except Exception:
+    pass
 
 client = TestClient(app)
 
@@ -115,12 +113,8 @@ try:
     from app import store
 
     user_rec = store.get_user_by_email("test@example.com")
-    print(
-        "store.get_user_by_email ->",
-        {k: user_rec.get(k) for k in ("id", "email", "role")} if user_rec else None,
-    )
-except Exception as e:
-    print("store debug lookup failed:", type(e).__name__, str(e))
+except Exception:
+    pass
 
 # Try posting form data as tests do
 resp = client.post(
@@ -130,22 +124,16 @@ resp = client.post(
         "password": "testpassword",
     },
 )
-print("status", resp.status_code)
-try:
-    print("json:", resp.json())
-except Exception:
-    print("text:", resp.text)
+with contextlib.suppress(Exception):
+    pass
 
 # Try JSON
 resp2 = client.post(
     "/auth/login",
     json={"username": "test@example.com", "password": "testpassword"},
 )
-print("status json", resp2.status_code)
-try:
-    print("json2:", resp2.json())
-except Exception:
-    print("text2:", resp2.text)
+with contextlib.suppress(Exception):
+    pass
 
 # Try form-encoded with explicit email field and request JSON response (tests expect this)
 resp3 = client.post(
@@ -153,12 +141,8 @@ resp3 = client.post(
     data={"email": "test@example.com", "password": "testpassword"},
     headers={"accept": "application/json"},
 )
-print("status form-json-accept", resp3.status_code)
-print("headers:", dict(resp3.headers))
-try:
-    print("json3:", resp3.json())
-except Exception:
-    print("text3:", resp3.text)
+with contextlib.suppress(Exception):
+    pass
 
 # Finally try a urlencoded POST with explicit content-type so the handler returns JSON
 resp4 = client.post(
@@ -169,22 +153,16 @@ resp4 = client.post(
         "accept": "application/json",
     },
 )
-print("status form-urlencoded json-accept", resp4.status_code)
-try:
-    print("json4:", resp4.json())
-except Exception:
-    print("text4:", resp4.text[:200])
+with contextlib.suppress(Exception):
+    pass
 
 # Direct API JSON call to /auth/login/api (programmatic API)
 resp5 = client.post(
     "/auth/login/api",
     json={"email": "test@example.com", "password": "testpassword"},
 )
-print("status api-json", resp5.status_code)
-try:
-    print("json5:", resp5.json())
-except Exception:
-    print("text5:", resp5.text[:200])
+with contextlib.suppress(Exception):
+    pass
 
 # cleanup (best-effort)
 with contextlib.suppress(Exception):

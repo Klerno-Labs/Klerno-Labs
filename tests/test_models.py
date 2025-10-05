@@ -9,7 +9,7 @@ from app.models import ReportRequest, ReportSummary, TaggedTransaction, Transact
 class TestTransaction:
     """Test Transaction model validation."""
 
-    def test_valid_transaction(self):
+    def test_valid_transaction(self) -> None:
         """Test creating a valid transaction."""
         tx = Transaction(
             tx_id="test_123",
@@ -25,7 +25,7 @@ class TestTransaction:
         assert tx.chain == "XRP"
         assert tx.amount == Decimal("100.5")
 
-    def test_transaction_defaults(self):
+    def test_transaction_defaults(self) -> None:
         """Test transaction with default values."""
         tx = Transaction()
         assert tx.tx_id == ""
@@ -33,7 +33,7 @@ class TestTransaction:
         assert tx.amount == Decimal(0)
         assert tx.direction == "out"
 
-    def test_transaction_negative_amount(self):
+    def test_transaction_negative_amount(self) -> None:
         """Test transaction with negative amount."""
         # This should be allowed as outgoing transactions can be negative
         tx = Transaction(
@@ -46,7 +46,7 @@ class TestTransaction:
         )
         assert tx.amount == Decimal("-100.5")
 
-    def test_transaction_zero_fee(self):
+    def test_transaction_zero_fee(self) -> None:
         """Test transaction with zero fee."""
         tx = Transaction(
             tx_id="test_123",
@@ -58,7 +58,7 @@ class TestTransaction:
         )
         assert tx.fee == Decimal(0)
 
-    def test_transaction_address_properties(self):
+    def test_transaction_address_properties(self) -> None:
         """Test address property aliases."""
         tx = Transaction(from_addr="rTestFrom", to_addr="rTestTo")
         assert tx.from_address == "rTestFrom"
@@ -68,7 +68,7 @@ class TestTransaction:
 class TestTaggedTransaction:
     """Test TaggedTransaction model validation."""
 
-    def test_valid_tagged_transaction(self):
+    def test_valid_tagged_transaction(self) -> None:
         """Test creating a valid tagged transaction."""
         tx = TaggedTransaction(
             tx_id="test_123",
@@ -86,7 +86,7 @@ class TestTaggedTransaction:
         assert tx.risk_score == 0.75
         assert tx.category == "transfer"
 
-    def test_risk_score_bounds(self):
+    def test_risk_score_bounds(self) -> None:
         """Test risk score validation bounds."""
         # Valid risk score
         tx = TaggedTransaction(
@@ -135,7 +135,7 @@ class TestTaggedTransaction:
         )
         assert tx_high.risk_score == 1.0
 
-    def test_address_aliases(self):
+    def test_address_aliases(self) -> None:
         """Test address field aliases."""
         tx = TaggedTransaction(
             tx_id="test_123",
@@ -156,7 +156,7 @@ class TestTaggedTransaction:
 class TestReportRequest:
     """Test ReportRequest model validation."""
 
-    def test_valid_report_request(self):
+    def test_valid_report_request(self) -> None:
         """Test creating a valid report request."""
         request = ReportRequest(
             address="rTestWallet",
@@ -167,13 +167,13 @@ class TestReportRequest:
         assert request.address == "rTestWallet"
         assert request.chain == "XRP"
 
-    def test_report_request_defaults(self):
+    def test_report_request_defaults(self) -> None:
         """Test report request with default values."""
         request = ReportRequest()
         assert request.chain == "XRP"
         assert len(request.wallet_addresses) == 0
 
-    def test_report_request_with_wallets(self):
+    def test_report_request_with_wallets(self) -> None:
         """Test report request with wallet addresses."""
         request = ReportRequest(wallet_addresses=["rWallet1", "rWallet2"])
         assert len(request.wallet_addresses) == 2
@@ -183,7 +183,7 @@ class TestReportRequest:
 class TestReportSummary:
     """Test ReportSummary model validation."""
 
-    def test_valid_report_summary(self):
+    def test_valid_report_summary(self) -> None:
         """Test creating a valid report summary."""
         summary = ReportSummary(
             total_transactions=100,
@@ -196,7 +196,7 @@ class TestReportSummary:
         assert summary.high_risk_count == 5
         assert len(summary.categories) == 3
 
-    def test_report_summary_empty_categories(self):
+    def test_report_summary_empty_categories(self) -> None:
         """Test report summary with empty categories."""
         summary = ReportSummary(
             total_transactions=0,
@@ -211,7 +211,7 @@ class TestReportSummary:
 class TestModelSerialization:
     """Test model serialization and deserialization."""
 
-    def test_transaction_json_serialization(self):
+    def test_transaction_json_serialization(self) -> None:
         """Test TaggedTransaction JSON serialization."""
         tx = TaggedTransaction(
             tx_id="test_123",
@@ -235,7 +235,7 @@ class TestModelSerialization:
         assert isinstance(tx_json, str)
         assert "test_123" in tx_json
 
-    def test_transaction_json_deserialization(self):
+    def test_transaction_json_deserialization(self) -> None:
         """Test TaggedTransaction JSON deserialization."""
         tx_data = {
             "tx_id": "test_123",

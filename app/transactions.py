@@ -1,6 +1,6 @@
 # transactions compatibility router
 import contextlib
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 
@@ -20,7 +20,9 @@ _SQL_SELECT_TRANSACTION_BY_ID = (
 
 
 @router.post("/transactions", status_code=201)
-def create_transaction(payload: dict[str, Any] = Body(...), user=Depends(current_user)):
+def create_transaction(
+    payload: Annotated[dict[str, Any], Body()], user=Depends(current_user)
+):
     """Compatibility-friendly transaction creator.
 
     Writes to a legacy `transactions` table when present (tests use this),

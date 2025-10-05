@@ -4,7 +4,7 @@ from app.guardian import score_risk
 from app.models import Transaction
 
 
-def test_large_outgoing_risk():
+def test_large_outgoing_risk() -> None:
     tx = Transaction(
         tx_id="1",
         timestamp=datetime.now(UTC),

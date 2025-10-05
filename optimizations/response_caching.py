@@ -6,7 +6,7 @@ from typing import Any
 class ResponseCache:
     """Simple in-memory response cache with TTL."""
 
-    def __init__(self, default_ttl: int = 300):  # 5 minutes default
+    def __init__(self, default_ttl: int = 300) -> None:  # 5 minutes default
         self.cache: dict[str, dict[str, Any]] = {}
         self.default_ttl = default_ttl
 
@@ -16,8 +16,7 @@ class ResponseCache:
             entry = self.cache[key]
             if time.time() < entry["expires_at"]:
                 return entry["data"]
-            else:
-                del self.cache[key]
+            del self.cache[key]
         return None
 
     def set(self, key: str, data: Any, ttl: int | None = None) -> None:

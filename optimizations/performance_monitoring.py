@@ -7,17 +7,17 @@ from collections import defaultdict, deque
 class PerformanceMonitor:
     """Real-time performance monitoring."""
 
-    def __init__(self, window_size: int = 1000):
+    def __init__(self, window_size: int = 1000) -> None:
         self.window_size = window_size
         self.metrics = defaultdict(lambda: deque(maxlen=window_size))
         self.lock = threading.Lock()
 
-    def record_response_time(self, endpoint: str, response_time_ms: float):
+    def record_response_time(self, endpoint: str, response_time_ms: float) -> None:
         """Record response time for an endpoint."""
         with self.lock:
             self.metrics[f"{endpoint}_response_time"].append(response_time_ms)
 
-    def record_database_query_time(self, query_type: str, time_ms: float):
+    def record_database_query_time(self, query_type: str, time_ms: float) -> None:
         """Record database query execution time."""
         with self.lock:
             self.metrics[f"db_{query_type}_time"].append(time_ms)
@@ -55,8 +55,7 @@ def timed_endpoint(endpoint_name: str):
         def wrapper(*args, **kwargs):
             start_time = time.perf_counter()
             try:
-                result = func(*args, **kwargs)
-                return result
+                return func(*args, **kwargs)
             finally:
                 end_time = time.perf_counter()
                 response_time_ms = (end_time - start_time) * 1000

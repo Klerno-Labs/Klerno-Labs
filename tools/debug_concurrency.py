@@ -11,11 +11,12 @@ import sqlite3
 import sys
 import tempfile
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from httpx import ASGITransport, AsyncClient
 
-from app._typing_shims import ISyncConnection
+if TYPE_CHECKING:
+    from app._typing_shims import ISyncConnection
 
 # Build a small temp DB like tests do
 with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
@@ -74,7 +75,7 @@ if ROOT not in sys.path:
 from app.main import app
 
 
-async def run_test(concurrent=20):
+async def run_test(concurrent=20) -> None:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
 
@@ -87,7 +88,6 @@ async def run_test(concurrent=20):
                 data = resp.json()
             except Exception:
                 data = resp.text
-            print(f"POST {i} -> {resp.status_code} {data}")
             if resp.status_code == 201:
                 txid = data.get("id") if isinstance(data, dict) else None
                 # Verify directly on disk that the transaction exists
@@ -101,19 +101,16 @@ async def run_test(concurrent=20):
                         "SELECT id, amount FROM transactions WHERE id=?",
                         (txid,),
                     )
-                    rr = cur.fetchone()
+                    cur.fetchone()
                     check_con.close()
-                    print(f"DB CHECK {txid} -> {rr}")
-                except Exception as e:
-                    print(f"DB CHECK ERROR for {txid}: {e}")
+                except Exception:
+                    pass
 
-                read = await client.get(f"/transactions/{txid}")
-                print(f"GET {txid} -> {read.status_code} {read.text}")
+                await client.get(f"/transactions/{txid}")
             return resp.status_code
 
         tasks = [op(i) for i in range(concurrent)]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        print("done", results)
+        await asyncio.gather(*tasks, return_exceptions=True)
 
 
 if __name__ == "__main__":

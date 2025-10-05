@@ -11,7 +11,7 @@ def _headers():
     return {"X-API-Key": key} if key else {}
 
 
-def test_build_message_endpoint_pain001():
+def test_build_message_endpoint_pain001() -> None:
     payload = {
         "message_type": "pain.001",
         "data": {
@@ -43,7 +43,7 @@ def test_build_message_endpoint_pain001():
     assert len(j.get("xml", "")) > 0
 
 
-def test_validate_xml_endpoint_pain001():
+def test_validate_xml_endpoint_pain001() -> None:
     # Build XML via endpoint, then post to validate-xml
     payload = {
         "message_type": "pain.001",

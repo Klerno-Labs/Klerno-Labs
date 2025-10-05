@@ -51,32 +51,24 @@ def main(save_token: bool = False, use_keyring: bool = False) -> int:
     paths = ["/auth/login_api", "/auth/login", "/auth/login/api"]
     payload = {"email": "dev@example.com", "password": "anything"}
 
-    print("Probing local ports for login endpoints...\n")
     for port in ports:
         for path in paths:
             url = f"http://127.0.0.1:{port}{path}"
             try:
                 r = requests.post(url, json=payload, timeout=2)
-            except Exception as e_json:
+            except Exception:
                 # Try form-encoded body as a fallback
                 try:
                     r = requests.post(url, data=payload, timeout=2)
-                except Exception as e_form:
-                    print(
-                        f"{url} -> connection error (json:{e_json!r} / form:{e_form!r})",
-                    )
+                except Exception:
                     continue
 
-            print(f"{url} -> {r.status_code}")
             try:
                 body = r.json()
-                print("json:", body)
             except Exception:
                 body = None
-                print("text:", (r.text or "")[:1000])
 
             if r.status_code == 200:
-                print("[SUCCESS] login succeeded at", url)
                 if save_token and body:
                     tokens = {
                         k: body.get(k)
@@ -107,21 +99,16 @@ def main(save_token: bool = False, use_keyring: bool = False) -> int:
                                     payload["email"],
                                     json.dumps(saved),
                                 )
-                                print(
-                                    "Saved tokens to OS keyring (service=klerno.dev.tokens)",
-                                )
                                 return 0
-                            except Exception as e:
-                                print("keyring save failed, falling back to file:", e)
+                            except Exception:
+                                pass
 
                         dest = Path(".run") / "dev_tokens.json"
                         save_tokens(dest, saved)
-                        print(f"Saved tokens to {dest}")
                 return 0
             # small delay to avoid spamming
             time.sleep(0.05)
 
-    print("No successful login found on probed ports/paths")
     return 1
 
 

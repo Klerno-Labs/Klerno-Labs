@@ -3,7 +3,7 @@ import pytest
 from app.crypto_iso20022_integration import CryptoISO20022Manager, SupportedCryptos
 
 
-def test_crypto_generate_payment_happy():
+def test_crypto_generate_payment_happy() -> None:
     mgr = CryptoISO20022Manager()
     payload = mgr.generate_crypto_payment_message(
         crypto=SupportedCryptos.XRP,
@@ -17,7 +17,7 @@ def test_crypto_generate_payment_happy():
     assert float(payload["amount"]["value"]) == 1.0
 
 
-def test_crypto_generate_payment_below_min_raises():
+def test_crypto_generate_payment_below_min_raises() -> None:
     mgr = CryptoISO20022Manager()
     with pytest.raises(ValueError):
         mgr.generate_crypto_payment_message(
@@ -28,7 +28,7 @@ def test_crypto_generate_payment_below_min_raises():
         )
 
 
-def test_get_all_supported_cryptos_contains_xrp():
+def test_get_all_supported_cryptos_contains_xrp() -> None:
     mgr = CryptoISO20022Manager()
     allc = mgr.get_all_supported_cryptos()
     assert "XRP" in allc

@@ -103,33 +103,37 @@ class Settings(BaseSettings):
     )
 
     @field_validator("APP_ENV")
-    def validate_app_env(cls, v: str) -> str:
+    def validate_app_env(self, v: str) -> str:
         """Validate application environment."""
         if v.lower() not in {"dev", "test", "production", "development", "local"}:
+            msg = "APP_ENV must be 'dev', 'test', 'production', 'development', or 'local'"
             raise ValueError(
-                "APP_ENV must be 'dev', 'test', 'production', 'development', or 'local'",
+                msg,
             )
         return v.lower()
 
     @field_validator("XRPL_NET")
-    def validate_xrpl_net(cls, v: str) -> str:
+    def validate_xrpl_net(self, v: str) -> str:
         """Validate XRPL network."""
         if v.lower() not in {"mainnet", "testnet", "devnet"}:
-            raise ValueError("XRPL_NET must be 'mainnet', 'testnet', or 'devnet'")
+            msg = "XRPL_NET must be 'mainnet', 'testnet', or 'devnet'"
+            raise ValueError(msg)
         return v.lower()
 
     @field_validator("COOKIE_SECURE")
-    def validate_cookie_secure(cls, v: str) -> str:
+    def validate_cookie_secure(self, v: str) -> str:
         """Validate cookie secure setting."""
         if v.lower() not in {"auto", "true", "false"}:
-            raise ValueError("COOKIE_SECURE must be 'auto', 'true', or 'false'")
+            msg = "COOKIE_SECURE must be 'auto', 'true', or 'false'"
+            raise ValueError(msg)
         return v.lower()
 
     @field_validator("COOKIE_SAMESITE")
-    def validate_cookie_samesite(cls, v: str) -> str:
+    def validate_cookie_samesite(self, v: str) -> str:
         """Validate cookie samesite setting."""
         if v.lower() not in {"lax", "strict", "none"}:
-            raise ValueError("COOKIE_SAMESITE must be 'lax', 'strict', or 'none'")
+            msg = "COOKIE_SAMESITE must be 'lax', 'strict', or 'none'"
+            raise ValueError(msg)
         return v.lower()
 
     @property

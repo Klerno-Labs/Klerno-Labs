@@ -2,7 +2,7 @@ import contextlib
 import json
 import logging
 from collections.abc import Callable
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -15,12 +15,14 @@ from .audit_logger import (
     log_api_access_denied,
     log_auth_failure,
     log_auth_success,
+)
+from .audit_logger import log_logout as audit_log_logout
+from .audit_logger import log_mfa_enabled as audit_log_mfa_enabled
+from .audit_logger import (
     log_password_reset_confirmed,
     log_password_reset_requested,
     log_user_created,
 )
-from .audit_logger import log_logout as audit_log_logout
-from .audit_logger import log_mfa_enabled as audit_log_mfa_enabled
 from .deps import require_user
 from .refresh_tokens import (
     issue_refresh,
@@ -355,7 +357,9 @@ def signup_api(payload: SignupReq, res: Response) -> dict[str, Any]:
 
 
 @router.get("/mfa/setup")
-def mfa_setup(user: dict[str, Any] = Depends(require_user)) -> MFASetupResponse:
+def mfa_setup(
+    user: Annotated[dict[str, Any], Depends(require_user)],
+) -> MFASetupResponse:
     """Get MFA setup information for current user."""
     user_data = store.get_user_by_id(user["id"])
     if not user_data or not user_data.get("totp_secret"):
@@ -378,7 +382,7 @@ def mfa_setup(user: dict[str, Any] = Depends(require_user)) -> MFASetupResponse:
 
 @router.post("/mfa/enable")
 def enable_mfa(
-    totp_code: str = Form(...),
+    totp_code: Annotated[str, Form()],
     user: dict[str, Any] = Depends(require_user),
 ) -> dict[str, Any]:
     """Enable MFA after user provides valid TOTP code."""
@@ -438,7 +442,7 @@ def request_password_reset(
         tokens = {}
         # Dynamic attribute for ephemeral password reset tokens (test helper)
     # Use setattr so static analyzers don't complain about unknown attrs.
-    store._reset_tokens = tokens
+    setattr(store, "_reset_tokens", tokens)
 
     tokens[reset_token] = {
         "user_id": user["id"],
@@ -540,11 +544,12 @@ def confirm_password_reset(
                 user.get("id"),
             )
         store.update_user_password(user["id"], new_password_hash)
-    except Exception:
+    except Exception as e:
         logger.exception(
             "Failed to update password for user %s during reset",
             user.get("id"),
         )
+        raise HTTPException(status_code=500, detail="Failed to update password") from e
 
     # Invalidate reset token
     with contextlib.suppress(Exception):
@@ -558,9 +563,9 @@ def confirm_password_reset(
 @router.post("/signup")
 def signup_form(
     request: Request,
-    email: str = Form(...),
-    password: str = Form(...),
-    wallet_addresses_json: str | None = Form(None),
+    email: Annotated[str, Form()],
+    password: Annotated[str, Form()],
+    wallet_addresses_json: Annotated[str | None, Form()] = None,
 ) -> Response:
     """Handle form - based signup with wallet addresses."""
     try:
@@ -779,7 +784,7 @@ class RefreshResponse(BaseModel):
     token_type: str = "bearer"
 
 
-@router.post("/token/refresh", response_model=RefreshResponse)
+@router.post("/token/refresh")
 def refresh_token(
     payload: RefreshRequest,
     request: Request,
@@ -827,10 +832,10 @@ def revoke_token(payload: RevokeRequest, request: Request) -> Response:
 @router.post("/login")
 def login_form(
     request: Request,
-    email: str | None = Form(None),
-    username: str | None = Form(None),
-    password: str = Form(...),
-    totp_code: str | None = Form(None),
+    password: Annotated[str, Form()],
+    email: Annotated[str | None, Form()] = None,
+    username: Annotated[str | None, Form()] = None,
+    totp_code: Annotated[str | None, Form()] = None,
 ) -> Response:
     """Handle form - based login."""
     # local bcrypt import removed; verification uses _verify_password which
@@ -990,7 +995,7 @@ def login_form(
 def logout(
     res: Response,
     request: Request,
-    user: dict[str, Any] = Depends(require_user),
+    user: Annotated[dict[str, Any], Depends(require_user)],
 ) -> Response:
     res.delete_cookie("session", path="/")
     with contextlib.suppress(Exception):
@@ -1011,7 +1016,7 @@ def logout(
 
 
 @router.get("/me", response_model=UserOut)
-def me(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+def me(user: Annotated[dict[str, Any], Depends(require_user)]) -> dict[str, Any]:
     return {
         "email": user["email"],
         "role": user["role"],
@@ -1044,7 +1049,9 @@ def oauth_microsoft(request: Request) -> Response:
 
 # ---- DEV helpers while Stripe isn't live ----
 @router.post("/mock/activate")
-def mock_activate(user: dict[str, Any] = Depends(require_user)) -> dict[str, Any]:
+def mock_activate(
+    user: Annotated[dict[str, Any], Depends(require_user)],
+) -> dict[str, Any]:
     """Simulate a paid subscription for the current user."""
     if user["role"] == "admin":
         store.set_subscription_active(user["email"], True)

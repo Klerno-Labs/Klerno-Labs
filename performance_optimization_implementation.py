@@ -2,11 +2,11 @@
 """Performance optimization analysis and implementation."""
 
 import json
+from pathlib import Path
 
 
 def create_performance_optimization_report():
     """Create a comprehensive performance optimization report."""
-
     # Performance metrics collected from tests
     performance_data = {
         "health_endpoint_avg_ms": 5.28,
@@ -112,7 +112,7 @@ def create_performance_optimization_report():
         ],
     }
 
-    report = {
+    return {
         "generated_at": "2025-10-04T21:20:00Z",
         "performance_assessment": assessment,
         "optimization_opportunities": optimizations,
@@ -120,14 +120,12 @@ def create_performance_optimization_report():
         "current_metrics": performance_data,
     }
 
-    return report
 
 
-def implement_response_caching():
+def implement_response_caching() -> str:
     """Implement response caching for performance optimization."""
-
     # Simple in-memory cache implementation
-    cache_implementation = '''
+    return '''
 import functools
 import time
 from typing import Any, Dict, Optional
@@ -197,13 +195,11 @@ def cached_response(ttl: int = 300):
 #     return {"status": "ok", "timestamp": time.time()}
 '''
 
-    return cache_implementation
 
 
-def implement_connection_pooling():
+def implement_connection_pooling() -> str:
     """Implement database connection pooling."""
-
-    pooling_implementation = '''
+    return '''
 import sqlite3
 import threading
 import queue
@@ -266,13 +262,11 @@ def get_pooled_connection():
 #     result = cursor.fetchone()
 '''
 
-    return pooling_implementation
 
 
-def implement_compression_middleware():
+def implement_compression_middleware() -> str:
     """Implement response compression middleware."""
-
-    compression_implementation = '''
+    return '''
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
@@ -297,13 +291,11 @@ def add_performance_middleware(app: FastAPI):
 # add_performance_middleware(app)
 '''
 
-    return compression_implementation
 
 
-def generate_performance_monitoring():
+def generate_performance_monitoring() -> str:
     """Generate performance monitoring utilities."""
-
-    monitoring_code = '''
+    return '''
 import time
 import threading
 import statistics
@@ -373,20 +365,15 @@ def timed_endpoint(endpoint_name: str):
 #     return {"status": "ok"}
 '''
 
-    return monitoring_code
 
 
 def main():
     """Generate comprehensive performance optimization implementation."""
-
-    print("🚀 PERFORMANCE OPTIMIZATION IMPLEMENTATION")
-    print("=" * 60)
-
     # Generate the performance report
     report = create_performance_optimization_report()
 
     # Save comprehensive report
-    with open("performance_optimization_report.json", "w") as f:
+    with Path("performance_optimization_report.json").open("w") as f:
         json.dump(report, f, indent=2)
 
     # Generate implementation files
@@ -398,33 +385,19 @@ def main():
     }
 
     for filename, code in implementations.items():
-        with open(f"optimizations/{filename}", "w") as f:
+        with Path(f"optimizations/{filename}").open("w") as f:
             f.write(code)
 
     # Print summary
-    print(
-        f"✅ Current Performance: {report['performance_assessment']['overall_performance']}"
-    )
-    print(
-        f"✅ Response Time: {report['current_metrics']['health_endpoint_avg_ms']}ms avg"
-    )
-    print(
-        f"✅ Performance Tier: {report['performance_assessment']['performance_tier']}"
-    )
 
-    print("\n💡 Optimization Opportunities:")
-    for opt in report["optimization_opportunities"]["immediate_optimizations"]:
-        print(f"   • {opt['category']}: {opt['impact']}")
+    for _opt in report["optimization_opportunities"]["immediate_optimizations"]:
+        pass
 
-    print("\n📊 Implementation plan saved to: performance_optimization_report.json")
-    print("🔧 Code implementations saved to: optimizations/ directory")
 
     return report
 
 
 if __name__ == "__main__":
     # Create optimizations directory
-    import os
-
-    os.makedirs("optimizations", exist_ok=True)
+    Path("optimizations").mkdir(parents=True, exist_ok=True)
     main()

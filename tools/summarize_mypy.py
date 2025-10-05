@@ -16,7 +16,6 @@ from pathlib import Path
 
 def run_mypy():
     cmd = [sys.executable, "-m", "mypy", "app", "--show-error-codes"]
-    print("Running:", " ".join(cmd))
     p = subprocess.run(cmd, check=False, capture_output=True, text=True)
     out = p.stdout + p.stderr
     path = Path("tools/mypy_full.txt")
@@ -25,7 +24,7 @@ def run_mypy():
     return out, p.returncode
 
 
-def summarize(out, top_n=20, sample_per_file=3):
+def summarize(out, top_n=20, sample_per_file=3) -> None:
     pattern = re.compile(r"^(.*?):(\d+): (error|note): (.*)$", re.MULTILINE)
     errors_by_file = defaultdict(list)
     for m in pattern.finditer(out):
@@ -38,16 +37,13 @@ def summarize(out, top_n=20, sample_per_file=3):
             errors_by_file[path].append((int(line), msg))
     totals = [(len(v), k) for k, v in errors_by_file.items()]
     totals.sort(reverse=True)
-    total_errors = sum(c for c, _ in totals)
-    print(f"Found {total_errors} errors across {len(totals)} files")
-    print("\nTop files:")
-    for count, path in totals[:top_n]:
-        print(f"{count:4d}\t{path}")
+    sum(c for c, _ in totals)
+    for _count, path in totals[:top_n]:
         sample = errors_by_file[path][:sample_per_file]
-        for ln, msg in sample:
-            print(f"    {ln}: {msg}")
+        for _ln, msg in sample:
+            pass
     if len(totals) == 0:
-        print("No errors found")
+        pass
 
 
 if __name__ == "__main__":

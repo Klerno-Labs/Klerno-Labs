@@ -9,7 +9,7 @@ from typing import Any
 class SecurityConfig:
     """Centralized security configuration management."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize security configuration."""
         self.environment = os.getenv("ENVIRONMENT", "development")
 
@@ -31,8 +31,9 @@ class SecurityConfig:
         secret = os.getenv("SECRET_KEY")
         if not secret:
             if self.is_production:
+                msg = "SECRET_KEY environment variable is required in production"
                 raise ValueError(
-                    "SECRET_KEY environment variable is required in production"
+                    msg,
                 )
             # Development fallback (never use in production)
             return "dev-secret-key-change-in-production"
@@ -53,8 +54,7 @@ class SecurityConfig:
         # Default origins based on environment
         if self.is_production:
             return []  # Must be explicitly configured in production
-        else:
-            return ["http://localhost:3000", "http://localhost:8080"]
+        return ["http://localhost:3000", "http://localhost:8080"]
 
     @property
     def rate_limit_requests(self) -> int:
@@ -103,7 +103,7 @@ class SecurityConfig:
                 {
                     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
                     "Content-Security-Policy": self._get_csp_header(),
-                }
+                },
             )
 
         return base_headers
@@ -124,7 +124,6 @@ class SecurityConfig:
 
     def validate_configuration(self) -> dict[str, Any]:
         """Validate security configuration and return status."""
-
         issues = []
         warnings = []
 

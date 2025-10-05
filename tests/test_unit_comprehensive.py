@@ -1,5 +1,5 @@
 """Comprehensive Unit Tests
-Tests individual components and functions in isolation
+Tests individual components and functions in isolation.
 """
 
 from datetime import datetime, timedelta
@@ -19,7 +19,7 @@ from app.paywall import PaywallManager
 class TestUserModel:
     """Test User model functionality."""
 
-    def test_user_creation(self):
+    def test_user_creation(self) -> None:
         """Test user object creation."""
         user = User(
             id=1,
@@ -34,7 +34,7 @@ class TestUserModel:
         assert user.is_active is True
         assert user.is_admin is False
 
-    def test_user_validation(self):
+    def test_user_validation(self) -> None:
         """Test user data validation."""
         with pytest.raises(ValueError):
             User(
@@ -49,7 +49,7 @@ class TestUserModel:
 class TestTransactionModel:
     """Test Transaction model functionality."""
 
-    def test_transaction_creation(self):
+    def test_transaction_creation(self) -> None:
         """Test transaction object creation."""
         transaction = Transaction(
             id=1,
@@ -65,7 +65,7 @@ class TestTransactionModel:
         assert transaction.currency == "USD"
         assert transaction.status == "completed"
 
-    def test_transaction_amount_validation(self):
+    def test_transaction_amount_validation(self) -> None:
         """Test transaction amount validation."""
         with pytest.raises(ValueError):
             Transaction(
@@ -80,7 +80,7 @@ class TestTransactionModel:
 class TestAuthenticationSystem:
     """Test authentication and authorization."""
 
-    def test_create_access_token(self):
+    def test_create_access_token(self) -> None:
         """Test JWT token creation."""
         user_data = {"sub": "test@example.com", "user_id": 1}
         token = create_access_token(data=user_data)
@@ -88,7 +88,7 @@ class TestAuthenticationSystem:
         assert isinstance(token, str)
         assert len(token) > 50  # JWT tokens are typically longer
 
-    def test_verify_token_valid(self):
+    def test_verify_token_valid(self) -> None:
         """Test token verification with valid token."""
         user_data = {"sub": "test@example.com", "user_id": 1}
         token = create_access_token(data=user_data)
@@ -97,12 +97,12 @@ class TestAuthenticationSystem:
         assert payload["sub"] == "test@example.com"
         assert payload["user_id"] == 1
 
-    def test_verify_token_invalid(self):
+    def test_verify_token_invalid(self) -> None:
         """Test token verification with invalid token."""
         with pytest.raises(jwt.PyJWTError):
             verify_token("invalid.jwt.token")
 
-    def test_verify_token_expired(self):
+    def test_verify_token_expired(self) -> None:
         """Test token verification with expired token."""
         user_data = {"sub": "test@example.com", "user_id": 1}
 
@@ -127,7 +127,7 @@ class TestComplianceEngine:
         """Create compliance engine for testing."""
         return ComplianceEngine()
 
-    def test_compliance_tag_creation(self):
+    def test_compliance_tag_creation(self) -> None:
         """Test compliance tag object creation."""
         tag = ComplianceTag(
             transaction_id=1,
@@ -142,7 +142,7 @@ class TestComplianceEngine:
         assert tag.details["reason"] == "large_amount"
 
     @pytest.mark.asyncio
-    async def test_analyze_transaction(self, compliance_engine):
+    async def test_analyze_transaction(self, compliance_engine) -> None:
         """Test transaction analysis."""
         transaction_data = {
             "amount": 50000,
@@ -158,7 +158,7 @@ class TestComplianceEngine:
         assert all(isinstance(tag, ComplianceTag) for tag in tags)
 
     @pytest.mark.asyncio
-    async def test_high_amount_detection(self, compliance_engine):
+    async def test_high_amount_detection(self, compliance_engine) -> None:
         """Test detection of high-amount transactions."""
         transaction_data = {
             "amount": 100000,  # High amount
@@ -183,7 +183,7 @@ class TestGuardianEngine:
         return GuardianEngine()
 
     @pytest.mark.asyncio
-    async def test_anomaly_detection(self, guardian_engine):
+    async def test_anomaly_detection(self, guardian_engine) -> None:
         """Test anomaly detection functionality."""
         transactions = [
             {"amount": 100, "timestamp": datetime.utcnow()},
@@ -198,7 +198,7 @@ class TestGuardianEngine:
         assert anomalies[0]["amount"] == 10000
 
     @pytest.mark.asyncio
-    async def test_pattern_recognition(self, guardian_engine):
+    async def test_pattern_recognition(self, guardian_engine) -> None:
         """Test pattern recognition in transactions."""
         transactions = [
             {"amount": 1000, "to_account": "account_a", "timestamp": datetime.utcnow()},
@@ -220,7 +220,7 @@ class TestPaywallManager:
         """Create paywall manager for testing."""
         return PaywallManager()
 
-    def test_subscription_validation(self, paywall_manager):
+    def test_subscription_validation(self, paywall_manager) -> None:
         """Test subscription status validation."""
         user_data = {
             "subscription_status": "active",
@@ -230,7 +230,7 @@ class TestPaywallManager:
         is_valid = paywall_manager.validate_subscription(user_data)
         assert is_valid is True
 
-    def test_expired_subscription(self, paywall_manager):
+    def test_expired_subscription(self, paywall_manager) -> None:
         """Test expired subscription handling."""
         user_data = {
             "subscription_status": "active",
@@ -240,7 +240,7 @@ class TestPaywallManager:
         is_valid = paywall_manager.validate_subscription(user_data)
         assert is_valid is False
 
-    def test_trial_period_calculation(self, paywall_manager):
+    def test_trial_period_calculation(self, paywall_manager) -> None:
         """Test trial period calculation."""
         signup_date = datetime.utcnow() - timedelta(days=5)
         trial_days_remaining = paywall_manager.calculate_trial_remaining(signup_date)
@@ -251,7 +251,7 @@ class TestPaywallManager:
 class TestUtilityFunctions:
     """Test utility functions."""
 
-    def test_currency_conversion(self):
+    def test_currency_conversion(self) -> None:
         """Test currency conversion functionality."""
         from app.utils import convert_currency
 
@@ -260,7 +260,7 @@ class TestUtilityFunctions:
             result = convert_currency(100, "USD", "EUR")
             assert result == 120.0
 
-    def test_data_validation(self):
+    def test_data_validation(self) -> None:
         """Test data validation utilities."""
         from app.utils import validate_amount, validate_email
 
@@ -270,7 +270,7 @@ class TestUtilityFunctions:
         assert validate_amount(Decimal("100.50")) is True
         assert validate_amount(Decimal(-50)) is False
 
-    def test_encryption_functions(self):
+    def test_encryption_functions(self) -> None:
         """Test encryption and decryption."""
         from app.security.encryption import decrypt_data, encrypt_data
 

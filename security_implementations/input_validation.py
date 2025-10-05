@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 class ValidationError(Exception):
     """Custom validation error."""
 
-    pass
 
 
 class InputSanitizer:
@@ -22,13 +21,14 @@ class InputSanitizer:
     @staticmethod
     def sanitize_string(value: str, max_length: int = 1000) -> str:
         """Sanitize string input to prevent XSS and injection attacks."""
-
         if not isinstance(value, str):
-            raise ValidationError("Input must be a string")
+            msg = "Input must be a string"
+            raise ValidationError(msg)
 
         # Limit length
         if len(value) > max_length:
-            raise ValidationError(f"Input too long (max {max_length} characters)")
+            msg = f"Input too long (max {max_length} characters)"
+            raise ValidationError(msg)
 
         # HTML escape
         sanitized = html.escape(value)
@@ -46,53 +46,57 @@ class InputSanitizer:
 
         for pattern in dangerous_patterns:
             if re.search(pattern, sanitized, re.IGNORECASE):
-                raise ValidationError("Potentially dangerous input detected")
+                msg = "Potentially dangerous input detected"
+                raise ValidationError(msg)
 
         return sanitized
 
     @staticmethod
     def sanitize_email(email: str) -> str:
         """Validate and sanitize email address."""
-
         email = email.strip().lower()
 
         # Basic email pattern
         email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
         if not re.match(email_pattern, email):
-            raise ValidationError("Invalid email format")
+            msg = "Invalid email format"
+            raise ValidationError(msg)
 
         # Additional security checks
         if len(email) > 254:  # RFC 5321 limit
-            raise ValidationError("Email address too long")
+            msg = "Email address too long"
+            raise ValidationError(msg)
 
         return email
 
     @staticmethod
     def sanitize_integer(
-        value: str | int, min_val: int = None, max_val: int = None
+        value: str | int, min_val: int | None = None, max_val: int | None = None,
     ) -> int:
         """Validate and sanitize integer input."""
-
         try:
             int_value = int(value)
-        except (ValueError, TypeError):
-            raise ValidationError("Invalid integer value")
+        except (ValueError, TypeError) as e:
+            msg = "Invalid integer value"
+            raise ValidationError(msg) from e
 
         if min_val is not None and int_value < min_val:
-            raise ValidationError(f"Value must be at least {min_val}")
+            msg = f"Value must be at least {min_val}"
+            raise ValidationError(msg)
 
         if max_val is not None and int_value > max_val:
-            raise ValidationError(f"Value must be at most {max_val}")
+            msg = f"Value must be at most {max_val}"
+            raise ValidationError(msg)
 
         return int_value
 
     @staticmethod
     def sanitize_filename(filename: str) -> str:
         """Sanitize filename to prevent path traversal attacks."""
-
         if not isinstance(filename, str):
-            raise ValidationError("Filename must be a string")
+            msg = "Filename must be a string"
+            raise ValidationError(msg)
 
         # Remove path separators and dangerous characters
         dangerous_chars = ["/", "\\", "..", ":", "*", "?", '"', "<", ">", "|"]
@@ -104,10 +108,12 @@ class InputSanitizer:
         # Ensure filename is not empty and not too long
         sanitized = sanitized.strip()
         if not sanitized:
-            raise ValidationError("Invalid filename")
+            msg = "Invalid filename"
+            raise ValidationError(msg)
 
         if len(sanitized) > 255:
-            raise ValidationError("Filename too long")
+            msg = "Filename too long"
+            raise ValidationError(msg)
 
         return sanitized
 
@@ -131,35 +137,39 @@ class UserCreateModel(SecureBaseModel):
     password: str = Field(..., min_length=8, max_length=128)
 
     @validator("username")
-    def validate_username(cls, v):
+    def validate_username(self, v):
         """Validate username format."""
         if not re.match(r"^[a-zA-Z0-9_]+$", v):
+            msg = "Username can only contain letters, numbers, and underscores"
             raise ValueError(
-                "Username can only contain letters, numbers, and underscores"
+                msg,
             )
         return InputSanitizer.sanitize_string(v)
 
     @validator("email")
-    def validate_email(cls, v):
+    def validate_email(self, v):
         """Validate email format."""
         return InputSanitizer.sanitize_email(v)
 
     @validator("password")
-    def validate_password(cls, v):
+    def validate_password(self, v):
         """Validate password strength."""
-
         # Check password complexity
         if not re.search(r"[A-Z]", v):
-            raise ValueError("Password must contain at least one uppercase letter")
+            msg = "Password must contain at least one uppercase letter"
+            raise ValueError(msg)
 
         if not re.search(r"[a-z]", v):
-            raise ValueError("Password must contain at least one lowercase letter")
+            msg = "Password must contain at least one lowercase letter"
+            raise ValueError(msg)
 
         if not re.search(r"\d", v):
-            raise ValueError("Password must contain at least one digit")
+            msg = "Password must contain at least one digit"
+            raise ValueError(msg)
 
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
-            raise ValueError("Password must contain at least one special character")
+            msg = "Password must contain at least one special character"
+            raise ValueError(msg)
 
         return v  # Don't sanitize passwords
 
@@ -172,23 +182,24 @@ class SearchQueryModel(SecureBaseModel):
     offset: int | None = Field(default=0, ge=0)
 
     @validator("query")
-    def validate_query(cls, v):
+    def validate_query(self, v):
         """Validate search query."""
         return InputSanitizer.sanitize_string(v, max_length=500)
 
 
 def validate_request_size(
-    content_length: str | None, max_size: int = 10 * 1024 * 1024
+    content_length: str | None, max_size: int = 10 * 1024 * 1024,
 ) -> None:
     """Validate request content size to prevent DoS attacks."""
-
     if content_length:
         try:
             size = int(content_length)
             if size > max_size:
-                raise ValidationError(f"Request too large (max {max_size} bytes)")
-        except ValueError:
-            raise ValidationError("Invalid content length")
+                msg = f"Request too large (max {max_size} bytes)"
+                raise ValidationError(msg)
+        except ValueError as e:
+            msg = "Invalid content length"
+            raise ValidationError(msg) from e
 
 
 # Example usage:

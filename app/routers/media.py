@@ -1,9 +1,8 @@
-"""
-Media router for handling media file uploads, serving, and management.
-"""
+"""Media router for handling media file uploads, serving, and management."""
 
 import mimetypes
 from pathlib import Path
+from typing import Annotated
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
@@ -28,7 +27,7 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
 @router.post("/upload")
-async def upload_media(file: UploadFile = File(...)):
+async def upload_media(file: Annotated[UploadFile, File()]):
     """Upload a media file."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
@@ -57,7 +56,8 @@ async def upload_media(file: UploadFile = File(...)):
         return {"filename": file.filename, "size": len(content), "path": str(file_path)}
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to save file: {str(e)}"
+            status_code=500,
+            detail=f"Failed to save file: {e!s}",
         ) from e
 
 
@@ -76,7 +76,7 @@ async def list_media_files():
                     "filename": file_path.name,
                     "size": stat.st_size,
                     "modified": stat.st_mtime,
-                }
+                },
             )
 
     return {"files": files}
@@ -111,5 +111,6 @@ async def delete_media_file(filename: str):
         return {"message": f"File {filename} deleted successfully"}
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to delete file: {str(e)}"
+            status_code=500,
+            detail=f"Failed to delete file: {e!s}",
         ) from e

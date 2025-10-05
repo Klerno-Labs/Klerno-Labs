@@ -96,8 +96,12 @@ async def status() -> StatusResponse:
 
 @router.get("/status/details", response_model=StatusDetailsResponse)
 async def status_details() -> StatusDetailsResponse:
-    # Strict auth toggle via settings helper
-    strict_auth = settings.strict_auth_transactions_enabled()
+    # Strict auth toggle via environment variable
+    strict_auth = os.getenv("STRICT_AUTH_TRANSACTIONS", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
 
     # Rate limit enabled via env
     rl = os.getenv("ENABLE_RATE_LIMIT", "").strip().lower() in {"1", "true", "yes"}
@@ -167,7 +171,9 @@ async def favicon(request: Request) -> Any:
         try:
             with Path(icon_path).open("rb") as f:
                 content = f.read()
-            etag = md5(content, usedforsecurity=False).hexdigest()  # nosec: B324 - ETag generation only
+            etag = md5(
+                content, usedforsecurity=False
+            ).hexdigest()  # nosec: B324 - ETag generation only
             headers["ETag"] = etag
             inm = request.headers.get("if-none-match")
             if inm and inm.strip('"') == etag:
@@ -180,7 +186,9 @@ async def favicon(request: Request) -> Any:
     transparent_png = b64decode(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
     )
-    etag = md5(transparent_png, usedforsecurity=False).hexdigest()  # nosec: B324 - ETag generation only
+    etag = md5(
+        transparent_png, usedforsecurity=False
+    ).hexdigest()  # nosec: B324 - ETag generation only
     headers["ETag"] = etag
     inm = request.headers.get("if-none-match")
     if inm and inm.strip('"') == etag:
@@ -278,5 +286,4 @@ async def csp_recent(limit: int = 50) -> Any:
     if lim == 0:
         return []
     # Convert to list and return newest first
-    items = list(CSP_REPORTS)[-lim:][::-1]
-    return items
+    return list(CSP_REPORTS)[-lim:][::-1]

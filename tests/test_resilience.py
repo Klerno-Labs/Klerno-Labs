@@ -2,6 +2,7 @@
 
 import contextlib
 import time
+from typing import Never
 
 import pytest
 
@@ -13,7 +14,7 @@ from app.resilience_system import (
 )
 
 
-def test_circuit_breaker_closed_to_open():
+def test_circuit_breaker_closed_to_open() -> None:
     """Test circuit breaker transitions from CLOSED to OPEN when failure threshold is reached."""
     config = CircuitBreakerConfig(failure_threshold=2, timeout_duration=1.0)
     cb = CircuitBreaker("test_service", config)
@@ -21,8 +22,9 @@ def test_circuit_breaker_closed_to_open():
     # Initially closed
     assert cb.state == CircuitState.CLOSED
 
-    def failing_function():
-        raise RuntimeError("Service failure")
+    def failing_function() -> Never:
+        msg = "Service failure"
+        raise RuntimeError(msg)
 
     # First failure - should remain closed
     with pytest.raises(RuntimeError):
@@ -37,13 +39,14 @@ def test_circuit_breaker_closed_to_open():
     assert cb.failure_count == 2
 
 
-def test_circuit_breaker_open_blocks_calls():
+def test_circuit_breaker_open_blocks_calls() -> None:
     """Test that circuit breaker blocks calls when open."""
     config = CircuitBreakerConfig(failure_threshold=1, timeout_duration=1.0)
     cb = CircuitBreaker("test_service", config)
 
-    def failing_function():
-        raise RuntimeError("Service failure")
+    def failing_function() -> Never:
+        msg = "Service failure"
+        raise RuntimeError(msg)
 
     # Trigger circuit to open
     with pytest.raises(RuntimeError):
@@ -55,7 +58,7 @@ def test_circuit_breaker_open_blocks_calls():
         cb.call(lambda: "success")
 
 
-def test_circuit_breaker_half_open_recovery():
+def test_circuit_breaker_half_open_recovery() -> None:
     """Test circuit breaker recovery from OPEN to HALF_OPEN to CLOSED."""
     config = CircuitBreakerConfig(
         failure_threshold=1,
@@ -66,7 +69,8 @@ def test_circuit_breaker_half_open_recovery():
 
     # Force circuit to open
     def _raise_test() -> None:
-        raise RuntimeError("test")
+        msg = "test"
+        raise RuntimeError(msg)
 
     with pytest.raises(RuntimeError):
         cb.call(_raise_test)
@@ -88,7 +92,7 @@ def test_circuit_breaker_half_open_recovery():
     assert cb.failure_count == 0
 
 
-def test_circuit_breaker_stats():
+def test_circuit_breaker_stats() -> None:
     """Test circuit breaker statistics tracking."""
     config = CircuitBreakerConfig(failure_threshold=2)
     cb = CircuitBreaker("test_service", config)
@@ -101,7 +105,8 @@ def test_circuit_breaker_stats():
     with contextlib.suppress(RuntimeError):
 
         def _maybe_fail() -> None:
-            raise RuntimeError("failure")
+            msg = "failure"
+            raise RuntimeError(msg)
 
         cb.call(_maybe_fail)
 

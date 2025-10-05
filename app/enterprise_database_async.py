@@ -1,9 +1,8 @@
 """Klerno Labs Enterprise Database Connection Pool & Async Processing
-Advanced database management with connection pooling and async operations
+Advanced database management with connection pooling and async operations.
 """
 
 import asyncio
-import json
 import logging
 import queue
 import sqlite3
@@ -26,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ConnectionStats:
-    """Connection pool statistics"""
+    """Connection pool statistics."""
 
     total_connections: int = 0
     active_connections: int = 0
@@ -40,7 +39,7 @@ class ConnectionStats:
 
 @dataclass
 class AsyncTask:
-    """Async task definition"""
+    """Async task definition."""
 
     task_id: str
     function: Callable
@@ -54,7 +53,7 @@ class AsyncTask:
 
 
 class DatabaseConnectionPool:
-    """Enterprise-grade database connection pool"""
+    """Enterprise-grade database connection pool."""
 
     def __init__(
         self,
@@ -94,7 +93,7 @@ class DatabaseConnectionPool:
         )
 
     def _initialize_pool(self) -> None:
-        """Initialize the connection pool"""
+        """Initialize the connection pool."""
         try:
             # Ensure database directory exists
             Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
@@ -117,10 +116,10 @@ class DatabaseConnectionPool:
             )
 
         except Exception as e:
-            logger.error(f"[DB-POOL] Failed to initialize pool: {e}")
+            logger.exception(f"[DB-POOL] Failed to initialize pool: {e}")
 
     def _create_connection(self) -> ISyncConnection | None:
-        """Create a new database connection"""
+        """Create a new database connection."""
         try:
             conn = sqlite3.connect(
                 self.database_path,
@@ -141,12 +140,13 @@ class DatabaseConnectionPool:
             return cast("ISyncConnection", conn)
 
         except Exception as e:
-            logger.error(f"[DB-POOL] Failed to create connection: {e}")
+            logger.exception(f"[DB-POOL] Failed to create connection: {e}")
             self._stats.failed_connections += 1
-            raise RuntimeError(f"Failed to create DB connection: {e}") from e
+            msg = f"Failed to create DB connection: {e}"
+            raise RuntimeError(msg) from e
 
     def get_connection(self) -> ISyncConnection | None:
-        """Get a connection from the pool"""
+        """Get a connection from the pool."""
         start_time = time.time()
 
         try:
@@ -186,7 +186,7 @@ class DatabaseConnectionPool:
                     return None
 
         except Exception as e:
-            logger.error(f"[DB-POOL] Error getting connection: {e}")
+            logger.exception(f"[DB-POOL] Error getting connection: {e}")
             return None
 
         finally:
@@ -199,11 +199,12 @@ class DatabaseConnectionPool:
             ) / self._stats.total_queries
 
             self._stats.peak_connections = max(
-                self._stats.peak_connections, self._stats.active_connections
+                self._stats.peak_connections,
+                self._stats.active_connections,
             )
 
     def return_connection(self, conn: ISyncConnection) -> None:
-        """Return a connection to the pool"""
+        """Return a connection to the pool."""
         if not conn:
             return
 
@@ -230,10 +231,10 @@ class DatabaseConnectionPool:
                         self._stats.total_connections -= 1
 
         except Exception as e:
-            logger.error(f"[DB-POOL] Error returning connection: {e}")
+            logger.exception(f"[DB-POOL] Error returning connection: {e}")
 
     def _maintenance_worker(self) -> None:
-        """Background maintenance of connections"""
+        """Background maintenance of connections."""
         while True:
             try:
                 time.sleep(300)  # Run every 5 minutes
@@ -275,16 +276,16 @@ class DatabaseConnectionPool:
                 )
 
             except Exception as e:
-                logger.error(f"[DB-POOL] Maintenance error: {e}")
+                logger.exception(f"[DB-POOL] Maintenance error: {e}")
 
     def get_stats(self) -> ConnectionStats:
-        """Get connection pool statistics"""
+        """Get connection pool statistics."""
         with self._lock:
             self._stats.idle_connections = self._pool.qsize()
             return self._stats
 
     def close_all(self) -> None:
-        """Close all connections"""
+        """Close all connections."""
         with self._lock:
             # Close pool connections
             while not self._pool.empty():
@@ -304,7 +305,7 @@ class DatabaseConnectionPool:
 
 
 class AsyncTaskProcessor:
-    """Enterprise async task processing system"""
+    """Enterprise async task processing system."""
 
     def __init__(
         self,
@@ -355,7 +356,7 @@ class AsyncTaskProcessor:
         logger.info(f"[ASYNC] Task processor started with {max_workers} workers")
 
     def submit_task(self, task: AsyncTask) -> str | None:
-        """Submit a task for async processing"""
+        """Submit a task for async processing."""
         try:
             with self._lock:
                 if self._task_queue.qsize() >= self.queue_size:
@@ -373,11 +374,11 @@ class AsyncTaskProcessor:
                 return task.task_id
 
         except Exception as e:
-            logger.error(f"[ASYNC] Error submitting task: {e}")
+            logger.exception(f"[ASYNC] Error submitting task: {e}")
             return None
 
     def schedule_task(self, task: AsyncTask, delay_seconds: int = 0) -> str | None:
-        """Schedule a task for future execution"""
+        """Schedule a task for future execution."""
         try:
             with self._lock:
                 task.scheduled_at = datetime.now() + timedelta(seconds=delay_seconds)
@@ -389,11 +390,11 @@ class AsyncTaskProcessor:
                 return task.task_id
 
         except Exception as e:
-            logger.error(f"[ASYNC] Error scheduling task: {e}")
+            logger.exception(f"[ASYNC] Error scheduling task: {e}")
             return None
 
     def _scheduler_worker(self) -> None:
-        """Process scheduled tasks"""
+        """Process scheduled tasks."""
         while self._running:
             try:
                 current_time = datetime.now()
@@ -421,10 +422,10 @@ class AsyncTaskProcessor:
                 time.sleep(1)  # Check every second
 
             except Exception as e:
-                logger.error(f"[ASYNC] Scheduler error: {e}")
+                logger.exception(f"[ASYNC] Scheduler error: {e}")
 
     def _processor_worker(self) -> None:
-        """Process tasks from queue"""
+        """Process tasks from queue."""
         while self._running:
             try:
                 # Get batch of tasks
@@ -459,10 +460,10 @@ class AsyncTaskProcessor:
                 time.sleep(0.1)  # Small delay to prevent CPU spinning
 
             except Exception as e:
-                logger.error(f"[ASYNC] Processor error: {e}")
+                logger.exception(f"[ASYNC] Processor error: {e}")
 
     def _execute_task(self, task: AsyncTask) -> Any:
-        """Execute a single task"""
+        """Execute a single task."""
         start_time = time.time()
 
         try:
@@ -482,7 +483,7 @@ class AsyncTaskProcessor:
             return result
 
         except Exception as e:
-            logger.error(f"[ASYNC] Task {task.task_id} execution failed: {e}")
+            logger.exception(f"[ASYNC] Task {task.task_id} execution failed: {e}")
             raise
 
     def _handle_task_completion(
@@ -491,7 +492,7 @@ class AsyncTaskProcessor:
         result: Any,
         error: Exception | None,
     ) -> None:
-        """Handle task completion"""
+        """Handle task completion."""
         with self._lock:
             self._stats["processing_tasks"] -= 1
 
@@ -519,7 +520,7 @@ class AsyncTaskProcessor:
                 logger.info(f"[ASYNC] Task {task.task_id} completed successfully")
 
     def get_stats(self) -> dict[str, Any]:
-        """Get task processing statistics"""
+        """Get task processing statistics."""
         with self._lock:
             self._stats["queued_tasks"] = self._task_queue.qsize()
             return self._stats.copy()
@@ -527,19 +528,19 @@ class AsyncTaskProcessor:
     from collections.abc import Sequence
 
     def get_failed_tasks(self) -> Sequence[tuple[object, Exception]]:
-        """Get list[Any] of failed tasks"""
+        """Get list[Any] of failed tasks."""
         with self._lock:
             return self._failed_tasks.copy()
 
     def shutdown(self) -> None:
-        """Shutdown the task processor"""
+        """Shutdown the task processor."""
         self._running = False
         self._executor.shutdown(wait=True)
         logger.info("[ASYNC] Task processor shutdown")
 
 
 class AsyncDatabaseManager:
-    """Async database operations manager"""
+    """Async database operations manager."""
 
     def __init__(self, database_path: str = "./data/klerno.db") -> None:
         self.database_path = database_path
@@ -549,19 +550,19 @@ class AsyncDatabaseManager:
         logger.info("[ASYNC-DB] Async database manager initialized")
 
     async def execute_query(self, query: str, params: tuple[Any, ...] = ()) -> Any:
-        """Execute async database query"""
+        """Execute async database query."""
         loop = asyncio.get_event_loop()
 
-        def _execute() -> None:
+        def _execute() -> Any:
             conn = self._pool.get_connection()
             if not conn:
-                raise Exception("No database connection available")
+                msg = "No database connection available"
+                raise Exception(msg)
 
             try:
                 cursor = conn.execute(query, params)
                 if query.strip().upper().startswith("SELECT"):
-                    results = [dict(row) for row in cursor.fetchall()]
-                    return results
+                    return [dict(row) for row in cursor.fetchall()]
                 conn.commit()
                 return {"affected_rows": cursor.rowcount}
             finally:
@@ -570,13 +571,14 @@ class AsyncDatabaseManager:
         return await loop.run_in_executor(None, _execute)
 
     async def execute_transaction(self, queries: list[tuple[Any, ...]]) -> bool:
-        """Execute multiple queries in a transaction"""
+        """Execute multiple queries in a transaction."""
         loop = asyncio.get_event_loop()
 
-        def _execute() -> None:
+        def _execute() -> bool:
             conn = self._pool.get_connection()
             if not conn:
-                raise Exception("No database connection available")
+                msg = "No database connection available"
+                raise Exception(msg)
 
             try:
                 conn.execute("BEGIN")
@@ -587,9 +589,9 @@ class AsyncDatabaseManager:
                 conn.commit()
                 return True
 
-            except Exception as e:
+            except Exception:
                 conn.rollback()
-                raise e
+                raise
             finally:
                 self._pool.return_connection(conn)
 
@@ -601,7 +603,7 @@ class AsyncDatabaseManager:
         *args,
         **kwargs,
     ) -> str | None:
-        """Submit a background database task"""
+        """Submit a background database task."""
         task = AsyncTask(
             task_id=f"db_task_{int(time.time() * 1000)}",
             function=task_func,
@@ -613,7 +615,7 @@ class AsyncDatabaseManager:
         return self._task_processor.submit_task(task)
 
     def get_database_stats(self) -> dict[str, Any]:
-        """Get comprehensive database statistics"""
+        """Get comprehensive database statistics."""
         pool_stats = self._pool.get_stats()
         task_stats = self._task_processor.get_stats()
 
@@ -633,11 +635,11 @@ class AsyncDatabaseManager:
 
     # Compatibility shim: older callers expect `get_performance_stats`
     def get_performance_stats(self) -> dict[str, Any]:
-        """Backward-compatible alias for get_database_stats"""
+        """Backward-compatible alias for get_database_stats."""
         return self.get_database_stats()
 
     def shutdown(self) -> None:
-        """Shutdown the database manager"""
+        """Shutdown the database manager."""
         self._task_processor.shutdown()
         self._pool.close_all()
         logger.info("[ASYNC-DB] Database manager shutdown")
@@ -653,7 +655,7 @@ database_manager: AsyncDatabaseManager | None = None
 
 
 def get_database_manager() -> AsyncDatabaseManager:
-    """Get global database manager instance"""
+    """Get global database manager instance."""
     global database_manager
 
     if database_manager is None:
@@ -663,13 +665,13 @@ def get_database_manager() -> AsyncDatabaseManager:
 
 
 def initialize_async_database() -> "AsyncDatabaseManager | None":
-    """Initialize async database systems"""
+    """Initialize async database systems."""
     try:
         manager = get_database_manager()
         logger.info("[ASYNC-DB] Enterprise async database systems initialized")
         return manager
     except Exception as e:
-        logger.error(f"[ASYNC-DB] Failed to initialize: {e}")
+        logger.exception(f"[ASYNC-DB] Failed to initialize: {e}")
         return None
 
 
@@ -679,21 +681,18 @@ if __name__ == "__main__":
         manager = get_database_manager()
 
         # Test query
-        results = await manager.execute_query("SELECT COUNT(*) as count FROM users")
-        print(f"User count: {results}")
+        await manager.execute_query("SELECT COUNT(*) as count FROM users")
 
         # Test transaction
-        success = await manager.execute_transaction(
+        await manager.execute_transaction(
             [
                 ("INSERT OR IGNORE INTO test_table (name) VALUES (?)", ("test",)),
                 ("UPDATE test_table SET name = ? WHERE name = ?", ("updated", "test")),
             ],
         )
-        print(f"Transaction success: {success}")
 
         # Get stats
-        stats = manager.get_database_stats()
-        print(f"Database stats: {json.dumps(stats, indent=2)}")
+        manager.get_database_stats()
 
         manager.shutdown()
 

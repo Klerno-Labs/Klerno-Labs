@@ -57,8 +57,7 @@ def main() -> int:
     try:
         r = client.get(f"{url}/ready")
         checks.append(("ready", r.status_code == 200, r.text[:200]))
-    except Exception as exc:
-        print("ready check failed:", exc)
+    except Exception:
         return 2
 
     # /metrics
@@ -66,8 +65,7 @@ def main() -> int:
         r = client.get(f"{url}/metrics")
         ok = r.status_code == 200 and "# HELP" in r.text
         checks.append(("metrics", ok, r.text[:200]))
-    except Exception as exc:
-        print("metrics check failed:", exc)
+    except Exception:
         return 3
 
     # /auth/me (if token available)
@@ -76,13 +74,12 @@ def main() -> int:
             headers = {"Authorization": f"Bearer {token}"}
             r = client.get(f"{url}/auth/me", headers=headers)
             checks.append(("auth.me", r.status_code == 200, r.text[:200]))
-        except Exception as exc:
-            print("auth.me check failed:", exc)
+        except Exception:
             return 4
 
     ok_all = all(ok for _, ok, _ in checks)
-    for name, ok, sample in checks:
-        print(f"{name}: {'OK' if ok else 'FAIL'}\n  sample: {sample}\n")
+    for _name, ok, _sample in checks:
+        pass
 
     return 0 if ok_all else 5
 

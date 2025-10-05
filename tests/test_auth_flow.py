@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 
-def test_login_api_with_temp_sqlite_db():
+def test_login_api_with_temp_sqlite_db() -> None:
     # Create a temp DB file
     tmp = tempfile.NamedTemporaryFile(
         prefix="klerno_test_pytest_",

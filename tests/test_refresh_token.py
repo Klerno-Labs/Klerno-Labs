@@ -5,7 +5,7 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_signup_returns_refresh_token():
+def test_signup_returns_refresh_token() -> None:
     resp = client.post(
         "/auth/signup/api",
         json={"email": "refreshuser@example.com", "password": "StrongP@ssw0rd!"},
@@ -18,7 +18,7 @@ def test_signup_returns_refresh_token():
     assert data["user"]["email"] == "refreshuser@example.com"
 
 
-def test_login_returns_refresh_token():
+def test_login_returns_refresh_token() -> None:
     # User must exist already
     client.post(
         "/auth/signup/api",
@@ -34,7 +34,7 @@ def test_login_returns_refresh_token():
     assert "refresh_token" in data
 
 
-def test_refresh_token_rotation():
+def test_refresh_token_rotation() -> None:
     # Signup to get refresh token
     resp = client.post(
         "/auth/signup/api",
@@ -52,7 +52,7 @@ def test_refresh_token_rotation():
     assert resp3.status_code == 401
 
 
-def test_refresh_token_revocation():
+def test_refresh_token_revocation() -> None:
     resp = client.post(
         "/auth/signup/api",
         json={"email": "revokeuser@example.com", "password": "StrongP@ssw0rd!"},

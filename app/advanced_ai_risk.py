@@ -31,7 +31,8 @@ def _ensure_numpy() -> None:
         # At runtime we require numpy for numerical operations used by the
         # advanced AI risk engine. Convert import failures into a clear
         # RuntimeError so callers can handle or surface a helpful message.
-        raise RuntimeError("numpy is required by advanced_ai_risk") from e
+        msg = "numpy is required by advanced_ai_risk"
+        raise RuntimeError(msg) from e
     except Exception:
         # Let unexpected errors bubble up unchanged
         raise
@@ -79,14 +80,14 @@ class AdvancedRiskScore:
 class AdvancedAIRiskEngine:
     """AI - powered advanced risk scoring engine."""
 
-    def __init__(self):
-        self.isolation_forest = None
-        self.risk_classifier = None
-        self.scaler = None
+    def __init__(self) -> None:
+        self.isolation_forest: Any = None
+        self.risk_classifier: Any = None
+        self.scaler: Any = None
         self.is_trained = False
         self._initialize_models()
 
-    def _initialize_models(self):
+    def _initialize_models(self) -> None:
         """Initialize AI models with synthetic training data."""
         # Import sklearn here to avoid heavy import at module import-time
         try:
@@ -98,7 +99,8 @@ class AdvancedAIRiskEngine:
             RandomForestClassifier = sk_mod.RandomForestClassifier
             StandardScaler = prep_mod.StandardScaler
         except Exception as e:
-            raise RuntimeError("sklearn is required to initialize AI models") from e
+            msg = "sklearn is required to initialize AI models"
+            raise RuntimeError(msg) from e
         # Generate synthetic training data for demonstration
         # In production, this would use real historical data
         X_train, y_train = self._generate_training_data()
@@ -108,6 +110,7 @@ class AdvancedAIRiskEngine:
         self.isolation_forest = IsolationForest(contamination=0.1, random_state=42)
         self.risk_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
 
+        # These are non-None right after initialization above
         X_scaled = self.scaler.fit_transform(X_train)
         self.isolation_forest.fit(X_scaled)
         self.risk_classifier.fit(X_scaled, y_train)
@@ -115,7 +118,7 @@ class AdvancedAIRiskEngine:
 
         logger.info("Advanced AI risk models initialized and trained")
 
-    def _generate_training_data(self) -> tuple:
+    def _generate_training_data(self) -> tuple[Any, Any]:
         """Generate synthetic training data."""
         _ensure_numpy()
         np.random.seed(42)
@@ -182,25 +185,29 @@ class AdvancedAIRiskEngine:
             or self.isolation_forest is None
             or self.risk_classifier is None
         ):
-            raise RuntimeError("AI models not trained or not initialized")
+            msg = "AI models not trained or not initialized"
+            raise RuntimeError(msg)
 
         # Extract features from transaction
         features = self._extract_features(transaction_data, user_history or [])
 
         # Scale features
         if self.scaler is None:
-            raise RuntimeError("Scaler not initialized")
+            msg = "Scaler not initialized"
+            raise RuntimeError(msg)
         features_scaled = self.scaler.transform([features])
 
         # Get anomaly score
         if self.isolation_forest is None:
-            raise RuntimeError("Isolation forest not initialized")
+            msg = "Isolation forest not initialized"
+            raise RuntimeError(msg)
         anomaly_score = self.isolation_forest.decision_function(features_scaled)[0]
         is_anomaly = self.isolation_forest.predict(features_scaled)[0] == -1
 
         # Get risk classification
         if self.risk_classifier is None:
-            raise RuntimeError("Risk classifier not initialized")
+            msg = "Risk classifier not initialized"
+            raise RuntimeError(msg)
         risk_proba = self.risk_classifier.predict_proba(features_scaled)[0]
 
         # Calculate overall risk score
@@ -256,7 +263,7 @@ class AdvancedAIRiskEngine:
         # Time - based features
         tx_time = transaction.get("timestamp", datetime.now(UTC))
         if isinstance(tx_time, str):
-            tx_time = datetime.fromisoformat(tx_time.replace("Z", "+00:00"))
+            tx_time = datetime.fromisoformat(tx_time)
         hour = tx_time.hour
 
         # Geographical risk (mock - based on addresses or known patterns)
@@ -441,7 +448,7 @@ class AdvancedAIRiskEngine:
         """Check if transaction is within recent timeframe."""
         tx_time = transaction.get("timestamp", datetime.now(UTC))
         if isinstance(tx_time, str):
-            tx_time = datetime.fromisoformat(tx_time.replace("Z", "+00:00"))
+            tx_time = datetime.fromisoformat(tx_time)
 
         return (datetime.now(UTC) - tx_time).days <= days
 

@@ -5,6 +5,11 @@ external code can reliably access subpackages like ``app.integrations``
 via the top-level ``app`` package (some tests patch those import paths).
 """
 
+import logging
+import types
+from collections.abc import Callable
+from typing import Any
+
 # Ensure structured logging is configured as early as possible so that
 # modules which call structlog.get_logger() at import-time will receive
 # the stdlib-backed logger instances our processors expect (avoids
@@ -18,14 +23,13 @@ try:
 
     with _contextlib.suppress(Exception):
         configure_logging()
+
 except Exception:
     # If the logging config module cannot be imported (very early
     # startup edge cases), skip and let callers configure logging later.
     pass
 
-import types
-from collections.abc import Callable
-from typing import Any
+logger = logging.getLogger(__name__)
 
 # Provide a minimal module object so `integrations` is always a module-like
 # object (avoids assigning None to a variable that later holds ModuleType).
@@ -44,6 +48,35 @@ except Exception:
     # package layout is mixed during consolidation.
     try:
         import integrations as integrations
+
+        # Expose the top-level integrations package under the app namespace so
+        # import resolution and unittest.mock.patch("app.integrations.xrp.*") work
+        # even though there is no physical app/integrations/ package on disk.
+        try:
+            import sys as _sys
+
+            _sys.modules.setdefault("app.integrations", integrations)
+        except Exception:
+            pass
+
+        # Ensure common submodules are imported and reachable as attributes so
+        # attribute traversal (pkgutil.resolve_name) can find them without needing
+        # a successful intermediate import of app.integrations.
+        try:
+            import importlib as _importlib
+
+            for _sub in ("xrp", "bsc", "bscscan"):
+                try:
+                    real = _importlib.import_module(f"integrations.{_sub}")
+                    # Register under both namespaces to aid patchers
+                    _sys.modules[f"app.integrations.{_sub}"] = real
+                    setattr(integrations, _sub, real)
+                except Exception:
+                    # If a submodule fails to import, skip silently; fallback
+                    # shim below will still provide placeholders when needed.
+                    pass
+        except Exception:
+            pass
     except Exception:
         # Provide a lightweight shim module so tests can patch attributes
         # like `app.integrations.xrp.get_xrpl_client` without raising
@@ -64,7 +97,7 @@ except Exception:
 
             if _sub == "xrp":
 
-                def _stub_get_xrpl_client(*args, **kwargs):
+                def _stub_get_xrpl_client(*args, **kwargs) -> None:
                     return None
 
                 def _stub_fetch_account_tx(account: str, limit: int = 10):
@@ -72,8 +105,8 @@ except Exception:
 
                 for m in (submod, app_sub):
                     # use setattr to keep static checkers happier about dynamic attrs
-                    m.get_xrpl_client = _stub_get_xrpl_client
-                    m.fetch_account_tx = _stub_fetch_account_tx
+                    m.get_xrpl_client = _stub_get_xrpl_client  # type: ignore[attr-defined]
+                    m.fetch_account_tx = _stub_fetch_account_tx  # type: ignore[attr-defined]
 
             setattr(integrations, _sub, submod)
             setattr(integrations, _sub, submod)
@@ -83,14 +116,14 @@ except Exception:
             try:
                 sys.modules[f"integrations.{_sub}"] = submod
                 sys.modules[f"app.integrations.{_sub}"] = app_sub
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Failed to register module integrations.{_sub}: {e}")
 
         try:
             sys.modules["integrations"] = integrations
             sys.modules["app.integrations"] = integrations
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to register integrations module: {e}")
 
         # Ensure `app.integrations` attribute points at our shim module
         integrations.__name__ = "integrations"
@@ -142,7 +175,7 @@ except Exception:
     class _AuthShim:
         """Lightweight auth shim exposing a minimal API used by tests."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             # Try to bind to the real security/session values if available
             try:
                 from . import security_session as _ss
@@ -184,9 +217,9 @@ try:
     import builtins
 
     if create_access_token is not None and not hasattr(builtins, "create_access_token"):
-        builtins.create_access_token = create_access_token
+        builtins.create_access_token = create_access_token  # type: ignore[attr-defined]
     if verify_token is not None and not hasattr(builtins, "verify_token"):
-        builtins.verify_token = verify_token
+        builtins.verify_token = verify_token  # type: ignore[attr-defined]
 except Exception:
     # ignore failures when running in restricted environments
     pass
@@ -221,9 +254,14 @@ try:
     if real_xrp is not None:
         try:
             # Ensure both top-level and app-level references point to the real module
-            integrations.xrp = real_xrp
             _sys.modules["integrations.xrp"] = real_xrp
             _sys.modules["app.integrations.xrp"] = real_xrp
+            # Also ensure attribute is set on the integrations package object that
+            # our app exposes so getattr(app.integrations, "xrp") succeeds.
+            try:
+                setattr(integrations, "xrp", real_xrp)
+            except Exception:
+                pass
         except Exception:
             pass
 except Exception:

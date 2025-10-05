@@ -1,4 +1,4 @@
-"""Comprehensive Testing Suite
+"""Comprehensive Testing Suite.
 
 99.9%+ code coverage testing with unit tests, integration tests,
     end - to - end tests, performance tests, security tests, and automated
@@ -62,7 +62,7 @@ class TestSuite:
 class TestRunner:
     """Advanced test runner with comprehensive coverage."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.results: list[TestResult] = []
         self.coverage_data: dict[str, Any] = {}
         self.test_suites: list[TestSuite] = []
@@ -152,7 +152,7 @@ class TestRunner:
 
         except Exception as e:
             cov.stop()
-            logger.error(f"Test run failed: {e}")
+            logger.exception(f"Test run failed: {e}")
             return {
                 "status": "failed",
                 "error": str(e),
@@ -205,7 +205,7 @@ class TestRunner:
                     stderr=asyncio.subprocess.PIPE,
                 )
 
-                stdout, stderr = await process.communicate()
+                _stdout, stderr = await process.communicate()
                 duration = (time.time() - start_time) * 1000
 
                 # Parse test results
@@ -674,7 +674,7 @@ class TestRunner:
                 "coverage_threshold_met": coverage_percent >= 99.0,
             }
         except Exception as e:
-            logger.error(f"Coverage report generation failed: {e}")
+            logger.exception(f"Coverage report generation failed: {e}")
             return {"overall_coverage": 0.0, "error": str(e)}
 
     def _calculate_test_summary(
@@ -775,16 +775,16 @@ class TestRunner:
                 conn.commit()
 
         except Exception as e:
-            logger.error(f"Failed to store test results: {e}")
+            logger.exception(f"Failed to store test results: {e}")
 
 
 class ContinuousTestingPipeline:
     """Continuous testing pipeline."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.test_runner = TestRunner()
         self.pipeline_running = False
-        self.test_schedule = []
+        self.test_schedule: list[str] = []
 
     def setup_default_test_suites(self) -> None:
         """Setup default test suites."""
@@ -885,7 +885,7 @@ class ContinuousTestingPipeline:
 
         self.pipeline_running = True
 
-        def pipeline_loop():
+        def pipeline_loop() -> None:
             while self.pipeline_running:
                 try:
                     # Run quick tests more frequently
@@ -899,7 +899,7 @@ class ContinuousTestingPipeline:
                         asyncio.run(self.run_full_test_suite())
 
                 except Exception as e:
-                    logger.error(f"Continuous testing error: {e}")
+                    logger.exception(f"Continuous testing error: {e}")
                     time.sleep(300)  # Wait 5 minutes before retry
 
         thread = threading.Thread(target=pipeline_loop, daemon=True)
@@ -969,7 +969,7 @@ class ContinuousTestingPipeline:
                 return {"test_runs": runs}
 
         except Exception as e:
-            logger.error(f"Failed to get test history: {e}")
+            logger.exception(f"Failed to get test history: {e}")
             return {"error": str(e)}
 
 

@@ -12,16 +12,16 @@ from fastapi import WebSocket, WebSocketDisconnect
 
 
 class ConnectionManager:
-    """Manages WebSocket connections and real-time communication"""
+    """Manages WebSocket connections and real-time communication."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: dict[str, WebSocket] = {}
         self.user_sessions: dict[str, dict] = {}
         self.room_connections: dict[str, set[str]] = {}
         self.user_presence: dict[str, dict] = {}
 
-    async def connect(self, websocket: WebSocket, user_id: str = None):
-        """Accept WebSocket connection and register user"""
+    async def connect(self, websocket: WebSocket, user_id: str | None = None):
+        """Accept WebSocket connection and register user."""
         await websocket.accept()
 
         connection_id = str(uuid.uuid4())
@@ -41,8 +41,7 @@ class ConnectionManager:
         self.user_presence[user_id] = {
             "status": "online",
             "last_seen": datetime.now().isoformat(),
-            "connections": self.user_presence.get(user_id, {}).get("connections", [])
-            + [connection_id],
+            "connections": [*self.user_presence.get(user_id, {}).get("connections", []), connection_id],
         }
 
         # Notify others about user joining
@@ -50,8 +49,8 @@ class ConnectionManager:
 
         return connection_id
 
-    async def disconnect(self, connection_id: str):
-        """Handle WebSocket disconnection"""
+    async def disconnect(self, connection_id: str) -> None:
+        """Handle WebSocket disconnection."""
         if connection_id in self.active_connections:
             session = self.user_sessions.get(connection_id, {})
             user_id = session.get("user_id")
@@ -77,8 +76,8 @@ class ConnectionManager:
 
                 self.user_presence[user_id]["connections"] = connections
 
-    async def send_personal_message(self, message: str, connection_id: str):
-        """Send message to specific connection"""
+    async def send_personal_message(self, message: str, connection_id: str) -> None:
+        """Send message to specific connection."""
         if connection_id in self.active_connections:
             websocket = self.active_connections[connection_id]
             try:
@@ -86,8 +85,8 @@ class ConnectionManager:
             except Exception:
                 await self.disconnect(connection_id)
 
-    async def send_to_user(self, message: dict, user_id: str):
-        """Send message to all connections of a specific user"""
+    async def send_to_user(self, message: dict, user_id: str) -> None:
+        """Send message to all connections of a specific user."""
         if user_id in self.user_presence:
             connections = self.user_presence[user_id].get("connections", [])
             for connection_id in connections[
@@ -95,8 +94,8 @@ class ConnectionManager:
             ]:  # Copy to avoid modification during iteration
                 await self.send_personal_message(json.dumps(message), connection_id)
 
-    async def broadcast(self, message: dict, exclude_user: str = None):
-        """Broadcast message to all connected users"""
+    async def broadcast(self, message: dict, exclude_user: str | None = None) -> None:
+        """Broadcast message to all connected users."""
         message_json = json.dumps(message)
         disconnected = []
 
@@ -115,9 +114,9 @@ class ConnectionManager:
             await self.disconnect(connection_id)
 
     async def broadcast_to_room(
-        self, message: dict, room_id: str, exclude_user: str = None
-    ):
-        """Broadcast message to all users in a specific room"""
+        self, message: dict, room_id: str, exclude_user: str | None = None,
+    ) -> None:
+        """Broadcast message to all users in a specific room."""
         if room_id in self.room_connections:
             for connection_id in list(self.room_connections[room_id]):
                 session = self.user_sessions.get(connection_id, {})
@@ -125,8 +124,8 @@ class ConnectionManager:
                     continue
                 await self.send_personal_message(json.dumps(message), connection_id)
 
-    async def join_room(self, connection_id: str, room_id: str):
-        """Add user to a room"""
+    async def join_room(self, connection_id: str, room_id: str) -> None:
+        """Add user to a room."""
         if room_id not in self.room_connections:
             self.room_connections[room_id] = set()
         self.room_connections[room_id].add(connection_id)
@@ -146,8 +145,8 @@ class ConnectionManager:
             exclude_user=user_id,
         )
 
-    async def leave_room(self, connection_id: str, room_id: str):
-        """Remove user from a room"""
+    async def leave_room(self, connection_id: str, room_id: str) -> None:
+        """Remove user from a room."""
         if room_id in self.room_connections:
             self.room_connections[room_id].discard(connection_id)
             if not self.room_connections[room_id]:
@@ -168,8 +167,8 @@ class ConnectionManager:
             exclude_user=user_id,
         )
 
-    async def broadcast_user_presence(self, user_id: str, action: str):
-        """Broadcast user presence changes"""
+    async def broadcast_user_presence(self, user_id: str, action: str) -> None:
+        """Broadcast user presence changes."""
         presence_data = self.user_presence.get(user_id, {})
         await self.broadcast(
             {
@@ -183,7 +182,7 @@ class ConnectionManager:
         )
 
     def get_active_users(self) -> list[dict]:
-        """Get list of active users"""
+        """Get list of active users."""
         active_users = []
         for user_id, presence in self.user_presence.items():
             if presence.get("status") == "online":
@@ -193,12 +192,12 @@ class ConnectionManager:
                         "status": presence.get("status"),
                         "last_seen": presence.get("last_seen"),
                         "connection_count": len(presence.get("connections", [])),
-                    }
+                    },
                 )
         return active_users
 
     def get_room_members(self, room_id: str) -> list[str]:
-        """Get list of users in a room"""
+        """Get list of users in a room."""
         if room_id not in self.room_connections:
             return []
 
@@ -216,8 +215,8 @@ manager = ConnectionManager()
 
 
 # WebSocket endpoint for FastAPI
-async def websocket_endpoint(websocket: WebSocket, user_id: str = None):
-    """Main WebSocket endpoint"""
+async def websocket_endpoint(websocket: WebSocket, user_id: str | None = None) -> None:
+    """Main WebSocket endpoint."""
     connection_id = await manager.connect(websocket, user_id)
 
     try:
@@ -234,8 +233,8 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str = None):
         await manager.disconnect(connection_id)
 
 
-async def handle_websocket_message(connection_id: str, message: dict):
-    """Handle incoming WebSocket messages"""
+async def handle_websocket_message(connection_id: str, message: dict) -> None:
+    """Handle incoming WebSocket messages."""
     message_type = message.get("type")
     session = manager.user_sessions.get(connection_id, {})
     user_id = session.get("user_id")

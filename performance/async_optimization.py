@@ -1,5 +1,5 @@
 """Async Performance Optimizations
-Advanced async patterns, concurrency control, and performance improvements
+Advanced async patterns, concurrency control, and performance improvements.
 """
 
 import asyncio
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ConcurrencyStats:
-    """Concurrency performance statistics"""
+    """Concurrency performance statistics."""
 
     total_tasks: int = 0
     completed_tasks: int = 0
@@ -28,9 +28,9 @@ class ConcurrencyStats:
 
 
 class AsyncSemaphorePool:
-    """Async semaphore pool for controlling concurrency"""
+    """Async semaphore pool for controlling concurrency."""
 
-    def __init__(self, max_concurrent: int = 10):
+    def __init__(self, max_concurrent: int = 10) -> None:
         self.max_concurrent = max_concurrent
         self.semaphore = asyncio.Semaphore(max_concurrent)
         self.stats = ConcurrencyStats(max_concurrent=max_concurrent)
@@ -38,7 +38,7 @@ class AsyncSemaphorePool:
 
     @asynccontextmanager
     async def acquire(self):
-        """Acquire semaphore with statistics tracking"""
+        """Acquire semaphore with statistics tracking."""
         await self.semaphore.acquire()
 
         task_id = id(asyncio.current_task())
@@ -64,7 +64,7 @@ class AsyncSemaphorePool:
 
         except Exception as e:
             self.stats.failed_tasks += 1
-            logger.error(f"Task failed: {e}")
+            logger.exception(f"Task failed: {e}")
             raise
 
         finally:
@@ -74,9 +74,9 @@ class AsyncSemaphorePool:
 
 
 class BatchProcessor:
-    """Batch processing for improved throughput"""
+    """Batch processing for improved throughput."""
 
-    def __init__(self, batch_size: int = 50, batch_timeout: float = 1.0):
+    def __init__(self, batch_size: int = 50, batch_timeout: float = 1.0) -> None:
         self.batch_size = batch_size
         self.batch_timeout = batch_timeout
         self.pending_items: list[Any] = []
@@ -88,23 +88,23 @@ class BatchProcessor:
         self,
         name: str,
         processor: Callable[[list[Any]], Awaitable[list[Any]]],
-    ):
-        """Register a batch processor function"""
+    ) -> None:
+        """Register a batch processor function."""
         self.batch_processors[name] = processor
 
-    async def start(self):
-        """Start batch processing"""
+    async def start(self) -> None:
+        """Start batch processing."""
         if not self._processing_task:
             self._processing_task = asyncio.create_task(self._process_batches())
 
-    async def stop(self):
-        """Stop batch processing"""
+    async def stop(self) -> None:
+        """Stop batch processing."""
         self._shutdown = True
         if self._processing_task:
             await self._processing_task
 
     async def add_item(self, item: Any) -> Any:
-        """Add item to batch for processing"""
+        """Add item to batch for processing."""
         future: asyncio.Future = asyncio.Future()
         self.pending_items.append((item, future))
 
@@ -114,8 +114,8 @@ class BatchProcessor:
 
         return await future
 
-    async def _process_batches(self):
-        """Main batch processing loop"""
+    async def _process_batches(self) -> None:
+        """Main batch processing loop."""
         while not self._shutdown:
             try:
                 await asyncio.sleep(self.batch_timeout)
@@ -124,10 +124,10 @@ class BatchProcessor:
                     await self._process_current_batch()
 
             except Exception as e:
-                logger.error(f"Batch processing error: {e}")
+                logger.exception(f"Batch processing error: {e}")
 
-    async def _process_current_batch(self):
-        """Process current batch of items"""
+    async def _process_current_batch(self) -> None:
+        """Process current batch of items."""
         if not self.pending_items:
             return
 
@@ -158,14 +158,14 @@ class BatchProcessor:
                     future.set_exception(e)
 
     async def _default_processor(self, items: list[Any]) -> list[Any]:
-        """Default batch processor (override for specific use cases)"""
+        """Default batch processor (override for specific use cases)."""
         return items
 
 
 class AsyncTaskManager:
-    """Advanced async task management with monitoring"""
+    """Advanced async task management with monitoring."""
 
-    def __init__(self, max_concurrent: int = 100):
+    def __init__(self, max_concurrent: int = 100) -> None:
         self.max_concurrent = max_concurrent
         self.semaphore_pool = AsyncSemaphorePool(max_concurrent)
         self.running_tasks: dict[str, asyncio.Task] = {}
@@ -178,9 +178,10 @@ class AsyncTaskManager:
         coro: Awaitable[Any],
         timeout: float | None = None,
     ) -> str:
-        """Submit a task for async execution"""
+        """Submit a task for async execution."""
         if task_id in self.running_tasks:
-            raise ValueError(f"Task {task_id} is already running")
+            msg = f"Task {task_id} is already running"
+            raise ValueError(msg)
 
         async def _execute_task():
             start_time = time.time()
@@ -241,7 +242,7 @@ class AsyncTaskManager:
         return task_id
 
     async def get_task_result(self, task_id: str, wait: bool = True) -> Any:
-        """Get task result"""
+        """Get task result."""
         if task_id in self.task_results:
             return self.task_results[task_id]
 
@@ -249,14 +250,15 @@ class AsyncTaskManager:
             task = self.running_tasks[task_id]
             return await task
 
-        raise ValueError(f"Task {task_id} not found or not completed")
+        msg = f"Task {task_id} not found or not completed"
+        raise ValueError(msg)
 
     def get_task_status(self, task_id: str) -> dict[str, Any]:
-        """Get task status and statistics"""
+        """Get task status and statistics."""
         return self.task_stats.get(task_id, {"status": "not_found"})
 
     async def cancel_task(self, task_id: str) -> bool:
-        """Cancel a running task"""
+        """Cancel a running task."""
         if task_id in self.running_tasks:
             task = self.running_tasks[task_id]
             task.cancel()
@@ -271,7 +273,7 @@ class AsyncTaskManager:
         return False
 
     def get_stats(self) -> dict[str, Any]:
-        """Get task manager statistics"""
+        """Get task manager statistics."""
         total_tasks = len(self.task_stats)
         completed_tasks = sum(
             1 for stats in self.task_stats.values() if stats["status"] == "completed"
@@ -314,7 +316,7 @@ def async_retry(
     backoff: float = 2.0,
     exceptions: tuple = (Exception,),
 ):
-    """Async retry decorator with exponential backoff"""
+    """Async retry decorator with exponential backoff."""
 
     def decorator(func: Callable):
         @functools.wraps(func)
@@ -330,7 +332,7 @@ def async_retry(
                     last_exception = e
 
                     if attempt == max_retries:
-                        logger.error(
+                        logger.exception(
                             f"Function {func.__name__} failed after {max_retries} retries: {e}",
                         )
                         raise
@@ -345,7 +347,8 @@ def async_retry(
             if last_exception is not None:
                 raise last_exception from None
             # Fallback: raise a generic RuntimeError if somehow no exception is captured
-            raise RuntimeError("Operation failed with unknown exception")
+            msg = "Operation failed with unknown exception"
+            raise RuntimeError(msg)
 
         return wrapper
 
@@ -353,7 +356,7 @@ def async_retry(
 
 
 def async_timeout(timeout_seconds: float):
-    """Async timeout decorator"""
+    """Async timeout decorator."""
 
     def decorator(func: Callable):
         @functools.wraps(func)
@@ -364,7 +367,7 @@ def async_timeout(timeout_seconds: float):
                     timeout=timeout_seconds,
                 )
             except TimeoutError:
-                logger.error(
+                logger.exception(
                     f"Function {func.__name__} timed out after {timeout_seconds}s",
                 )
                 raise
@@ -375,7 +378,7 @@ def async_timeout(timeout_seconds: float):
 
 
 def async_rate_limit(calls_per_second: float):
-    """Async rate limiting decorator"""
+    """Async rate limiting decorator."""
 
     def decorator(func: Callable):
         last_called = 0.0
@@ -408,7 +411,7 @@ async def process_concurrent_tasks(
     tasks: list[Awaitable[Any]],
     max_concurrent: int = 10,
 ) -> list[Any]:
-    """Process multiple tasks with controlled concurrency"""
+    """Process multiple tasks with controlled concurrency."""
     semaphore = asyncio.Semaphore(max_concurrent)
 
     async def _process_task(task):
@@ -416,8 +419,7 @@ async def process_concurrent_tasks(
             return await task
 
     # Execute all tasks with concurrency control
-    results = await asyncio.gather(*[_process_task(task) for task in tasks])
-    return results
+    return await asyncio.gather(*[_process_task(task) for task in tasks])
 
 
 async def batch_process_items(
@@ -426,7 +428,7 @@ async def batch_process_items(
     batch_size: int = 50,
     max_concurrent: int = 10,
 ) -> list[Any]:
-    """Process items in batches with controlled concurrency"""
+    """Process items in batches with controlled concurrency."""
     results = []
 
     # Process items in batches

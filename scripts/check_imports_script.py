@@ -12,7 +12,5 @@ modules = [
 for m in modules:
     try:
         __import__(m)
-        print(f"OK: {m}")
     except Exception:
-        print(f"ERROR importing {m}")
         traceback.print_exc()

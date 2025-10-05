@@ -202,7 +202,7 @@ def tag_category(tx, address_book: AddressBook | None = None) -> Category:
     if len(contenders) == 1:
         return cast("Category", contenders[0].category)
 
-    for pref in PRIORITY + ["expense", "unknown"]:
+    for pref in [*PRIORITY, "expense", "unknown"]:
         for r in contenders:
             if r.category == pref:
                 return cast("Category", r.category)
@@ -226,7 +226,7 @@ class ComplianceEngine:
     and returns a list of ComplianceTag instances.
     """
 
-    def __init__(self, *, high_amount_threshold: Decimal | float = 100000):
+    def __init__(self, *, high_amount_threshold: Decimal | float = 100000) -> None:
         self.high_amount_threshold = _as_decimal(high_amount_threshold)
 
     async def analyze_transaction(self, tx: dict) -> list[ComplianceTag]:

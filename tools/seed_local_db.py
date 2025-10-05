@@ -32,7 +32,7 @@ cur.execute("PRAGMA table_info(users);")
 existing_cols = {r[1] for r in cur.fetchall()}
 
 
-def add_col(name: str, col_def: str):
+def add_col(name: str, col_def: str) -> None:
     if name not in existing_cols:
         try:
             cur.execute(f"ALTER TABLE users ADD COLUMN {col_def}")
@@ -76,4 +76,3 @@ except Exception:
 
 con.commit()
 con.close()
-print(f"Seeded {DB.resolve()}")

@@ -1,5 +1,5 @@
 """Guardian Protection System Wrapper
-Provides enterprise-grade protection capabilities for the TOP 0.1% application
+Provides enterprise-grade protection capabilities for the TOP 0.1% application.
 """
 
 """Compatibility shim for guardian module."""

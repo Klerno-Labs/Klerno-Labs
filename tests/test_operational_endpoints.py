@@ -7,7 +7,7 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_ready_endpoint():
+def test_ready_endpoint() -> None:
     resp = client.get("/ready")
     assert resp.status_code in (200, 503)
     data = resp.json()
@@ -15,7 +15,7 @@ def test_ready_endpoint():
     assert "uptime_seconds" in data
 
 
-def test_metrics_endpoint_optional():
+def test_metrics_endpoint_optional() -> None:
     resp = client.get("/metrics")
     # If prometheus_client not installed, endpoint might 404 (skip) else 200
     if resp.status_code == 404:
@@ -24,7 +24,7 @@ def test_metrics_endpoint_optional():
     assert b"http_requests_total" in resp.content
 
 
-def test_security_headers_present():
+def test_security_headers_present() -> None:
     resp = client.get("/health")
     assert resp.status_code == 200
     # Minimal set of security headers we add

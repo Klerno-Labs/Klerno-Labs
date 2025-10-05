@@ -65,7 +65,8 @@ class User:
     ) -> None:
         # Basic validation
         if email and "@" not in email:
-            raise ValueError("invalid email")
+            msg = "invalid email"
+            raise ValueError(msg)
 
         self.id = id
         self.email = email
@@ -222,7 +223,8 @@ class Transaction:
         try:
             self.amount = Decimal(str(amount))
         except Exception as e:
-            raise ValueError("invalid amount") from e
+            msg = "invalid amount"
+            raise ValueError(msg) from e
 
         # Decide whether negative amounts are acceptable. Tests expect that
         # negative values are allowed for the default/native currency (XRP)
@@ -235,7 +237,8 @@ class Transaction:
             if not (
                 str(symbol).upper() == "XRP" or (chain and str(chain).upper() == "XRP")
             ):
-                raise ValueError("amount must be non-negative for fiat currencies")
+                msg = "amount must be non-negative for fiat currencies"
+                raise ValueError(msg)
 
         # currency maps to symbol
         self.symbol = currency or kwargs.get("symbol", "XRP")

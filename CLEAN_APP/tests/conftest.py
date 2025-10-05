@@ -226,7 +226,7 @@ def mock_xrpl_client():
 
 
 @pytest.fixture
-def sample_iso20022_message():
+def sample_iso20022_message() -> str:
     """Create a sample ISO 20022 message for testing."""
     return """<?xml version="1.0" encoding="UTF-8"?>
     <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.02">
@@ -303,7 +303,8 @@ class DatabaseTestUtils:
         conn.close()
         # Ensure we return an int (sqlite may expose lastrowid as Optional)
         if transaction_id is None:
-            raise RuntimeError("Failed to create transaction; lastrowid is None")
+            msg = "Failed to create transaction; lastrowid is None"
+            raise RuntimeError(msg)
         return int(transaction_id)
 
 

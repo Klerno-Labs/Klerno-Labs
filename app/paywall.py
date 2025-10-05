@@ -1,9 +1,9 @@
 # app / paywall.py
 import os
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Depends, Form, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from .deps import require_user
 
@@ -23,7 +23,7 @@ PAYWALL_CODE = os.getenv("PAYWALL_CODE", "Labs2025").strip()
 
 
 @router.get("/paywall", include_in_schema=False)
-def paywall(request: Request) -> None:
+def paywall(request: Request) -> Response:
     err = request.query_params.get("err")
     return templates.TemplateResponse(
         "paywall_professional.html",
@@ -32,7 +32,7 @@ def paywall(request: Request) -> None:
 
 
 @router.post("/paywall/verify", include_in_schema=False)
-def paywall_verify(code: str = Form(...)):
+def paywall_verify(code: Annotated[str, Form()]) -> Response:
     accepted = PAYWALL_CODE or (expected_api_key() or "").strip()
     if accepted and code.strip() == accepted:
         api_key = (expected_api_key() or "").strip()
@@ -52,7 +52,7 @@ def paywall_verify(code: str = Form(...)):
 
 
 @router.get("/logout", include_in_schema=False)
-def logout() -> None:
+def logout() -> Response:
     resp = RedirectResponse(url="/paywall", status_code=303)
     resp.delete_cookie("cw_paid")
     return resp
@@ -62,8 +62,8 @@ def logout() -> None:
 @router.post("/api/paywall/xrp-payment", include_in_schema=False)
 async def create_xrp_payment_request(
     request: Request,
-    amount_xrp: float = Body(...),
-    tier: int = Body(1),
+    amount_xrp: Annotated[float, Body()],
+    tier: Annotated[int, Body()] = 1,
     _user=Depends(require_user),
 ):
     """Create a payment request for XRPL."""
@@ -100,8 +100,8 @@ async def create_xrp_payment_request(
 
 @router.post("/api/paywall/verify-xrp", include_in_schema=False)
 async def verify_xrp_payment_request(
-    payment_id: str = Body(...),
-    tx_hash: str = Body(...),
+    payment_id: Annotated[str, Body()],
+    tx_hash: Annotated[str, Body()],
     _user=Depends(require_user),
 ):
     """Verify an XRPL payment."""
@@ -146,8 +146,8 @@ async def verify_xrp_payment_request(
 
 @router.post("/api/paywall/verify-payment", include_in_schema=False)
 async def verify_payment_endpoint(
-    request_id: str = Body(...),
-    transaction_hash: str = Body(...),
+    request_id: Annotated[str, Body()],
+    transaction_hash: Annotated[str, Body()],
     _user=Depends(require_user),
 ):
     """Verify a payment transaction."""
@@ -195,7 +195,7 @@ class PaywallManager:
 
     def activate_subscription(self, user_id: int) -> None:
         # No-op for tests
-        return True
+        return None
 
     # Compatibility helpers used by unit tests
     def validate_subscription(self, user_data: dict[str, Any]) -> bool:
@@ -206,7 +206,7 @@ class PaywallManager:
 
         return expires > datetime.utcnow()
 
-    def calculate_trial_remaining(self, signup_date) -> None:
+    def calculate_trial_remaining(self, signup_date) -> int:
         from datetime import datetime
 
         TRIAL_DAYS = 30

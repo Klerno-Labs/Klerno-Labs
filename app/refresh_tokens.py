@@ -58,7 +58,7 @@ def _token_len() -> int:
     return int(os.getenv("REFRESH_TOKEN_LENGTH", "48"))
 
 
-def _redis_client() -> None:  # pragma: no cover
+def _redis_client() -> Any | None:  # pragma: no cover
     if os.getenv("USE_REDIS_REFRESH", "false").lower() not in {"1", "true", "yes"}:
         return None
     url = os.getenv("REDIS_URL")
@@ -71,8 +71,7 @@ def _redis_client() -> None:  # pragma: no cover
 
 
 def _generate_refresh() -> str:
-    raw = secrets.token_urlsafe(_token_len())
-    return raw
+    return secrets.token_urlsafe(_token_len())
 
 
 def issue_refresh(user_id: int, email: str, role: str) -> str:

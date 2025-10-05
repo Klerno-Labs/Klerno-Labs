@@ -116,9 +116,9 @@ class MultiChainAnalytics:
 class MultiChainEngine:
     """Multi - blockchain support and analytics engine."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.chain_configs = self._initialize_chain_configs()
-        self.rate_limiters = {}
+        self.rate_limiters: dict[SupportedChain, dict[str, Any]] = {}
         self._init_rate_limiting()
 
     def _initialize_chain_configs(self) -> dict[SupportedChain, ChainInfo]:
@@ -214,7 +214,7 @@ class MultiChainEngine:
             ),
         }
 
-    def _init_rate_limiting(self):
+    def _init_rate_limiting(self) -> None:
         """Initialize rate limiting for API calls."""
         for chain in SupportedChain:
             self.rate_limiters[chain] = {
@@ -229,7 +229,8 @@ class MultiChainEngine:
     ) -> ChainTransaction | None:
         """Get transaction details from any supported chain."""
         if not self._check_rate_limit(chain):
-            raise Exception(f"Rate limit exceeded for {chain.value}")
+            msg = f"Rate limit exceeded for {chain.value}"
+            raise Exception(msg)
 
         try:
             if chain == SupportedChain.BITCOIN:
@@ -248,10 +249,11 @@ class MultiChainEngine:
                 return await self._get_solana_transaction(tx_hash)
             if chain == SupportedChain.AVALANCHE:
                 return await self._get_avalanche_transaction(tx_hash)
-            raise ValueError(f"Unsupported chain: {chain}")
+            msg = f"Unsupported chain: {chain}"
+            raise ValueError(msg)
 
         except Exception as e:
-            logger.error(f"Error getting {chain.value} transaction {tx_hash}: {e}")
+            logger.exception(f"Error getting {chain.value} transaction {tx_hash}: {e}")
             return None
 
     async def get_address_transactions(
@@ -262,7 +264,8 @@ class MultiChainEngine:
     ) -> list[ChainTransaction]:
         """Get transactions for an address on any chain."""
         if not self._check_rate_limit(chain):
-            raise Exception(f"Rate limit exceeded for {chain.value}")
+            msg = f"Rate limit exceeded for {chain.value}"
+            raise Exception(msg)
 
         try:
             if chain == SupportedChain.BITCOIN:
@@ -284,7 +287,7 @@ class MultiChainEngine:
             return []
 
         except Exception as e:
-            logger.error(
+            logger.exception(
                 f"Error getting {chain.value} address transactions for {address}: {e}",
             )
             return []
@@ -369,11 +372,7 @@ class MultiChainEngine:
     def detect_chain_from_address(self, address: str) -> SupportedChain | None:
         """Auto - detect blockchain from address format."""
         # Bitcoin patterns
-        if (
-            address.startswith("1")
-            or address.startswith("3")
-            or address.startswith("bc1")
-        ):
+        if address.startswith(("1", "3", "bc1")):
             return SupportedChain.BITCOIN
 
         # Ethereum / EVM patterns (40 hex chars after 0x)

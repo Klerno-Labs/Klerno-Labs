@@ -4,16 +4,12 @@
 import json
 import subprocess
 import time
+from pathlib import Path
 from typing import Any
 
 
 def generate_final_validation_report():
     """Generate comprehensive final validation report."""
-
-    print("🎯 KLERNO LABS FINAL VALIDATION REPORT")
-    print("🚀 ACHIEVEMENT: TOP 0.01% PERFORMANCE TIER")
-    print("=" * 70)
-
     # Compile comprehensive achievements
     validation_report = {
         "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -218,7 +214,6 @@ def generate_final_validation_report():
 
 def calculate_weighted_score() -> float:
     """Calculate overall weighted performance score."""
-
     scores = {
         "code_quality": 100,
         "database_performance": 100,
@@ -241,9 +236,6 @@ def calculate_weighted_score() -> float:
 
 def run_final_validation_tests():
     """Run final validation tests to confirm everything works."""
-
-    print("🧪 Running final validation tests...")
-
     validation_results = {
         "test_suite_passed": False,
         "performance_tests_passed": False,
@@ -253,94 +245,69 @@ def run_final_validation_tests():
 
     try:
         # Run main test suite
-        print("   • Running main test suite...")
         test_result = subprocess.run(
             ["python", "-m", "pytest", "-q", "--tb=short"],
-            capture_output=True,
+            check=False, capture_output=True,
             text=True,
             timeout=120,
         )
 
         if test_result.returncode == 0:
             validation_results["test_suite_passed"] = True
-            print("     ✅ Main test suite: PASSED")
         else:
-            print("     ⚠️ Main test suite: Some issues detected")
+            pass
 
-    except Exception as e:
-        print(f"     ❌ Test suite error: {e}")
+    except Exception:
+        pass
 
     try:
         # Run performance tests
-        print("   • Running performance validation...")
         perf_result = subprocess.run(
             ["python", "-m", "pytest", "test_performance_benchmarks.py", "-v"],
-            capture_output=True,
+            check=False, capture_output=True,
             text=True,
             timeout=60,
         )
 
         if perf_result.returncode == 0:
             validation_results["performance_tests_passed"] = True
-            print("     ✅ Performance tests: PASSED")
         else:
-            print("     ⚠️ Performance tests: Minor issues")
+            pass
 
-    except Exception as e:
-        print(f"     ❌ Performance test error: {e}")
+    except Exception:
+        pass
 
     # Code quality is already validated through previous Ruff runs
     validation_results["code_quality_validated"] = True
-    print("     ✅ Code quality: VALIDATED")
 
     # Security implementations have been created
     validation_results["security_checks_passed"] = True
-    print("     ✅ Security hardening: IMPLEMENTED")
 
     return validation_results
 
 
-def print_achievement_summary(report: dict[str, Any]):
+def print_achievement_summary(report: dict[str, Any]) -> None:
     """Print comprehensive achievement summary."""
-
-    print("\n🏆 ACHIEVEMENT SUMMARY")
-    print("=" * 60)
-
-    print("🎯 Target Achievement: TOP 0.01% PERFORMANCE TIER")
-    print(f"✅ Status: {report['achievement_status']}")
-    print(f"📊 Overall Score: {report['overall_score']}/100")
-    print(f"🏅 Performance Tier: {report['performance_tier']}")
-
-    print("\n📈 CATEGORY SCORES:")
     metrics = report["metrics_achieved"]
-    for category, score in metrics.items():
+    for category in metrics:
         if "_score" in category and category != "overall_weighted_score":
-            category_name = category.replace("_score", "").replace("_", " ").title()
-            print(f"   • {category_name}: {score}/100")
+            category.replace("_score", "").replace("_", " ").title()
 
-    print("\n🚀 MAJOR ACCOMPLISHMENTS:")
-    for accomplishment in report["accomplishments"]:
-        print(f"   • {accomplishment['category']}: {accomplishment['achievement']}")
+    for _accomplishment in report["accomplishments"]:
+        pass
 
-    print("\n💼 ENTERPRISE READINESS:")
     enterprise = report["enterprise_readiness"]
-    ready_items = [
+    [
         key
         for key, value in enterprise.items()
         if isinstance(value, str) and "✅" in value
     ]
-    print(f"   • {len(ready_items)} enterprise criteria met")
-    print(f"   • Deployment confidence: {enterprise['deployment_confidence']}")
-    print(f"   • Production ready: {metrics['production_ready']}")
 
-    print("\n🔄 TRANSFORMATION MAGNITUDE:")
-    transformation = report["before_after_comparison"]["transformation_magnitude"]
-    print(f"   • {transformation}")
+    report["before_after_comparison"]["transformation_magnitude"]
 
 
 def main():
     """Generate final comprehensive validation report."""
-
     # Generate comprehensive report
     report = generate_final_validation_report()
 
@@ -349,24 +316,13 @@ def main():
     report["final_validation_tests"] = validation_tests
 
     # Save comprehensive report
-    with open("final_enterprise_certification.json", "w") as f:
+    with Path("final_enterprise_certification.json").open("w") as f:
         json.dump(report, f, indent=2)
 
     # Print achievement summary
     print_achievement_summary(report)
 
-    print("\n📄 FINAL DOCUMENTATION:")
-    print("   • Comprehensive report: final_enterprise_certification.json")
-    print("   • Security implementations: security_implementations/")
-    print("   • Performance optimizations: optimizations/")
-    print("   • Database optimizations: Applied and validated")
 
-    print("\n🎯 MISSION ACCOMPLISHED!")
-    print("=" * 60)
-    print("🏆 KLERNO LABS HAS ACHIEVED TOP 0.01% PERFORMANCE TIER")
-    print("✅ Enterprise-grade quality and security implemented")
-    print("🚀 Ready for production deployment")
-    print("💼 Suitable for enterprise environments")
 
     return report
 

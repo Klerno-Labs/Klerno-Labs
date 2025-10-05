@@ -32,7 +32,7 @@ class PerformanceMetrics:
 class PerformanceMonitor:
     """Tracks API performance metrics with sub - 100ms targeting."""
 
-    def __init__(self, max_metrics: int = 1000):
+    def __init__(self, max_metrics: int = 1000) -> None:
         self.metrics: deque = deque(maxlen=max_metrics)
         self.endpoint_stats: dict[str, dict[str, Any]] = defaultdict(
             lambda: {

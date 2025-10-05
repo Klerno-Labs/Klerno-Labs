@@ -9,10 +9,12 @@ import os
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import Request
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from fastapi import Request
 
 
 class AuditEventType(str, Enum):

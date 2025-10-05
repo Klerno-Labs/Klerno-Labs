@@ -11,7 +11,7 @@ from typing import Any
 class SecurityValidator:
     """Advanced security validation and hardening system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.security_report = {
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
             "vulnerabilities_found": [],
@@ -22,32 +22,23 @@ class SecurityValidator:
 
     def run_comprehensive_security_scan(self) -> dict[str, Any]:
         """Run comprehensive security analysis."""
-
-        print("🔒 COMPREHENSIVE SECURITY VALIDATION")
-        print("=" * 50)
-
         # Run Bandit security scan
-        print("🔍 Running Bandit security scanner...")
         bandit_results = self._run_bandit_scan()
 
         # Analyze dependencies for known vulnerabilities
-        print("📦 Checking dependencies for vulnerabilities...")
         dependency_results = self._analyze_dependencies()
 
         # Check for sensitive data exposure
-        print("🔍 Scanning for sensitive data exposure...")
         sensitive_data_results = self._scan_sensitive_data()
 
         # Validate authentication and authorization
-        print("🔐 Validating authentication mechanisms...")
         auth_results = self._validate_authentication()
 
         # Check for secure configurations
-        print("⚙️ Checking security configurations...")
         config_results = self._check_security_configs()
 
         # Compile comprehensive security report
-        security_report = {
+        return {
             "scan_timestamp": self.security_report["timestamp"],
             "bandit_analysis": bandit_results,
             "dependency_vulnerabilities": dependency_results,
@@ -55,17 +46,15 @@ class SecurityValidator:
             "authentication_security": auth_results,
             "configuration_security": config_results,
             "overall_security_score": self._calculate_security_score(
-                bandit_results, dependency_results, config_results
+                bandit_results, dependency_results, config_results,
             ),
             "critical_issues": self._identify_critical_issues(bandit_results),
             "remediation_plan": self._generate_remediation_plan(),
         }
 
-        return security_report
 
     def _run_bandit_scan(self) -> dict[str, Any]:
         """Run Bandit security scanner and parse results."""
-
         try:
             # Run bandit scan with JSON output
             result = subprocess.run(
@@ -80,13 +69,13 @@ class SecurityValidator:
                     "-x",
                     ".venv*,node_modules,__pycache__,*.pyc",
                 ],
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
                 timeout=120,
             )
 
             if (
-                result.returncode == 0 or result.returncode == 1
+                result.returncode in {0, 1}
             ):  # 1 = vulnerabilities found
                 try:
                     bandit_data = json.loads(result.stdout)
@@ -119,7 +108,7 @@ class SecurityValidator:
                         "scan_summary": {
                             "high_severity": len(vulnerabilities_by_severity["HIGH"]),
                             "medium_severity": len(
-                                vulnerabilities_by_severity["MEDIUM"]
+                                vulnerabilities_by_severity["MEDIUM"],
                             ),
                             "low_severity": len(vulnerabilities_by_severity["LOW"]),
                         },
@@ -141,12 +130,11 @@ class SecurityValidator:
         except Exception as e:
             return {
                 "scan_successful": False,
-                "error": f"Failed to run Bandit scan: {str(e)}",
+                "error": f"Failed to run Bandit scan: {e!s}",
             }
 
     def _analyze_dependencies(self) -> dict[str, Any]:
         """Analyze dependencies for known vulnerabilities."""
-
         dependency_analysis = {
             "scan_performed": True,
             "vulnerabilities_found": [],
@@ -157,14 +145,14 @@ class SecurityValidator:
         try:
             result = subprocess.run(
                 ["python", "-m", "pip", "show", "safety"],
-                capture_output=True,
+                check=False, capture_output=True,
                 text=True,
                 timeout=30,
             )
 
             if result.returncode != 0:
                 dependency_analysis["recommendations"].append(
-                    "Install 'safety' package for dependency vulnerability scanning: pip install safety"
+                    "Install 'safety' package for dependency vulnerability scanning: pip install safety",
                 )
                 dependency_analysis["safety_available"] = False
             else:
@@ -173,7 +161,7 @@ class SecurityValidator:
                 # Run safety check if available
                 safety_result = subprocess.run(
                     ["python", "-m", "safety", "check", "--json"],
-                    capture_output=True,
+                    check=False, capture_output=True,
                     text=True,
                     timeout=60,
                 )
@@ -189,13 +177,12 @@ class SecurityValidator:
                         )
 
         except Exception as e:
-            dependency_analysis["error"] = f"Dependency analysis failed: {str(e)}"
+            dependency_analysis["error"] = f"Dependency analysis failed: {e!s}"
 
         return dependency_analysis
 
     def _scan_sensitive_data(self) -> dict[str, Any]:
         """Scan for potential sensitive data exposure."""
-
         sensitive_patterns = [
             {"pattern": "password", "type": "Password"},
             {"pattern": "secret", "type": "Secret"},
@@ -232,7 +219,7 @@ class SecurityValidator:
                                     "line": line_num,
                                     "type": pattern_info["type"],
                                     "content": line.strip()[:100],  # First 100 chars
-                                }
+                                },
                             )
 
             except Exception:
@@ -247,7 +234,6 @@ class SecurityValidator:
 
     def _validate_authentication(self) -> dict[str, Any]:
         """Validate authentication and authorization mechanisms."""
-
         auth_analysis = {
             "authentication_present": False,
             "authorization_present": False,
@@ -283,7 +269,7 @@ class SecurityValidator:
                                 "file": str(py_file),
                                 "pattern": pattern,
                                 "type": "Authentication/Authorization",
-                            }
+                            },
                         )
 
             except Exception:
@@ -294,7 +280,7 @@ class SecurityValidator:
 
         if not auth_analysis["authentication_present"]:
             auth_analysis["recommendations"].append(
-                "Implement proper authentication mechanisms (JWT, OAuth2, etc.)"
+                "Implement proper authentication mechanisms (JWT, OAuth2, etc.)",
             )
 
         auth_analysis["recommendations"].extend(
@@ -303,19 +289,19 @@ class SecurityValidator:
                 "Implement CORS properly for production",
                 "Add security headers (HSTS, CSP, etc.)",
                 "Use HTTPS in production environment",
-            ]
+            ],
         )
 
         return auth_analysis
 
     def _check_security_configs(self) -> dict[str, Any]:
         """Check security configurations."""
-
         config_analysis = {
             "debug_mode_issues": [],
             "insecure_configurations": [],
             "missing_security_features": [],
             "recommendations": [],
+            "environment_variables": {},
         }
 
         # Check for debug mode in production
@@ -351,7 +337,6 @@ class SecurityValidator:
 
     def _check_environment_variables(self) -> dict[str, Any]:
         """Check environment variable usage for security."""
-
         env_patterns = ["os.environ", "getenv", "env.", "Environment"]
         env_usage = []
 
@@ -376,17 +361,16 @@ class SecurityValidator:
         }
 
     def _calculate_security_score(
-        self, bandit_results: dict, dependency_results: dict, config_results: dict
+        self, bandit_results: dict, dependency_results: dict, config_results: dict,
     ) -> dict[str, Any]:
         """Calculate overall security score."""
-
         base_score = 100
 
         # Deduct points for security issues
         if bandit_results.get("scan_successful"):
             high_issues = bandit_results.get("scan_summary", {}).get("high_severity", 0)
             medium_issues = bandit_results.get("scan_summary", {}).get(
-                "medium_severity", 0
+                "medium_severity", 0,
             )
             low_issues = bandit_results.get("scan_summary", {}).get("low_severity", 0)
 
@@ -430,12 +414,11 @@ class SecurityValidator:
 
     def _identify_critical_issues(self, bandit_results: dict) -> list[dict[str, Any]]:
         """Identify critical security issues that need immediate attention."""
-
         critical_issues = []
 
         if bandit_results.get("scan_successful"):
             high_severity_issues = bandit_results.get(
-                "vulnerabilities_by_severity", {}
+                "vulnerabilities_by_severity", {},
             ).get("HIGH", [])
 
             # Focus on the most critical issues
@@ -459,15 +442,14 @@ class SecurityValidator:
                             "line": issue.get("line_number"),
                             "description": issue.get("issue_text"),
                             "priority": "IMMEDIATE",
-                        }
+                        },
                     )
 
         return critical_issues
 
     def _generate_remediation_plan(self) -> dict[str, Any]:
         """Generate comprehensive security remediation plan."""
-
-        remediation_plan = {
+        return {
             "immediate_actions": [
                 {
                     "action": "Fix Critical Vulnerabilities",
@@ -530,53 +512,33 @@ class SecurityValidator:
             ],
         }
 
-        return remediation_plan
 
 
 def main():
     """Run comprehensive security validation and generate hardening recommendations."""
-
-    print("🔒 KLERNO LABS SECURITY VALIDATION")
-    print("🎯 TARGET: ENTERPRISE-GRADE SECURITY")
-    print("=" * 60)
-
     validator = SecurityValidator()
 
     # Run comprehensive security scan
     security_report = validator.run_comprehensive_security_scan()
 
     # Save security report
-    with open("comprehensive_security_report.json", "w") as f:
+    with Path("comprehensive_security_report.json").open("w") as f:
         json.dump(security_report, f, indent=2)
 
     # Print summary
-    print("\n🔒 SECURITY VALIDATION COMPLETE")
-    print("=" * 50)
 
-    overall_score = security_report["overall_security_score"]
-    print(f"Security Score: {overall_score['security_score']}/100")
-    print(f"Security Tier: {overall_score['security_tier']}")
+    security_report["overall_security_score"]
 
     if security_report["bandit_analysis"].get("scan_successful"):
-        summary = security_report["bandit_analysis"]["scan_summary"]
-        print("\nVulnerabilities Found:")
-        print(f"   • HIGH Severity: {summary['high_severity']}")
-        print(f"   • MEDIUM Severity: {summary['medium_severity']}")
-        print(f"   • LOW Severity: {summary['low_severity']}")
+        security_report["bandit_analysis"]["scan_summary"]
 
     critical_issues = security_report["critical_issues"]
     if critical_issues:
-        print(f"\n🚨 Critical Issues ({len(critical_issues)}):")
-        for issue in critical_issues[:5]:  # Show first 5
-            print(f"   • {issue['test_name']} in {issue['file']}:{issue['line']}")
+        for _issue in critical_issues[:5]:  # Show first 5
+            pass
 
-    print("\n📋 Remediation Plan:")
-    plan = security_report["remediation_plan"]
-    print(f"   • Immediate Actions: {len(plan['immediate_actions'])}")
-    print(f"   • Short-term Actions: {len(plan['short_term_actions'])}")
-    print(f"   • Long-term Actions: {len(plan['long_term_actions'])}")
+    security_report["remediation_plan"]
 
-    print("\n📊 Detailed security report saved to: comprehensive_security_report.json")
 
     return security_report
 

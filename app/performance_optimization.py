@@ -1,4 +1,4 @@
-"""Enterprise Performance & Scalability Optimization
+"""Enterprise Performance & Scalability Optimization.
 
 Implements enterprise - grade performance optimization with advanced caching,
     database optimization, connection pooling, load balancing, and horizontal
@@ -17,7 +17,6 @@ import pickle  # nosec: B403 - used for internal cache serialization only (data 
 import threading
 import time
 from collections import OrderedDict, defaultdict
-from collections.abc import AsyncIterator, Callable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
@@ -37,6 +36,8 @@ UVLOOP_AVAILABLE = False
 
 if TYPE_CHECKING:
     # Only import psutil at type-check time to avoid requiring it at runtime
+    from collections.abc import AsyncIterator, Callable
+
     import psutil  # pragma: no cover
 else:
     psutil = None
@@ -146,7 +147,7 @@ class CacheConfig:
 class AdvancedCache(Generic[T]):
     """Advanced multi - level caching system."""
 
-    def __init__(self, config: CacheConfig):
+    def __init__(self, config: CacheConfig) -> None:
         self.config = config
         # local_cache maps normalized string keys to dicts with data/expiry/access_count
         self.local_cache: OrderedDict[str, dict[str, Any]] = OrderedDict()
@@ -477,7 +478,7 @@ class DatabasePool:
         max_connections: int = 20,
         max_queries: int = 50000,
         max_inactive_connection_lifetime: float = 300.0,
-    ):
+    ) -> None:
         self.database_url = database_url
         self.min_connections = min_connections
         self.max_connections = max_connections
@@ -536,7 +537,7 @@ class DatabasePool:
                 self.max_connections,
             )
         except Exception as e:
-            logger.error(f"Failed to initialize database pool: {e}")
+            logger.exception(f"Failed to initialize database pool: {e}")
             raise
 
     @asynccontextmanager
@@ -586,7 +587,7 @@ class DatabasePool:
         except Exception as e:
             async with self.lock:
                 self.stats["query_errors"] += 1
-            logger.error(f"Query execution error: {e}")
+            logger.exception(f"Query execution error: {e}")
             raise
 
     async def execute_transaction(self, queries: list[tuple]) -> list[Any]:
@@ -612,7 +613,7 @@ class DatabasePool:
         except Exception as e:
             async with self.lock:
                 self.stats["query_errors"] += 1
-            logger.error(f"Transaction execution error: {e}")
+            logger.exception(f"Transaction execution error: {e}")
             raise
 
     async def close(self) -> None:
@@ -1026,7 +1027,7 @@ class PerformanceOptimizer:
                     applied_optimizations.append(rule["name"])
                     logger.info(f"Applied optimization: {rule['name']}")
             except Exception as e:
-                logger.error(f"Error applying optimization {rule['name']}: {e}")
+                logger.exception(f"Error applying optimization {rule['name']}: {e}")
 
         return applied_optimizations
 
@@ -1196,7 +1197,7 @@ class PerformanceOptimizer:
             }
 
         except Exception as e:
-            logger.error(f"Error initializing cache layers: {e}")
+            logger.exception(f"Error initializing cache layers: {e}")
 
     async def run_performance_benchmarks(self) -> dict[str, Any]:
         """Run comprehensive performance benchmarks."""
@@ -1294,7 +1295,7 @@ class PerformanceOptimizer:
             )
 
         except Exception as e:
-            logger.error(f"Error running performance benchmarks: {e}")
+            logger.exception(f"Error running performance benchmarks: {e}")
             benchmark_results["error"] = str(e)
 
         return benchmark_results
@@ -1371,7 +1372,7 @@ class PerformanceOptimizer:
             }
 
         except Exception as e:
-            logger.error(f"Error optimizing database connections: {e}")
+            logger.exception(f"Error optimizing database connections: {e}")
             return {"status": "error", "message": str(e)}
 
     async def setup_load_balancer(self) -> dict[str, Any]:
@@ -1463,7 +1464,7 @@ class PerformanceOptimizer:
             }
 
         except Exception as e:
-            logger.error(f"Error setting up load balancer: {e}")
+            logger.exception(f"Error setting up load balancer: {e}")
             return {"status": "error", "message": str(e)}
 
     async def get_performance_baseline(self) -> dict[str, Any]:
@@ -1630,7 +1631,8 @@ async def optimized_query(query: str, *args: Any) -> list[dict[str, Any]]:
     """Execute optimized database query."""
     if performance_optimizer.db_pool:
         return await performance_optimizer.db_pool.execute_query(query, *args)
-    raise RuntimeError("Database pool not initialized")
+    msg = "Database pool not initialized"
+    raise RuntimeError(msg)
 
 
 def get_cached_data(key: str) -> Any:

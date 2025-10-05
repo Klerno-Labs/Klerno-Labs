@@ -15,10 +15,12 @@ from __future__ import annotations
 import base64
 import os
 import secrets
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import Request
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from fastapi import Request
 
 NONCE_ATTRIBUTE = "csp_nonce"
 

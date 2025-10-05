@@ -16,13 +16,16 @@ import ipaddress
 import logging
 import os
 import time
-from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from fastapi import Request, Response
 
 # Configure security logging
 security_logger = logging.getLogger("klerno.security")
@@ -213,7 +216,8 @@ class InputSanitizer:
     def sanitize_string(value: str, max_length: int = 1000) -> str:
         """Sanitize string input to prevent injection attacks."""
         if not isinstance(value, str):
-            raise ValueError("Input must be a string")
+            msg = "Input must be a string"
+            raise ValueError(msg)
 
         # Truncate if too long
         if len(value) > max_length:
@@ -241,11 +245,13 @@ class InputSanitizer:
 
         # Basic email validation
         if "@" not in email or "." not in email.split("@")[1]:
-            raise ValueError("Invalid email format")
+            msg = "Invalid email format"
+            raise ValueError(msg)
 
         # Check for suspicious patterns
         if any(char in email for char in ["<", ">", "script", "javascript"]):
-            raise ValueError("Invalid characters in email")
+            msg = "Invalid characters in email"
+            raise ValueError(msg)
 
         return email.lower().strip()
 
@@ -256,11 +262,13 @@ class InputSanitizer:
 
         # Basic validation - should be alphanumeric
         if not all(c.isalnum() for c in address):
-            raise ValueError("Invalid wallet address format")
+            msg = "Invalid wallet address format"
+            raise ValueError(msg)
 
         # Check length constraints
         if len(address) < 20 or len(address) > 80:
-            raise ValueError("Wallet address length invalid")
+            msg = "Wallet address length invalid"
+            raise ValueError(msg)
 
         return address
 
@@ -360,7 +368,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             return response
 
         except Exception as e:
-            security_logger.error(
+            security_logger.exception(
                 f"Security middleware error for {client_ip}: {e!s}",
             )
             return JSONResponse(
@@ -400,7 +408,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
             return "auth"
         if path.startswith("/admin/"):
             return "admin"
-        if path.startswith("/api/payment") or path.startswith("/paywall"):
+        if path.startswith(("/api/payment", "/paywall")):
             return "payment"
         if path.startswith("/api/"):
             return "api"
@@ -443,7 +451,7 @@ class AuditLogger:
         event_type: str,
         details: dict[str, Any],
         client_ip: str | None = None,
-    ):
+    ) -> None:
         """Log security - related events for audit trail."""
         log_entry = {
             "timestamp": datetime.now(UTC).isoformat(),
@@ -460,7 +468,7 @@ class AuditLogger:
         action: str,
         target: str,
         client_ip: str | None = None,
-    ):
+    ) -> None:
         """Log administrative actions for compliance."""
         AuditLogger.log_security_event(
             "admin_action",
@@ -469,7 +477,7 @@ class AuditLogger:
         )
 
     @staticmethod
-    def log_authentication(email: str, success: bool, client_ip: str | None = None):
+    def log_authentication(email: str, success: bool, client_ip: str | None = None) -> None:
         """Log authentication attempts."""
         AuditLogger.log_security_event(
             "authentication",

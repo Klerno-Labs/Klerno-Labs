@@ -3,6 +3,7 @@
 Run inside the project's Python environment (venv) to avoid PowerShell quoting issues.
 """
 
+import contextlib
 import sys
 from importlib import import_module
 
@@ -14,23 +15,18 @@ try:
     import app.logging_config as lc
 
     lc.configure_logging()
-    print("configured logging via app.logging_config.configure_logging()")
-except Exception as e:
-    print("failed to configure logging:", e)
+except Exception:
+    pass
 
 # Inspect structlog get_logger
 try:
     import structlog
 
     lg = structlog.get_logger("diagnostic")
-    print("structlog.get_logger() ->", type(lg))
-    try:
+    with contextlib.suppress(Exception):
         inner = getattr(lg, "_logger", None)
-        print("-> inner logger:", type(inner), repr(inner))
-    except Exception as e:
-        print("-> error accessing inner:", e)
-except Exception as e:
-    print("structlog import error:", e)
+except Exception:
+    pass
 
 # Import the FastAPI app and list routes
 try:
@@ -39,13 +35,11 @@ try:
     for name in ("app.main", "app"):
         try:
             app_mod = import_module(name)
-            print(f"imported {name} successfully")
             break
-        except Exception as e:
-            print(f"import {name} failed:", e)
+        except Exception:
+            pass
 
     if app_mod is None:
-        print("could not import app module")
         sys.exit(1)
 
     # Try to find FastAPI app object
@@ -60,22 +54,19 @@ try:
                 break
 
     if maybe_app is None:
-        print("could not find FastAPI app object in module", app_mod)
+        pass
     else:
-        print("Found app object:", maybe_app)
         routes = []
         for r in maybe_app.routes:
             routes.append(
                 (getattr(r, "path", None), getattr(r, "methods", None), type(r)),
             )
-        print(f"Registered routes (count={len(routes)}):")
-        for p, m, t in routes:
-            print(" -", p, m, t)
+        for _p, _m, _t in routes:
+            pass
 
-except Exception as e:
-    print("error inspecting app routes:", e)
+except Exception:
+    pass
 
-print("\nDone")
 
 
 def main() -> int:
@@ -158,7 +149,6 @@ def main() -> int:
     with path.open("w", encoding="utf-8") as f:
         f.write(out.getvalue())
 
-    print(f"Wrote diagnostic output to {path}")
     return code
 
 

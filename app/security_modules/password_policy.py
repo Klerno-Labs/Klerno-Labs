@@ -1,6 +1,5 @@
-"""
-Enterprise - Grade Password Security Policy Implementation
-NIST SP 800 - 63B Compliant Password Management System
+"""Enterprise - Grade Password Security Policy Implementation
+NIST SP 800 - 63B Compliant Password Management System.
 """
 
 import hashlib
@@ -42,7 +41,7 @@ except Exception:
 
         def hash(self, password: str) -> str:
             return hashlib.pbkdf2_hmac(
-                "sha256", password.encode(), b"salt", 100000
+                "sha256", password.encode(), b"salt", 100000,
             ).hex()
 
         def verify(self, hash_val: str, password: str) -> bool:
@@ -65,7 +64,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PasswordPolicyConfig:
-    """Password policy configuration following NIST SP 800 - 63B"""
+    """Password policy configuration following NIST SP 800 - 63B."""
 
     min_length: int = 12
     max_length: int = 128
@@ -80,12 +79,11 @@ class PasswordPolicyConfig:
 
 
 class PasswordSecurityPolicy:
-    """
-    World - class password security policy implementation
-    Exceeds enterprise security standards and compliance requirements
+    """World - class password security policy implementation
+    Exceeds enterprise security standards and compliance requirements.
     """
 
-    def __init__(self, config: PasswordPolicyConfig | None = None):
+    def __init__(self, config: PasswordPolicyConfig | None = None) -> None:
         self.config = config or PasswordPolicyConfig()
         # When running under tests, disable external breach checks to keep
         # registration deterministic and offline-friendly.
@@ -106,23 +104,22 @@ class PasswordSecurityPolicy:
         self.failed_attempts: dict[str, int] = {}
 
     def validate(
-        self, password: str, username: str | None = None
+        self, password: str, username: str | None = None,
     ) -> tuple[bool, list[str]]:
-        """
-        Comprehensive password validation
-        Returns: (is_valid, list_of_errors)
+        """Comprehensive password validation
+        Returns: (is_valid, list_of_errors).
         """
         errors = []
 
         # Length validation
         if len(password) < self.config.min_length:
             errors.append(
-                f"Password must be at least {self.config.min_length} characters long"
+                f"Password must be at least {self.config.min_length} characters long",
             )
 
         if len(password) > self.config.max_length:
             errors.append(
-                f"Password must not exceed {self.config.max_length} characters"
+                f"Password must not exceed {self.config.max_length} characters",
             )
 
         # Character complexity requirements
@@ -136,7 +133,7 @@ class PasswordSecurityPolicy:
             errors.append("Password must contain at least one number")
 
         if self.config.require_symbols and not re.search(
-            r'[!@#$%^&*(),.?" :{}|<>]', password
+            r'[!@#$%^&*(),.?" :{}|<>]', password,
         ):
             errors.append("Password must contain at least one special character")
 
@@ -153,7 +150,7 @@ class PasswordSecurityPolicy:
             try:
                 if self.check_breached(password):
                     errors.append(
-                        "This password has been found in data breaches and cannot be used"
+                        "This password has been found in data breaches and cannot be used",
                     )
             except Exception as e:
                 logger.warning(f"Breach check failed: {e}")
@@ -161,9 +158,8 @@ class PasswordSecurityPolicy:
         return len(errors) == 0, errors
 
     def check_breached(self, password: str) -> bool:
-        """
-        Check if password has been breached using Have I Been Pwned API
-        Uses k - anonymity model for privacy protection
+        """Check if password has been breached using Have I Been Pwned API
+        Uses k - anonymity model for privacy protection.
         """
         try:
             # If running under tests or test runner, skip network calls to
@@ -211,33 +207,33 @@ class PasswordSecurityPolicy:
             return False
 
         except Exception as e:
-            logger.error(f"Breach check error: {e}")
+            logger.exception(f"Breach check error: {e}")
             # Return False on error to not block legitimate passwords
             return False
 
     def hash(self, password: str) -> str:
-        """Hash password using Argon2id algorithm"""
+        """Hash password using Argon2id algorithm."""
         try:
             return self.ph.hash(password)
         except HashingError as e:
-            logger.error(f"Password hashing failed: {e}")
-            raise ValueError("Password hashing failed") from e
+            logger.exception(f"Password hashing failed: {e}")
+            msg = "Password hashing failed"
+            raise ValueError(msg) from e
 
     def verify(self, password: str, hash_str: str) -> bool:
-        """Verify password against Argon2id hash"""
+        """Verify password against Argon2id hash."""
         try:
             self.ph.verify(hash_str, password)
             return True
         except VerifyMismatchError:
             return False
         except Exception as e:
-            logger.error(f"Password verification error: {e}")
+            logger.exception(f"Password verification error: {e}")
             return False
 
     def generate_secure_password(self, length: int = 16) -> str:
-        """Generate a cryptographically secure password"""
-        if length < self.config.min_length:
-            length = self.config.min_length
+        """Generate a cryptographically secure password."""
+        length = max(length, self.config.min_length)
 
         # Character sets
         uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -280,4 +276,4 @@ class PasswordSecurityPolicy:
 policy = PasswordSecurityPolicy()
 
 # Export key functions
-__all__ = ["PasswordSecurityPolicy", "PasswordPolicyConfig", "policy"]
+__all__ = ["PasswordPolicyConfig", "PasswordSecurityPolicy", "policy"]

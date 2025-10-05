@@ -1,5 +1,5 @@
 """AI Processor Module for Enterprise Integration
-Provides access to AI processing functionality
+Provides access to AI processing functionality.
 """
 
 """Compatibility shim for app.ai.processor."""

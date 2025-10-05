@@ -7,17 +7,18 @@ but the shim intentionally performs no runtime network calls.
 """
 
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def create_payment_request(*args, **kwargs) -> None:
+def create_payment_request(*args: Any, **kwargs: Any) -> dict[str, Any]:
     """Compatibility stub: return a deterministic dummy payment request."""
     logger.debug("xrpl_payments_mock.create_payment_request called (shim)")
     return {"id": "mock-payment", "address": "rMockAddress", "amount": 0}
 
 
-def verify_payment(*args, **kwargs) -> None:
+def verify_payment(*args: Any, **kwargs: Any) -> bool:
     """Compatibility stub: always return False (no payment)."""
     logger.debug("xrpl_payments_mock.verify_payment called (shim)")
     return False

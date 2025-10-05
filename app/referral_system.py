@@ -1,5 +1,5 @@
 """Klerno Labs Referral System
-Handles referral tracking, rewards, and viral growth mechanics
+Handles referral tracking, rewards, and viral growth mechanics.
 """
 
 import hashlib
@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 
 class ReferralCode(BaseModel):
-    """Referral code data model"""
+    """Referral code data model."""
 
     code: str
     user_id: str
@@ -26,7 +26,7 @@ class ReferralCode(BaseModel):
 
 
 class ReferralEvent(BaseModel):
-    """Referral event tracking"""
+    """Referral event tracking."""
 
     event_id: str
     referrer_id: str
@@ -38,7 +38,7 @@ class ReferralEvent(BaseModel):
 
 
 class ReferralReward(BaseModel):
-    """Referral reward tracking"""
+    """Referral reward tracking."""
 
     reward_id: str
     referrer_id: str
@@ -51,15 +51,15 @@ class ReferralReward(BaseModel):
 
 
 class ReferralManager:
-    """Handles all referral system operations"""
+    """Handles all referral system operations."""
 
-    def __init__(self, db: Session | None):
+    def __init__(self, db: Session | None) -> None:
         # Accept an optional Session for test/demo usage where a DB may not
         # be available. Callers in production should pass a real Session.
         self.db = db
 
     def generate_referral_code(self, user_id: str, prefix: str = "KL") -> str:
-        """Generate a unique referral code for a user"""
+        """Generate a unique referral code for a user."""
         # Create a deterministic but secure code
         secret = f"{user_id}-{secrets.token_hex(8)}"
         hash_obj = hashlib.sha256(secret.encode())
@@ -67,13 +67,13 @@ class ReferralManager:
         return f"{prefix}{code_suffix}"
 
     def create_referral_link(self, user_id: str, campaign: str = "general") -> str:
-        """Create a full referral link for sharing"""
+        """Create a full referral link for sharing."""
         code = self.generate_referral_code(user_id)
         base_url = "https://klernolabs.com"
         return f"{base_url}/signup?ref={code}&campaign={campaign}"
 
     def track_referral_signup(self, referral_code: str, new_user_id: str) -> bool:
-        """Track when someone signs up via a referral link"""
+        """Track when someone signs up via a referral link."""
         # In a real implementation, this would:
         # 1. Validate the referral code
         # 2. Create a referral event record
@@ -102,7 +102,7 @@ class ReferralManager:
         plan_type: str,
         amount: float,
     ) -> bool:
-        """Track when a referred user converts to paid"""
+        """Track when a referred user converts to paid."""
         # Find referral event for this user
         referral_event = self._get_referral_event_by_user(user_id)
         if not referral_event:
@@ -121,7 +121,7 @@ class ReferralManager:
         return self._process_referral_reward(reward)
 
     def get_user_referral_stats(self, user_id: str) -> dict[str, Any]:
-        """Get referral statistics for a user"""
+        """Get referral statistics for a user."""
         return {
             "referral_code": self.generate_referral_code(user_id),
             "total_referrals": self._count_user_referrals(user_id),
@@ -136,7 +136,7 @@ class ReferralManager:
         user_id: str,
         platform: str,
     ) -> dict[str, Any]:
-        """Generate platform - specific sharing content"""
+        """Generate platform - specific sharing content."""
         referral_link = self.create_referral_link(user_id, f"social_{platform}")
 
         templates: dict[str, dict[str, Any]] = {
@@ -174,51 +174,51 @@ class ReferralManager:
     # Helper methods (would integrate with actual database / infrastructure)
 
     def _get_user_by_code(self, code: str) -> str:
-        """Get user ID by referral code"""
+        """Get user ID by referral code."""
         # Mock implementation
         return "user_123"
 
     def _get_request_ip(self) -> str:
-        """Get current request IP"""
+        """Get current request IP."""
         return "127.0.0.1"
 
     def _get_user_agent(self) -> str:
-        """Get current user agent"""
+        """Get current user agent."""
         return "Mozilla / 5.0..."
 
     def _store_referral_event(self, event: ReferralEvent) -> bool:
-        """Store referral event in database"""
+        """Store referral event in database."""
         # Mock implementation - would use actual database
         return True
 
     def _get_referral_event_by_user(self, user_id: str) -> ReferralEvent | None:
-        """Get referral event for a user"""
+        """Get referral event for a user."""
         # Mock implementation
         return None
 
     def _process_referral_reward(self, reward: ReferralReward) -> bool:
-        """Process and store referral reward"""
+        """Process and store referral reward."""
         # Mock implementation - would integrate with payment system
         return True
 
     def _count_user_referrals(self, user_id: str) -> int:
-        """Count total referrals for user"""
+        """Count total referrals for user."""
         return 0
 
     def _count_user_conversions(self, user_id: str) -> int:
-        """Count successful conversions for user"""
+        """Count successful conversions for user."""
         return 0
 
     def _calculate_total_earnings(self, user_id: str) -> float:
-        """Calculate total earnings for user"""
+        """Calculate total earnings for user."""
         return 0.0
 
     def _calculate_pending_rewards(self, user_id: str) -> float:
-        """Calculate pending rewards for user"""
+        """Calculate pending rewards for user."""
         return 0.0
 
     def _generate_email_template(self, referral_link: str) -> str:
-        """Generate email sharing template"""
+        """Generate email sharing template."""
         return (
             "Hi there!\n\n"
             "I wanted to share this incredible tool I just found - Klerno Labs.\n\n"
@@ -241,19 +241,19 @@ class ReferralManager:
 
 
 class ViralAnalytics:
-    """Track and analyze viral growth metrics"""
+    """Track and analyze viral growth metrics."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def calculate_viral_coefficient(self, period_days: int = 30) -> float:
-        """Calculate viral coefficient for given period"""
+        """Calculate viral coefficient for given period."""
         # Viral coefficient = (# of new users from referrals) / (# of existing users)
         # Would use actual data from database
         return 0.45  # Mock value
 
     def get_referral_funnel(self) -> dict[str, Any]:
-        """Get referral conversion funnel metrics"""
+        """Get referral conversion funnel metrics."""
         return {
             "link_clicks": 1250,
             "signups": 487,
@@ -263,7 +263,7 @@ class ViralAnalytics:
         }
 
     def get_top_referrers(self, limit: int = 10) -> list[dict[str, Any]]:
-        """Get top performing referrers"""
+        """Get top performing referrers."""
         return [
             {
                 "user_id": "user_123",
@@ -281,8 +281,8 @@ class ViralAnalytics:
         ]
 
     def track_sharing_event(self, user_id: str, platform: str, content_type: str):
-        """Track when users share content"""
-        event = {
+        """Track when users share content."""
+        return {
             "user_id": user_id,
             "platform": platform,
             "content_type": content_type,
@@ -290,14 +290,13 @@ class ViralAnalytics:
             "session_id": secrets.token_hex(8),
         }
         # Would store in analytics database
-        return event
 
 
 # Integration with existing auth system
 
 
 def integrate_referral_with_signup(signup_data: dict, referral_code: str | None = None):
-    """Integrate referral tracking with user signup"""
+    """Integrate referral tracking with user signup."""
     if referral_code:
         # Track the referral signup (defensive: only call when we have a user_id)
         new_user_id = signup_data.get("user_id")
@@ -321,12 +320,9 @@ if __name__ == "__main__":
 
     # Generate referral link
     link = manager.create_referral_link("user_123")
-    print(f"Referral link: {link}")
 
     # Get sharing content
     twitter_content = manager.generate_social_share_content("user_123", "twitter")
-    print(f"Twitter content: {twitter_content}")
 
     # Get user stats
     stats = manager.get_user_referral_stats("user_123")
-    print(f"User stats: {stats}")

@@ -8,7 +8,7 @@ from contextlib import contextmanager
 class DatabaseConnectionPool:
     """Simple database connection pool for SQLite."""
 
-    def __init__(self, database_path: str, pool_size: int = 10):
+    def __init__(self, database_path: str, pool_size: int = 10) -> None:
         self.database_path = database_path
         self.pool_size = pool_size
         self.pool = queue.Queue(maxsize=pool_size)
@@ -22,7 +22,7 @@ class DatabaseConnectionPool:
 
     @contextmanager
     def get_connection(
-        self, timeout: float = 30.0
+        self, timeout: float = 30.0,
     ) -> Generator[sqlite3.Connection, None, None]:
         """Get connection from pool with automatic return."""
         conn = None
@@ -33,7 +33,7 @@ class DatabaseConnectionPool:
             if conn:
                 self.pool.put(conn)
 
-    def close_all(self):
+    def close_all(self) -> None:
         """Close all connections in the pool."""
         while not self.pool.empty():
             try:
@@ -47,7 +47,7 @@ class DatabaseConnectionPool:
 db_pool = None
 
 
-def initialize_connection_pool(database_path: str = "./data/klerno.db"):
+def initialize_connection_pool(database_path: str = "./data/klerno.db") -> None:
     """Initialize the global connection pool."""
     global db_pool
     db_pool = DatabaseConnectionPool(database_path)

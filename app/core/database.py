@@ -60,7 +60,7 @@ class DatabaseConnectionManager:
         except Exception as e:
             if conn:
                 conn.rollback()
-            logger.error(f"Database connection error: {e}")
+            logger.exception(f"Database connection error: {e}")
             raise
         finally:
             if conn:
@@ -120,7 +120,7 @@ class DatabaseConnectionManager:
                 return True
             except Exception as e:
                 conn.rollback()
-                logger.error(f"Transaction failed: {e}")
+                logger.exception(f"Transaction failed: {e}")
                 return False
 
 

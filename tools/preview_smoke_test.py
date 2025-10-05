@@ -28,5 +28,5 @@ for p in paths:
     r = client.get(p)
     results[p] = (r.status_code, r.headers.get("content-type"))
 
-for p, (s, t) in results.items():
-    print(f"{p}: {s} - {t}")
+for p in results:
+    pass

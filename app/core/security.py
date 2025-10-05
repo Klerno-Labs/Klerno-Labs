@@ -1,4 +1,4 @@
-"""Unified Security Module for Klerno Labs
+"""Unified Security Module for Klerno Labs.
 
 This module consolidates all security functionality into a single source of truth:
 - API key authentication
@@ -21,15 +21,17 @@ import os
 import secrets
 import time
 from collections import defaultdict
-from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from dotenv import find_dotenv, load_dotenv
 from fastapi import Header, HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # Configure unified security logging
 security_logger = logging.getLogger("klerno.security.unified")
@@ -114,7 +116,7 @@ class AuditEvent:
         outcome: str = "success",
         details: dict[str, Any] | None = None,
         user_id: str | None = None,
-    ):
+    ) -> None:
         self.event_type = event_type
         self.outcome = outcome
         self.details = details or {}
@@ -180,7 +182,7 @@ class SecurityManager:
         # config values may be typed as object; cast to Any so int() overloads match
         window: int = int(cast("Any", self.config.get("rate_limit_window", 60)))
         max_requests: int = int(
-            cast("Any", self.config.get("rate_limit_requests", 100))
+            cast("Any", self.config.get("rate_limit_requests", 100)),
         )
 
         # Clean old entries
@@ -234,7 +236,7 @@ def expected_api_key() -> str:
     """Get expected API key with priority:
     1) ENV: X_API_KEY or API_KEY
     2) File: data/api_key.secret
-    3) Generate new key
+    3) Generate new key.
     """
     # Try environment variables first
     key = os.getenv("X_API_KEY") or os.getenv("API_KEY")
@@ -255,7 +257,7 @@ def expected_api_key() -> str:
         _META_FILE.write_text(f"Generated: {datetime.now(UTC).isoformat()}\n")
         security_logger.info("Generated new API key")
     except Exception as e:
-        security_logger.error(f"Failed to save API key: {e}")
+        security_logger.exception(f"Failed to save API key: {e}")
 
     return new_key
 
@@ -294,7 +296,7 @@ class UnifiedSecurityMiddleware(BaseHTTPMiddleware):
     - Request validation
     - Security headers
     - Threat detection
-    - Audit logging
+    - Audit logging.
     """
 
     def __init__(self, app: Any, config: dict[str, Any] | None = None) -> None:
@@ -436,7 +438,7 @@ class UnifiedSecurityMiddleware(BaseHTTPMiddleware):
 class AuditLogger:
     """Centralized audit logging for security events."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = logging.getLogger("klerno.audit")
         self.logger.setLevel(logging.INFO)
 

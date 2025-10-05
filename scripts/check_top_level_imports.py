@@ -39,7 +39,7 @@ def scan_file(path: Path) -> list[str]:
     return errors
 
 
-def main():
+def main() -> None:
     repo = Path(__file__).resolve().parents[1]
     py_files = list(repo.rglob("*.py"))
     errs: list[str] = []
@@ -50,9 +50,8 @@ def main():
         errs.extend(scan_file(p))
 
     if errs:
-        print("Top-level heavy imports found:")
-        for e in errs:
-            print(" -", e)
+        for _e in errs:
+            pass
         sys.exit(2)
 
 

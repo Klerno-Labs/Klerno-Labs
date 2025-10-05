@@ -18,7 +18,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Add security headers to response."""
-
         response = await call_next(request)
 
         # Security headers
@@ -65,7 +64,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Log request details."""
-
         start_time = time.perf_counter()
 
         # Log request
@@ -74,7 +72,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
         logger.info(
             f"Request: {request.method} {request.url.path} "
-            f"from {client_ip} [{user_agent}]"
+            f"from {client_ip} [{user_agent}]",
         )
 
         response = await call_next(request)
@@ -82,7 +80,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         # Log response
         process_time = time.perf_counter() - start_time
         logger.info(
-            f"Response: {response.status_code} processed in {process_time:.4f}s"
+            f"Response: {response.status_code} processed in {process_time:.4f}s",
         )
 
         return response
@@ -90,7 +88,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 def configure_security_middleware(app: FastAPI) -> None:
     """Configure all security middleware for the FastAPI app."""
-
     # Add compression middleware first
     app.add_middleware(GZipMiddleware, minimum_size=1000)
 

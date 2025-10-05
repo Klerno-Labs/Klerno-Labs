@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class RateLimiter:
     """In-memory rate limiter with sliding window."""
 
-    def __init__(self, requests_per_window: int = 100, window_seconds: int = 60):
+    def __init__(self, requests_per_window: int = 100, window_seconds: int = 60) -> None:
         """Initialize rate limiter."""
         self.requests_per_window = requests_per_window
         self.window_seconds = window_seconds
@@ -21,7 +21,6 @@ class RateLimiter:
 
     def is_allowed(self, identifier: str) -> bool:
         """Check if request is allowed for the given identifier."""
-
         current_time = time.time()
         request_times = self.requests[identifier]
 
@@ -60,13 +59,12 @@ class RateLimiter:
 class RateLimitMiddleware:
     """Rate limiting middleware for FastAPI."""
 
-    def __init__(self, requests_per_window: int = 100, window_seconds: int = 60):
+    def __init__(self, requests_per_window: int = 100, window_seconds: int = 60) -> None:
         """Initialize rate limit middleware."""
         self.rate_limiter = RateLimiter(requests_per_window, window_seconds)
 
     def get_client_identifier(self, request: Request) -> str:
         """Get unique identifier for rate limiting."""
-
         # Try to get real IP from proxy headers
         forwarded_for = request.headers.get("X-Forwarded-For")
         if forwarded_for:
@@ -82,7 +80,6 @@ class RateLimitMiddleware:
 
     def check_rate_limit(self, request: Request) -> None:
         """Check rate limit and raise exception if exceeded."""
-
         identifier = self.get_client_identifier(request)
 
         if not self.rate_limiter.is_allowed(identifier):
@@ -116,7 +113,6 @@ strict_rate_limiter = RateLimitMiddleware(requests_per_window=10, window_seconds
 
 def rate_limit(requests_per_window: int = 100, window_seconds: int = 60):
     """Decorator for rate limiting specific endpoints."""
-
     limiter = RateLimitMiddleware(requests_per_window, window_seconds)
 
     def decorator(func):

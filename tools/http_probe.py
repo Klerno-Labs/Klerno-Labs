@@ -31,4 +31,3 @@ def probe(path, timeout: int = 5):
 if __name__ == "__main__":
     for p in paths:
         status, ctype = probe(p)
-        print(f"{p}: {status} - {ctype}")

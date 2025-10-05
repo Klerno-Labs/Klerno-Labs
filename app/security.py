@@ -53,7 +53,7 @@ def _ensure_data_dir() -> None:
 def expected_api_key() -> str:
     """Priority:
     1) ENV: X_API_KEY (or API_KEY)
-    2) File: data / api_key.secret (written by admin rotation)
+    2) File: data / api_key.secret (written by admin rotation).
     """
     # ensure env vars are loaded (deferred)
     _ensure_env_loaded()
@@ -98,7 +98,7 @@ async def enforce_api_key(
 ) -> bool:
     """Authorize EITHER:
       • x - api - key header that matches the expected key, OR
-      • a valid session (so the web dashboard works without pasting a key)
+      • a valid session (so the web dashboard works without pasting a key).
 
     Dev - friendly: if no key is configured at all, allow requests.
     Enhanced with audit logging for security events.
@@ -126,7 +126,8 @@ async def enforce_api_key(
         deps_mod = importlib.import_module("app.deps")
         require_user = getattr(deps_mod, "require_user", None)
         if require_user is None:
-            raise RuntimeError("require_user not available")
+            msg = "require_user not available"
+            raise RuntimeError(msg)
 
         # Call the dependency; some implementations accept Request, others do not.
         try:

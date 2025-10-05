@@ -1,5 +1,5 @@
 """Performance and Load Tests
-Tests application performance under various load conditions
+Tests application performance under various load conditions.
 """
 
 import asyncio
@@ -13,7 +13,7 @@ class TestPerformanceBenchmarks:
     """Test performance benchmarks for critical operations."""
 
     @pytest.mark.asyncio
-    async def test_authentication_performance(self, async_client):
+    async def test_authentication_performance(self, async_client) -> None:
         """Test authentication endpoint performance."""
         start_time = time.time()
 
@@ -36,7 +36,7 @@ class TestPerformanceBenchmarks:
         assert total_time < 2.0  # Total time for 10 requests under 2 seconds
 
     @pytest.mark.asyncio
-    async def test_transaction_processing_performance(self, async_client):
+    async def test_transaction_processing_performance(self, async_client) -> None:
         """Test transaction processing performance."""
         transaction_times = []
 
@@ -66,7 +66,7 @@ class TestPerformanceBenchmarks:
         assert max_time < 2.0  # Maximum processing time under 2 seconds
 
     @pytest.mark.asyncio
-    async def test_compliance_analysis_performance(self, async_client):
+    async def test_compliance_analysis_performance(self, async_client) -> None:
         """Test compliance analysis performance."""
         large_transaction_data = {
             "amount": 50000,
@@ -95,7 +95,7 @@ class TestConcurrencyAndScaling:
     """Test application behavior under concurrent load."""
 
     @pytest.mark.asyncio
-    async def test_concurrent_user_sessions(self, async_client):
+    async def test_concurrent_user_sessions(self, async_client) -> None:
         """Test handling of concurrent user sessions."""
         concurrent_users = 50
         requests_per_user = 5
@@ -163,7 +163,7 @@ class TestConcurrencyAndScaling:
             assert total_time < 30.0  # Total test time under 30 seconds
 
     @pytest.mark.asyncio
-    async def test_database_connection_pooling(self, async_client):
+    async def test_database_connection_pooling(self, async_client) -> None:
         """Test database connection pooling under load."""
         concurrent_db_operations = 100
 
@@ -219,7 +219,7 @@ class TestMemoryAndResourceUsage:
     """Test memory usage and resource consumption."""
 
     @pytest.mark.asyncio
-    async def test_memory_usage_under_load(self, async_client):
+    async def test_memory_usage_under_load(self, async_client) -> None:
         """Test memory usage during high-load operations."""
         import os
 
@@ -255,14 +255,14 @@ class TestMemoryAndResourceUsage:
         assert memory_increase < 100  # Memory increase should be less than 100MB
         assert final_memory < 500  # Total memory usage should be reasonable
 
-    def test_cpu_usage_monitoring(self):
+    def test_cpu_usage_monitoring(self) -> None:
         """Test CPU usage during intensive operations."""
         import psutil
 
         # Monitor CPU usage
         cpu_percentages = []
 
-        def cpu_monitor():
+        def cpu_monitor() -> None:
             for _ in range(10):
                 cpu_percentages.append(psutil.cpu_percent(interval=1))
 
@@ -291,7 +291,7 @@ class TestScalabilityLimits:
     """Test application scalability limits."""
 
     @pytest.mark.asyncio
-    async def test_maximum_concurrent_requests(self, async_client):
+    async def test_maximum_concurrent_requests(self, async_client) -> None:
         """Test maximum number of concurrent requests the system can handle."""
         max_concurrent = 200
         request_timeout = 10  # seconds
@@ -334,7 +334,7 @@ class TestScalabilityLimits:
         successful_requests = [
             r for r in results if isinstance(r, dict) and r["success"]
         ]
-        failed_requests = [
+        [
             r for r in results if isinstance(r, dict) and not r["success"]
         ]
 
@@ -347,8 +347,3 @@ class TestScalabilityLimits:
         assert success_rate > 0.90  # At least 90% success rate under max load
         assert avg_response_time < 5.0  # Average response time under 5 seconds
 
-        print("Scalability Test Results:")
-        print(f"  Max Concurrent Requests: {max_concurrent}")
-        print(f"  Success Rate: {success_rate:.2%}")
-        print(f"  Average Response Time: {avg_response_time:.2f}s")
-        print(f"  Failed Requests: {len(failed_requests)}")

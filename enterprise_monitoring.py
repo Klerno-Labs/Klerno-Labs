@@ -1,5 +1,5 @@
 """Enterprise Monitoring System Wrapper
-Provides enterprise-grade monitoring capabilities for the TOP 0.1% application
+Provides enterprise-grade monitoring capabilities for the TOP 0.1% application.
 """
 
 """Compatibility shim for enterprise monitoring.

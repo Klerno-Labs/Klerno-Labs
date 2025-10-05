@@ -1,19 +1,21 @@
-"""Klerno Labs - Enhanced Health Checks and Monitoring
+"""Klerno Labs - Enhanced Health Checks and Monitoring.
 ==================================================
 Comprehensive health checks and metrics for horizontal scaling
 """
 
 import asyncio
 import time
-from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import psutil
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 
-from ._typing_shims import IRedisLike
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from ._typing_shims import IRedisLike
 
 psycopg2: Any | None = None
 try:
@@ -37,7 +39,7 @@ except Exception:
 
 
 class HealthStatus(BaseModel):
-    """Health check response model"""
+    """Health check response model."""
 
     status: str
     timestamp: str
@@ -50,7 +52,7 @@ class HealthStatus(BaseModel):
 
 
 class MetricsResponse(BaseModel):
-    """Metrics response model"""
+    """Metrics response model."""
 
     timestamp: str
     instance_id: str | None = None
@@ -61,9 +63,9 @@ class MetricsResponse(BaseModel):
 
 
 class HealthChecker:
-    """Comprehensive health checking for all services"""
+    """Comprehensive health checking for all services."""
 
-    def __init__(self, app: FastAPI):
+    def __init__(self, app: FastAPI) -> None:
         self.app = app
         self.start_time = time.time()
         self.version = "1.0.0"  # Should be loaded from environment
@@ -71,7 +73,7 @@ class HealthChecker:
         self.instance_id = None  # Should be loaded from environment
 
     async def check_database(self) -> dict[str, Any]:
-        """Check PostgreSQL database connectivity and performance"""
+        """Check PostgreSQL database connectivity and performance."""
         try:
             # Use connection from settings
             from app.settings import get_settings
@@ -121,7 +123,7 @@ class HealthChecker:
             }
 
     async def check_cache(self) -> dict[str, Any]:
-        """Check Redis cache connectivity and performance"""
+        """Check Redis cache connectivity and performance."""
         try:
             start_time = time.time()
 
@@ -179,7 +181,7 @@ class HealthChecker:
             }
 
     async def check_external_apis(self) -> dict[str, Any]:
-        """Check external API dependencies"""
+        """Check external API dependencies."""
         checks = {}
 
         # XRPL Network check
@@ -211,7 +213,7 @@ class HealthChecker:
         return checks
 
     def get_system_metrics(self) -> dict[str, Any]:
-        """Get system resource metrics"""
+        """Get system resource metrics."""
         try:
             # CPU metrics
             cpu_percent = psutil.cpu_percent(interval=1)
@@ -255,7 +257,7 @@ class HealthChecker:
             return {"error": f"Failed to get system metrics: {e!s}"}
 
     async def comprehensive_health_check(self) -> HealthStatus:
-        """Perform comprehensive health check"""
+        """Perform comprehensive health check."""
         start_time = time.time()
 
         # Run all checks concurrently and assign explicitly to avoid
@@ -313,7 +315,7 @@ class HealthChecker:
         )
 
     async def get_metrics(self) -> MetricsResponse:
-        """Get comprehensive metrics for monitoring"""
+        """Get comprehensive metrics for monitoring."""
         try:
             # Get system metrics
             system_metrics = self.get_system_metrics()
@@ -365,7 +367,7 @@ health_checker = None
 
 
 def init_health_checker(app: FastAPI) -> HealthChecker:
-    """Initialize health checker"""
+    """Initialize health checker."""
     # Assign the module-level health_checker so callers can retrieve it
     # using get_health_checker(). We intentionally bind here.
     global health_checker
@@ -374,8 +376,9 @@ def init_health_checker(app: FastAPI) -> HealthChecker:
 
 
 def get_health_checker() -> HealthChecker:
-    """Get health checker instance"""
+    """Get health checker instance."""
     # No global statement required for read access; just ensure it's initialized.
     if health_checker is None:
-        raise RuntimeError("Health checker not initialized")
+        msg = "Health checker not initialized"
+        raise RuntimeError(msg)
     return health_checker

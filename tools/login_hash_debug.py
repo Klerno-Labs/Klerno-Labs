@@ -23,7 +23,6 @@ with tempfile.NamedTemporaryFile(
 os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
 os.environ["DB_PATH"] = db_path
 
-print("DEBUG: DB_PATH ->", os.environ["DB_PATH"])
 
 # create legacy users table
 con = sqlite3.connect(db_path)
@@ -48,7 +47,6 @@ from app.security_session import hash_pw, verify_pw
 
 pw = "testpassword"
 pw_hash = hash_pw(pw)
-print("DEBUG: generated hash prefix:", pw_hash[:4])
 
 # Insert user
 con = sqlite3.connect(db_path)
@@ -61,23 +59,20 @@ con.commit()
 con.close()
 
 # Direct DB introspection to confirm contents
-print("\nDEBUG: Raw DB contents (sqlite3 query)")
 con = sqlite3.connect(db_path)
 cur = con.cursor()
 try:
     cur.execute("SELECT id, email, hashed_password, is_active, is_admin FROM users")
     rows = cur.fetchall()
-    for r in rows:
-        print("row ->", r)
-except Exception as e:
-    print("raw select failed:", type(e).__name__, str(e))
+    for _r in rows:
+        pass
+except Exception:
+    pass
 finally:
     con.close()
 
 # Read via store
 user = store.get_user_by_email("test@example.com")
-print("\nstore.get_user_by_email ->", user)
-print("store returned user keys:", list(user.keys()) if user else None)
 if user and user.get("password_hash"):
     ph = user.get("password_hash")
     if ph:
@@ -85,9 +80,7 @@ if user and user.get("password_hash"):
         from typing import cast
 
         ph_str = cast("str", ph)
-        print("stored password_hash (prefix):", ph_str[:8])
         ok = verify_pw(pw, ph_str)
-        print("verify_pw result:", ok)
 
 # cleanup
 from contextlib import suppress
