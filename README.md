@@ -64,7 +64,8 @@ python -m pip install -r dev-requirements.txt
 
 ### CI status
 
-![Core CI](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/core-ci.yml/badge.svg)
+[![Core CI](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/core-ci.yml/badge.svg)](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/core-ci.yml)
+[![Enterprise](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/enterprise.yml/badge.svg)](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/enterprise.yml)
 
 
 ## 🔑 JWT Rotation & Refresh Tokens
