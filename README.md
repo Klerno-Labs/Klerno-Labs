@@ -67,6 +67,21 @@ python -m pip install -r dev-requirements.txt
 [![Core CI](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/core-ci.yml/badge.svg)](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/core-ci.yml)
 [![Enterprise](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/enterprise.yml/badge.svg)](https://github.com/Klerno-Labs/Klerno-Labs/actions/workflows/enterprise.yml)
 
+### Pre-commit (optional but recommended)
+
+Install and run the same checks locally:
+
+```powershell
+python -m pip install pre-commit
+pre-commit install
+# Run on all files once
+pre-commit run --all-files
+```
+
+### Coverage in CI
+
+The Core CI workflow generates a coverage.xml artifact on every run. You can download it from the job artifacts to review coverage locally.
+
 
 ## 🔑 JWT Rotation & Refresh Tokens
 
