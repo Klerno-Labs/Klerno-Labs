@@ -3,7 +3,7 @@
 {% block title %}Sign In - Klerno Labs{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/css/design-system.css">
+<link rel="stylesheet" href="{{ static_url('css/design-system.css') }}">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -315,7 +315,7 @@
     <div class="auth-footer">
       <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.875rem;">
         Don't have an account?
-        <a href="/signup" class="auth-link">Create one here</a>
+        <a href="/auth/signup" class="auth-link">Create one here</a>
       </p>
 
       <div

@@ -315,7 +315,7 @@
 <div id="auth-card" class="auth-container" data-show-demo="{{ 'true' if show_demo_credentials else 'false' }}">
   <div class="auth-card">
     <div class="logo-section">
-      <img src="/static/klerno-logo.png" alt="Klerno Labs" class="logo">
+      <img src="{{ static_url('klerno-logo.png') }}" alt="Klerno Labs" class="logo">
       <h1 class="auth-title">Welcome Back</h1>
       <p class="auth-subtitle">Sign in to your Klerno Labs account</p>
     </div>
@@ -377,7 +377,7 @@
     <div class="auth-footer">
       <p>
         Don't have an account?
-        <a href="/signup" class="auth-link">Create one here</a>
+        <a href="/auth/signup" class="auth-link">Create one here</a>
       </p>
     </div>
 

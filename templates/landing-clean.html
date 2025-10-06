@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Klerno Labs - Elite Blockchain Security & Risk Analysis{% endblock %}
+
+{% block head %}
+<!-- SEO Meta Tags -->
+<meta name="description"
+    content="Klerno Labs provides enterprise-grade blockchain security and risk analysis for XRPL, Bitcoin, Ethereum, and major cryptocurrencies. Real-time monitoring, compliance tools, and AI-powered threat detection.">
+<meta name="keywords"
+    content="blockchain security, cryptocurrency analysis, XRPL monitoring, Bitcoin analysis, Ethereum security, risk assessment, compliance tools">
+<meta name="author" content="Klerno Labs">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ request.base_url }}">
+<meta property="og:title" content="Klerno Labs - Elite Blockchain Security & Risk Analysis">
+<meta property="og:description"
+    content="Enterprise-grade blockchain security and risk analysis for major cryptocurrencies. Real-time monitoring, compliance tools, and AI-powered threat detection.">
+<meta property="og:image" content="{{ static_url('klerno-social-share.jpg') }}">
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="{{ request.base_url }}">
+<meta property="twitter:title" content="Klerno Labs - Elite Blockchain Security & Risk Analysis">
+<meta property="twitter:description"
+    content="Enterprise-grade blockchain security and risk analysis for major cryptocurrencies. Real-time monitoring, compliance tools, and AI-powered threat detection.">
+<meta property="twitter:image" content="{{ static_url('klerno-social-share.jpg') }}">
+
+<!-- Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Klerno Labs",
+  "url": "{{ request.base_url }}",
+  "logo": "{{ request.base_url }}static/klerno-logo.png",
+  "description": "Enterprise-grade blockchain security and risk analysis platform",
+  "foundingDate": "2024",
+  "industry": "Blockchain Security",
+  "services": [
+    {
+      "@type": "Service",
+      "name": "XRPL Analysis",
+      "description": "Specialized security monitoring for XRP Ledger transactions"
+    },
+    {
+      "@type": "Service",
+      "name": "Compliance Tools",
+      "description": "Enterprise compliance tools for cryptocurrency regulations"
+    }
+  ],
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "",
+    "contactType": "Customer Service",
+    "email": "contact@klerno.com"
+  }
+}
+</script>
+
+<link rel="preload" as="image" href="{{ static_url('images/hero-bg.jpg') }}">
+{% endblock %}
+
+{% block content %}
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <div class="hero-content">
+        <h1 class="hero-title">Elite Blockchain Security</h1>
+        <p class="hero-subtitle">
+            Enterprise-grade risk analysis and compliance monitoring for XRPL, Bitcoin, Ethereum, and major
+            cryptocurrencies.
+            Powered by AI-driven threat detection and real-time transaction analysis.
+        </p>
+        <div class="hero-cta">
+            <a href="#demo" class="btn-elite btn-elite-primary">Watch Demo</a>
+            <a href="/auth/signup" class="btn-elite btn-elite-secondary">Start Free Trial</a>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section section">
+    <div class="section-container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">99.9%</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">50M+</div>
+                <div class="stat-label">Transactions Analyzed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">500+</div>
+                <div class="stat-label">Enterprise Clients</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Monitoring</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section section">
+    <div class="section-container">
+        <h2 class="section-title">Powerful Features</h2>
+        <p class="section-subtitle">
+            Comprehensive blockchain security and compliance tools designed for enterprise-scale operations.
+        </p>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3 class="feature-title">Advanced Security Monitoring</h3>
+                <p class="feature-description">
+                    Real-time threat detection with AI-powered analysis of suspicious transaction patterns and wallet
+                    behaviors.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">Risk Assessment</h3>
+                <p class="feature-description">
+                    Comprehensive risk scoring and analysis for cryptocurrency transactions with detailed compliance
+                    reporting.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">XRPL Specialization</h3>
+                <p class="feature-description">
+                    Deep integration with XRP Ledger for specialized monitoring, analysis, and compliance tools.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3 class="feature-title">Multi-Chain Support</h3>
+                <p class="feature-description">
+                    Support for Bitcoin, Ethereum, and other major blockchain networks with unified monitoring
+                    dashboard.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3 class="feature-title">Analytics & Reporting</h3>
+                <p class="feature-description">
+                    Advanced analytics with customizable reports and compliance documentation for regulatory
+                    requirements.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔧</div>
+                <h3 class="feature-title">API Integration</h3>
+                <p class="feature-description">
+                    Robust API for seamless integration with existing systems and custom compliance workflows.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Demo Section -->
+<section class="demo-section section" id="demo">
+    <div class="section-container">
+        <h2 class="section-title">See It In Action</h2>
+        <p class="section-subtitle">
+            Experience our advanced blockchain analysis platform with an interactive demo.
+        </p>
+
+        <div class="demo-container">
+            <div class="demo-header">
+                <div class="demo-dot"></div>
+                <div class="demo-dot"></div>
+                <div class="demo-dot"></div>
+            </div>
+            <div class="demo-content">
+                <div>
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">📊</div>
+                    <div style="font-size: 1.125rem;">Interactive Demo</div>
+                    <div style="font-size: 0.875rem; margin-top: 0.5rem; opacity: 0.7;">
+                        Click "Watch Demo" to see the full platform in action
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="#demo" class="btn-elite btn-elite-primary">Watch Demo</a>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section section">
+    <div class="section-container">
+        <h2 class="cta-title">Ready to Secure Your Blockchain Operations?</h2>
+        <p class="cta-subtitle">
+            Join hundreds of enterprises already using Klerno Labs for blockchain security and compliance.
+        </p>
+        <div class="hero-cta">
+            <a href="/auth/signup" class="btn-elite btn-elite-secondary">Start Free Trial</a>
+            <a href="mailto:contact@klerno.com" class="btn-elite btn-elite-primary">Contact Sales</a>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+<section class="pricing-section section">
+    <div class="section-container">
+        <h2 class="section-title">Choose Your Plan</h2>
+        <p class="section-subtitle">
+            Flexible pricing plans designed to scale with your business needs.
+        </p>
+
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="pricing-tier">Starter</div>
+                <div class="pricing-price">$99</div>
+                <div class="pricing-period">per month</div>
+                <ul class="pricing-features">
+                    <li>Basic monitoring</li>
+                    <li>Email alerts</li>
+                    <li>Standard support</li>
+                    <li>5 wallets</li>
+                </ul>
+                <a href="/auth/signup" class="btn-elite btn-elite-secondary">Get Started</a>
+            </div>
+
+            <div class="pricing-card featured">
+                <div class="pricing-tier">Professional</div>
+                <div class="pricing-price">$299</div>
+                <div class="pricing-period">per month</div>
+                <ul class="pricing-features">
+                    <li>Advanced monitoring</li>
+                    <li>Real-time alerts</li>
+                    <li>Priority support</li>
+                    <li>50 wallets</li>
+                    <li>API access</li>
+                    <li>Custom reports</li>
+                </ul>
+                <a href="/auth/signup" class="btn-elite btn-elite-primary">Start Trial</a>
+            </div>
+
+            <div class="pricing-card">
+                <div class="pricing-tier">Enterprise</div>
+                <div class="pricing-price">Custom</div>
+                <div class="pricing-period">pricing</div>
+                <ul class="pricing-features">
+                    <li>Unlimited monitoring</li>
+                    <li>24/7 support</li>
+                    <li>Custom integrations</li>
+                    <li>Unlimited wallets</li>
+                    <li>White-label options</li>
+                    <li>Dedicated account manager</li>
+                </ul>
+                <a href="mailto:enterprise@klerno.com" class="btn-elite btn-elite-secondary">Contact Sales</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

@@ -4,7 +4,12 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any, NotRequired, TypedDict
+from typing import Any
+
+try:  # Pydantic v2 requires typing_extensions.TypedDict on Python < 3.12
+    from typing_extensions import NotRequired, TypedDict  # type: ignore
+except Exception:  # pragma: no cover - fallback for Python >= 3.12
+    from typing import NotRequired, TypedDict  # type: ignore
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field
 

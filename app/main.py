@@ -46,6 +46,29 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
+# Static asset versioning helper to enable long-lived caching without frequent 304s
+try:
+    from .static_version import get_static_version
+
+    STATIC_VERSION = get_static_version()
+except Exception:
+    STATIC_VERSION = os.getenv(
+        "STATIC_VERSION", str(int(datetime.now(UTC).timestamp()))
+    )
+
+
+def static_url(path: str) -> str:
+    """Build a versioned URL for assets under /static.
+
+    Example: static_url('css/organized-elite.css') -> /static/css/organized-elite.css?v=...
+    """
+    p = path.lstrip("/")
+    return f"/static/{p}?v={STATIC_VERSION}"
+
+
+# Expose to all templates
+templates.env.globals["static_url"] = static_url
+
 
 # Application lifespan
 @asynccontextmanager
@@ -183,6 +206,17 @@ async def add_security_headers(
     # Provide a minimal baseline CSP only when nonce system disabled so we don't conflict.
     if not csp_enabled():
         response.headers.setdefault("Content-Security-Policy", "default-src 'self'")
+    # Strengthen caching for versioned static assets
+    try:
+        path = request.url.path
+        if path.startswith("/static/") and "v=" in str(request.url):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        # Legacy convenience mounts: set a modest cache to reduce revalidation noise
+        elif path.startswith("/css/") or path.startswith("/js/"):
+            # 1 hour cache
+            response.headers.setdefault("Cache-Control", "public, max-age=3600")
+    except Exception:
+        pass
     return response
 
 
@@ -190,6 +224,23 @@ async def add_security_headers(
 
 with _suppress(Exception):
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    # Convenience mounts for legacy paths if referenced anywhere
+    css_dir = STATIC_DIR / "css"
+    js_dir = STATIC_DIR / "js"
+    if css_dir.exists():
+        app.mount("/css", StaticFiles(directory=str(css_dir)), name="css")
+    if js_dir.exists():
+        app.mount("/js", StaticFiles(directory=str(js_dir)), name="js")
+
+
+# Legacy direct logo path -> redirect to versioned static asset
+@app.get("/klerno-logo.png")
+async def _logo_redirect() -> Response:
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(
+        url=f"/static/klerno-logo.png?v={STATIC_VERSION}", status_code=307
+    )
 
 
 # Basic models
@@ -215,9 +266,16 @@ async def dashboard_page(request: Request) -> Any:
 
 @app.get("/")
 async def landing_page(request: Request) -> Any:
-    """Unified landing page (professional variant)."""
-    # Prefer the professional landing if available for a more polished look
-    return templates.TemplateResponse("landing-professional.html", {"request": request})
+    """Unified landing page (clean organized variant)."""
+    # Use the clean organized landing page
+    return templates.TemplateResponse("landing-clean.html", {"request": request})
+
+
+@app.get("/signup")
+async def legacy_signup_redirect() -> Response:
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(url="/auth/signup", status_code=307)
 
 
 # Import gating dependency (kept near top-level imports in practice). If circular issues arise,

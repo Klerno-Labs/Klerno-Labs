@@ -1,6 +1,11 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, TypedDict
+from typing import Any
+
+try:
+    from typing import TypedDict
+except ImportError:
+    from typing_extensions import TypedDict
 
 class TokenClaims(TypedDict, total=False):
     iss: str
@@ -26,21 +31,21 @@ class NeonRow(TypedDict, total=False):
 class User:
     def __init__(
         self,
-        id: int | None = ...,
+        id_: int | None = ...,
         email: str = ...,
         password_hash: str | None = ...,
         hashed_password: str | None = ...,
-        role: Any = ...,
+        role: str = ...,
         is_active: bool | None = ...,
         is_admin: bool | None = ...,
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401
     ) -> None: ...
 
     id: int | None
     email: str
     password_hash: str | None
     hashed_password: str | None
-    role: Any
+    role: str
     is_active: bool
     is_admin: bool
     created_at: datetime | None
@@ -50,13 +55,13 @@ class User:
 class Transaction:
     def __init__(
         self,
-        id: int | None = ...,
+        id_: int | None = ...,
         tx_id: str | None = ...,
         user_id: int | None = ...,
         amount: Decimal | float | str = ...,
         currency: str | None = ...,
         status: str | None = ...,
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401
     ) -> None: ...
 
     id: int | None
@@ -108,7 +113,7 @@ class ReportSummary:
         total_out: Decimal | None = ...,
         total_fees: Decimal | None = ...,
         net: Decimal | None = ...,
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401
     ) -> None: ...
 
     address: str | None
@@ -139,7 +144,7 @@ class ReportRequest:
         min_amount: Decimal | None = ...,
         max_amount: Decimal | None = ...,
         wallet_addresses: list[str] = ...,
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401
     ) -> None: ...
 
     address: str | None

@@ -1,7 +1,9 @@
 import contextlib
 import json
 import logging
+import os
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
@@ -15,12 +17,14 @@ from .audit_logger import (
     log_api_access_denied,
     log_auth_failure,
     log_auth_success,
+)
+from .audit_logger import log_logout as audit_log_logout
+from .audit_logger import log_mfa_enabled as audit_log_mfa_enabled
+from .audit_logger import (
     log_password_reset_confirmed,
     log_password_reset_requested,
     log_user_created,
 )
-from .audit_logger import log_logout as audit_log_logout
-from .audit_logger import log_mfa_enabled as audit_log_mfa_enabled
 from .deps import require_user
 from .refresh_tokens import (
     issue_refresh,
@@ -35,6 +39,25 @@ from .settings import get_settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 templates = Jinja2Templates(directory="templates")
+
+# Ensure templates in this router have the same helper for versioned static assets
+try:
+    from .static_version import get_static_version
+
+    _STATIC_VERSION = get_static_version()
+except Exception:
+    _STATIC_VERSION = os.getenv(
+        "STATIC_VERSION", str(int(datetime.now(UTC).timestamp()))
+    )
+
+
+def static_url(path: str) -> str:
+    p = path.lstrip("/")
+    return f"/static/{p}?v={_STATIC_VERSION}"
+
+
+templates.env.globals["static_url"] = static_url
+
 
 logger = logging.getLogger(__name__)
 # Logging is configured centrally in app.logging_config.configure_logging()

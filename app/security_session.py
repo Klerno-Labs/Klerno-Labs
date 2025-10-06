@@ -1,7 +1,12 @@
 import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any
+
+try:
+    from typing_extensions import TypedDict  # type: ignore
+except Exception:  # pragma: no cover
+    from typing import TypedDict  # type: ignore
 
 import jwt
 from fastapi import Depends, HTTPException, status

@@ -1,14 +1,15 @@
-
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Klerno Labs - Real-Time Dashboard</title>
-    <link rel="stylesheet" href="/static/css/klerno-themes.css">
-    <link rel="stylesheet" href="/static/css/realtime-features.css">
-    <link rel="stylesheet" href="/static/css/data-visualization.css">
+    <link rel="stylesheet" href="{{ static_url('css/klerno-themes.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/realtime-features.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/data-visualization.css') }}">
 </head>
+
 <body>
     <div class="realtime-dashboard">
         <!-- Main Content Area -->
@@ -44,12 +45,8 @@
                         <!-- Chat messages will appear here -->
                     </div>
                     <div class="chat-input-container">
-                        <textarea
-                            id="chat-input"
-                            class="chat-input"
-                            placeholder="Type a message..."
-                            rows="2"
-                        ></textarea>
+                        <textarea id="chat-input" class="chat-input" placeholder="Type a message..."
+                            rows="2"></textarea>
                     </div>
                 </div>
             </div>
@@ -65,9 +62,9 @@
     </div>
 
     <!-- Scripts -->
-    <script src="/static/js/theme-system.js"></script>
-    <script src="/static/js/data-visualization.js"></script>
-    <script src="/static/js/realtime-engine.js"></script>
+    <script src="{{ static_url('js/theme-system.js') }}"></script>
+    <script src="{{ static_url('js/data-visualization.js') }}"></script>
+    <script src="{{ static_url('js/realtime-engine.js') }}"></script>
 
     <script>
         // Initialize real-time dashboard
@@ -136,4 +133,5 @@
         });
     </script>
 </body>
+
 </html>

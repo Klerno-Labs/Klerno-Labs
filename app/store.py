@@ -24,7 +24,12 @@ import time
 from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, NotRequired, TypedDict, cast
+from typing import Any, cast
+
+try:
+    from typing_extensions import NotRequired, TypedDict  # type: ignore
+except Exception:  # pragma: no cover
+    from typing import NotRequired, TypedDict  # type: ignore
 
 from app._typing_shims import ISyncConnection
 from app.constants import CACHE_TTL
