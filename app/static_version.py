@@ -64,6 +64,13 @@ def get_static_version() -> str:
         _cached_version = env
         return _cached_version
 
+    # 1b) Render’s deploy metadata if available (set automatically by Render)
+    for k in ("RENDER_GIT_COMMIT_SHA", "RENDER_GIT_COMMIT"):
+        val = os.getenv(k)
+        if val:
+            _cached_version = val[:7]
+            return _cached_version
+
     # 2) Git short SHA when available
     try:
         repo_root = Path(__file__).resolve().parent.parent
