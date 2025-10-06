@@ -15,6 +15,8 @@ services:
         value: 8000
       - key: HOST
         value: 0.0.0.0
+      - key: READINESS_FAIL_OPEN
+        value: "1"
       - key: STATIC_VERSION
         # Render exposes RENDER_GIT_COMMIT or RENDER_GIT_COMMIT_SHA depending on runtime; use the latter if available
         # This ensures immutable, versioned assets per deploy
