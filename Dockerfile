@@ -8,7 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+# Upgrade pip to avoid resolver quirks and ensure fresh installs
+RUN python -m pip install --upgrade pip setuptools wheel \
+    && pip install -r requirements.txt \
+    && pip install --no-deps --upgrade itsdangerous>=2.1.2
 
 FROM base AS dev-deps
 COPY dev-requirements.txt .
