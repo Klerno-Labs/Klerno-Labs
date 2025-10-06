@@ -228,6 +228,15 @@ def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> 
         except Exception:
             backoff = 0.1
 
+    def _with_ssl(url: str) -> str:
+        try:
+            if (url.startswith("postgres://") or url.startswith("postgresql://")) and ("sslmode=" not in url):
+                sep = "&" if "?" in url else "?"
+                return f"{url}{sep}sslmode=require"
+        except Exception:
+            pass
+        return url
+
     last_exc = None
     for attempt in range(max(1, retries)):
         try:
@@ -236,14 +245,14 @@ def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> 
                 if psycopg is None:
                     msg = "psycopg (psycopg3) expected but not available"
                     raise RuntimeError(msg)
-                return psycopg.connect(DATABASE_URL)
+                return psycopg.connect(_with_ssl(DATABASE_URL))
             # psycopg2
             if psycopg is None or RealDictCursor is None:
                 msg = "psycopg2 and RealDictCursor required but not available"
                 raise RuntimeError(
                     msg,
                 )
-            return psycopg.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+            return psycopg.connect(_with_ssl(DATABASE_URL), cursor_factory=RealDictCursor)
         except Exception as e:
             last_exc = e
             # exponential backoff
@@ -340,7 +349,19 @@ def init_db() -> None:
         con = cast("ISyncConnection", sqlite3.connect(db_path, check_same_thread=False))
         con.row_factory = sqlite3.Row
     else:
-        con = _conn()
+        try:
+            con = _conn()
+        except Exception as e:
+            # Do not crash application startup if Postgres is temporarily unavailable.
+            # We will skip schema init and allow the service to start; readiness/ops can retry later.
+            try:
+                logger.warning(
+                    "db.init.postgres_connect_failed",
+                    exc_info=True,
+                )
+            except Exception:
+                pass
+            return
     cur = con.cursor()
 
     # ---- TXS TABLE ----
