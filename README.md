@@ -355,3 +355,19 @@ revisions. When `DATABASE_URL` points to Postgres and `psycopg` is available the
 runtime automatically uses Postgres connections.
 
 Fallback: If Postgres is unavailable the app will continue to work with SQLite.
+
+### Static asset versioning and caching
+
+This app uses versioned static URLs via a helper that appends `?v=<STATIC_VERSION>` to `/static/...` paths. In production, set `STATIC_VERSION` to a release identifier (for example the git commit SHA) so browsers can cache assets immutably and only fetch new versions on deploy.
+
+- If `STATIC_VERSION` is not set, the app falls back to the current git short SHA or a timestamp.
+- Versioned assets get `Cache-Control: public, max-age=31536000, immutable`.
+- Legacy `/css` and `/js` mounts are kept temporarily with a 1-hour cache to reduce revalidation noise.
+
+Guardrail: lint templates for unversioned `/static` links
+
+```powershell
+npm run lint:assets
+```
+
+This flags any `href/src="/static/..."` usage that doesn’t include a `?v=` query.
