@@ -143,7 +143,11 @@ def main() -> int:
     sys.stdout.write(json.dumps(summary, indent=2))
     sys.stdout.write("\n")
     # Allow fail-open behavior in some environments to avoid blocking deploys
-    if problems and os.environ.get("READINESS_FAIL_OPEN", "").lower() in {"1", "true", "yes"}:
+    if problems and os.environ.get("READINESS_FAIL_OPEN", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }:
         warn("Readiness issues detected but READINESS_FAIL_OPEN=1 set; continuing")
         return 0
     return 0 if not problems else 2

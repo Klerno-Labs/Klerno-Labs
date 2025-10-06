@@ -18,7 +18,8 @@ $violations = @()
 foreach ($f in $files) {
     try {
         $text = Get-Content -Raw -ErrorAction Stop $f.FullName
-    } catch {
+    }
+    catch {
         Write-Verbose "Skipping unreadable file: $($f.FullName) - $_"
         continue
     }
@@ -30,7 +31,8 @@ foreach ($f in $files) {
 '@
     try {
         $rxMatches = [regex]::Matches($text, $pattern)
-    } catch {
+    }
+    catch {
         Write-Verbose "Regex failed for: $($f.FullName) - $_"
         continue
     }
