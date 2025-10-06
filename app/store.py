@@ -230,7 +230,9 @@ def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> 
 
     def _with_ssl(url: str) -> str:
         try:
-            if (url.startswith("postgres://") or url.startswith("postgresql://")) and ("sslmode=" not in url):
+            if (url.startswith("postgres://") or url.startswith("postgresql://")) and (
+                "sslmode=" not in url
+            ):
                 sep = "&" if "?" in url else "?"
                 return f"{url}{sep}sslmode=require"
         except Exception:
@@ -252,7 +254,9 @@ def _postgres_conn(retries: int | None = None, backoff: float | None = None) -> 
                 raise RuntimeError(
                     msg,
                 )
-            return psycopg.connect(_with_ssl(DATABASE_URL), cursor_factory=RealDictCursor)
+            return psycopg.connect(
+                _with_ssl(DATABASE_URL), cursor_factory=RealDictCursor
+            )
         except Exception as e:
             last_exc = e
             # exponential backoff
@@ -351,7 +355,7 @@ def init_db() -> None:
     else:
         try:
             con = _conn()
-        except Exception as e:
+        except Exception:
             # Do not crash application startup if Postgres is temporarily unavailable.
             # We will skip schema init and allow the service to start; readiness/ops can retry later.
             try:
