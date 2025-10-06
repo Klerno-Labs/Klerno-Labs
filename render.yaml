@@ -11,10 +11,8 @@ services:
     envVars:
       - key: APP_ENV
         value: production
-      - key: PORT
-        value: 8000
-      - key: HOST
-        value: 0.0.0.0
+      # Allow Render to inject PORT; app honors ${PORT} in Dockerfile CMD
+      # HOST defaults to 0.0.0.0 in Dockerfile, no need to override here
       - key: READINESS_FAIL_OPEN
         value: "1"
       - key: STATIC_VERSION
