@@ -1,5 +1,7 @@
 """Klerno Labs - Clean Enterprise Transaction Analysis Platform."""
 
+# ruff: noqa: I001  # import block ordering is deliberate to avoid circulars
+
 from __future__ import annotations
 
 import contextlib
@@ -7,9 +9,10 @@ import importlib
 import os
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -37,8 +40,11 @@ START_TIME = datetime.now(UTC)
 
 FastAPIResponse: type[Response] = Response
 
-# Templates setup
-templates = Jinja2Templates(directory="templates")
+# Templates & static setup (use absolute paths to work from any CWD)
+BASE_DIR = (Path(__file__).parent / "..").resolve()
+TEMPLATES_DIR = BASE_DIR / "templates"
+STATIC_DIR = BASE_DIR / "static"
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
 # Application lifespan
@@ -183,7 +189,7 @@ async def add_security_headers(
 # Mount static files
 
 with _suppress(Exception):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 # Basic models
@@ -214,6 +220,23 @@ async def landing_page(request: Request) -> Any:
     return templates.TemplateResponse("landing-professional.html", {"request": request})
 
 
+# Import gating dependency (kept near top-level imports in practice). If circular issues arise,
+# consider lazy importing within the specific route only.
+from .authz import require_min_tier_env  # noqa: E402
+
+
+@app.get("/admin/access-view")
+async def admin_access_view(
+    request: Request,
+    _tier=Depends(require_min_tier_env("ADMIN_PAGE_MIN_TIER", "admin")),
+):
+    """Admin-only UI to visualize /admin/access JSON.
+
+    Now gated: Only visible to admins when ENABLE_TIER_GATING is on.
+    """
+    return templates.TemplateResponse("admin-access.html", {"request": request})
+
+
 from .routers import (  # import after app creation to avoid circulars  # noqa: E402
     operational,
 )
@@ -223,6 +246,101 @@ with contextlib.suppress(Exception):
     if router_obj is not None:
         app.include_router(router_obj)
         logger.info("router.operational.included")
+
+try:
+    from .routers import neon_proxy  # noqa: E402
+
+    if getattr(neon_proxy, "router", None) is not None:
+        app.include_router(neon_proxy.router)
+        logger.info("router.neon_proxy.included")
+except Exception:
+    # If the Neon proxy router fails to import (e.g., optional deps missing),
+    # install a minimal fallback so routes exist and tests don't 404.
+    logger.warning("router.neon_proxy.import_failed_fallback_enabled", exc_info=True)
+
+    from fastapi import APIRouter, Depends, Header
+
+    from .authz import require_min_tier_env  # lazy import to avoid circulars
+
+    fallback = APIRouter(prefix="/api/neon", tags=["neon-data-api"])  # minimal
+
+    def _base_url_fallback() -> str:
+        import os as _os
+
+        url = _os.getenv("VITE_NEON_DATA_API_URL", _os.getenv("NEON_DATA_API_URL", ""))
+        return url.rstrip("/") if url else ""
+
+    def _decode_jwt_fallback(token: str):
+        try:
+            parts = token.split(".")
+            if len(parts) != 3:
+                return None
+            import base64 as _b64
+            import json as _json
+
+            def _b64url_dec(s: str) -> bytes:
+                pad = "=" * (-len(s) % 4)
+                return _b64.urlsafe_b64decode(s + pad)
+
+            payload = _json.loads(_b64url_dec(parts[1]))
+            return payload if isinstance(payload, dict) else None
+        except Exception:
+            return None
+
+    @fallback.get("/token-status")
+    async def token_status_fallback(
+        Authorization: str | None = Header(default=None),
+        _tier=Depends(require_min_tier_env("TOKEN_STATUS_MIN_TIER", "admin")),
+    ) -> dict:
+        import os as _os
+        import time as _time
+
+        src = "missing"
+        token: str | None = None
+        if Authorization and Authorization.lower().startswith("bearer "):
+            token = Authorization.split(" ", 1)[1]
+            src = "header"
+        elif _os.getenv("NEON_API_KEY"):
+            token = _os.getenv("NEON_API_KEY")
+            src = "env"
+
+        info: dict = {
+            "source": src,
+            "base_url_configured": bool(_base_url_fallback()),
+            "is_jwt": False,
+        }
+        if token:
+            info["is_jwt"] = token.count(".") == 2
+            payload = _decode_jwt_fallback(token)
+            if isinstance(payload, dict):
+                claims = {
+                    k: payload.get(k)
+                    for k in ("iss", "aud", "sub", "role", "exp", "iat")
+                }
+                info["claims"] = claims
+                exp = payload.get("exp")
+                if isinstance(exp, (int, float)):
+                    seconds = int(exp - _time.time())
+                    info["seconds_to_expiry"] = seconds
+                    threshold = int(_os.getenv("NEON_NEAR_EXPIRY_SECONDS", "300"))
+                    info["near_expiry"] = seconds <= threshold
+        return info
+
+    @fallback.get("/notes")
+    async def notes_unavailable(
+        _tier=Depends(require_min_tier_env("NEON_PROXY_MIN_TIER", "premium")),
+    ) -> None:
+        # httpx or router not available; report service unavailable rather than 404
+        raise HTTPException(status_code=500, detail="Neon Data API client unavailable")
+
+    @fallback.get("/paragraphs")
+    async def paragraphs_unavailable(
+        _tier=Depends(require_min_tier_env("NEON_PROXY_MIN_TIER", "premium")),
+    ) -> None:
+        raise HTTPException(status_code=500, detail="Neon Data API client unavailable")
+
+    app.include_router(fallback)
+    logger.info("router.neon_proxy.fallback_included")
 
 
 # Serve a favicon to avoid 404 noise for browsers and bots
@@ -280,9 +398,13 @@ def premium_advanced(request: Request) -> Any:
 @app.get("/admin/users")
 def compat_admin_users() -> Any:
     try:
-        from .admin import _list_users
+        import importlib
 
-        return _list_users()
+        admin_mod = importlib.import_module("app.admin")
+        _list = getattr(admin_mod, "_list_users", None)
+        if callable(_list):
+            return _list()
+        raise AttributeError("_list_users not found")
     except Exception:
         # Fallback: empty list
         # Try a direct DB query against legacy schema as a last resort

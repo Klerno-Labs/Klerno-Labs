@@ -3,9 +3,7 @@
 {% block title %}Compliance Dashboard - Klerno Labs{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/css/design-system.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.min.js"></script>
+<!-- Page-specific head: Chart.js adapter only (Chart.js is loaded in base.html) -->
 <script
   src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
@@ -1065,7 +1063,7 @@
 
   <!-- Charts Section -->
   <div class="charts-grid">
-  <div class="chart-container animate-on-scroll">
+    <div class="chart-container animate-on-scroll">
       <div class="chart-header">
         <h3>Risk Analysis Trends</h3>
         <div class="chart-controls">
@@ -1079,7 +1077,7 @@
       </div>
     </div>
 
-  <div class="chart-container animate-on-scroll">
+    <div class="chart-container animate-on-scroll">
       <div class="chart-header">
         <h3>Transaction Categories</h3>
       </div>
@@ -1339,7 +1337,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/theme-controller.js"></script>
 <script>
   // Blockchain Compliance Dashboard Controller
   class BlockchainDashboard {

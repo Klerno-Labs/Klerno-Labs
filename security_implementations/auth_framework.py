@@ -7,7 +7,7 @@ from typing import Any
 
 import bcrypt
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 logger = logging.getLogger(__name__)
@@ -139,8 +139,11 @@ class JWTBearer(HTTPBearer):
 
     async def __call__(
         self,
-        credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
+        request: Request,
     ):
+        credentials: HTTPAuthorizationCredentials | None = await super().__call__(
+            request
+        )
         if credentials:
             if not credentials.scheme == "Bearer":
                 raise HTTPException(

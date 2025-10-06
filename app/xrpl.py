@@ -1,4 +1,5 @@
 import inspect
+import os
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -15,6 +16,10 @@ def create_account() -> dict[str, str]:
     This endpoint is primarily used by tests; the underlying client is patched
     by the test suite. We return a minimal created account shape.
     """
+    # Dev-mode mock: allow forcing success without a live XRPL client
+    if os.getenv("XRPL_DEV_MOCK"):
+        return {"account_address": "rDevMock123", "secret": "sDEVXXXXXXXX"}
+
     client = xrp_integ.get_xrpl_client()
     if not client or not getattr(client, "is_connected", lambda: False)():
         raise HTTPException(status_code=500, detail="XRPL client unavailable")
@@ -27,6 +32,12 @@ async def get_balance(account: str) -> dict[str, float]:
 
     The client is typically patched in tests to return deterministic values.
     """
+    # Dev-mode mock: return a deterministic balance without XRPL
+    if os.getenv("XRPL_DEV_MOCK"):
+        # Simple deterministic pseudo-balance from account string
+        pseudo = sum(ord(c) for c in account) % 1000 / 10.0
+        return {"balance": pseudo}
+
     client = xrp_integ.get_xrpl_client()
     if not client or not getattr(client, "is_connected", lambda: False)():
         raise HTTPException(status_code=500, detail="XRPL client unavailable")

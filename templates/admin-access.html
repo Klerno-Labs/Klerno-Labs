@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Admin Access Status{% endblock %}
+{% block head %}
+<style>
+    .card {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+    }
+
+    .k {
+        color: #a0aec0;
+    }
+
+    .v {
+        color: #e2e8f0;
+        font-weight: 600;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .tier {
+        background: #2d3748;
+        color: #f7fafc;
+    }
+
+    .on {
+        background: #22543d;
+        color: #c6f6d5;
+    }
+
+    .off {
+        background: #742a2a;
+        color: #fed7d7;
+    }
+
+    .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 0;
+    }
+
+    .small {
+        font-size: 12px;
+        color: #a0aec0;
+    }
+
+    .input {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        padding: 8px;
+        color: #e2e8f0;
+    }
+
+    .btn {
+        background: #4a5568;
+        border: none;
+        color: #f7fafc;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .btn:hover {
+        background: #2d3748;
+    }
+
+    pre {
+        background: rgba(0, 0, 0, 0.35);
+        padding: 12px;
+        border-radius: 8px;
+        overflow: auto;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 980px; margin: 24px auto;">
+    <h1>Admin Access Status</h1>
+    <p class="small">Use this utility to inspect the effective tier gating configuration and your detected tier.</p>
+
+    <div class="card" style="margin-bottom: 16px;">
+        <div class="row" style="gap: 8px;">
+            <div>
+                <div class="small">Simulate client tier (X-User-Tier header)</div>
+                <input id="tierInput" class="input" placeholder="free | pro | premium | admin" />
+            </div>
+            <div>
+                <div class="small">Feature flag (display only)</div>
+                <span id="flagBadge" class="badge off">unknown</span>
+            </div>
+            <div style="margin-left:auto;">
+                <button class="btn" id="refreshBtn">Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h3>Detected</h3>
+            <div class="row">
+                <span class="k">Current Tier</span>
+                <span class="badge tier" id="currentTier">-</span>
+            </div>
+            <div class="row">
+                <span class="k">Gating</span>
+                <span id="gatingBadge" class="badge off">off</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Defaults</h3>
+            <div class="row"><span class="k">DEFAULT_USER_TIER</span><span class="v" id="defDefaultTier">-</span></div>
+            <div class="row"><span class="k">TOKEN_STATUS_MIN_TIER</span><span class="v" id="defToken">-</span></div>
+            <div class="row"><span class="k">NEON_PROXY_MIN_TIER</span><span class="v" id="defNeon">-</span></div>
+            <div class="row"><span class="k">ADMIN_PAGE_MIN_TIER</span><span class="v" id="defAdmin">-</span></div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+        <h3>Raw</h3>
+        <pre id="rawBox">(empty)</pre>
+    </div>
+</div>
+<script>
+    async function fetchAccess() {
+        const tier = document.getElementById('tierInput').value.trim();
+        const headers = tier ? { 'X-User-Tier': tier } : {};
+        const res = await fetch('/admin/access', { headers });
+        if (!res.ok) {
+            const text = await res.text();
+            document.getElementById('rawBox').textContent = `HTTP ${res.status}: ${text}`;
+            return;
+        }
+        const data = await res.json();
+        document.getElementById('rawBox').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('currentTier').textContent = data.detected.current_tier;
+        const gating = !!data.gating_enabled;
+        document.getElementById('gatingBadge').textContent = gating ? 'on' : 'off';
+        document.getElementById('gatingBadge').className = 'badge ' + (gating ? 'on' : 'off');
+        document.getElementById('flagBadge').textContent = gating ? 'on' : 'off';
+        document.getElementById('flagBadge').className = 'badge ' + (gating ? 'on' : 'off');
+        document.getElementById('defDefaultTier').textContent = data.defaults.DEFAULT_USER_TIER || '(unset)';
+        document.getElementById('defToken').textContent = data.defaults.TOKEN_STATUS_MIN_TIER;
+        document.getElementById('defNeon').textContent = data.defaults.NEON_PROXY_MIN_TIER;
+        document.getElementById('defAdmin').textContent = data.defaults.ADMIN_PAGE_MIN_TIER;
+    }
+    document.getElementById('refreshBtn').addEventListener('click', fetchAccess);
+    window.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        const qTier = (params.get('tier') || '').trim().toLowerCase();
+        if (qTier) {
+            document.getElementById('tierInput').value = qTier;
+        }
+        fetchAccess();
+    });
+</script>
+{% endblock %}

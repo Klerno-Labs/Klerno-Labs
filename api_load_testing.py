@@ -44,7 +44,9 @@ async def run_load(n: int = 1000) -> dict[str, Any]:
     successes = 0
     first_id: int | None = None
 
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:  # type: ignore[arg-type]
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://test"
+    ) as client:
         # Warm-up health check
         r = await client.get("/health")
         r.raise_for_status()
@@ -81,7 +83,7 @@ async def run_load(n: int = 1000) -> dict[str, Any]:
             for item in batch:
                 if isinstance(item, BaseException):
                     continue
-                ok, dt, txid = item  # type: ignore[misc]
+                ok, dt, txid = item
                 if ok:
                     successes += 1
                     if first_id is None and txid is not None:

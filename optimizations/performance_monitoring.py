@@ -2,6 +2,7 @@ import statistics
 import threading
 import time
 from collections import defaultdict, deque
+from typing import Any
 
 
 class PerformanceMonitor:
@@ -9,7 +10,7 @@ class PerformanceMonitor:
 
     def __init__(self, window_size: int = 1000) -> None:
         self.window_size = window_size
-        self.metrics = defaultdict(lambda: deque(maxlen=window_size))
+        self.metrics: dict[str, Any] = defaultdict(lambda: deque(maxlen=window_size))
         self.lock = threading.Lock()
 
     def record_response_time(self, endpoint: str, response_time_ms: float) -> None:

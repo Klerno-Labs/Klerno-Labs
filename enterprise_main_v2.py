@@ -199,7 +199,7 @@ def initialize_enterprise_features() -> None:
         # Guardian Protection
         if config.features.guardian_protection:
             try:
-                import guardian as _guardian
+                import app.guardian as _guardian
 
                 ENTERPRISE_FEATURES["guardian"] = True
                 _loaded_enterprise_modules.append(_guardian.__name__)

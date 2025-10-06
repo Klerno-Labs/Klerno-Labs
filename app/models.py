@@ -1,13 +1,52 @@
-# app / models.py
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Any
+from typing import Any, NotRequired, TypedDict
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field
+
+# Explicit public exports for static analyzers
+__all__ = [
+    "TokenClaims",
+    "TokenStatus",
+    "NeonRow",
+    "NeonListResponse",
+]
+
+
+class TokenClaims(TypedDict, total=False):
+    iss: NotRequired[str]
+    aud: NotRequired[str]
+    sub: NotRequired[str]
+    role: NotRequired[str]
+    exp: NotRequired[int]
+    iat: NotRequired[int]
+
+
+class TokenStatus(TypedDict):
+    source: str
+    base_url_configured: bool
+    is_jwt: bool
+    claims: NotRequired[TokenClaims]
+    seconds_to_expiry: NotRequired[int]
+    near_expiry: NotRequired[bool]
+
+
+class NeonRow(TypedDict, total=False):
+    # Minimal, schema-agnostic row definition; expand as needed per table
+    id: NotRequired[int]
+    created_at: NotRequired[str]
+    updated_at: NotRequired[str]
+
+
+class NeonListResponse(TypedDict):
+    # For now, our handlers directly return list[dict]; this TypedDict allows
+    # future expansion if we choose to wrap with metadata.
+    items: list[NeonRow]
+
 
 # ----------------------------
 # Enhanced User and Role System

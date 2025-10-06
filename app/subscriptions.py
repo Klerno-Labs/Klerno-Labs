@@ -1,10 +1,20 @@
 from __future__ import annotations
 
-# Dummy db for test patching
-db = None
-# Utility for test compatibility
-
+import sqlite3
 from datetime import UTC, datetime, timedelta
+from enum import Enum
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, cast
+
+from fastapi import Depends, HTTPException, status
+from pydantic import BaseModel
+
+from .security_session import get_current_user
+from .settings import settings
+
+# Dummy db for test patching
+db: Any | None = None
+# Utility for test compatibility
 
 
 def is_subscription_active(user_id: str) -> bool:
@@ -28,17 +38,6 @@ Subscriptions Module for Klerno Labs.
 
 Manages user subscriptions, tier pricing, and access control.
 """
-
-import sqlite3
-from enum import Enum
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
-
-from fastapi import Depends, HTTPException, status
-from pydantic import BaseModel
-
-from .config import settings
-from .security_session import get_current_user
 
 if TYPE_CHECKING:
     from app._typing_shims import ISyncConnection
@@ -82,7 +81,7 @@ class Subscription(BaseModel):
 
 
 # Default tier configuration - Aligned with advertised pricing
-DEFAULT_TIERS = {
+DEFAULT_TIERS: dict[SubscriptionTier, TierDetails] = {
     SubscriptionTier.STARTER: TierDetails(
         id=SubscriptionTier.STARTER,
         name="Starter",
@@ -97,19 +96,6 @@ DEFAULT_TIERS = {
             "Email alerts",
             "Community support",
             "API access",
-        ],
-    ),
-    SubscriptionTier.PROFESSIONAL: TierDetails(
-        id=SubscriptionTier.PROFESSIONAL,
-        name="Professional",
-        description="Ideal for power users and small businesses",
-        price_xrp=25.0,  # $99 / month worth in XRP (25 XRP * $4 / XRP=~$100)
-        duration_days=30,
-        transaction_limit=100000,  # 100, 000 transactions / month
-        api_rate_limit=1000,  # 1, 000 requests / hour
-        features=[
-            "Up to 100, 000 transactions / month",
-            "Advanced AI risk scoring",
             "Real - time WebSocket alerts",
             "Priority support",
             "Custom dashboards",
@@ -138,7 +124,7 @@ DEFAULT_TIERS = {
 }
 
 
-# In - memory cache for tier configuration
+# In - memory cache for tier configuration (string keys)
 _tier_cache: dict[str, TierDetails] = {}
 
 
@@ -202,12 +188,49 @@ def init_subscription_db() -> None:
     conn.close()
 
 
+def _use_sqlite() -> bool:
+    """Determine if SQLite should be used based on available settings.
+
+    Falls back to True when database_url indicates sqlite or when USE_SQLITE is truthy if present.
+    """
+    try:
+        # Prefer explicit flag when available
+        use_flag = getattr(settings, "USE_SQLITE", None)
+        if isinstance(use_flag, bool):
+            return use_flag
+    except Exception:
+        pass
+    try:
+        db_url = str(getattr(settings, "database_url", ""))
+        return db_url.startswith("sqlite:")
+    except Exception:
+        return True
+
+
+def _sqlite_path() -> str:
+    """Resolve SQLite path from settings or database_url, with a safe default."""
+    try:
+        path = getattr(settings, "SQLITE_PATH", None)
+        if path:
+            return str(path)
+    except Exception:
+        pass
+    try:
+        db_url = str(getattr(settings, "database_url", ""))
+        if db_url.startswith("sqlite:///"):
+            return str(Path(db_url.replace("sqlite:///", "")))
+    except Exception:
+        pass
+    return "data/klerno.db"
+
+
 def get_db_connection() -> Any:
     """Get a database connection."""
-    if settings.USE_SQLITE:
+    if _use_sqlite():
         # Ensure directory exists using pathlib
-        Path(settings.SQLITE_PATH).resolve().parent.mkdir(parents=True, exist_ok=True)
-        conn = cast("ISyncConnection", sqlite3.connect(settings.SQLITE_PATH))
+        db_path = _sqlite_path()
+        Path(db_path).resolve().parent.mkdir(parents=True, exist_ok=True)
+        conn = cast("ISyncConnection", sqlite3.connect(db_path))
         conn.row_factory = sqlite3.Row
         return conn
     # Use PostgreSQL instead (not implemented in this example)
@@ -233,9 +256,10 @@ def get_tier_details(tier_id: str | SubscriptionTier) -> TierDetails:
             # If coercion fails, leave as-is to trigger fallback later
             tier_key = tier_id
 
-    # Check cache first
-    if tier_key in _tier_cache:
-        return _tier_cache[tier_key]
+    # Normalize to string key for cache access
+    key_str = tier_key.value if isinstance(tier_key, SubscriptionTier) else tier_key
+    if key_str in _tier_cache:
+        return _tier_cache[key_str]
 
     # Query database
     conn = get_db_connection()
@@ -245,16 +269,15 @@ def get_tier_details(tier_id: str | SubscriptionTier) -> TierDetails:
             "SELECT id, name, description, price_xrp, duration_days, features "
             "FROM subscription_tiers WHERE id=?"
         ),
-        (tier_id,),
+        (key_str,),
     )
     row = cursor.fetchone()
     conn.close()
 
     if not row:
-        # Fallback to default: ensure we only use SubscriptionTier when
-        # indexing DEFAULT_TIERS to satisfy static checkers.
+        # Fallback to defaults when available
         if isinstance(tier_key, SubscriptionTier) and tier_key in DEFAULT_TIERS:
-            _tier_cache[tier_key] = DEFAULT_TIERS[tier_key]
+            _tier_cache[tier_key.value] = DEFAULT_TIERS[tier_key]
             return DEFAULT_TIERS[tier_key]
         msg = f"Subscription tier {tier_id} not found"
         raise ValueError(msg)
@@ -269,7 +292,7 @@ def get_tier_details(tier_id: str | SubscriptionTier) -> TierDetails:
     )
 
     # Cache for future use
-    _tier_cache[tier_key] = tier
+    _tier_cache[key_str] = tier
 
     return tier
 
@@ -285,7 +308,7 @@ def get_all_tiers() -> list[TierDetails]:
     rows = cursor.fetchall()
     conn.close()
 
-    tiers = []
+    tiers: list[TierDetails] = []
     for row in rows:
         tier = TierDetails(
             id=row["id"],
@@ -609,14 +632,20 @@ def get_all_subscriptions(limit: int = 100, offset: int = 0) -> list[Subscriptio
 
 async def require_active_subscription(
     current_user: dict[str, Any] = Depends(get_current_user),
-):
+) -> dict[str, Any]:
     """FastAPI dependency that requires an active subscription."""
     # Admin users always have access
     if current_user.get("role") == "admin":
         return current_user
 
     # Check for active subscription
-    if not has_active_subscription(current_user["id"]):
+    # Prefer explicit id, else fall back to uid (from security_session)
+    user_id_val = current_user.get("id")
+    if user_id_val is None:
+        user_id_val = current_user.get("uid")
+    # Ensure string for downstream helpers expecting str ids
+    user_id_str = str(user_id_val) if user_id_val is not None else ""
+    if not has_active_subscription(user_id_str):
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
             detail="Active subscription required",

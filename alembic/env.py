@@ -11,7 +11,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 
-from alembic import context  # type: ignore[attr-defined]
+from alembic import context
 
 # Import models metadata if/when SQLAlchemy models are added.
 # from app import models

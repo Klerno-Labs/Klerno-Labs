@@ -102,11 +102,21 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    if TYPE_CHECKING:
+        # Help static type checkers understand that Settings can be
+        # instantiated without explicitly passing every field. At runtime,
+        # pydantic handles defaults and env-driven values.
+        def __init__(self, **data: Any) -> None: ...
+
     @field_validator("cors_origins", mode="before")
     def _split_origins(cls, v: Any) -> list[str]:
         if isinstance(v, str):
             return [o for o in (item.strip() for item in v.split(",")) if o]
-        return v
+        if isinstance(v, (list, tuple)):
+            # Coerce any sequence into a list of strings
+            return [str(o) for o in v]
+        # Fallback to empty list for unexpected types to satisfy typing
+        return []
 
     @model_validator(mode="before")
     def _derive_app_env(cls, values: dict[str, Any]) -> dict[str, Any]:
@@ -128,7 +138,7 @@ class Settings(BaseSettings):
         return values
 
     @field_validator("jwt_secret", mode="after")
-    def _enforce_strong_secret(cls, v: str, info: ValidationInfo):
+    def _enforce_strong_secret(cls, v: str, info: ValidationInfo) -> str:
         env_eff = (
             info.data.get("environment") or info.data.get("app_env") or ""
         ).lower()
@@ -145,7 +155,7 @@ class Settings(BaseSettings):
         return v
 
     @model_validator(mode="after")
-    def _pytest_port_override(self):
+    def _pytest_port_override(self) -> Settings:
         """Under pytest ensure default port is stable (8000) to satisfy tests that
         instantiate Settings() directly. This avoids accidental overrides from a
         developer's environment (e.g. PORT=8002) leaking into test expectations.

@@ -21,7 +21,7 @@ import logging
 import os
 import sqlite3
 import time
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Any, NotRequired, TypedDict, cast
@@ -33,6 +33,10 @@ from app.constants import CACHE_TTL
 # Add explicit type annotations to satisfy static checkers
 _cache: dict[str, Any] = {}
 _cache_expiry: dict[str, float] = {}
+
+# Typed runtime-only store for password reset tokens used by auth flows/tests.
+# This avoids dynamic attributes on the store module for type checkers.
+_reset_tokens: dict[str, dict[str, Any]] = {}
 
 
 def _safe_idx(seq: Sequence[Any] | Any, idx: int) -> Any:
@@ -614,7 +618,9 @@ def _row_as_dict(row: Any) -> dict[str, Any]:
         keys = getattr(row, "keys", None)
         if callable(keys):
             try:
-                return {k: row[k] for k in row.keys()}
+                _get = cast(Callable[[], Iterable[Any]], keys)
+                mapping_keys = list(_get())
+                return {k: row[k] for k in mapping_keys}
             except Exception:
                 # fall through to index-based
                 pass

@@ -3,6 +3,7 @@ import sqlite3
 import threading
 from collections.abc import Generator
 from contextlib import contextmanager
+from typing import Any
 
 
 class DatabaseConnectionPool:
@@ -11,7 +12,7 @@ class DatabaseConnectionPool:
     def __init__(self, database_path: str, pool_size: int = 10) -> None:
         self.database_path = database_path
         self.pool_size = pool_size
-        self.pool = queue.Queue(maxsize=pool_size)
+        self.pool: queue.Queue[Any] = queue.Queue(maxsize=pool_size)
         self.lock = threading.Lock()
 
         # Initialize pool with connections
@@ -45,7 +46,7 @@ class DatabaseConnectionPool:
 
 
 # Global connection pool
-db_pool = None
+db_pool: DatabaseConnectionPool | None = None
 
 
 def initialize_connection_pool(database_path: str = "./data/klerno.db") -> None:
@@ -58,6 +59,7 @@ def get_pooled_connection():
     """Get a connection from the pool."""
     if db_pool is None:
         initialize_connection_pool()
+    assert db_pool is not None, "Failed to initialize connection pool"
     return db_pool.get_connection()
 
 

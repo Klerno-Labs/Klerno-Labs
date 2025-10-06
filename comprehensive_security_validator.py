@@ -81,7 +81,11 @@ class SecurityValidator:
                     bandit_data = json.loads(result.stdout)
 
                     # Categorize vulnerabilities by severity
-                    vulnerabilities_by_severity = {"HIGH": [], "MEDIUM": [], "LOW": []}
+                    vulnerabilities_by_severity: dict[str, list[dict[str, Any]]] = {
+                        "HIGH": [],
+                        "MEDIUM": [],
+                        "LOW": [],
+                    }
 
                     for result_item in bandit_data.get("results", []):
                         severity = result_item.get("issue_severity", "LOW")
@@ -135,7 +139,7 @@ class SecurityValidator:
 
     def _analyze_dependencies(self) -> dict[str, Any]:
         """Analyze dependencies for known vulnerabilities."""
-        dependency_analysis = {
+        dependency_analysis: dict[str, Any] = {
             "scan_performed": True,
             "vulnerabilities_found": [],
             "recommendations": [],
@@ -236,7 +240,7 @@ class SecurityValidator:
 
     def _validate_authentication(self) -> dict[str, Any]:
         """Validate authentication and authorization mechanisms."""
-        auth_analysis = {
+        auth_analysis: dict[str, Any] = {
             "authentication_present": False,
             "authorization_present": False,
             "security_headers": False,
@@ -298,7 +302,7 @@ class SecurityValidator:
 
     def _check_security_configs(self) -> dict[str, Any]:
         """Check security configurations."""
-        config_analysis = {
+        config_analysis: dict[str, Any] = {
             "debug_mode_issues": [],
             "insecure_configurations": [],
             "missing_security_features": [],

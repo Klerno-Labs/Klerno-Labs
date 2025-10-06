@@ -10,7 +10,7 @@ from typing import Any
 def analyze_database_structure() -> dict[str, Any]:
     """Analyze database structure and identify issues."""
     db_path = "./data/klerno.db"
-    report = {
+    report: dict[str, Any] = {
         "database_path": db_path,
         "issues": [],
         "tables": {},
@@ -149,7 +149,7 @@ def generate_optimization_queries() -> list[str]:
 
 def check_migration_consistency() -> dict[str, Any]:
     """Check Alembic migration consistency."""
-    report = {
+    report: dict[str, Any] = {
         "alembic_status": "unknown",
         "migration_issues": [],
         "recommendations": [],

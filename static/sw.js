@@ -6,8 +6,8 @@ const urlsToCache = [
     '/static/css/premium.css',
     '/static/css/micro-interactions.css',
     '/static/js/micro-interactions.js',
-    '/static/icons/icon-192x192.png',
-    '/static/icons/icon-512x512.png'
+    // Use existing SVG favicon instead of missing PNGs
+    '/static/icons/favicon.svg'
 ];
 
 // Install event
@@ -49,8 +49,9 @@ function doBackgroundSync() {
 self.addEventListener('push', (event) => {
     const options = {
         body: event.data ? event.data.text() : 'New update available!',
-        icon: '/static/icons/icon-192x192.png',
-        badge: '/static/icons/badge-72x72.png',
+        // Use existing assets
+        icon: '/static/icons/favicon.svg',
+        badge: '/static/klerno-logo.png',
         actions: [
             { action: 'view', title: 'View' },
             { action: 'dismiss', title: 'Dismiss' }

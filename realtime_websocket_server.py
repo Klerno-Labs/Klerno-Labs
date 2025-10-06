@@ -72,9 +72,9 @@ class ConnectionManager:
 
                 if not connections:
                     self.user_presence[user_id]["status"] = "offline"
-                    self.user_presence[user_id]["last_seen"] = (
-                        datetime.now().isoformat()
-                    )
+                    self.user_presence[user_id][
+                        "last_seen"
+                    ] = datetime.now().isoformat()
                     await self.broadcast_user_presence(user_id, "left")
 
                 self.user_presence[user_id]["connections"] = connections

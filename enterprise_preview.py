@@ -40,7 +40,7 @@ def _ensure_auth_shim() -> None:
     def _shim_ping():
         return {"ok": True, "shim": True}
 
-    mod.router = router
+    mod.router = router  # type: ignore[attr-defined]
 
     # Register both the module import and set in the already-imported
     # `app` package if it's present in sys.modules so attribute access
@@ -52,7 +52,7 @@ def _ensure_auth_shim() -> None:
     pkg = sys.modules.get("app")
     if pkg is not None:
         with contextlib.suppress(Exception):
-            pkg.auth = mod
+            pkg.auth = mod  # type: ignore[attr-defined]
 
 
 # Ensure shim exists before importing enterprise_main_v2

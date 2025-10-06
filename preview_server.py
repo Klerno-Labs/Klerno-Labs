@@ -24,7 +24,7 @@ def _shim_ping():
     return {"ok": True, "shim": True}
 
 
-mod.router = router
+mod.router = router  # type: ignore[attr-defined]
 
 # Register shim before importing the package that expects it
 import contextlib
@@ -33,7 +33,7 @@ sys.modules["app.auth"] = mod
 pkg = sys.modules.get("app")
 if pkg is not None:
     with contextlib.suppress(Exception):
-        pkg.auth = mod
+        pkg.auth = mod  # type: ignore[attr-defined]
 
 # Now import the real app entrypoint
 import enterprise_main_v2 as _enterprise

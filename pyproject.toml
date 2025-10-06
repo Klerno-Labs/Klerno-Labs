@@ -48,6 +48,7 @@ ignore = [
 "tests/*" = ["S101", "ARG", "SIM", "E402"]
 "CLEAN_APP/tests/*" = ["S101", "ARG", "SIM", "E402"]
 "tools/*" = ["E402"]
+"app/models.pyi" = ["E302"]  # Allow single blank lines before class definitions in stub files
 
 # Temporary: some app modules intentionally perform runtime checks/imports
 # to avoid heavy import-time side effects during test collection. These

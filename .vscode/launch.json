@@ -1,0 +1,37 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: FastAPI (uvicorn)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "app.main:app",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "8010",
+                "--reload"
+            ],
+            "justMyCode": true,
+            "env": {
+                "APP_ENV": "development",
+                "NEON_API_KEY": "${input:neonApiKey}",
+                "DATABASE_URL": "sqlite:///./data/klerno.db",
+                "VITE_NEON_DATA_API_URL": "https://ep-odd-wave-adbr94n5.apirest.c-2.us-east-1.aws.neon.tech/neondb/rest/v1",
+                "VITE_PUBLIC_STACK_PROJECT_ID": "15bef875-551f-4ea0-a466-4c21fc686335",
+                "VITE_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY": "pck_8hgqbrvzqpd5srj40t53nxqjrehxq335mc0k55z38szjg"
+            },
+            "console": "integratedTerminal"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "neonApiKey",
+            "type": "promptString",
+            "description": "Enter Neon API Key (will be used for this debug session only)",
+            "password": true
+        }
+    ]
+}

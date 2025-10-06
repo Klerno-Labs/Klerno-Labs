@@ -70,14 +70,17 @@ def _ensure_integrations_aliases() -> None:
     def _stub_xrp_module(name: str) -> types.ModuleType:
         m = _types.ModuleType(name)
 
-        def _stub_get_xrpl_client(*_a: Any, **_kw: Any) -> None:  # type: ignore[override]
+        def _stub_get_xrpl_client(*_a: Any, **_kw: Any) -> None:
             return None
 
-        def _stub_fetch_account_tx(account: str, limit: int = 10):
+        def _stub_fetch_account_tx(
+            account: str, limit: int = 10
+        ) -> list[dict[str, Any]]:
             return []
 
-        setattr(m, "get_xrpl_client", _stub_get_xrpl_client)
-        setattr(m, "fetch_account_tx", _stub_fetch_account_tx)
+        # Assign attributes dynamically; these are test-only shims
+        m.get_xrpl_client = _stub_get_xrpl_client  # type: ignore[attr-defined]
+        m.fetch_account_tx = _stub_fetch_account_tx  # type: ignore[attr-defined]
         return m
 
     for sub in ("xrp", "bsc", "bscscan"):
@@ -92,10 +95,8 @@ def _ensure_integrations_aliases() -> None:
         # Register under both namespaces and as attribute on top
         sys.modules[f"integrations.{sub}"] = mod
         sys.modules[f"app.integrations.{sub}"] = mod
-        try:
+        with contextlib.suppress(Exception):
             setattr(top, sub, mod)
-        except Exception:
-            pass
 
     # Finally, ensure the package-level attribute points at our `top` module
     globals()["integrations"] = top
@@ -174,9 +175,15 @@ try:
     import builtins
 
     if create_access_token is not None and not hasattr(builtins, "create_access_token"):
+        # Runtime attribute injection used only in tests
         builtins.create_access_token = create_access_token  # type: ignore[attr-defined]
+    else:
+        pass
     if verify_token is not None and not hasattr(builtins, "verify_token"):
+        # Runtime attribute injection used only in tests
         builtins.verify_token = verify_token  # type: ignore[attr-defined]
+    else:
+        pass
 except Exception:
     # ignore failures when running in restricted environments
     pass

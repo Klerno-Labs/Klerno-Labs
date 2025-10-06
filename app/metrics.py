@@ -14,10 +14,10 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, FastAPI, Request, Response
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
 # Module-level handles initialized by setup_metrics; remain None if unavailable.
 _prom_available: bool = False
@@ -27,6 +27,8 @@ _latency_hist = None
 _rl_allow_counter = None
 _rl_deny_counter = None
 _csp_violation_counter = None
+_neon_req_counter = None
+_neon_latency_hist = None
 
 
 def inc_rate_limit_allowed(backend: str = "memory") -> None:
@@ -77,7 +79,7 @@ def inc_csp_violation(directive: str = "unknown") -> None:
         pass
 
 
-def setup_metrics(app) -> None:  # pragma: no cover
+def setup_metrics(app: FastAPI) -> None:  # pragma: no cover
     # Always expose /metrics; if prometheus_client is unavailable, serve a
     # minimal payload to ensure a 200 response and consistent ops behavior.
     try:
@@ -129,16 +131,22 @@ def setup_metrics(app) -> None:  # pragma: no cover
             labelnames=["directive"],
             registry=registry,
         )
+        neon_req = Counter(
+            "neon_proxy_requests_total",
+            "Neon proxy requests total",
+            labelnames=["route", "status"],
+            registry=registry,
+        )
+        neon_lat = Histogram(
+            "neon_proxy_duration_seconds",
+            "Neon proxy call duration seconds",
+            labelnames=["route"],
+            registry=registry,
+        )
 
     # Publish to module-level globals for helper functions
-    global \
-        _prom_available, \
-        _registry, \
-        _req_counter, \
-        _latency_hist, \
-        _rl_allow_counter, \
-        _rl_deny_counter, \
-        _csp_violation_counter
+    global _prom_available, _registry, _req_counter, _latency_hist, _rl_allow_counter
+    global _rl_deny_counter, _csp_violation_counter, _neon_req_counter, _neon_latency_hist
     _prom_available = prom_available
     _registry = registry
     _req_counter = req_counter
@@ -146,9 +154,13 @@ def setup_metrics(app) -> None:  # pragma: no cover
     _rl_allow_counter = rl_allow
     _rl_deny_counter = rl_deny
     _csp_violation_counter = locals().get("csp_viol") if prom_available else None
+    _neon_req_counter = locals().get("neon_req") if prom_available else None
+    _neon_latency_hist = locals().get("neon_lat") if prom_available else None
 
     @app.middleware("http")
-    async def _metrics_middleware(request: Request, call_next: Callable) -> Response:
+    async def _metrics_middleware(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         start = time.perf_counter()
         response: Response = await call_next(request)
         if prom_available and req_counter and latency_hist and registry:
@@ -168,7 +180,7 @@ def setup_metrics(app) -> None:  # pragma: no cover
         return response
 
     # Idempotent: if already registered skip
-    if any(r.path == "/metrics" for r in app.routes):
+    if any(getattr(r, "path", None) == "/metrics" for r in app.routes):
         return
 
     router = APIRouter()
@@ -188,3 +200,17 @@ def setup_metrics(app) -> None:  # pragma: no cover
         )
 
     app.include_router(router)
+
+
+def neon_record(route: str, status: int, duration: float) -> None:
+    """Record Neon proxy metrics when available.
+
+    Safe no-op if Prometheus is unavailable.
+    """
+    try:
+        if _neon_req_counter is not None:
+            _neon_req_counter.labels(route=route, status=str(status)).inc()
+        if _neon_latency_hist is not None:
+            _neon_latency_hist.labels(route=route).observe(duration)
+    except Exception:
+        pass

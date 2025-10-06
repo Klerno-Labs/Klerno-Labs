@@ -2,112 +2,117 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+			"label": "Set NEON_API_KEY (PowerShell)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}\\scripts\\set-neon-api-key.ps1"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Set NEON_API_KEY (session-only)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}\\scripts\\set-neon-api-key.ps1",
+				"-SessionOnly"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Test Neon REST (with token)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}\\scripts\\test-neon-rest.ps1"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Vendor: Install deps (npm)",
+			"type": "shell",
+			"command": "npm ci",
+			"options": {
+				"cwd": "${workspaceFolder}\\vendor\\neon-data-api-neon-auth"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Vendor: Migrate (npm)",
+			"type": "shell",
+			"command": "npm run predb:migrate; npm run db:migrate",
+			"options": {
+				"cwd": "${workspaceFolder}\\vendor\\neon-data-api-neon-auth",
+				"env": {
+					"DATABASE_URL": "${input:vendorDatabaseUrl}",
+					"VITE_NEON_DATA_API_URL": "${input:vendorDataApiUrl}"
+				}
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Vendor: Dev (npm, 5174)",
+			"type": "shell",
+			"command": "npm run dev:5174",
+			"options": {
+				"cwd": "${workspaceFolder}\\vendor\\neon-data-api-neon-auth",
+				"env": {
+					"PORT": "5174"
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
 			"label": "Run tests after admin cleanup",
 			"type": "shell",
-			"command": "pytest -q",
-			"args": [],
+			"command": "${workspaceFolder}\\.venv-1\\Scripts\\python.exe",
+			"args": [
+				"-m",
+				"pytest",
+				"-q"
+			],
 			"isBackground": false,
 			"problemMatcher": [],
-			"group": "build"
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
 		},
 		{
-			"label": "Run tests after admin cleanup",
+			"label": "Run tests (session python)",
 			"type": "shell",
 			"command": "pytest -q",
 			"args": [],
 			"isBackground": false,
-			"problemMatcher": [
-				"$pytest"
-			],
-			"group": "build"
+			"problemMatcher": []
+		}
+	],
+	"inputs": [
+		{
+			"id": "vendorDatabaseUrl",
+			"type": "promptString",
+			"description": "Neon Postgres DATABASE_URL for drizzle migrations (will not be saved)",
+			"password": true
 		},
 		{
-			"label": "Run tests after admin cleanup",
-			"type": "shell",
-			"command": "pytest -q",
-			"args": [],
-			"isBackground": false,
-			"group": "build"
-		},
-		{
-			"label": "Run tests after admin cleanup",
-			"type": "shell",
-			"command": "pytest -q",
-			"args": [],
-			"isBackground": false,
-			"group": "build"
-		},
-		{
-			"label": "Run tests after admin cleanup",
-			"type": "shell",
-			"command": "pytest -q",
-			"args": [],
-			"isBackground": false,
-			"group": "build"
-		},
-		{
-			"label": "Run tests after admin cleanup",
-			"type": "shell",
-			"command": "pytest -q",
-			"args": [],
-			"isBackground": false,
-			"group": "build"
-		},
-		{
-			"label": "Run tests after admin cleanup",
-			"type": "shell",
-			"command": "pytest -q",
-			"args": [],
-			"isBackground": false,
-			"group": "build"
-		},
-		{
-			"label": "Run tests after admin cleanup",
-			"type": "shell",
-			"command": "pytest -q",
-			"args": [],
-			"isBackground": false,
-			"group": "build"
-		},
-		{
-			"label": "Run tests after OG/CSP meta updates",
-			"type": "shell",
-			"command": "pytest -q",
-			"args": [],
-			"isBackground": false,
-			"group": "build"
-		},
-		{
-			"label": "Run tests after OG/CSP meta updates",
-			"type": "shell",
-			"command": "pytest -q",
-			"args": [],
-			"isBackground": false,
-			"group": "build"
-		},
-		{
-			"label": "Run tests after OG/CSP meta updates",
-			"type": "shell",
-			"command": "pytest -q",
-			"args": [],
-			"isBackground": false,
-			"group": "build"
-		},
-		{
-			"label": "Run tests after OG/CSP meta updates",
-			"type": "shell",
-			"command": "pytest -q",
-			"args": [],
-			"isBackground": false,
-			"group": "build"
-		},
-		{
-			"label": "Run tests after OG/CSP meta updates",
-			"type": "shell",
-			"command": "pytest -q",
-			"args": [],
-			"isBackground": false,
-			"group": "build"
+			"id": "vendorDataApiUrl",
+			"type": "promptString",
+			"description": "Neon Data API URL",
+			"default": "https://ep-odd-wave-adbr94n5.apirest.c-2.us-east-1.aws.neon.tech/neondb/rest/v1"
 		}
 	]
 }

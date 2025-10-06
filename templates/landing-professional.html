@@ -3,24 +3,20 @@
 {% block title %}Klerno Labs - Enterprise Blockchain Compliance{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/css/design-system.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<base href="{{ request.base_url }}">
 <style>
+  /* Align landing variables with global design tokens for consistent theming */
   :root {
-    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
-    --text-primary: #1a1a1a;
-    --text-secondary: #666666;
+    /* Use global gradient and color tokens */
+    --primary-gradient: var(--gradient-primary);
+    --secondary-gradient: var(--gradient-primary);
+    --accent-gradient: var(--gradient-primary);
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
     --text-white: #ffffff;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
+    --success: var(--color-success);
+    --warning: var(--color-warning);
+    --danger: var(--color-error);
+    /* Glass variables come from design system; do not override here */
   }
 
   * {
@@ -378,7 +374,7 @@
       <h1 class="hero-title">
         Advanced AML/KYC <br>
         <span
-          style="background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Compliance
+          style="background: var(--accent-gradient); background-clip: text; -webkit-background-clip: text; color: transparent; -webkit-text-fill-color: transparent;">Compliance
           Platform</span>
       </h1>
 

@@ -7,5 +7,10 @@
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true
-    }
+    },
+    "exclude": [
+        "vendor/**/*",
+        "node_modules/**/*",
+        "dist/**/*"
+    ]
 }

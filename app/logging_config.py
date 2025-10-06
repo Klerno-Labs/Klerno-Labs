@@ -145,7 +145,7 @@ def log_request_response(
     duration: float,
     request_id: str | None = None,
     user_id: str | None = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     """Log HTTP request / response details."""
     logger = get_logger("http")
@@ -164,7 +164,11 @@ def log_request_response(
     if user_id:
         log_data["user_id"] = user_id
 
-    log_data.update(kwargs)
+    if kwargs:
+        from contextlib import suppress
+
+        with suppress(Exception):
+            log_data.update(dict(kwargs))
 
     if status_code >= 500:
         logger.error("HTTP request failed", **log_data)
@@ -179,7 +183,7 @@ def log_security_event(
     user_id: str | None = None,
     ip_address: str | None = None,
     details: dict[str, Any] | None = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     """Log security - related events."""
     logger = get_logger("security")
@@ -203,7 +207,11 @@ def log_security_event(
         except Exception:
             log_data["details"] = str(details)
 
-    log_data.update(kwargs)
+    if kwargs:
+        from contextlib import suppress
+
+        with suppress(Exception):
+            log_data.update(dict(kwargs))
 
     # Security events are always important
     if event_type in [
@@ -222,7 +230,7 @@ def log_business_event(
     entity_id: str | None = None,
     user_id: str | None = None,
     details: dict[str, Any] | None = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     """Log business logic events."""
     logger = get_logger("business")
@@ -249,7 +257,11 @@ def log_business_event(
         except Exception:
             log_data["details"] = str(details)
 
-    log_data.update(kwargs)
+    if kwargs:
+        from contextlib import suppress
+
+        with suppress(Exception):
+            log_data.update(dict(kwargs))
 
     logger.info("Business event", **log_data)
 
@@ -259,7 +271,7 @@ def log_performance_metric(
     duration: float,
     success: bool = True,
     details: dict[str, Any] | None = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     """Log performance metrics."""
     logger = get_logger("performance")
@@ -279,7 +291,11 @@ def log_performance_metric(
         except Exception:
             log_data["details"] = str(details)
 
-    log_data.update(kwargs)
+    if kwargs:
+        from contextlib import suppress
+
+        with suppress(Exception):
+            log_data.update(dict(kwargs))
 
     if not success or duration > 5.0:  # Log slow operations as warnings
         logger.warning("Performance metric", **log_data)

@@ -1,6 +1,27 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, TypedDict
+
+class TokenClaims(TypedDict, total=False):
+    iss: str
+    aud: str
+    sub: str
+    role: str
+    exp: int
+    iat: int
+
+class TokenStatus(TypedDict):
+    source: str
+    base_url_configured: bool
+    is_jwt: bool
+    claims: TokenClaims | None
+    seconds_to_expiry: int | None
+    near_expiry: bool | None
+
+class NeonRow(TypedDict, total=False):
+    id: int
+    created_at: str
+    updated_at: str
 
 class User:
     def __init__(
