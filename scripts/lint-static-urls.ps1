@@ -16,14 +16,28 @@ $files = Get-ChildItem -Path $dir -Recurse -Include *.html -File
 $violations = @()
 
 foreach ($f in $files) {
-    $text = Get-Content -Raw $f.FullName
-    # Find src/href to /static without ?v=
-    $pattern = '(href|src)\s*=\s*\"(/static/[^\"]*?)\"'
-    $rxMatches = [regex]::Matches($text, $pattern)
+    try {
+        $text = Get-Content -Raw -ErrorAction Stop $f.FullName
+    } catch {
+        Write-Verbose "Skipping unreadable file: $($f.FullName) - $_"
+        continue
+    }
+    if ([string]::IsNullOrWhiteSpace($text)) { continue }
+
+    # Find src/href to /static without ?v=; support both single and double quotes
+    $pattern = @'
+(href|src)\s*=\s*(['"])\s*(/static/[^'"']*?)\s*\2
+'@
+    try {
+        $rxMatches = [regex]::Matches($text, $pattern)
+    } catch {
+        Write-Verbose "Regex failed for: $($f.FullName) - $_"
+        continue
+    }
     foreach ($m in $rxMatches) {
-        $url = $m.Groups[2].Value
-        if ($url -match '\\.(map|webmanifest)$') { continue }
-        if ($url -notmatch '\\?v=') {
+        $url = $m.Groups[3].Value
+        if ($url -match '\.(map|webmanifest)$') { continue }
+        if ($url -notmatch '\?v=') {
             $violations += [pscustomobject]@{ File = $f.FullName; URL = $url }
         }
     }
