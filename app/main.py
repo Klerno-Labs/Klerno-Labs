@@ -80,6 +80,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         msg="Starting Klerno Labs Enterprise Platform",
         stage="startup",
     )
+    # Log presence of critical import-time dependency used by SessionMiddleware
+    with contextlib.suppress(Exception):
+        import itsdangerous as _its
+
+        logger.info(
+            "startup.dep.itsdangerous",
+            version=getattr(_its, "__version__", "unknown"),
+        )
     from . import store
 
     # Secret / config validation for non-development environments

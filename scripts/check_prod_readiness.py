@@ -99,6 +99,18 @@ def check_files() -> None:
 def check_import_app() -> bool:
     """Attempt to import the application package to surface import-time errors."""
     try:
+        # Ensure core runtime dependency present before importing app
+        try:
+            import itsdangerous  # type: ignore
+
+            try:
+                ver = getattr(itsdangerous, "__version__", "unknown")
+                ok(f"itsdangerous available (version {ver})")
+            except Exception:
+                ok("itsdangerous available")
+        except Exception as _exc:
+            fail(f"Missing dependency: itsdangerous not importable: {_exc!r}")
+            # Continue to attempt app import to surface additional issues
         try:
             # common FastAPI entrypoint names that projects use
             import importlib
