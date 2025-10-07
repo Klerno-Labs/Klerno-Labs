@@ -648,6 +648,19 @@ async def legacy_signup_redirect() -> Response:
     return RedirectResponse(url="/auth/signup", status_code=307)
 
 
+# Legacy login redirect: support GET /login -> /auth/login
+@app.get(
+    "/login",
+    tags=["auth"],
+    summary="Legacy login redirect (to /auth/login)",
+    name="getLegacyLogin",
+)
+async def legacy_login_redirect() -> Response:
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(url="/auth/login", status_code=307)
+
+
 # Import gating dependency (kept near top-level imports in practice). If circular issues arise,
 # consider lazy importing within the specific route only.
 from .authz import require_min_tier_env  # noqa: E402
