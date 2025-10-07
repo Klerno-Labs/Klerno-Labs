@@ -418,7 +418,9 @@ _is_dev = str(_env).lower() in {"dev", "development", "local"}
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.jwt_secret,
-    same_site="strict",
+    # Use Lax to align with auth._set_session_cookie and avoid blocking
+    # cookies on top-level navigations after login in dev.
+    same_site="lax",
     https_only=not _is_dev,
 )
 
