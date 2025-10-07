@@ -58,7 +58,7 @@
                 <a href="{{ home_url }}" class="navbar-brand"
                     style="color: var(--color-text-primary); font-weight: var(--font-bold); font-size: var(--text-xl); text-decoration: none; display: flex; align-items: center; gap: var(--space-3);">
                     <img src="{{ static_url('klerno-logo.png') }}" alt="Klerno Labs" style="height: 32px;">
-                    Klerno Labs
+                    <span class="visually-hidden">Klerno Labs</span>
                 </a>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
@@ -159,7 +159,7 @@
     <!-- Footer -->
     <footer class="container pb-4" style="color:var(--muted)">
         <div class="d-flex align-items-center justify-content-between">
-            <span>© {{ (now().year if now else 2025) }} Klerno Labs — Klerno Labs</span>
+            <span>© {{ (now().year if now else 2025) }} Klerno Labs</span>
             <span class="opacity-75">XRPL-first • Risk & Alerts</span>
         </div>
     </footer>

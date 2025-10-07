@@ -1,0 +1,48 @@
+name: Security CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    schedule:
+        - cron: "0 6 * * 1"
+
+jobs:
+    security:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install -r dev-requirements.txt || true
+                  pip install -r requirements.txt
+                  pip install pip-audit bandit
+
+            - name: pip-audit (dependencies)
+              continue-on-error: true
+              run: pip-audit -r requirements.txt -r dev-requirements.txt || pip-audit -r requirements.txt || true
+
+            - name: Bandit (security lint)
+              continue-on-error: true
+              run: bandit -q -r app || true
+
+            - name: Build Docker image
+              run: docker build -t klerno-labs:ci .
+
+            - name: Trivy scan image
+              uses: aquasecurity/trivy-action@0.24.0
+              with:
+                  image-ref: "klerno-labs:ci"
+                  format: "table"
+                  exit-code: "0"
+                  ignore-unfixed: true
+                  vuln-type: "os,library"
