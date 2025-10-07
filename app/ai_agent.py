@@ -1,6 +1,4 @@
-"""
-Safe Auto - Improver (proposal - only).
-"""
+"""Safe Auto - Improver (proposal - only)."""
 
 from __future__ import annotations
 
@@ -32,17 +30,15 @@ def load_policy() -> dict[str, Any]:
         return {"allowed_paths": []}
     try:
         return yaml.safe_load(p.read_text(encoding="utf - 8")) or {"allowed_paths": []}
-    except Exception as e:
+    except Exception:
         # Malformed policy -> deny all
-        print(f"[policy] Failed to load policy.yaml: {e}")
         return {"allowed_paths": []}
 
 
 def _insert_future_annotations(content: str) -> str:
-    """
-    Insert 'from __future__ import annotations' at a safe position:
+    """Insert 'from __future__ import annotations' at a safe position:
     - after shebang / encoding lines
-    - after a leading module docstring (if present)
+    - after a leading module docstring (if present).
     """
     lines = content.splitlines()
     i = 0
@@ -69,7 +65,7 @@ def _insert_future_annotations(content: str) -> str:
 
     insert_line = "from __future__ import annotations"
     # Insert with a trailing newline, and add a blank line after for readability
-    new_lines = lines[:i] + [insert_line, ""] + lines[i:]
+    new_lines = [*lines[:i], insert_line, "", *lines[i:]]
     return "\n".join(new_lines) + ("\n" if content.endswith("\n") else "")
 
 
@@ -89,7 +85,7 @@ def llm_suggest(file_path: Path, content: str) -> list[Suggestion]:
                         "Enable postponed evaluation of annotations for forward references "
                         "on Python < 3.11."
                     ),
-                )
+                ),
             )
 
     return suggestions

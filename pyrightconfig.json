@@ -1,0 +1,28 @@
+{
+    "venvPath": ".",
+    "venv": ".venv-py311",
+    "include": [
+        "app"
+    ],
+    "exclude": [
+        "**/tests/**",
+        "**/docs/**",
+        "**/.venv-py311/**",
+        "local_data/**",
+        "CLEAN_APP/**",
+        "data/**",
+        "launch/**",
+        "scripts/**"
+    ],
+    "typeCheckingMode": "basic",
+    "reportMissingImports": false,
+    "reportMissingTypeStubs": false,
+    "executionEnvironments": [
+        {
+            "root": ".",
+            "extraPaths": [
+                ".venv-py311/Lib/site-packages"
+            ]
+        }
+    ]
+}

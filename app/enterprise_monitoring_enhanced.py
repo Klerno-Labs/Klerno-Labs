@@ -1,9 +1,9 @@
-"""
-Klerno Labs - Enterprise Monitoring Dashboard
-Real-time system monitoring with alerting for 0.01% quality applications
+"""Klerno Labs - Enterprise Monitoring Dashboard
+Real-time system monitoring with alerting for 0.01% quality applications.
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import sqlite3
@@ -11,30 +11,27 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import psutil
+
+if TYPE_CHECKING:
+    from app._typing_shims import ISyncConnection
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class MetricPoint:
-    """Individual metric data point."""
+    """Simple metric point used by the monitor buffer.
+
+    Kept minimal so existing code can reference MetricPoint for typing.
+    """
 
     timestamp: datetime
     metric_name: str
     value: float
-    tags: dict[str, str]
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary for JSON serialization."""
-        return {
-            "timestamp": self.timestamp.isoformat(),
-            "metric_name": self.metric_name,
-            "value": self.value,
-            "tags": self.tags,
-        }
+    tags: dict[str, str] | None = None
 
 
 @dataclass
@@ -54,9 +51,11 @@ class Alert:
 
 
 class EnterpriseMonitor:
-    """Enterprise-grade monitoring system with real-time metrics and alerting."""
+    """Enterprise-grade monitoring system with real-time
+    metrics and alerting.
+    """
 
-    def __init__(self, db_path: str = "./data/monitoring.db"):
+    def __init__(self, db_path: str = "./data/monitoring.db") -> None:
         self.db_path = db_path
         self.metrics_buffer: list[MetricPoint] = []
         self.alerts: dict[str, Alert] = {}
@@ -72,7 +71,7 @@ class EnterpriseMonitor:
         """Initialize monitoring database."""
         Path(self.db_path).parent.mkdir(exist_ok=True, parents=True)
 
-        conn = sqlite3.connect(self.db_path)
+        conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
         cursor = conn.cursor()
 
         # Create metrics table
@@ -86,7 +85,7 @@ class EnterpriseMonitor:
                 tags TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # Create alerts table
@@ -103,7 +102,7 @@ class EnterpriseMonitor:
                 duration_seconds INTEGER,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # Create performance index
@@ -111,20 +110,20 @@ class EnterpriseMonitor:
             """
             CREATE INDEX IF NOT EXISTS idx_metrics_timestamp
             ON metrics(timestamp)
-        """
+        """,
         )
 
         cursor.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_metrics_name_timestamp
             ON metrics(metric_name, timestamp)
-        """
+        """,
         )
 
         conn.commit()
         conn.close()
 
-        logger.info("✅ Monitoring database initialized")
+    logger.info("[OK] Monitoring database initialized")
 
     def _setup_default_alerts(self) -> None:
         """Setup default system alerts."""
@@ -184,7 +183,7 @@ class EnterpriseMonitor:
         for alert in default_alerts:
             self.alerts[alert.id] = alert
 
-        logger.info(f"✅ Configured {len(default_alerts)} default alerts")
+        logger.info(f"[OK] Configured {len(default_alerts)} default alerts")
 
     def collect_system_metrics(self) -> list[MetricPoint]:
         """Collect comprehensive system metrics."""
@@ -194,14 +193,27 @@ class EnterpriseMonitor:
         try:
             # CPU metrics
             cpu_percent = psutil.cpu_percent(interval=1)
-            metrics.append(
-                MetricPoint(
-                    timestamp=now,
-                    metric_name="system.cpu.percent",
-                    value=cpu_percent,
-                    tags={"host": "localhost", "type": "system"},
+            # Ensure cpu_percent is a numeric value before casting; avoid
+            # calling float() on arbitrary types (list/dict) which some
+            # environment wrappers may return.
+            cpu_percent_val = None
+            if isinstance(cpu_percent, (int, float)):
+                cpu_percent_val = float(cpu_percent)
+            elif isinstance(cpu_percent, str):
+                try:
+                    cpu_percent_val = float(cpu_percent)
+                except Exception:
+                    cpu_percent_val = None
+
+            if cpu_percent_val is not None:
+                metrics.append(
+                    MetricPoint(
+                        timestamp=now,
+                        metric_name="system.cpu.percent",
+                        value=cpu_percent_val,
+                        tags={"host": "localhost", "type": "system"},
+                    ),
                 )
-            )
 
             # Memory metrics
             memory = psutil.virtual_memory()
@@ -211,7 +223,7 @@ class EnterpriseMonitor:
                     metric_name="system.memory.percent",
                     value=memory.percent,
                     tags={"host": "localhost", "type": "system"},
-                )
+                ),
             )
 
             metrics.append(
@@ -220,7 +232,7 @@ class EnterpriseMonitor:
                     metric_name="system.memory.available_mb",
                     value=memory.available / 1024 / 1024,
                     tags={"host": "localhost", "type": "system"},
-                )
+                ),
             )
 
             # Disk metrics
@@ -232,31 +244,37 @@ class EnterpriseMonitor:
                     metric_name="system.disk.percent",
                     value=disk_percent,
                     tags={"host": "localhost", "type": "system", "mount": "/"},
-                )
+                ),
             )
 
             # Network metrics
             network = psutil.net_io_counters()
-            metrics.append(
-                MetricPoint(
-                    timestamp=now,
-                    metric_name="system.network.bytes_sent",
-                    value=network.bytes_sent,
-                    tags={"host": "localhost", "type": "system"},
-                )
-            )
+            # network may be a struct or a mapping depending on psutil version
+            bytes_sent = getattr(network, "bytes_sent", None)
+            bytes_recv = getattr(network, "bytes_recv", None)
 
-            metrics.append(
-                MetricPoint(
-                    timestamp=now,
-                    metric_name="system.network.bytes_recv",
-                    value=network.bytes_recv,
-                    tags={"host": "localhost", "type": "system"},
+            if bytes_sent is not None:
+                metrics.append(
+                    MetricPoint(
+                        timestamp=now,
+                        metric_name="system.network.bytes_sent",
+                        value=float(bytes_sent),
+                        tags={"host": "localhost", "type": "system"},
+                    ),
                 )
-            )
+
+            if bytes_recv is not None:
+                metrics.append(
+                    MetricPoint(
+                        timestamp=now,
+                        metric_name="system.network.bytes_recv",
+                        value=float(bytes_recv),
+                        tags={"host": "localhost", "type": "system"},
+                    ),
+                )
 
             # Process metrics
-            try:
+            with contextlib.suppress(psutil.NoSuchProcess):
                 process = psutil.Process()
                 metrics.append(
                     MetricPoint(
@@ -264,7 +282,7 @@ class EnterpriseMonitor:
                         metric_name="app.memory.rss_mb",
                         value=process.memory_info().rss / 1024 / 1024,
                         tags={"host": "localhost", "type": "application"},
-                    )
+                    ),
                 )
 
                 metrics.append(
@@ -273,7 +291,7 @@ class EnterpriseMonitor:
                         metric_name="app.cpu.percent",
                         value=process.cpu_percent(),
                         tags={"host": "localhost", "type": "application"},
-                    )
+                    ),
                 )
 
                 metrics.append(
@@ -282,14 +300,11 @@ class EnterpriseMonitor:
                         metric_name="app.threads.count",
                         value=process.num_threads(),
                         tags={"host": "localhost", "type": "application"},
-                    )
+                    ),
                 )
 
-            except psutil.NoSuchProcess:
-                pass
-
         except Exception as e:
-            logger.error(f"Error collecting system metrics: {e}")
+            logger.exception(f"Error collecting system metrics: {e}")
 
         return metrics
 
@@ -298,11 +313,17 @@ class EnterpriseMonitor:
         self.metrics_buffer.append(metric)
 
     def add_custom_metric(
-        self, name: str, value: float, tags: dict[str, str] = None
+        self,
+        name: str,
+        value: float,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Add a custom metric."""
         metric = MetricPoint(
-            timestamp=datetime.now(), metric_name=name, value=value, tags=tags or {}
+            timestamp=datetime.now(),
+            metric_name=name,
+            value=value,
+            tags=tags or {},
         )
         self.add_metric(metric)
 
@@ -312,7 +333,7 @@ class EnterpriseMonitor:
             return
 
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             for metric in self.metrics_buffer:
@@ -336,14 +357,14 @@ class EnterpriseMonitor:
             self.metrics_buffer.clear()
 
         except Exception as e:
-            logger.error(f"Error flushing metrics: {e}")
+            logger.exception(f"Error flushing metrics: {e}")
 
     def check_alerts(self) -> list[dict[str, Any]]:
         """Check all alerts against current metrics."""
         triggered_alerts = []
 
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             for alert in self.alerts.values():
@@ -366,16 +387,14 @@ class EnterpriseMonitor:
                 avg_value = result[0]
 
                 # Check if alert condition is met
-                condition_met = False
-                if (
-                    alert.operator == "gt"
-                    and avg_value > alert.threshold
-                    or alert.operator == "lt"
-                    and avg_value < alert.threshold
-                    or alert.operator == "eq"
-                    and abs(avg_value - alert.threshold) < 0.01
-                ):
-                    condition_met = True
+                condition_met = (
+                    (alert.operator == "gt" and avg_value > alert.threshold)
+                    or (alert.operator == "lt" and avg_value < alert.threshold)
+                    or (
+                        alert.operator == "eq"
+                        and abs(avg_value - alert.threshold) < 0.01
+                    )
+                )
 
                 # Handle alert state changes
                 if condition_met and not alert.active:
@@ -396,6 +415,10 @@ class EnterpriseMonitor:
                     triggered_alerts.append(alert_data)
 
                     # Log to alert history
+                    message = (
+                        f"{alert.description} (Current: {avg_value:.2f}, "
+                        f"Threshold: {alert.threshold})"
+                    )
                     cursor.execute(
                         """
                         INSERT INTO alert_history
@@ -406,19 +429,22 @@ class EnterpriseMonitor:
                             alert.id,
                             alert.name,
                             alert.severity,
-                            f"{alert.description} (Current: {avg_value:.2f}, Threshold: {alert.threshold})",
+                            message,
                             alert.triggered_at.isoformat(),
                         ),
                     )
 
                     logger.warning(
-                        f"🚨 Alert triggered: {alert.name} - {avg_value:.2f}"
+                        f"🚨 Alert triggered: {alert.name} - {avg_value:.2f}",
                     )
 
                 elif not condition_met and alert.active:
                     # Alert resolved
                     resolved_at = datetime.now()
-                    duration = (resolved_at - alert.triggered_at).total_seconds()
+                    if alert.triggered_at is not None:
+                        duration = (resolved_at - alert.triggered_at).total_seconds()
+                    else:
+                        duration = 0.0
 
                     cursor.execute(
                         """
@@ -433,21 +459,21 @@ class EnterpriseMonitor:
                     alert.triggered_at = None
 
                     logger.info(
-                        f"✅ Alert resolved: {alert.name} after {duration:.1f}s"
+                        f"[OK] Alert resolved: {alert.name} after {duration:.1f}s",
                     )
 
             conn.commit()
             conn.close()
 
         except Exception as e:
-            logger.error(f"Error checking alerts: {e}")
+            logger.exception(f"Error checking alerts: {e}")
 
         return triggered_alerts
 
     def get_dashboard_data(self, hours: int = 1) -> dict[str, Any]:
         """Get dashboard data for the last N hours."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             since = datetime.now() - timedelta(hours=hours)
@@ -492,7 +518,8 @@ class EnterpriseMonitor:
             # Get recent alert history
             cursor.execute(
                 """
-                SELECT alert_name, severity, triggered_at, resolved_at, duration_seconds
+                SELECT alert_name, severity, triggered_at,
+                       resolved_at, duration_seconds
                 FROM alert_history
                 WHERE triggered_at >= ?
                 ORDER BY triggered_at DESC
@@ -510,7 +537,7 @@ class EnterpriseMonitor:
                         "triggered_at": row[2],
                         "resolved_at": row[3],
                         "duration": row[4],
-                    }
+                    },
                 )
 
             conn.close()
@@ -520,11 +547,11 @@ class EnterpriseMonitor:
                 "metrics_summary": metrics_summary,
                 "active_alerts": active_alerts,
                 "alert_history": alert_history,
-                "system_status": "healthy" if not active_alerts else "degraded",
+                "system_status": ("healthy" if not active_alerts else "degraded"),
             }
 
         except Exception as e:
-            logger.error(f"Error getting dashboard data: {e}")
+            logger.exception(f"Error getting dashboard data: {e}")
             return {"error": str(e)}
 
     async def run_monitoring_loop(self) -> None:
@@ -545,7 +572,7 @@ class EnterpriseMonitor:
                 triggered_alerts = self.check_alerts()
                 for alert in triggered_alerts:
                     logger.warning(
-                        f"🚨 ALERT: {alert['name']} - {alert['description']}"
+                        f"🚨 ALERT: {alert['name']} - {alert['description']}",
                     )
 
                 # Flush metrics periodically
@@ -556,7 +583,7 @@ class EnterpriseMonitor:
                 await asyncio.sleep(self.collection_interval)
 
             except Exception as e:
-                logger.error(f"Error in monitoring loop: {e}")
+                logger.exception(f"Error in monitoring loop: {e}")
                 await asyncio.sleep(5)
 
     def stop(self) -> None:
@@ -570,7 +597,7 @@ class EnterpriseMonitor:
 monitor = EnterpriseMonitor()
 
 
-async def start_monitoring():
+async def start_monitoring() -> None:
     """Start the monitoring system."""
     await monitor.run_monitoring_loop()
 

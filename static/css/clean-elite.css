@@ -1,0 +1,234 @@
+/**
+ * KLERNO LABS - CLEAN ELITE OVERRIDE
+ * Removes conflicts and provides clean elite styling
+ */
+
+/* Reset any conflicting styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Clean hero section */
+.hero-section {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-content {
+    max-width: 800px;
+    padding: 2rem;
+    z-index: 2;
+    position: relative;
+}
+
+.hero-title {
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    line-height: 1.1;
+    background: linear-gradient(45deg, #fff, #e2e8f0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    line-height: 1.6;
+}
+
+.hero-cta {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Clean button system */
+.btn-elite {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    font-size: 1rem;
+    min-width: 160px;
+}
+
+.btn-elite-primary {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.btn-elite-primary:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    color: white;
+}
+
+.btn-elite-secondary {
+    background: white;
+    color: #4f46e5;
+    border-color: white;
+}
+
+.btn-elite-secondary:hover {
+    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    color: #4f46e5;
+}
+
+/* Clean navigation */
+.navbar {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar-brand {
+    color: white !important;
+    font-weight: 700 !important;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.8) !important;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    color: white !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px;
+}
+
+/* Floating particles */
+.hero-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    animation: float 6s ease-in-out infinite;
+}
+
+.particle:nth-child(1) {
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.particle:nth-child(2) {
+    top: 40%;
+    left: 80%;
+    animation-delay: -2s;
+}
+
+.particle:nth-child(3) {
+    top: 70%;
+    left: 20%;
+    animation-delay: -4s;
+}
+
+.particle:nth-child(4) {
+    top: 10%;
+    left: 60%;
+    animation-delay: -1s;
+}
+
+.particle:nth-child(5) {
+    top: 60%;
+    left: 70%;
+    animation-delay: -1.5s;
+}
+
+.particle:nth-child(6) {
+    top: 80%;
+    left: 30%;
+    animation-delay: -3s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+        opacity: 0.6;
+    }
+
+    50% {
+        transform: translateY(-20px) rotate(180deg);
+        opacity: 1;
+    }
+}
+
+/* Section styling */
+.section {
+    padding: 4rem 0;
+}
+
+.section-dark {
+    background: #1e293b;
+    color: white;
+}
+
+.section-light {
+    background: #f8fafc;
+    color: #334155;
+}
+
+/* Card styling */
+.card-elite {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+}
+
+.card-elite:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .hero-cta {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .btn-elite {
+        width: 100%;
+        max-width: 280px;
+    }
+}

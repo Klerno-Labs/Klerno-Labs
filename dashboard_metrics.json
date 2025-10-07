@@ -1,0 +1,2587 @@
+{
+  "export_timestamp": "2025-10-03T15:07:21.025980",
+  "dashboard_config": {
+    "refresh_interval": 5,
+    "max_history": 100,
+    "alert_thresholds": {
+      "cpu_critical": 90,
+      "cpu_warning": 75,
+      "memory_critical": 90,
+      "memory_warning": 80,
+      "disk_critical": 95,
+      "disk_warning": 85,
+      "response_time_critical": 2.0,
+      "response_time_warning": 1.0
+    },
+    "enterprise_endpoints": [
+      "/health",
+      "/status",
+      "/enterprise/status",
+      "/enterprise/health",
+      "/enterprise/metrics",
+      "/enterprise/analytics"
+    ]
+  },
+  "metrics_history": [
+    {
+      "timestamp": "2025-10-03T15:05:19.481082",
+      "system_health": {
+        "cpu": {
+          "percent": 12.9,
+          "count": 8,
+          "frequency_mhz": 1200.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 74.8,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.7119140625,
+          "available_gb": 3.9390792846679688,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.14915945005779,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19729614257812,
+          "free_gb": 327.5693016052246,
+          "read_mb": 143649.11572265625,
+          "write_mb": 162856.29541015625,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.02693939208984,
+          "bytes_recv_mb": 70.7454195022583,
+          "packets_sent": 59743,
+          "packets_recv": 148072,
+          "active_connections": 1440,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 363,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:05:26.413492",
+      "system_health": {
+        "cpu": {
+          "percent": 8.4,
+          "count": 8,
+          "frequency_mhz": 400.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 74.5,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.652610778808594,
+          "available_gb": 3.998382568359375,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.14923481927132,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.1976547241211,
+          "free_gb": 327.56894302368164,
+          "read_mb": 143653.3955078125,
+          "write_mb": 162857.052734375,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.0565643310547,
+          "bytes_recv_mb": 70.78719997406006,
+          "packets_sent": 59803,
+          "packets_recv": 148164,
+          "active_connections": 1437,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 362,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:05:33.107573",
+      "system_health": {
+        "cpu": {
+          "percent": 8.5,
+          "count": 8,
+          "frequency_mhz": 1200.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 74.4,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.641315460205078,
+          "available_gb": 4.009677886962891,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149235621071465,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19765853881836,
+          "free_gb": 327.5689392089844,
+          "read_mb": 143653.4736328125,
+          "write_mb": 162857.7177734375,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.1365613937378,
+          "bytes_recv_mb": 70.80363655090332,
+          "packets_sent": 59828,
+          "packets_recv": 148221,
+          "active_connections": 1446,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 362,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:05:39.814045",
+      "system_health": {
+        "cpu": {
+          "percent": 8.5,
+          "count": 8,
+          "frequency_mhz": 400.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 74.2,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.620281219482422,
+          "available_gb": 4.030712127685547,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149310990284995,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19801712036133,
+          "free_gb": 327.5685806274414,
+          "read_mb": 143653.4755859375,
+          "write_mb": 162858.04248046875,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.13695907592773,
+          "bytes_recv_mb": 70.80596923828125,
+          "packets_sent": 59834,
+          "packets_recv": 148249,
+          "active_connections": 1443,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 361,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:05:46.521937",
+      "system_health": {
+        "cpu": {
+          "percent": 19.0,
+          "count": 8,
+          "frequency_mhz": 1200.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 72.2,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.298664093017578,
+          "available_gb": 4.352329254150391,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149337449689746,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.1981430053711,
+          "free_gb": 327.56845474243164,
+          "read_mb": 143654.4248046875,
+          "write_mb": 162858.5205078125,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.14205360412598,
+          "bytes_recv_mb": 70.81612586975098,
+          "packets_sent": 59854,
+          "packets_recv": 148291,
+          "active_connections": 1441,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:05:53.557420",
+      "system_health": {
+        "cpu": {
+          "percent": 8.5,
+          "count": 8,
+          "frequency_mhz": 700.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 73.6,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.518047332763672,
+          "available_gb": 4.132946014404297,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.14934226049061,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.1981658935547,
+          "free_gb": 327.56843185424805,
+          "read_mb": 143721.7373046875,
+          "write_mb": 162894.0224609375,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.14550113677979,
+          "bytes_recv_mb": 70.82123851776123,
+          "packets_sent": 59869,
+          "packets_recv": 148339,
+          "active_connections": 1438,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:06:00.286459",
+      "system_health": {
+        "cpu": {
+          "percent": 7.4,
+          "count": 8,
+          "frequency_mhz": 400.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 73.6,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.517719268798828,
+          "available_gb": 4.133274078369141,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149079270043394,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19691467285156,
+          "free_gb": 327.5696830749512,
+          "read_mb": 143722.2568359375,
+          "write_mb": 162894.49755859375,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.1458444595337,
+          "bytes_recv_mb": 70.82429885864258,
+          "packets_sent": 59875,
+          "packets_recv": 148372,
+          "active_connections": 1434,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:06:06.993025",
+      "system_health": {
+        "cpu": {
+          "percent": 6.2,
+          "count": 8,
+          "frequency_mhz": 400.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 73.6,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.514656066894531,
+          "available_gb": 4.1363372802734375,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149079270043394,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19691467285156,
+          "free_gb": 327.5696830749512,
+          "read_mb": 143722.2568359375,
+          "write_mb": 162894.6328125,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.14807891845703,
+          "bytes_recv_mb": 70.83031940460205,
+          "packets_sent": 59890,
+          "packets_recv": 148404,
+          "active_connections": 1439,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:06:13.661726",
+      "system_health": {
+        "cpu": {
+          "percent": 9.8,
+          "count": 8,
+          "frequency_mhz": 700.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 73.6,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.512237548828125,
+          "available_gb": 4.138755798339844,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149104927648004,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19703674316406,
+          "free_gb": 327.5695610046387,
+          "read_mb": 143722.8115234375,
+          "write_mb": 162894.759765625,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.16493606567383,
+          "bytes_recv_mb": 70.85080432891846,
+          "packets_sent": 59943,
+          "packets_recv": 148468,
+          "active_connections": 1441,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:06:20.379195",
+      "system_health": {
+        "cpu": {
+          "percent": 7.4,
+          "count": 8,
+          "frequency_mhz": 700.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 73.6,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.513862609863281,
+          "available_gb": 4.1371307373046875,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149104927648004,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19703674316406,
+          "free_gb": 327.5695610046387,
+          "read_mb": 143722.8583984375,
+          "write_mb": 162896.09375,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.17767429351807,
+          "bytes_recv_mb": 71.00303936004639,
+          "packets_sent": 60000,
+          "packets_recv": 148581,
+          "active_connections": 1437,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:06:27.062670",
+      "system_health": {
+        "cpu": {
+          "percent": 8.6,
+          "count": 8,
+          "frequency_mhz": 400.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 73.5,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.511066436767578,
+          "available_gb": 4.139926910400391,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149104927648004,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19703674316406,
+          "free_gb": 327.5695610046387,
+          "read_mb": 143722.8583984375,
+          "write_mb": 162896.32470703125,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.17788314819336,
+          "bytes_recv_mb": 71.00511264801025,
+          "packets_sent": 60004,
+          "packets_recv": 148603,
+          "active_connections": 1446,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:06:33.749628",
+      "system_health": {
+        "cpu": {
+          "percent": 4.7,
+          "count": 8,
+          "frequency_mhz": 400.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 73.6,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.513031005859375,
+          "available_gb": 4.137962341308594,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.14902955843447,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.1966781616211,
+          "free_gb": 327.56991958618164,
+          "read_mb": 143722.9208984375,
+          "write_mb": 162897.1240234375,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.18193340301514,
+          "bytes_recv_mb": 71.01507186889648,
+          "packets_sent": 60022,
+          "packets_recv": 148649,
+          "active_connections": 1442,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:06:40.450239",
+      "system_health": {
+        "cpu": {
+          "percent": 12.5,
+          "count": 8,
+          "frequency_mhz": 400.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 73.6,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.513603210449219,
+          "available_gb": 4.13739013671875,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.14908087364368,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.1969223022461,
+          "free_gb": 327.56967544555664,
+          "read_mb": 143722.9833984375,
+          "write_mb": 162897.2919921875,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.18203735351562,
+          "bytes_recv_mb": 71.01659965515137,
+          "packets_sent": 60024,
+          "packets_recv": 148666,
+          "active_connections": 1437,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:06:47.165796",
+      "system_health": {
+        "cpu": {
+          "percent": 38.3,
+          "count": 8,
+          "frequency_mhz": 2701.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 74.2,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.609912872314453,
+          "available_gb": 4.041080474853516,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149081675443824,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19692611694336,
+          "free_gb": 327.5696716308594,
+          "read_mb": 143724.6669921875,
+          "write_mb": 162898.25390625,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.1871280670166,
+          "bytes_recv_mb": 71.07621955871582,
+          "packets_sent": 60055,
+          "packets_recv": 148719,
+          "active_connections": 1448,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:06:54.260531",
+      "system_health": {
+        "cpu": {
+          "percent": 8.1,
+          "count": 8,
+          "frequency_mhz": 400.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 73.1,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.433860778808594,
+          "available_gb": 4.217132568359375,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149081675443824,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19692611694336,
+          "free_gb": 327.5696716308594,
+          "read_mb": 143791.9638671875,
+          "write_mb": 162933.03759765625,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.19046306610107,
+          "bytes_recv_mb": 71.08022499084473,
+          "packets_sent": 60068,
+          "packets_recv": 148759,
+          "active_connections": 1435,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:07:00.944315",
+      "system_health": {
+        "cpu": {
+          "percent": 9.5,
+          "count": 8,
+          "frequency_mhz": 400.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 73.0,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.431903839111328,
+          "available_gb": 4.219089508056641,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149082477243972,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19692993164062,
+          "free_gb": 327.5696678161621,
+          "read_mb": 143791.9638671875,
+          "write_mb": 162933.18212890625,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.19101428985596,
+          "bytes_recv_mb": 71.084059715271,
+          "packets_sent": 60078,
+          "packets_recv": 148800,
+          "active_connections": 1442,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:07:07.642650",
+      "system_health": {
+        "cpu": {
+          "percent": 6.2,
+          "count": 8,
+          "frequency_mhz": 400.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 73.0,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.431285858154297,
+          "available_gb": 4.219707489013672,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149082477243972,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19692993164062,
+          "free_gb": 327.5696678161621,
+          "read_mb": 143791.9638671875,
+          "write_mb": 162933.49609375,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.19451522827148,
+          "bytes_recv_mb": 71.09207916259766,
+          "packets_sent": 60097,
+          "packets_recv": 148839,
+          "active_connections": 1439,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    },
+    {
+      "timestamp": "2025-10-03T15:07:14.332424",
+      "system_health": {
+        "cpu": {
+          "percent": 8.4,
+          "count": 8,
+          "frequency_mhz": 400.0,
+          "status": "HEALTHY"
+        },
+        "memory": {
+          "percent": 73.0,
+          "total_gb": 15.650993347167969,
+          "used_gb": 11.427528381347656,
+          "available_gb": 4.2234649658203125,
+          "swap_percent": 7.1,
+          "status": "HEALTHY"
+        },
+        "disk": {
+          "percent": 31.149108134848575,
+          "total_gb": 475.76659774780273,
+          "used_gb": 148.19705200195312,
+          "free_gb": 327.5695457458496,
+          "read_mb": 143792.2529296875,
+          "write_mb": 162933.64697265625,
+          "status": "HEALTHY"
+        },
+        "network": {
+          "bytes_sent_mb": 132.1967544555664,
+          "bytes_recv_mb": 71.09977436065674,
+          "packets_sent": 60115,
+          "packets_recv": 148891,
+          "active_connections": 1435,
+          "status": "HEALTHY"
+        },
+        "processes": {
+          "total_count": 360,
+          "status": "HEALTHY"
+        }
+      },
+      "application_health": {
+        "overall_status": "CRITICAL",
+        "health_score": 66.66666666666666,
+        "server": {
+          "healthy": false,
+          "status": "STOPPED",
+          "pid": null,
+          "port": "8000"
+        },
+        "database": {
+          "healthy": true,
+          "status": "CONNECTED",
+          "connection_pool": {
+            "active": 5,
+            "idle": 10,
+            "max": 20
+          },
+          "response_time_ms": 15
+        },
+        "external_services": {
+          "healthy": true,
+          "services": {
+            "payment_gateway": {
+              "status": "HEALTHY",
+              "response_time_ms": 85
+            },
+            "blockchain_rpc": {
+              "status": "HEALTHY",
+              "response_time_ms": 120
+            },
+            "notification_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 45
+            },
+            "analytics_service": {
+              "status": "HEALTHY",
+              "response_time_ms": 60
+            }
+          }
+        },
+        "uptime_hours": 72.5,
+        "last_deployment": "2025-10-03T12:00:00Z",
+        "version": "v2.0.0-enterprise"
+      },
+      "performance_metrics": {
+        "response_times": {
+          "avg_ms": 85,
+          "p50_ms": 60,
+          "p95_ms": 150,
+          "p99_ms": 300,
+          "status": "HEALTHY"
+        },
+        "throughput": {
+          "requests_per_second": 45.2,
+          "requests_per_minute": 2712,
+          "peak_rps": 78.5,
+          "status": "HEALTHY"
+        },
+        "error_rates": {
+          "error_rate_percent": 0.2,
+          "4xx_errors": 12,
+          "5xx_errors": 2,
+          "status": "HEALTHY"
+        },
+        "cache": {
+          "hit_rate_percent": 87.5,
+          "miss_rate_percent": 12.5,
+          "size_mb": 256,
+          "status": "HEALTHY"
+        }
+      },
+      "security_status": {
+        "authentication": {
+          "active_sessions": 42,
+          "failed_logins_24h": 3,
+          "suspicious_ips": 0,
+          "status": "HEALTHY"
+        },
+        "ssl_certificates": {
+          "expires_in_days": 85,
+          "status": "HEALTHY"
+        },
+        "firewall": {
+          "blocked_requests_24h": 157,
+          "allowed_requests_24h": 15420,
+          "status": "HEALTHY"
+        },
+        "vulnerability_scan": {
+          "last_scan": "2025-10-02T10:00:00Z",
+          "critical_issues": 0,
+          "medium_issues": 1,
+          "low_issues": 3,
+          "status": "HEALTHY"
+        },
+        "compliance": {
+          "gdpr_compliant": true,
+          "pci_compliant": true,
+          "iso27001_compliant": true,
+          "status": "COMPLIANT"
+        }
+      },
+      "alerts": []
+    }
+  ],
+  "alerts_summary": {
+    "total_alerts": 0,
+    "recent_alerts": []
+  }
+}

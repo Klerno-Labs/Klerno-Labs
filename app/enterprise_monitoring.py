@@ -1,5 +1,4 @@
-"""
-Enterprise Monitoring & Quality Control System
+"""Enterprise Monitoring & Quality Control System.
 
 Top 0.01% quality monitoring with comprehensive observability,
     performance metrics, error tracking, and health checks for
@@ -15,28 +14,39 @@ import statistics
 import threading
 import time
 from collections import defaultdict, deque
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import psutil
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    import psutil  # pragma: no cover
+else:
+    try:
+        import psutil
+    except Exception:
+        psutil = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
-# Configure enterprise logging
-try:
-    import os
+from contextlib import suppress
 
-    logs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
-    os.makedirs(logs_dir, exist_ok=True)
+# Configure enterprise logging
+from pathlib import Path
+
+try:
+    # Locate repo-level logs directory next to package root
+    logs_dir = Path(__file__).resolve().parents[1] / "logs"
+    with suppress(Exception):
+        logs_dir.mkdir(parents=True, exist_ok=True)
 
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
         handlers=[
-            logging.FileHandler(os.path.join(logs_dir, "enterprise.log")),
+            logging.FileHandler(str(logs_dir / "enterprise.log")),
             logging.StreamHandler(),
         ],
     )
@@ -120,9 +130,10 @@ class HealthCheck:
 class MetricsCollector:
     """Collects and stores metrics."""
 
-    def __init__(self, max_samples: int = 10000):
-        self.metrics: deque = deque(maxlen=max_samples)
-        self.aggregates: dict[str, dict] = defaultdict(dict)
+    def __init__(self, max_samples: int = 10000) -> None:
+        self.metrics: deque[Metric] = deque(maxlen=max_samples)
+        # aggregates maps metric_key -> aggregated stats dict
+        self.aggregates: defaultdict[str, dict[str, Any]] = defaultdict(dict)
         self.lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
 
@@ -135,11 +146,14 @@ class MetricsCollector:
             # Log critical metrics
             if metric.metric_type in [MetricType.TIMER, MetricType.COUNTER]:
                 self.logger.debug(
-                    f"Metric recorded: {metric.name}={metric.value} {metric.unit or ''}"
+                    f"Metric recorded: {metric.name}={metric.value} {metric.unit or ''}",
                 )
 
     def increment_counter(
-        self, name: str, value: int = 1, tags: dict[str, str] = None
+        self,
+        name: str,
+        value: int = 1,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Increment a counter metric."""
         metric = Metric(
@@ -154,9 +168,9 @@ class MetricsCollector:
     def set_gauge(
         self,
         name: str,
-        value: int | float,
-        tags: dict[str, str] = None,
-        unit: str = None,
+        value: float,
+        tags: dict[str, str] | None = None,
+        unit: str | None = None,
     ) -> None:
         """Set a gauge metric."""
         metric = Metric(
@@ -170,9 +184,16 @@ class MetricsCollector:
         self.record_metric(metric)
 
     def record_timer(
-        self, name: str, duration_ms: float, tags: dict[str, str] = None
+        self,
+        name: str | None,
+        duration_ms: float,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Record a timer metric."""
+        if not name:
+            # If no metric name provided, skip recording to avoid invalid keys
+            return
+
         metric = Metric(
             name=name,
             value=duration_ms,
@@ -184,7 +205,10 @@ class MetricsCollector:
         self.record_metric(metric)
 
     def record_histogram(
-        self, name: str, value: int | float, tags: dict[str, str] = None
+        self,
+        name: str,
+        value: float,
+        tags: dict[str, str] | None = None,
     ) -> None:
         """Record a histogram metric."""
         metric = Metric(
@@ -217,7 +241,9 @@ class MetricsCollector:
         agg["values"].append(metric.value)
 
     def get_aggregate_stats(
-        self, metric_name: str, metric_type: MetricType
+        self,
+        metric_name: str,
+        metric_type: MetricType,
     ) -> dict[str, Any]:
         """Get aggregate statistics for a metric."""
         key = f"{metric_name}:{metric_type.value}"
@@ -255,7 +281,7 @@ class MetricsCollector:
 class AlertManager:
     """Manages alerts and notifications."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.alerts: dict[str, Alert] = {}
         self.alert_rules: list[dict] = []
         self.subscribers: list[Callable] = []
@@ -266,7 +292,8 @@ class AlertManager:
         """Add an alert rule."""
         required_fields = ["name", "condition", "level", "message"]
         if not all(field in rule for field in required_fields):
-            raise ValueError(f"Alert rule must contain: {required_fields}")
+            msg = f"Alert rule must contain: {required_fields}"
+            raise ValueError(msg)
 
         self.alert_rules.append(rule)
         self.logger.info(f"Added alert rule: {rule['name']}")
@@ -282,7 +309,7 @@ class AlertManager:
         description: str,
         level: AlertLevel,
         source: str,
-        metadata: dict[str, Any] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Alert:
         """Create and fire an alert."""
         alert = Alert(
@@ -303,7 +330,7 @@ class AlertManager:
             try:
                 subscriber(alert)
             except Exception as e:
-                self.logger.error(f"Error notifying alert subscriber: {e}")
+                self.logger.exception(f"Error notifying alert subscriber: {e}")
 
         # Log alert
         self.logger.warning(f"ALERT [{level.value.upper()}] {title}: {description}")
@@ -344,7 +371,9 @@ class AlertManager:
                         source="alert_rules",
                     )
             except Exception as e:
-                self.logger.error(f"Error evaluating alert rule {rule['name']}: {e}")
+                self.logger.exception(
+                    f"Error evaluating alert rule {rule['name']}: {e}"
+                )
 
     def _evaluate_rule(self, rule: dict, metrics: list[Metric]) -> bool:
         """Evaluate an alert rule condition."""
@@ -367,14 +396,16 @@ class AlertManager:
 class HealthChecker:
     """Performs health checks."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.checks: dict[str, Callable] = {}
         self.results: dict[str, HealthCheck] = {}
         self.lock = threading.Lock()
         self.logger = logging.getLogger(__name__)
 
     def register_check(
-        self, name: str, check_func: Callable[[], dict[str, Any]]
+        self,
+        name: str,
+        check_func: Callable[[], dict[str, Any]],
     ) -> None:
         """Register a health check."""
         self.checks[name] = check_func
@@ -394,7 +425,8 @@ class HealthChecker:
         start_time = time.time()
         try:
             result = await asyncio.get_event_loop().run_in_executor(
-                None, self.checks[name]
+                None,
+                self.checks[name],
             )
             duration_ms = (time.time() - start_time) * 1000
 
@@ -417,7 +449,7 @@ class HealthChecker:
             error_check = HealthCheck(
                 name=name,
                 status=HealthStatus.CRITICAL,
-                message=f"Health check failed: {str(e)}",
+                message=f"Health check failed: {e!s}",
                 timestamp=datetime.now(UTC),
                 duration_ms=duration_ms,
             )
@@ -425,7 +457,7 @@ class HealthChecker:
             with self.lock:
                 self.results[name] = error_check
 
-            self.logger.error(f"Health check {name} failed: {e}")
+            self.logger.exception(f"Health check {name} failed: {e}")
             return error_check
 
     async def run_all_checks(self) -> dict[str, HealthCheck]:
@@ -446,23 +478,22 @@ class HealthChecker:
 
         if HealthStatus.CRITICAL in statuses:
             return HealthStatus.CRITICAL
-        elif HealthStatus.UNHEALTHY in statuses:
+        if HealthStatus.UNHEALTHY in statuses:
             return HealthStatus.UNHEALTHY
-        elif HealthStatus.DEGRADED in statuses:
+        if HealthStatus.DEGRADED in statuses:
             return HealthStatus.DEGRADED
-        elif all(status == HealthStatus.HEALTHY for status in statuses):
+        if all(status == HealthStatus.HEALTHY for status in statuses):
             return HealthStatus.HEALTHY
-        else:
-            return HealthStatus.UNKNOWN
+        return HealthStatus.UNKNOWN
 
 
 class SystemMonitor:
     """Monitors system resources."""
 
-    def __init__(self, metrics_collector: MetricsCollector):
+    def __init__(self, metrics_collector: MetricsCollector) -> None:
         self.metrics = metrics_collector
         self.monitoring = False
-        self.monitor_thread = None
+        self.monitor_thread: threading.Thread | None = None
         self.logger = logging.getLogger(__name__)
 
     def start_monitoring(self, interval_seconds: int = 30) -> None:
@@ -472,7 +503,9 @@ class SystemMonitor:
 
         self.monitoring = True
         self.monitor_thread = threading.Thread(
-            target=self._monitor_loop, args=(interval_seconds,), daemon=True
+            target=self._monitor_loop,
+            args=(interval_seconds,),
+            daemon=True,
         )
         self.monitor_thread.start()
         self.logger.info("System monitoring started")
@@ -491,7 +524,7 @@ class SystemMonitor:
                 self._collect_system_metrics()
                 time.sleep(interval_seconds)
             except Exception as e:
-                self.logger.error(f"Error in monitoring loop: {e}")
+                self.logger.exception(f"Error in monitoring loop: {e}")
                 time.sleep(interval_seconds)
 
     def _collect_system_metrics(self) -> None:
@@ -506,33 +539,45 @@ class SystemMonitor:
             self.metrics.set_gauge("system.memory.usage", memory.percent, unit="%")
             self.metrics.set_gauge("system.memory.used", memory.used, unit="bytes")
             self.metrics.set_gauge(
-                "system.memory.available", memory.available, unit="bytes"
+                "system.memory.available",
+                memory.available,
+                unit="bytes",
             )
 
             # Disk metrics
             disk = psutil.disk_usage("/")
             self.metrics.set_gauge(
-                "system.disk.usage", (disk.used / disk.total) * 100, unit="%"
+                "system.disk.usage",
+                (disk.used / disk.total) * 100,
+                unit="%",
             )
             self.metrics.set_gauge("system.disk.free", disk.free, unit="bytes")
 
             # Network metrics
             network = psutil.net_io_counters()
             self.metrics.set_gauge(
-                "system.network.bytes_sent", network.bytes_sent, unit="bytes"
+                "system.network.bytes_sent",
+                network.bytes_sent,
+                unit="bytes",
             )
             self.metrics.set_gauge(
-                "system.network.bytes_recv", network.bytes_recv, unit="bytes"
+                "system.network.bytes_recv",
+                network.bytes_recv,
+                unit="bytes",
             )
 
             # Process metrics
             process = psutil.Process()
             self.metrics.set_gauge("process.cpu.usage", process.cpu_percent(), unit="%")
             self.metrics.set_gauge(
-                "process.memory.usage", process.memory_percent(), unit="%"
+                "process.memory.usage",
+                process.memory_percent(),
+                unit="%",
             )
             self.metrics.set_gauge(
-                "process.memory.rss", process.memory_info().rss, unit="bytes"
+                "process.memory.rss",
+                process.memory_info().rss,
+                unit="bytes",
             )
 
             # Load average (Unix only)
@@ -545,12 +590,14 @@ class SystemMonitor:
                 pass  # Not available on Windows
 
         except Exception as e:
-            self.logger.error(f"Error collecting system metrics: {e}")
+            self.logger.exception(f"Error collecting system metrics: {e}")
 
 
 @contextlib.contextmanager
 def timer_context(
-    metrics_collector: MetricsCollector, metric_name: str, tags: dict[str, str] = None
+    metrics_collector: MetricsCollector,
+    metric_name: str | None,
+    tags: dict[str, str] | None = None,
 ):
     """Context manager for timing operations."""
     start_time = time.time()
@@ -561,21 +608,21 @@ def timer_context(
         metrics_collector.record_timer(metric_name, duration_ms, tags)
 
 
-def time_function(metric_name: str = None, tags: dict[str, str] = None):
+def time_function(metric_name: str | None = None, tags: dict[str, str] | None = None):
     """Decorator for timing function execution."""
 
     def decorator(func):
-
         def wrapper(*args, **kwargs):
             name = metric_name or f"function.{func.__name__}.duration"
             start_time = time.time()
             try:
-                result = func(*args, **kwargs)
-                return result
+                return func(*args, **kwargs)
             finally:
                 duration_ms = (time.time() - start_time) * 1000
                 if hasattr(func, "_metrics_collector"):
-                    func._metrics_collector.record_timer(name, duration_ms, tags)
+                    # ensure name is a str for the recorder
+                    _name: str = name
+                    func._metrics_collector.record_timer(_name, duration_ms, tags or {})
 
         return wrapper
 
@@ -585,7 +632,7 @@ def time_function(metric_name: str = None, tags: dict[str, str] = None):
 class QualityController:
     """Controls quality metrics and standards."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.quality_thresholds = {
             "response_time_p95": 200,  # ms
             "error_rate": 0.001,  # 0.1%
@@ -622,7 +669,8 @@ class QualityController:
         if requests > 0:
             error_rate = errors / requests
             error_score = max(
-                0, 100 - (error_rate / self.quality_thresholds["error_rate"]) * 100
+                0,
+                100 - (error_rate / self.quality_thresholds["error_rate"]) * 100,
             )
             scores.append(error_score)
 
@@ -631,7 +679,8 @@ class QualityController:
         if cpu_metrics:
             avg_cpu = statistics.mean(cpu_metrics)
             cpu_score = max(
-                0, 100 - (avg_cpu / self.quality_thresholds["cpu_usage"]) * 100
+                0,
+                100 - (avg_cpu / self.quality_thresholds["cpu_usage"]) * 100,
             )
             scores.append(cpu_score)
 
@@ -639,7 +688,8 @@ class QualityController:
         if memory_metrics:
             avg_memory = statistics.mean(memory_metrics)
             memory_score = max(
-                0, 100 - (avg_memory / self.quality_thresholds["memory_usage"]) * 100
+                0,
+                100 - (avg_memory / self.quality_thresholds["memory_usage"]) * 100,
             )
             scores.append(memory_score)
 
@@ -663,7 +713,7 @@ class QualityController:
             avg_response = statistics.mean(response_times)
             if avg_response > self.quality_thresholds["response_time_p95"]:
                 recommendations.append(
-                    "Optimize response times through caching and database optimization"
+                    "Optimize response times through caching and database optimization",
                 )
 
         cpu_metrics = [m.value for m in metrics if m.name == "system.cpu.usage"]
@@ -671,7 +721,7 @@ class QualityController:
             avg_cpu = statistics.mean(cpu_metrics)
             if avg_cpu > self.quality_thresholds["cpu_usage"]:
                 recommendations.append(
-                    "Reduce CPU usage through code optimization and async processing"
+                    "Reduce CPU usage through code optimization and async processing",
                 )
 
         memory_metrics = [m.value for m in metrics if m.name == "system.memory.usage"]
@@ -679,7 +729,7 @@ class QualityController:
             avg_memory = statistics.mean(memory_metrics)
             if avg_memory > self.quality_thresholds["memory_usage"]:
                 recommendations.append(
-                    "Optimize memory usage through efficient data structures and garbage collection"
+                    "Optimize memory usage through efficient data structures and garbage collection",
                 )
 
         return recommendations
@@ -699,7 +749,7 @@ alert_manager.add_alert_rule(
         "condition": "system.cpu.usage > 90",
         "level": "high",
         "message": "CPU usage is critically high",
-    }
+    },
 )
 
 alert_manager.add_alert_rule(
@@ -708,7 +758,7 @@ alert_manager.add_alert_rule(
         "condition": "system.memory.usage > 95",
         "level": "critical",
         "message": "Memory usage is critically high",
-    }
+    },
 )
 
 alert_manager.add_alert_rule(
@@ -717,7 +767,7 @@ alert_manager.add_alert_rule(
         "condition": "error_rate > 0.01",
         "level": "high",
         "message": "Error rate exceeds acceptable threshold",
-    }
+    },
 )
 
 # Register default health checks
@@ -753,13 +803,13 @@ health_checker.register_check("database", database_health_check)
 health_checker.register_check("api", api_health_check)
 
 
-def start_enterprise_monitoring():
+def start_enterprise_monitoring() -> None:
     """Start enterprise monitoring system."""
     system_monitor.start_monitoring(interval_seconds=30)
     logging.getLogger(__name__).info("Enterprise monitoring system started")
 
 
-def stop_enterprise_monitoring():
+def stop_enterprise_monitoring() -> None:
     """Stop enterprise monitoring system."""
     system_monitor.stop_monitoring()
     logging.getLogger(__name__).info("Enterprise monitoring system stopped")
@@ -782,17 +832,20 @@ def get_monitoring_dashboard() -> dict[str, Any]:
         },
         "system_stats": {
             "cpu_usage": metrics_collector.get_aggregate_stats(
-                "system.cpu.usage", MetricType.GAUGE
+                "system.cpu.usage",
+                MetricType.GAUGE,
             ),
             "memory_usage": metrics_collector.get_aggregate_stats(
-                "system.memory.usage", MetricType.GAUGE
+                "system.memory.usage",
+                MetricType.GAUGE,
             ),
             "response_times": metrics_collector.get_aggregate_stats(
-                "api.response_time", MetricType.TIMER
+                "api.response_time",
+                MetricType.TIMER,
             ),
         },
         "recommendations": quality_controller.get_quality_recommendations(
-            recent_metrics
+            recent_metrics,
         ),
     }
 
@@ -800,7 +853,7 @@ def get_monitoring_dashboard() -> dict[str, Any]:
 class MonitoringOrchestrator:
     """Main orchestrator for enterprise monitoring operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics_collector = MetricsCollector()
         self.alert_manager = AlertManager()
         self.health_checker = HealthChecker()
@@ -816,7 +869,7 @@ class MonitoringOrchestrator:
             self.monitoring_active = True
             logger.info("Enterprise monitoring started successfully")
         except Exception as e:
-            logger.error(f"Failed to start monitoring: {e}")
+            logger.exception(f"Failed to start monitoring: {e}")
             raise
 
     def _setup_default_alert_rules(self) -> None:
@@ -871,19 +924,22 @@ class MonitoringOrchestrator:
                 "metrics_count": len(recent_metrics),
                 "system_metrics": {
                     "cpu_usage": self.metrics_collector.get_aggregate_stats(
-                        "system.cpu.usage", MetricType.GAUGE
+                        "system.cpu.usage",
+                        MetricType.GAUGE,
                     ),
                     "memory_usage": self.metrics_collector.get_aggregate_stats(
-                        "system.memory.usage", MetricType.GAUGE
+                        "system.memory.usage",
+                        MetricType.GAUGE,
                     ),
                     "response_time": self.metrics_collector.get_aggregate_stats(
-                        "api.response_time", MetricType.TIMER
+                        "api.response_time",
+                        MetricType.TIMER,
                     ),
                 },
                 "monitoring_active": self.monitoring_active,
             }
         except Exception as e:
-            logger.error(f"Failed to get current metrics: {e}")
+            logger.exception(f"Failed to get current metrics: {e}")
             return {"error": str(e)}
 
     async def run_health_checks(self) -> dict[str, Any]:
@@ -906,7 +962,7 @@ class MonitoringOrchestrator:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            logger.error(f"Health checks failed: {e}")
+            logger.exception(f"Health checks failed: {e}")
             return {
                 "overall_status": "unhealthy",
                 "error": str(e),
@@ -925,5 +981,5 @@ class MonitoringOrchestrator:
                 "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            logger.error(f"Failed to get alert status: {e}")
+            logger.exception(f"Failed to get alert status: {e}")
             return {"active": False, "error": str(e)}

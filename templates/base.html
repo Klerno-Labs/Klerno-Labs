@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en" data-app="klerno">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="color-scheme" content="dark light" />
+    <title>{{ title or "Klerno Labs" }}</title>
+    <base href="{{ request.base_url }}">
+
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Bootstrap 5 (CDN) with safe local fallback -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"
+        data-fallback="{{ static_url('vendor/bootstrap/bootstrap.min.css') }}"
+        onerror="this.removeAttribute('onerror'); this.href=this.dataset.fallback" />
+
+    <!-- Organized Elite Design (complete styling system) -->
+    <link rel="stylesheet" href="{{ static_url('css/organized-elite.css') }}" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ static_url('manifest.json') }}" />
+    <meta name="theme-color" content="#667eea" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Klerno Labs" />
+    <link rel="apple-touch-icon" href="{{ static_url('klerno-logo.png') }}" />
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{{ static_url('favicon.ico') }}" type="image/x-icon" />
+
+    <!-- Chart.js (CDN) with safe local fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+        data-fallback="{{ static_url('vendor/chartjs/chart.umd.min.js') }}"
+        onerror="this.removeAttribute('onerror'); this.src=this.dataset.fallback"></script>
+
+    {% block head %}{% endblock %}
+</head>
+
+<body class="min-vh-100 d-flex flex-column">
+    <!-- Accessibility: Skip to content link -->
+    <a href="#main" class="skip-to-content"
+        style="position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden;">Skip to
+        content</a>
+
+    <!-- Elite Header / Nav -->
+    <header class="glass sticky-top" style="z-index: var(--z-sticky);">
+        <nav class="navbar navbar-expand-lg" style="padding: var(--space-4) 0;">
+            <div class="container-fluid" style="max-width: 1200px; margin: 0 auto; padding: 0 var(--space-6);">
+                {% set home_url = "/dashboard" if user and (user.get("subscription_active") or user.get("role") ==
+                "admin") else
+                "/" %}
+                <a href="{{ home_url }}" class="navbar-brand"
+                    style="color: var(--color-text-primary); font-weight: var(--font-bold); font-size: var(--text-xl); text-decoration: none; display: flex; align-items: center; gap: var(--space-3);">
+                    <img src="{{ static_url('klerno-logo.png') }}" alt="Klerno Labs" style="height: 32px;">
+                    Klerno Labs
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation"
+                    style="border: 1px solid var(--glass-border); background: var(--color-surface-primary); color: var(--color-text-primary);">
+                    <span class="navbar-toggler-icon" style="filter: brightness(0) invert(1);"></span>
+                </button>
+
+                <div id="mainNav" class="collapse navbar-collapse">
+                    <ul class="navbar-nav ms-auto" style="display: flex; align-items: center; gap: var(--space-2);">
+                        {% if user and (user.get("subscription_active") or user.get("role") == "admin") %}
+                        <!-- Authenticated users with subscription -->
+                        <li class="nav-item">
+                            <a id="nav-dashboard" class="nav-link" href="/dashboard"
+                                style="color: var(--color-text-secondary); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a id="nav-alerts" class="nav-link" href="/alerts-ui"
+                                style="color: var(--color-text-secondary); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">Alerts</a>
+                        </li>
+                        {% if user.get("role") == "admin" %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/analytics/dashboard"
+                                style="color: var(--color-text-secondary); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">Analytics</a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/wallets"
+                                style="color: var(--color-text-secondary); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">Wallets</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/docs" target="_blank" rel="noopener"
+                                style="color: var(--color-text-secondary); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">API
+                                Docs</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/auth/logout"
+                                style="color: var(--color-accent); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">Logout</a>
+                        </li>
+                        {% elif user %}
+                        <!-- Authenticated users without subscription -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="/paywall"
+                                style="color: var(--color-accent); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">Upgrade
+                                to Pro</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/auth/logout"
+                                style="color: var(--color-text-secondary); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">Logout</a>
+                        </li>
+                        {% else %}
+                        <!-- Non-authenticated users -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="/demo"
+                                style="color: var(--color-text-secondary); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">Demo</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/auth/login"
+                                style="color: var(--color-text-secondary); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/auth/signup"
+                                style="color: var(--color-accent); padding: var(--space-2) var(--space-4); border-radius: var(--radius-lg); transition: all var(--transition-base); text-decoration: none;">Sign
+                                Up</a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <button class="theme-toggle btn btn-sm btn-elite-secondary" type="button"
+                                title="Toggle theme" aria-label="Toggle theme"
+                                style="margin-left: var(--space-2); display: inline-flex; align-items: center; gap: var(--space-2);">
+                                <!-- Icon will be injected by theme-controller.js -->
+                                <span style="font-size: var(--text-sm);">Theme</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main content -->
+    <main id="main" class="container flex-grow-1 py-4" tabindex="-1">
+        <!-- Global alerts container -->
+        <div id="alerts-container" class="mb-3"></div>
+
+        {% if content %}
+        <!-- For custom error pages with content directly in the template -->
+        <div class="card mb-4">
+            <div class="card-body">
+                {{ content|safe }}
+            </div>
+        </div>
+        {% else %}
+        {% block content %}{% endblock %}
+        {% endif %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="container pb-4" style="color:var(--muted)">
+        <div class="d-flex align-items-center justify-content-between">
+            <span>© {{ (now().year if now else 2025) }} Klerno Labs — Klerno Labs</span>
+            <span class="opacity-75">XRPL-first • Risk & Alerts</span>
+        </div>
+    </footer>
+
+    <!-- Carry ?key=... through internal links so UI pages remain authorized -->
+    <script>
+        (function attachKeyToLinks() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const key = params.get("key");
+                if (!key) return;
+                for (const a of document.querySelectorAll('a[href^="/"]')) {
+                    const url = new URL(a.getAttribute("href"), window.location.origin);
+                    url.searchParams.set("key", key);
+                    a.setAttribute("href", url.toString());
+                }
+            } catch { }
+        })();
+    </script>
+
+    <!-- Bootstrap Bundle (CDN) with safe local fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"
+        data-fallback="{{ static_url('vendor/bootstrap/bootstrap.bundle.min.js') }}"
+        onerror="this.removeAttribute('onerror'); this.src=this.dataset.fallback">
+        </script>
+
+    <!-- Theme toggle + micro-interactions -->
+    <script src="{{ static_url('js/theme-controller.js') }}"></script>
+    <script src="{{ static_url('js/micro-interactions.js') }}"></script>
+    <script src="{{ static_url('js/app-enhanced.js') }}"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        // Progressive Web App Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('{{ static_url("sw.js") }}')
+                    .then(function (registration) {
+                        console.log('✅ Service Worker registered successfully:', registration.scope);
+
+                        // Check for updates
+                        registration.addEventListener('updatefound', function () {
+                            const newWorker = registration.installing;
+                            if (newWorker) {
+                                newWorker.addEventListener('statechange', function () {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        // New version available
+                                        if (confirm('A new version of Klerno Labs is available. Reload to update?')) {
+                                            window.location.reload();
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    })
+                    .catch(function (error) {
+                        console.log('❌ Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Show install button/banner
+            const installBanner = document.createElement('div');
+            installBanner.innerHTML = `
+        <div style="position: fixed; bottom: 20px; right: 20px; background: #667eea; color: white; padding: 15px; border-radius: 8px; z-index: 1000; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+          <div style="margin-bottom: 10px;">📱 Install Klerno Labs App</div>
+          <button onclick="installPWA()" style="background: white; color: #667eea; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 8px;">Install</button>
+          <button onclick="this.parentElement.remove()" style="background: transparent; color: white; border: 1px solid white; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Later</button>
+        </div>
+      `;
+            document.body.appendChild(installBanner);
+        });
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('✅ User accepted the PWA install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+    </script>
+
+    <!-- Elite Interactions -->
+    <script src="{{ static_url('js/elite-interactions.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

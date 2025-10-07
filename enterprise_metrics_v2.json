@@ -1,0 +1,393 @@
+{
+  "export_timestamp": "2025-10-03T15:03:48.084671",
+  "system_metrics": [
+    {
+      "timestamp": "2025-10-03T15:03:04.088295",
+      "cpu_percent": 15.4,
+      "memory_percent": 71.9,
+      "memory_used_mb": 11528.15234375,
+      "disk_usage_percent": 31.159528329519397,
+      "network_bytes_sent": 137357074,
+      "network_bytes_recv": 72697795,
+      "active_connections": 1451
+    },
+    {
+      "timestamp": "2025-10-03T15:03:15.146326",
+      "cpu_percent": 33.5,
+      "memory_percent": 71.2,
+      "memory_used_mb": 11407.4609375,
+      "disk_usage_percent": 31.159542761921987,
+      "network_bytes_sent": 137532308,
+      "network_bytes_recv": 72753880,
+      "active_connections": 1452
+    },
+    {
+      "timestamp": "2025-10-03T15:03:28.231393",
+      "cpu_percent": 8.0,
+      "memory_percent": 70.6,
+      "memory_used_mb": 11307.953125,
+      "disk_usage_percent": 31.15954516732242,
+      "network_bytes_sent": 137532472,
+      "network_bytes_recv": 72757150,
+      "active_connections": 1451
+    },
+    {
+      "timestamp": "2025-10-03T15:03:39.260380",
+      "cpu_percent": 8.0,
+      "memory_percent": 70.5,
+      "memory_used_mb": 11299.52734375,
+      "disk_usage_percent": 31.15955879792487,
+      "network_bytes_sent": 137533028,
+      "network_bytes_recv": 72760424,
+      "active_connections": 1437
+    }
+  ],
+  "application_metrics": [
+    {
+      "timestamp": "2025-10-03T15:03:06.117681",
+      "active_requests": 0,
+      "total_requests": 600,
+      "successful_requests": 0,
+      "failed_requests": 600,
+      "average_response_time": 2.0283899307250977,
+      "endpoint_stats": {
+        "/health": {
+          "status_code": 0,
+          "response_time": 2.0283899307250977,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/status": {
+          "status_code": 0,
+          "response_time": 2.0283899307250977,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/enterprise/status": {
+          "status_code": 0,
+          "response_time": 2.0283899307250977,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/enterprise/health": {
+          "status_code": 0,
+          "response_time": 2.0283899307250977,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/docs": {
+          "status_code": 0,
+          "response_time": 2.0283899307250977,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/openapi.json": {
+          "status_code": 0,
+          "response_time": 2.0283899307250977,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        }
+      },
+      "cache_hit_rate": 0.85,
+      "database_connections": 5
+    },
+    {
+      "timestamp": "2025-10-03T15:03:25.196121",
+      "active_requests": 0,
+      "total_requests": 600,
+      "successful_requests": 0,
+      "failed_requests": 600,
+      "average_response_time": 2.0272629658381143,
+      "endpoint_stats": {
+        "/health": {
+          "status_code": 0,
+          "response_time": 2.020535469055176,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/status": {
+          "status_code": 0,
+          "response_time": 2.0200188159942627,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/enterprise/status": {
+          "status_code": 0,
+          "response_time": 2.0388026237487793,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/enterprise/health": {
+          "status_code": 0,
+          "response_time": 2.0227091312408447,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/docs": {
+          "status_code": 0,
+          "response_time": 2.0388026237487793,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/openapi.json": {
+          "status_code": 0,
+          "response_time": 2.0227091312408447,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        }
+      },
+      "cache_hit_rate": 0.85,
+      "database_connections": 5
+    },
+    {
+      "timestamp": "2025-10-03T15:03:45.288688",
+      "active_requests": 0,
+      "total_requests": 600,
+      "successful_requests": 0,
+      "failed_requests": 600,
+      "average_response_time": 2.0209136803944907,
+      "endpoint_stats": {
+        "/health": {
+          "status_code": 0,
+          "response_time": 2.0213475227355957,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/status": {
+          "status_code": 0,
+          "response_time": 2.020888090133667,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/enterprise/status": {
+          "status_code": 0,
+          "response_time": 2.020888090133667,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/enterprise/health": {
+          "status_code": 0,
+          "response_time": 2.0213475227355957,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/docs": {
+          "status_code": 0,
+          "response_time": 2.020888090133667,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/openapi.json": {
+          "status_code": 0,
+          "response_time": 2.020122766494751,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        }
+      },
+      "cache_hit_rate": 0.85,
+      "database_connections": 5
+    }
+  ],
+  "api_health_checks": [
+    {
+      "endpoint": "/health",
+      "status_code": 0,
+      "response_time": 2.0283899307250977,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/status",
+      "status_code": 0,
+      "response_time": 2.0283899307250977,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/enterprise/status",
+      "status_code": 0,
+      "response_time": 2.0283899307250977,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/enterprise/health",
+      "status_code": 0,
+      "response_time": 2.0283899307250977,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/docs",
+      "status_code": 0,
+      "response_time": 2.0283899307250977,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/openapi.json",
+      "status_code": 0,
+      "response_time": 2.0283899307250977,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/health",
+      "status_code": 0,
+      "response_time": 2.020535469055176,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/status",
+      "status_code": 0,
+      "response_time": 2.0200188159942627,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/enterprise/status",
+      "status_code": 0,
+      "response_time": 2.0388026237487793,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/enterprise/health",
+      "status_code": 0,
+      "response_time": 2.0227091312408447,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/docs",
+      "status_code": 0,
+      "response_time": 2.0388026237487793,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/openapi.json",
+      "status_code": 0,
+      "response_time": 2.0227091312408447,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/health",
+      "status_code": 0,
+      "response_time": 2.0213475227355957,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/status",
+      "status_code": 0,
+      "response_time": 2.020888090133667,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/enterprise/status",
+      "status_code": 0,
+      "response_time": 2.020888090133667,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/enterprise/health",
+      "status_code": 0,
+      "response_time": 2.0213475227355957,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/docs",
+      "status_code": 0,
+      "response_time": 2.020888090133667,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    },
+    {
+      "endpoint": "/openapi.json",
+      "status_code": 0,
+      "response_time": 2.020122766494751,
+      "success": false,
+      "error_message": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+    }
+  ],
+  "comprehensive_health_report": {
+    "timestamp": "2025-10-03T15:03:48.084671",
+    "overall_health": "CRITICAL",
+    "system_health": {
+      "status": "HEALTHY",
+      "cpu_percent": 8.0,
+      "memory_percent": 70.5,
+      "disk_usage_percent": 31.15955879792487,
+      "active_connections": 1437,
+      "averages": {
+        "cpu_percent": 16.225,
+        "memory_percent": 71.05000000000001
+      }
+    },
+    "application_health": {
+      "status": "CRITICAL",
+      "success_rate": 0.0,
+      "average_response_time": 2.0209136803944907,
+      "total_requests": 600,
+      "failed_requests": 600,
+      "cache_hit_rate": 0.85,
+      "database_connections": 5
+    },
+    "api_health": {
+      "status": "CRITICAL",
+      "success_rate": 0.0,
+      "total_endpoints": 6,
+      "successful_endpoints": 0,
+      "endpoint_details": {
+        "/health": {
+          "status_code": 0,
+          "response_time": 2.0213475227355957,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/status": {
+          "status_code": 0,
+          "response_time": 2.020888090133667,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/enterprise/status": {
+          "status_code": 0,
+          "response_time": 2.020888090133667,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/enterprise/health": {
+          "status_code": 0,
+          "response_time": 2.0213475227355957,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/docs": {
+          "status_code": 0,
+          "response_time": 2.020888090133667,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        },
+        "/openapi.json": {
+          "status_code": 0,
+          "response_time": 2.020122766494751,
+          "success": false,
+          "error": "Cannot connect to host 127.0.0.1:8000 ssl:default [The remote computer refused the network connection]"
+        }
+      }
+    },
+    "monitoring_stats": {
+      "system_metrics_collected": 4,
+      "app_metrics_collected": 3,
+      "api_checks_performed": 18,
+      "monitoring_duration_minutes": 0.6666666666666666
+    }
+  }
+}

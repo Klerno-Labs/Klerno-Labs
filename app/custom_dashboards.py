@@ -1,5 +1,4 @@
-"""
-Custom Dashboards Module for Klerno Labs.
+"""Custom Dashboards Module for Klerno Labs.
 
 Provides customizable dashboard functionality for Professional and Enterprise tiers.
 """
@@ -51,7 +50,7 @@ class DashboardWidget:
     position: dict[str, int]  # x, y, width, height
     data_source: str
     refresh_interval: int = 30  # seconds
-    filters: dict[str, Any] = None
+    filters: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert widget to dictionary."""
@@ -69,8 +68,8 @@ class Dashboard:
     layout: dict[str, Any]
     widgets: list[DashboardWidget]
     is_public: bool = False
-    created_at: datetime = None
-    updated_at: datetime = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert dashboard to dictionary."""
@@ -85,10 +84,10 @@ class Dashboard:
 class DashboardManager:
     """Manages custom dashboards for users."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._init_dashboard_tables()
 
-    def _init_dashboard_tables(self):
+    def _init_dashboard_tables(self) -> None:
         """Initialize dashboard database tables."""
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -106,7 +105,7 @@ class DashboardManager:
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
         )
-        """
+        """,
         )
 
         # Dashboard widgets table
@@ -124,7 +123,7 @@ class DashboardManager:
                 filters TEXT,
                 FOREIGN KEY (dashboard_id) REFERENCES dashboards (id) ON DELETE CASCADE
         )
-        """
+        """,
         )
 
         conn.commit()
@@ -135,7 +134,7 @@ class DashboardManager:
         user_id: str,
         name: str,
         description: str = "",
-        layout: dict[str, Any] = None,
+        layout: dict[str, Any] | None = None,
     ) -> Dashboard:
         """Create a new dashboard for user."""
         dashboard_id = str(uuid.uuid4())
@@ -217,7 +216,11 @@ class DashboardManager:
         conn.close()
         return dashboards
 
-    def get_dashboard(self, dashboard_id: str, user_id: str = None) -> Dashboard | None:
+    def get_dashboard(
+        self,
+        dashboard_id: str,
+        user_id: str | None = None,
+    ) -> Dashboard | None:
         """Get specific dashboard by ID."""
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -264,7 +267,7 @@ class DashboardManager:
         position: dict[str, int],
         data_source: str,
         refresh_interval: int = 30,
-        filters: dict[str, Any] = None,
+        filters: dict[str, Any] | None = None,
     ) -> DashboardWidget:
         """Add widget to dashboard."""
         widget_id = str(uuid.uuid4())
@@ -286,7 +289,8 @@ class DashboardManager:
         cursor.execute(
             """
             INSERT INTO dashboard_widgets
-            (id, dashboard_id, type, title, config, position, data_source, refresh_interval, filters)
+            (id, dashboard_id, type, title, config, position,
+             data_source, refresh_interval, filters)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
@@ -425,14 +429,13 @@ class DashboardManager:
 
         if widget.type == WidgetType.CHART:
             return self._get_chart_data(widget, user_id)
-        elif widget.type == WidgetType.METRIC:
+        if widget.type == WidgetType.METRIC:
             return self._get_metric_data(widget, user_id)
-        elif widget.type == WidgetType.ALERT_LIST:
+        if widget.type == WidgetType.ALERT_LIST:
             return self._get_alert_data(widget, user_id)
-        elif widget.type == WidgetType.TABLE:
+        if widget.type == WidgetType.TABLE:
             return self._get_table_data(widget, user_id)
-        else:
-            return {"data": [], "timestamp": datetime.utcnow().isoformat()}
+        return {"data": [], "timestamp": datetime.utcnow().isoformat()}
 
     def _get_chart_data(self, widget: DashboardWidget, user_id: str) -> dict[str, Any]:
         """Get chart data."""
@@ -449,8 +452,9 @@ class DashboardManager:
                 {
                     "timestamp": date.isoformat(),
                     "risk_score": random.uniform(0.1, 0.9),
+                    # nosec: B311 - non-crypto randomness for demo/test data
                     "transaction_count": random.randint(10, 100),
-                }
+                },
             )
 
         return {"data": data, "timestamp": now.isoformat(), "widget_id": widget.id}
@@ -504,7 +508,7 @@ class DashboardManager:
                     "amount": random.uniform(100, 10000),
                     "risk_score": random.uniform(0.1, 0.9),
                     "status": random.choice(["approved", "flagged", "pending"]),
-                }
+                },
             )
 
         return {
@@ -529,7 +533,7 @@ def create_dashboard(user_id: str, name: str, description: str = "") -> Dashboar
     return dashboard_manager.create_dashboard(user_id, name, description)
 
 
-def get_dashboard(dashboard_id: str, user_id: str = None) -> Dashboard | None:
+def get_dashboard(dashboard_id: str, user_id: str | None = None) -> Dashboard | None:
     """Get specific dashboard."""
     return dashboard_manager.get_dashboard(dashboard_id, user_id)
 

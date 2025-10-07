@@ -1,0 +1,10 @@
+failed to configure logging: No module named 'structlog'
+structlog import error: No module named 'structlog'
+import app.main failed: No module named 'itsdangerous'
+imported app successfully
+could not find FastAPI app object in module <module 'app' from '/home/runner/work/Klerno-Labs/Klerno-Labs/app/__init__.py'>
+
+Done
+Traceback (most recent call last):
+  File "<stdin>", line 8, in <module>
+AttributeError: module 'tools.diagnose_logging_and_routes' has no attribute 'main'

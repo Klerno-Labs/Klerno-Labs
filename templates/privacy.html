@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy - Klerno Labs{% endblock %}
+
+{% block head %}
+<style>
+    .privacy-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 2rem;
+        color: #333;
+        line-height: 1.6;
+    }
+
+    .privacy-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: white;
+        border-radius: 20px;
+    }
+
+    .privacy-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .privacy-date {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+
+    .privacy-content {
+        background: #fff;
+        padding: 3rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        color: #27ae60;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 2rem 0 1rem 0;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 0.5rem;
+    }
+
+    .subsection-title {
+        color: #333;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 1.5rem 0 0.5rem 0;
+    }
+
+    .privacy-text {
+        margin-bottom: 1rem;
+        text-align: justify;
+    }
+
+    .highlight {
+        background: linear-gradient(120deg, rgba(46, 204, 113, 0.1) 0%, rgba(39, 174, 96, 0.1) 100%);
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        border-left: 4px solid #27ae60;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+    }
+
+    .data-table th,
+    .data-table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+    }
+
+    .data-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #27ae60;
+    }
+
+    .security-features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+
+    .security-card {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 15px;
+        border-left: 4px solid #27ae60;
+    }
+
+    .security-icon {
+        color: #27ae60;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .contact-info {
+        background: #f8f9fa;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin: 2rem auto;
+        display: block;
+        width: fit-content;
+    }
+
+    .back-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="privacy-container">
+    <div class="privacy-header">
+        <h1 class="privacy-title">Privacy Policy</h1>
+        <p class="privacy-date">Last Updated: {{ moment().format('MMMM D, YYYY') }}</p>
+    </div>
+
+    <div class="privacy-content">
+        <div class="highlight">
+            <p><strong>Your Privacy Matters:</strong> At Klerno Labs, we are committed to protecting your privacy and ensuring the security of your personal information. This policy explains how we collect, use, and safeguard your data.</p>
+        </div>
+
+        <h2 class="section-title">1. Information We Collect</h2>
+        <p class="privacy-text">
+            We collect information you provide directly to us, information we get from your use of our services, and information from third-party sources.
+        </p>
+
+        <h3 class="subsection-title">1.1 Information You Provide</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Data Type</th>
+                    <th>Purpose</th>
+                    <th>Legal Basis</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Account Information</td>
+                    <td>Service delivery and account management</td>
+                    <td>Contract performance</td>
+                </tr>
+                <tr>
+                    <td>Transaction Data</td>
+                    <td>Blockchain analysis and compliance monitoring</td>
+                    <td>Legitimate interest</td>
+                </tr>
+                <tr>
+                    <td>Communication Records</td>
+                    <td>Customer support and service improvement</td>
+                    <td>Legitimate interest</td>
+                </tr>
+                <tr>
+                    <td>Usage Analytics</td>
+                    <td>Platform optimization and security</td>
+                    <td>Legitimate interest</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 class="section-title">2. How We Use Your Information</h2>
+        <p class="privacy-text">
+            We use the information we collect to provide, maintain, and improve our services, process transactions, communicate with you, and ensure compliance with applicable regulations.
+        </p>
+
+        <h3 class="subsection-title">2.1 Primary Uses</h3>
+        <p class="privacy-text">
+            • Providing blockchain analysis and compliance monitoring services<br>
+            • Processing and analyzing transaction data for risk assessment<br>
+            • Generating compliance reports and regulatory filings<br>
+            • Detecting and preventing fraudulent activities<br>
+            • Improving our machine learning algorithms and detection capabilities
+        </p>
+
+        <h2 class="section-title">3. Data Security Measures</h2>
+        <p class="privacy-text">
+            We implement comprehensive security measures to protect your information from unauthorized access, alteration, disclosure, or destruction.
+        </p>
+
+        <div class="security-features">
+            <div class="security-card">
+                <div class="security-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h4>End-to-End Encryption</h4>
+                <p>All data transmissions are protected with industry-standard encryption protocols.</p>
+            </div>
+            <div class="security-card">
+                <div class="security-icon">
+                    <i class="fas fa-server"></i>
+                </div>
+                <h4>Secure Infrastructure</h4>
+                <p>Our systems are hosted in SOC 2 compliant data centers with 24/7 monitoring.</p>
+            </div>
+            <div class="security-card">
+                <div class="security-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h4>Access Controls</h4>
+                <p>Multi-factor authentication and role-based access controls protect your account.</p>
+            </div>
+            <div class="security-card">
+                <div class="security-icon">
+                    <i class="fas fa-audit"></i>
+                </div>
+                <h4>Regular Audits</h4>
+                <p>Periodic security assessments and penetration testing ensure ongoing protection.</p>
+            </div>
+        </div>
+
+        <h2 class="section-title">4. Data Sharing and Disclosure</h2>
+        <p class="privacy-text">
+            We do not sell, trade, or otherwise transfer your personal information to third parties except as described in this policy.
+        </p>
+
+        <div class="highlight">
+            <p><strong>Limited Sharing:</strong> We may share information with service providers, regulatory authorities (when required by law), and in case of business transfers, always ensuring appropriate safeguards are in place.</p>
+        </div>
+
+        <h2 class="section-title">5. Data Retention</h2>
+        <p class="privacy-text">
+            We retain your information for as long as necessary to provide our services and comply with legal obligations. Transaction data may be retained for extended periods as required by financial regulations.
+        </p>
+
+        <h2 class="section-title">6. Your Rights and Choices</h2>
+        <p class="privacy-text">
+            You have certain rights regarding your personal information, including the right to access, update, or delete your data, subject to legal and regulatory requirements.
+        </p>
+
+        <h3 class="subsection-title">6.1 GDPR Rights (EU Users)</h3>
+        <p class="privacy-text">
+            • Right of access to your personal data<br>
+            • Right to rectification of inaccurate data<br>
+            • Right to erasure ("right to be forgotten")<br>
+            • Right to restrict processing<br>
+            • Right to data portability<br>
+            • Right to object to processing
+        </p>
+
+        <h2 class="section-title">7. International Data Transfers</h2>
+        <p class="privacy-text">
+            Your information may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place for such transfers.
+        </p>
+
+        <h2 class="section-title">8. Children's Privacy</h2>
+        <p class="privacy-text">
+            Our services are not directed to individuals under 18. We do not knowingly collect personal information from children under 18.
+        </p>
+
+        <h2 class="section-title">9. Changes to This Policy</h2>
+        <p class="privacy-text">
+            We may update this privacy policy from time to time. We will notify you of any material changes by posting the new policy on this page and updating the "Last Updated" date.
+        </p>
+
+        <h2 class="section-title">10. Contact Information</h2>
+        <div class="contact-info">
+            <h3>Data Protection Officer</h3>
+            <p>If you have questions about this privacy policy or our data practices:</p>
+            <p>
+                <strong>Email:</strong> privacy@klernolabs.com<br>
+                <strong>Address:</strong> Klerno Labs Privacy Office<br>
+                <strong>Phone:</strong> +1 (555) 123-4567
+            </p>
+        </div>
+    </div>
+
+    <a href="/" class="back-button">
+        <i class="fas fa-arrow-left"></i>
+        Back to Dashboard
+    </a>
+</div>
+{% endblock %}

@@ -1,6 +1,5 @@
-"""
-Community and Collaboration Features for Klerno Labs
-Provides forums, knowledge sharing, and collaborative features
+"""Community and Collaboration Features for Klerno Labs
+Provides forums, knowledge sharing, and collaborative features.
 """
 
 from datetime import datetime
@@ -11,7 +10,7 @@ from pydantic import BaseModel
 
 
 class PostType(str, Enum):
-    """Types of community posts"""
+    """Types of community posts."""
 
     QUESTION = "question"
     DISCUSSION = "discussion"
@@ -21,7 +20,7 @@ class PostType(str, Enum):
 
 
 class PostStatus(str, Enum):
-    """Status of community posts"""
+    """Status of community posts."""
 
     DRAFT = "draft"
     PUBLISHED = "published"
@@ -30,14 +29,14 @@ class PostStatus(str, Enum):
 
 
 class VoteType(str, Enum):
-    """Vote types"""
+    """Vote types."""
 
     UPVOTE = "upvote"
     DOWNVOTE = "downvote"
 
 
 class CommunityPost(BaseModel):
-    """Community forum post"""
+    """Community forum post."""
 
     id: int
     title: str
@@ -58,7 +57,7 @@ class CommunityPost(BaseModel):
 
 
 class CommunityReply(BaseModel):
-    """Reply to a community post"""
+    """Reply to a community post."""
 
     id: int
     post_id: int
@@ -74,7 +73,7 @@ class CommunityReply(BaseModel):
 
 
 class KnowledgeArticle(BaseModel):
-    """Knowledge base article"""
+    """Knowledge base article."""
 
     id: int
     title: str
@@ -93,7 +92,7 @@ class KnowledgeArticle(BaseModel):
 
 
 class TutorialStep(BaseModel):
-    """Step in a tutorial"""
+    """Step in a tutorial."""
 
     step_number: int
     title: str
@@ -103,7 +102,7 @@ class TutorialStep(BaseModel):
 
 
 class Tutorial(BaseModel):
-    """Interactive tutorial"""
+    """Interactive tutorial."""
 
     id: int
     title: str
@@ -122,7 +121,7 @@ class Tutorial(BaseModel):
 
 
 class UserContribution(BaseModel):
-    """User's community contributions"""
+    """User's community contributions."""
 
     user_id: int
     posts_count: int
@@ -137,24 +136,24 @@ class UserContribution(BaseModel):
 
 
 class CommunityManager:
-    """Manages community features and interactions"""
+    """Manages community features and interactions."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.posts: dict[int, CommunityPost] = {}
         self.replies: dict[int, list[CommunityReply]] = {}
         self.knowledge_articles: dict[int, KnowledgeArticle] = {}
         self.tutorials: dict[int, Tutorial] = {}
         self.user_contributions: dict[int, UserContribution] = {}
-        self.votes: dict[str, dict[int, VoteType]] = (
-            {}
-        )  # user_id -> {post_id: vote_type}
+        self.votes: dict[
+            str,
+            dict[int, VoteType],
+        ] = {}  # user_id -> {post_id: vote_type}
 
         # Initialize with sample content
         self._initialize_sample_content()
 
-    def _initialize_sample_content(self):
-        """Initialize with sample community content"""
-
+    def _initialize_sample_content(self) -> None:
+        """Initialize with sample community content."""
         # Sample knowledge articles
         self.knowledge_articles[1] = KnowledgeArticle(
             id=1,
@@ -320,11 +319,14 @@ def safe_analyze(client, transaction):
         self.posts[1] = CommunityPost(
             id=1,
             title="Best practices for setting risk thresholds?",
-            content="""I'm new to AML compliance and trying to figure out the optimal risk threshold settings for our organization. We're a mid - size fintech company processing about 10K transactions per day.
-
-Currently, we have the threshold set at 0.75, but we're getting too many false positives. Should we increase it to 0.85 or 0.9? What do other organizations typically use?
-
-Also, should thresholds vary by transaction amount or time of day?""",
+            content=(
+                """I'm new to AML compliance and trying to figure out the optimal risk threshold "
+                "settings for our organization. We're a mid - size fintech company processing "
+                "about 10K transactions per day.\n\nCurrently, we have the threshold set at "
+                "0.75, but we're getting too many false positives. Should we increase it to "
+                "0.85 or 0.9? What do other organizations typically use?\n\nAlso, should "
+                "thresholds vary by transaction amount or time of day?"""
+            ),
             post_type=PostType.QUESTION,
             status=PostStatus.PUBLISHED,
             author_id=2,
@@ -344,16 +346,17 @@ Also, should thresholds vary by transaction amount or time of day?""",
             CommunityReply(
                 id=1,
                 post_id=1,
-                content="""Great question! In our experience, 0.75 is actually quite conservative. Here's what we've learned:
-
-1. **Start with 0.85** for most organizations - this significantly reduces false positives while still catching genuine risks
-2. **Use dynamic thresholds** based on transaction amount:
-   - Amounts < $1, 000: 0.9 threshold
-   - $1, 000 - $10, 000: 0.85 threshold
-   - $10, 000+: 0.75 threshold
-3. **Time - based adjustments** can help - slightly lower thresholds during off - hours when legitimate activity is lower
-
-The key is to monitor your false positive rate and adjust accordingly. Aim for < 5% false positives for best efficiency.""",
+                content=(
+                    """Great question! In our experience, 0.75 is actually quite conservative. "
+                    "Here's what we've learned:\n\n1. **Start with 0.85** for most organizations - "
+                    "this significantly reduces false positives while still catching genuine "
+                    "risks\n2. **Use dynamic thresholds** based on transaction amount:\n   - "
+                    "Amounts < $1, 000: 0.9 threshold\n   - $1, 000 - $10, 000: 0.85 "
+                    "threshold\n   - $10, 000+: 0.75 threshold\n3. **Time - based adjustments** "
+                    "can help - slightly lower thresholds during off - hours when legitimate "
+                    "activity is lower\n\nThe key is to monitor your false positive rate and adjust accordingly. "
+                    "Aim for < 5% false positives for best efficiency."""
+                ),
                 author_id=3,
                 author_name="AML_Expert_Sarah",
                 created_at=datetime.utcnow(),
@@ -382,7 +385,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
         ]
 
     def get_featured_content(self) -> dict[str, list[Any]]:
-        """Get featured community content for the homepage"""
+        """Get featured community content for the homepage."""
         featured_articles = [
             article
             for article in self.knowledge_articles.values()
@@ -402,7 +405,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
         return {"featured_articles": featured_articles, "popular_posts": popular_posts}
 
     def search_content(self, query: str, content_type: str = "all") -> list[Any]:
-        """Search community content"""
+        """Search community content."""
         results = []
         query_lower = query.lower()
 
@@ -427,7 +430,7 @@ This has worked well for us and reduces alert fatigue significantly.""",
         return results
 
     def get_user_contributions(self, user_id: int) -> UserContribution | None:
-        """Get user's community contributions and reputation"""
+        """Get user's community contributions and reputation."""
         return self.user_contributions.get(user_id)
 
     def create_post(
@@ -437,10 +440,10 @@ This has worked well for us and reduces alert fatigue significantly.""",
         post_type: PostType,
         author_id: int,
         author_name: str,
-        tags: list[str] = None,
+        tags: list[str] | None = None,
     ) -> CommunityPost:
-        """Create a new community post"""
-        post_id = max(self.posts.keys(), default=0) + 1
+        """Create a new community post."""
+        post_id = max(self.posts, default=0) + 1
 
         post = CommunityPost(
             id=post_id,
@@ -466,9 +469,10 @@ This has worked well for us and reduces alert fatigue significantly.""",
         author_name: str,
         parent_reply_id: int | None = None,
     ) -> CommunityReply:
-        """Add a reply to a post"""
+        """Add a reply to a post."""
         if post_id not in self.posts:
-            raise ValueError("Post not found")
+            msg = "Post not found"
+            raise ValueError(msg)
 
         reply_id = (
             max([r.id for replies in self.replies.values() for r in replies], default=0)
@@ -495,10 +499,11 @@ This has worked well for us and reduces alert fatigue significantly.""",
 
         return reply
 
-    def vote_on_post(self, user_id: int, post_id: int, vote_type: VoteType):
-        """Vote on a post"""
+    def vote_on_post(self, user_id: int, post_id: int, vote_type: VoteType) -> None:
+        """Vote on a post."""
         if post_id not in self.posts:
-            raise ValueError("Post not found")
+            msg = "Post not found"
+            raise ValueError(msg)
 
         user_votes = self.votes.setdefault(str(user_id), {})
         previous_vote = user_votes.get(post_id)
@@ -522,8 +527,8 @@ This has worked well for us and reduces alert fatigue significantly.""",
             del user_votes[post_id]
 
     def get_trending_topics(self) -> list[dict[str, Any]]:
-        """Get trending topics and tags"""
-        tag_counts = {}
+        """Get trending topics and tags."""
+        tag_counts: dict[str, int] = {}
 
         # Count tags from recent posts (last 30 days)
         cutoff = datetime.utcnow().timestamp() - (30 * 24 * 60 * 60)
@@ -541,24 +546,28 @@ This has worked well for us and reduces alert fatigue significantly.""",
                     "tag": tag,
                     "post_count": count,
                     "growth": "up",  # Simplified - would calculate actual growth
-                }
+                },
             )
 
         return trending[:10]
 
 
 class CollaborationFeatures:
-    """Features for team collaboration and knowledge sharing"""
+    """Features for team collaboration and knowledge sharing."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.shared_workspaces: dict[int, dict[str, Any]] = {}
         self.team_annotations: dict[str, list[dict[str, Any]]] = {}
 
     def create_shared_workspace(
-        self, name: str, description: str, owner_id: int, team_members: list[int]
+        self,
+        name: str,
+        description: str,
+        owner_id: int,
+        team_members: list[int],
     ) -> dict[str, Any]:
-        """Create a shared workspace for team collaboration"""
-        workspace_id = max(self.shared_workspaces.keys(), default=0) + 1
+        """Create a shared workspace for team collaboration."""
+        workspace_id = max(self.shared_workspaces, default=0) + 1
 
         workspace = {
             "id": workspace_id,
@@ -582,7 +591,7 @@ class CollaborationFeatures:
         annotation: str,
         annotation_type: str = "note",
     ) -> dict[str, Any]:
-        """Add annotation to a transaction for team collaboration"""
+        """Add annotation to a transaction for team collaboration."""
         if transaction_id not in self.team_annotations:
             self.team_annotations[transaction_id] = []
 
@@ -599,7 +608,7 @@ class CollaborationFeatures:
         return annotation_obj
 
     def get_team_insights(self, workspace_id: int) -> dict[str, Any]:
-        """Get collaborative insights for a team workspace"""
+        """Get collaborative insights for a team workspace."""
         if workspace_id not in self.shared_workspaces:
             return {}
 

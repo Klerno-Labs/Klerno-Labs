@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klerno Labs - Real-Time Dashboard</title>
+    <link rel="stylesheet" href="{{ static_url('css/klerno-themes.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/realtime-features.css') }}">
+    <link rel="stylesheet" href="{{ static_url('css/data-visualization.css') }}">
+</head>
+
+<body>
+    <div class="realtime-dashboard">
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1>🚀 Klerno Labs Real-Time Dashboard</h1>
+                <div class="connection-indicator connected"></div>
+                <span id="connection-status" class="connection-status connected">Connected</span>
+            </header>
+
+            <!-- Analytics Dashboard -->
+            <div id="analytics-dashboard" class="analytics-dashboard">
+                <!-- Widgets will be dynamically loaded here -->
+            </div>
+        </main>
+
+        <!-- Real-time Sidebar -->
+        <aside class="realtime-sidebar">
+            <!-- User Presence -->
+            <div class="sidebar-section">
+                <h3>👥 Active Users</h3>
+                <div id="user-presence" class="user-presence-container">
+                    <!-- User presence will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Live Chat -->
+            <div class="sidebar-section">
+                <h3>💬 Live Chat</h3>
+                <div class="chat-container">
+                    <div class="chat-header">Team Chat</div>
+                    <div id="chat-messages" class="chat-messages">
+                        <!-- Chat messages will appear here -->
+                    </div>
+                    <div class="chat-input-container">
+                        <textarea id="chat-input" class="chat-input" placeholder="Type a message..."
+                            rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Feed -->
+            <div class="sidebar-section">
+                <h3>⚡ Live Activity</h3>
+                <div id="activity-feed" class="activity-feed">
+                    <!-- Activity items will appear here -->
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ static_url('js/theme-system.js') }}"></script>
+    <script src="{{ static_url('js/data-visualization.js') }}"></script>
+    <script src="{{ static_url('js/realtime-engine.js') }}"></script>
+
+    <script>
+        // Initialize real-time dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup demo dashboard
+            const demoConfig = {
+                widgets: [
+                    {
+                        type: 'chart',
+                        chartType: 'line',
+                        title: 'Real-Time Metrics',
+                        size: 'large',
+                        data: {
+                            labels: ['10:00', '10:05', '10:10', '10:15', '10:20', '10:25'],
+                            datasets: [{
+                                label: 'Active Users',
+                                data: [45, 52, 48, 61, 58, 64],
+                                borderColor: '#6366f1',
+                                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                tension: 0.4
+                            }]
+                        }
+                    },
+                    {
+                        type: 'chart',
+                        chartType: 'gauge',
+                        title: 'System Performance',
+                        size: 'medium',
+                        data: { value: 94 }
+                    }
+                ]
+            };
+
+            if (window.dataViz) {
+                window.dataViz.createDashboard('analytics-dashboard', demoConfig);
+            }
+
+            // Setup real-time event handlers
+            if (window.realTime) {
+                // Join main room
+                window.realTime.joinRoom('main');
+
+                // Handle real-time data updates
+                window.realTime.on('data_update', (data) => {
+                    console.log('📊 Real-time data update:', data);
+                    // Update visualizations with new data
+                });
+
+                // Handle user activities
+                window.realTime.on('user_activity', (activity) => {
+                    console.log('👤 User activity:', activity);
+                });
+
+                // Simulate real-time data updates
+                setInterval(() => {
+                    if (window.realTime.isConnected) {
+                        const randomData = {
+                            metric: 'active_users',
+                            value: Math.floor(Math.random() * 100) + 30,
+                            timestamp: new Date().toISOString()
+                        };
+                        window.realTime.sendDataUpdate(randomData);
+                    }
+                }, 10000);
+            }
+        });
+    </script>
+</body>
+
+</html>

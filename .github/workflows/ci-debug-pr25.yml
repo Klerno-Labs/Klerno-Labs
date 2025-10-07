@@ -1,0 +1,67 @@
+name: CI Debug for pr-25
+
+on:
+  push:
+    branches: [ pr-25 ]
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.11' ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
+          if [ -f dev-requirements.txt ]; then python -m pip install -r dev-requirements.txt; fi
+
+      - name: List tools directory
+        run: |
+          echo 'tools directory:'
+          ls -l tools || true
+
+      - name: Print sys.path
+        run: |
+          python -c "import sys; print('sys.path:', sys.path)"
+
+      - name: Startup diagnostic (import check)
+        run: |
+          mkdir -p .run || true
+          python - <<'PY' > .run/diagnostic-startup.txt 2>&1
+          import sys, traceback
+          try:
+              from tools import diagnose_logging_and_routes
+          except Exception as e:
+              print('Diagnostic import failed:', e)
+              traceback.print_exc()
+              sys.exit(2)
+          try:
+              diagnose_logging_and_routes.main()
+          except Exception as e:
+              print('Diagnostic run failed:', e)
+              traceback.print_exc()
+              sys.exit(3)
+          PY
+
+      - name: Run focused unit test (rehash)
+        run: |
+          mkdir -p .run || true
+          python -m pytest -q tests/test_rehash.py > .run/test-rehash.txt 2>&1 || true
+
+      - name: Upload debug artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-debug-artifacts
+          path: .run/**
+          if-no-files-found: warn

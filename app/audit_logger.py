@@ -1,7 +1,6 @@
 # app / audit_logger.py
-"""
-Comprehensive audit logging system for security events and compliance.
-"""
+"""Comprehensive audit logging system for security events and compliance."""
+
 from __future__ import annotations
 
 import json
@@ -10,10 +9,12 @@ import os
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import Request
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from fastapi import Request
 
 
 class AuditEventType(str, Enum):
@@ -69,16 +70,14 @@ class AuditEvent(BaseModel):
     resource: str | None = None
     action: str | None = None
     outcome: str = "success"  # success, failure, error
-    details: dict[str, Any] = Field(default_factory=dict)
+    details: dict[str, Any] = Field(default_factory=dict[str, Any])
     risk_score: float | None = None
 
 
 class AuditLogger:
-    """
-    Centralized audit logging system with structured logging and security focus.
-    """
+    """Centralized audit logging system with structured logging and security focus."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = self._setup_logger()
 
     def _setup_logger(self) -> logging.Logger:
@@ -97,11 +96,11 @@ class AuditLogger:
         # JSON formatter for structured logging
 
         class JSONFormatter(logging.Formatter):
-
-            def format(self, record):
+            def format(self, record: logging.LogRecord) -> str:
                 log_entry = {
                     "timestamp": datetime.fromtimestamp(
-                        record.created, tz=UTC
+                        record.created,
+                        tz=UTC,
                     ).isoformat(),
                     "level": record.levelname,
                     "logger": record.name,
@@ -109,21 +108,36 @@ class AuditLogger:
                 }
 
                 # Add audit event data if present
-                if hasattr(record, "audit_event"):
-                    log_entry["audit_event"] = record.audit_event
+                audit_data = getattr(record, "audit_event", None)
+                if audit_data is not None:
+                    log_entry["audit_event"] = audit_data
 
                 return json.dumps(log_entry, default=str)
 
-        # File handler for audit logs
-        file_handler = logging.FileHandler(log_dir / "audit.log")
-        file_handler.setFormatter(JSONFormatter())
-        logger.addHandler(file_handler)
+        # File handler for audit logs (honor TEST mode to keep CI output clean)
+        if (
+            os.getenv("PYTEST_CURRENT_TEST") is None
+            and os.getenv("DISABLE_AUDIT_FILE") != "1"
+        ):
+            file_handler = logging.FileHandler(log_dir / "audit.log")
+            file_handler.setFormatter(JSONFormatter())
+            logger.addHandler(file_handler)
 
         # Console handler for development
-        if os.getenv("APP_ENV", "dev").lower() == "dev":
+        app_env = os.getenv("APP_ENV", os.getenv("ENVIRONMENT", "dev")).lower()
+        if app_env == "dev":
             console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.INFO)
             console_handler.setFormatter(
-                logging.Formatter("%(asctime)s - AUDIT - %(message)s")
+                logging.Formatter("%(asctime)s - AUDIT - %(message)s"),
+            )
+            logger.addHandler(console_handler)
+        elif app_env in {"test", "testing"}:
+            # In test environments, keep audit logs quiet on console
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.WARNING)
+            console_handler.setFormatter(
+                logging.Formatter("%(asctime)s - AUDIT - %(message)s"),
             )
             logger.addHandler(console_handler)
 
@@ -157,8 +171,116 @@ class AuditLogger:
 
         self.log_event(event)
 
+    def log_logout(
+        self,
+        user_id: str,
+        user_email: str,
+        user_role: str,
+        request: Request | None = None,
+    ) -> None:
+        """Log user logout event."""
+        event = AuditEvent(
+            event_type=AuditEventType.LOGOUT,
+            user_id=user_id,
+            user_email=user_email,
+            user_role=user_role,
+            outcome="success",
+        )
+
+        if request:
+            self._enrich_from_request(event, request)
+
+        self.log_event(event)
+
+    def log_user_created(
+        self,
+        user_id: str,
+        user_email: str,
+        request: Request | None = None,
+    ) -> None:
+        """Log that a new user account was created."""
+        event = AuditEvent(
+            event_type=AuditEventType.USER_CREATED,
+            user_id=user_id,
+            user_email=user_email,
+            outcome="success",
+            details={"source": "self-service"},
+        )
+
+        if request:
+            self._enrich_from_request(event, request)
+
+        self.log_event(event)
+
+    def log_password_reset(
+        self,
+        phase: str,
+        email: str,
+        user_id: str | None = None,
+        request: Request | None = None,
+    ) -> None:
+        """Log password reset lifecycle events (request/confirm)."""
+        event = AuditEvent(
+            event_type=AuditEventType.PASSWORD_CHANGE,
+            user_id=user_id,
+            user_email=email,
+            outcome="success",
+            details={"phase": phase},
+        )
+
+        if request:
+            self._enrich_from_request(event, request)
+
+        self.log_event(event)
+
+    def log_mfa_enabled(
+        self,
+        user_id: str,
+        user_email: str,
+        request: Request | None = None,
+    ) -> None:
+        """Log that a user enabled MFA."""
+        event = AuditEvent(
+            event_type=AuditEventType.SETTINGS_CHANGED,
+            user_id=user_id,
+            user_email=user_email,
+            outcome="success",
+            details={"mfa_enabled": True},
+        )
+
+        if request:
+            self._enrich_from_request(event, request)
+
+        self.log_event(event)
+
+    def log_api_access_denied(
+        self,
+        endpoint: str,
+        method: str,
+        user_id: str | None = None,
+        reason: str | None = None,
+        request: Request | None = None,
+    ) -> None:
+        """Log denied API access, including reason when available."""
+        event = AuditEvent(
+            event_type=AuditEventType.API_ACCESS_DENIED,
+            user_id=user_id,
+            resource=endpoint,
+            action=method,
+            outcome="failure",
+            details={"reason": reason} if reason else {},
+        )
+
+        if request:
+            self._enrich_from_request(event, request)
+
+        self.log_event(event)
+
     def log_auth_failure(
-        self, email: str, reason: str, request: Request | None = None
+        self,
+        email: str,
+        reason: str,
+        request: Request | None = None,
     ) -> None:
         """Log failed authentication attempt."""
         event = AuditEvent(
@@ -180,8 +302,14 @@ class AuditLogger:
         user_id: str | None = None,
         api_key_used: bool = False,
         request: Request | None = None,
+        *,
+        status_code: int | None = None,
+        duration_ms: float | None = None,
     ) -> None:
-        """Log API access."""
+        """Log API access.
+
+        Optional status_code and duration_ms are included in the event details when provided.
+        """
         event = AuditEvent(
             event_type=AuditEventType.API_ACCESS,
             user_id=user_id,
@@ -190,6 +318,15 @@ class AuditLogger:
             outcome="success",
             details={"api_key_used": api_key_used},
         )
+
+        # Enrich details with optional metrics if provided
+        if status_code is not None:
+            event.details["status_code"] = status_code
+        if duration_ms is not None:
+            try:
+                event.details["duration_ms"] = round(float(duration_ms), 2)
+            except Exception:
+                event.details["duration_ms"] = duration_ms
 
         if request:
             self._enrich_from_request(event, request)
@@ -263,7 +400,7 @@ class AuditLogger:
     def _enrich_from_request(self, event: AuditEvent, request: Request) -> None:
         """Enrich audit event with request information."""
         event.ip_address = self._get_client_ip(request)
-        event.user_agent = request.headers.get("user - agent")
+        event.user_agent = request.headers.get("user-agent")
         event.request_id = getattr(request.state, "request_id", None)
         event.session_id = request.cookies.get("session")
 
@@ -291,13 +428,16 @@ audit_logger = AuditLogger()
 
 
 def log_auth_success(
-    user_id: str, user_email: str, user_role: str, request: Request | None = None
-):
+    user_id: str,
+    user_email: str,
+    user_role: str,
+    request: Request | None = None,
+) -> None:
     """Convenience function for logging successful authentication."""
     audit_logger.log_auth_success(user_id, user_email, user_role, request)
 
 
-def log_auth_failure(email: str, reason: str, request: Request | None = None):
+def log_auth_failure(email: str, reason: str, request: Request | None = None) -> None:
     """Convenience function for logging failed authentication."""
     audit_logger.log_auth_failure(email, reason, request)
 
@@ -308,9 +448,20 @@ def log_api_access(
     user_id: str | None = None,
     api_key_used: bool = False,
     request: Request | None = None,
-):
+    *,
+    status_code: int | None = None,
+    duration_ms: float | None = None,
+) -> None:
     """Convenience function for logging API access."""
-    audit_logger.log_api_access(endpoint, method, user_id, api_key_used, request)
+    audit_logger.log_api_access(
+        endpoint,
+        method,
+        user_id,
+        api_key_used,
+        request,
+        status_code=status_code,
+        duration_ms=duration_ms,
+    )
 
 
 def log_security_event(
@@ -318,6 +469,59 @@ def log_security_event(
     details: dict[str, Any],
     request: Request | None = None,
     risk_score: float | None = None,
-):
+) -> None:
     """Convenience function for logging security events."""
     audit_logger.log_security_event(event_type, details, request, risk_score)
+
+
+def log_logout(
+    user_id: str,
+    user_email: str,
+    user_role: str,
+    request: Request | None = None,
+) -> None:
+    """Convenience: log user logout."""
+    audit_logger.log_logout(user_id, user_email, user_role, request)
+
+
+def log_user_created(
+    user_id: str,
+    user_email: str,
+    request: Request | None = None,
+) -> None:
+    """Convenience: log user creation."""
+    audit_logger.log_user_created(user_id, user_email, request)
+
+
+def log_password_reset_requested(
+    email: str,
+    request: Request | None = None,
+    user_id: str | None = None,
+) -> None:
+    """Convenience: log password reset request."""
+    audit_logger.log_password_reset("request", email, user_id, request)
+
+
+def log_password_reset_confirmed(
+    user_id: str,
+    email: str,
+    request: Request | None = None,
+) -> None:
+    """Convenience: log password reset confirmation."""
+    audit_logger.log_password_reset("confirm", email, user_id, request)
+
+
+def log_mfa_enabled(user_id: str, email: str, request: Request | None = None) -> None:
+    """Convenience: log MFA enabled."""
+    audit_logger.log_mfa_enabled(user_id, email, request)
+
+
+def log_api_access_denied(
+    endpoint: str,
+    method: str,
+    user_id: str | None = None,
+    reason: str | None = None,
+    request: Request | None = None,
+) -> None:
+    """Convenience: log denied API access."""
+    audit_logger.log_api_access_denied(endpoint, method, user_id, reason, request)

@@ -1,6 +1,5 @@
-"""
-Klerno Labs Enterprise Analytics & Business Intelligence System
-Advanced analytics, reporting, and business intelligence capabilities
+"""Klerno Labs Enterprise Analytics & Business Intelligence System
+Advanced analytics, reporting, and business intelligence capabilities.
 """
 
 import json
@@ -12,10 +11,53 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
-import numpy as np
-import pandas as pd
+from app.constants import CACHE_TTL
+
+
+def _ensure_numpy() -> None:
+    if "np" in globals():
+        return
+    try:
+        import importlib
+
+        np = importlib.import_module("numpy")
+        globals()["np"] = np
+    except ImportError as e:
+        msg = "numpy is required for analytics computations"
+        raise RuntimeError(msg) from e
+    except Exception:
+        raise
+
+
+if TYPE_CHECKING:
+    # Avoid requiring heavy optional dependencies in dev envs; treat as Any.
+    from collections.abc import Mapping, Sequence
+
+    from app._typing_shims import ISyncConnection
+
+    np: Any
+    pd: Any
+else:
+    # At runtime we lazily load these; initialize to None so the names exist
+    # (the helper functions _ensure_numpy/_ensure_pandas will populate them).
+    np = None
+    pd = None
+
+
+def _ensure_pandas() -> None:
+    if "pd" in globals():
+        return
+    try:
+        import importlib
+
+        pd = importlib.import_module("pandas")
+        globals()["pd"] = pd
+    except ImportError as e:
+        msg = "pandas is required for reporting features"
+        raise RuntimeError(msg) from e
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,34 +66,34 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class AnalyticsEvent:
-    """Analytics event record"""
+    """Analytics event record."""
 
     event_id: str
     event_type: str
     timestamp: datetime
     user_id: str | None = None
     session_id: str | None = None
-    properties: dict[str, Any] = field(default_factory=dict)
-    metadata: dict[str, Any] = field(default_factory=dict)
+    properties: dict[str, Any] = field(default_factory=dict[str, Any])
+    metadata: dict[str, Any] = field(default_factory=dict[str, Any])
 
 
 @dataclass
 class ReportConfig:
-    """Report configuration"""
+    """Report configuration."""
 
     report_id: str
     report_name: str
     description: str
     query_template: str
-    parameters: dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict[str, Any])
     schedule: str | None = None  # cron-like schedule
     output_format: str = "json"  # json, csv, pdf, html
-    recipients: list[str] = field(default_factory=list)
+    recipients: list[str] = field(default_factory=list[Any])
 
 
 @dataclass
 class BusinessMetric:
-    """Business metric definition"""
+    """Business metric definition."""
 
     metric_id: str
     metric_name: str
@@ -65,18 +107,18 @@ class BusinessMetric:
 
 
 class EnterpriseAnalytics:
-    """Comprehensive enterprise analytics system"""
+    """Comprehensive enterprise analytics system."""
 
-    def __init__(self, database_path: str = "./data/klerno.db"):
+    def __init__(self, database_path: str = "./data/klerno.db") -> None:
         self.database_path = database_path
         self.events: list[AnalyticsEvent] = []
         self.reports: dict[str, ReportConfig] = {}
         self.metrics: dict[str, BusinessMetric] = {}
-        self.cached_results: dict[str, dict] = {}
+        self.cached_results: dict[str, dict[str, Any]] = {}
 
         # Configuration
         self.event_retention_days = 90
-        self.cache_ttl_seconds = 300
+        self.cache_ttl_seconds = CACHE_TTL
 
         # Threading
         self._lock = threading.RLock()
@@ -87,10 +129,12 @@ class EnterpriseAnalytics:
 
         # Start background workers
         self._analytics_thread = threading.Thread(
-            target=self._analytics_worker, daemon=True
+            target=self._analytics_worker,
+            daemon=True,
         )
         self._cleanup_thread = threading.Thread(
-            target=self._cleanup_worker, daemon=True
+            target=self._cleanup_worker,
+            daemon=True,
         )
 
         self._analytics_thread.start()
@@ -102,12 +146,12 @@ class EnterpriseAnalytics:
 
         logger.info("[ANALYTICS] Enterprise analytics system initialized")
 
-    def _init_database(self):
-        """Initialize analytics database"""
+    def _init_database(self) -> None:
+        """Initialize analytics database."""
         try:
             Path(self.database_path).parent.mkdir(parents=True, exist_ok=True)
 
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             # Analytics events table
@@ -123,7 +167,7 @@ class EnterpriseAnalytics:
                     properties TEXT,
                     metadata TEXT
                 )
-            """
+            """,
             )
 
             # User sessions table
@@ -143,7 +187,7 @@ class EnterpriseAnalytics:
                     country TEXT,
                     city TEXT
                 )
-            """
+            """,
             )
 
             # Business metrics table
@@ -156,7 +200,7 @@ class EnterpriseAnalytics:
                     value REAL NOT NULL,
                     metadata TEXT
                 )
-            """
+            """,
             )
 
             # Report executions table
@@ -171,27 +215,27 @@ class EnterpriseAnalytics:
                     result_data TEXT,
                     error_message TEXT
                 )
-            """
+            """,
             )
 
             # Create indices for performance
             cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_events_timestamp ON analytics_events(timestamp)"
+                "CREATE INDEX IF NOT EXISTS idx_events_timestamp ON analytics_events(timestamp)",
             )
             cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_events_type ON analytics_events(event_type)"
+                "CREATE INDEX IF NOT EXISTS idx_events_type ON analytics_events(event_type)",
             )
             cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_events_user ON analytics_events(user_id)"
+                "CREATE INDEX IF NOT EXISTS idx_events_user ON analytics_events(user_id)",
             )
             cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_sessions_start ON user_sessions(start_time)"
+                "CREATE INDEX IF NOT EXISTS idx_sessions_start ON user_sessions(start_time)",
             )
             cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON business_metrics(timestamp)"
+                "CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON business_metrics(timestamp)",
             )
             cursor.execute(
-                "CREATE INDEX IF NOT EXISTS idx_metrics_id ON business_metrics(metric_id)"
+                "CREATE INDEX IF NOT EXISTS idx_metrics_id ON business_metrics(metric_id)",
             )
 
             conn.commit()
@@ -200,18 +244,17 @@ class EnterpriseAnalytics:
             logger.info("[ANALYTICS] Database initialized")
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Database initialization failed: {e}")
+            logger.exception(f"[ANALYTICS] Database initialization failed: {e}")
 
     def track_event(
         self,
         event_type: str,
         user_id: str | None = None,
         session_id: str | None = None,
-        properties: dict[str, Any] = None,
-        metadata: dict[str, Any] = None,
+        properties: dict[str, Any] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
-        """Track an analytics event"""
-
+        """Track an analytics event."""
         event_id = f"{event_type}_{int(time.time() * 1000)}_{hash(str(properties))}"
 
         event = AnalyticsEvent(
@@ -231,10 +274,10 @@ class EnterpriseAnalytics:
         logger.debug(f"[ANALYTICS] Tracked event: {event_type}")
         return event_id
 
-    def _store_event(self, event: AnalyticsEvent):
-        """Store event in database"""
+    def _store_event(self, event: AnalyticsEvent) -> None:
+        """Store event in database."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -258,23 +301,22 @@ class EnterpriseAnalytics:
             conn.close()
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to store event: {e}")
+            logger.exception(f"[ANALYTICS] Failed to store event: {e}")
 
-    def register_metric(self, metric: BusinessMetric):
-        """Register a business metric"""
+    def register_metric(self, metric: BusinessMetric) -> None:
+        """Register a business metric."""
         with self._lock:
             self.metrics[metric.metric_id] = metric
             logger.info(f"[ANALYTICS] Registered metric: {metric.metric_name}")
 
-    def register_report(self, report: ReportConfig):
-        """Register a report configuration"""
+    def register_report(self, report: ReportConfig) -> None:
+        """Register a report configuration."""
         with self._lock:
             self.reports[report.report_id] = report
             logger.info(f"[ANALYTICS] Registered report: {report.report_name}")
 
-    def _register_default_metrics(self):
-        """Register default business metrics"""
-
+    def _register_default_metrics(self) -> None:
+        """Register default business metrics."""
         # User engagement metrics
         self.register_metric(
             BusinessMetric(
@@ -287,7 +329,7 @@ class EnterpriseAnalytics:
                 threshold_critical=25,
                 unit="users",
                 category="engagement",
-            )
+            ),
         )
 
         self.register_metric(
@@ -301,7 +343,7 @@ class EnterpriseAnalytics:
                 threshold_critical=60,  # 1 minute
                 unit="seconds",
                 category="engagement",
-            )
+            ),
         )
 
         # System performance metrics
@@ -316,7 +358,7 @@ class EnterpriseAnalytics:
                 threshold_critical=2000,  # 2s
                 unit="milliseconds",
                 category="performance",
-            )
+            ),
         )
 
         # Business metrics
@@ -331,12 +373,11 @@ class EnterpriseAnalytics:
                 threshold_critical=1.0,  # 1%
                 unit="percent",
                 category="business",
-            )
+            ),
         )
 
-    def _register_default_reports(self):
-        """Register default reports"""
-
+    def _register_default_reports(self) -> None:
+        """Register default reports."""
         # Daily summary report
         self.register_report(
             ReportConfig(
@@ -355,7 +396,7 @@ class EnterpriseAnalytics:
             """,
                 schedule="0 9 * * *",  # Daily at 9 AM
                 output_format="json",
-            )
+            ),
         )
 
         # User behavior report
@@ -378,7 +419,7 @@ class EnterpriseAnalytics:
             """,
                 schedule="0 0 * * 1",  # Weekly on Monday
                 output_format="json",
-            )
+            ),
         )
 
         # Performance report
@@ -402,16 +443,19 @@ class EnterpriseAnalytics:
             """,
                 schedule="0 8 * * *",  # Daily at 8 AM
                 output_format="json",
-            )
+            ),
         )
 
     def calculate_metric(
-        self, metric_id: str, start_time: datetime = None, end_time: datetime = None
+        self,
+        metric_id: str,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
     ) -> dict[str, Any]:
-        """Calculate a business metric"""
-
+        """Calculate a business metric."""
         if metric_id not in self.metrics:
-            raise ValueError(f"Unknown metric: {metric_id}")
+            msg = f"Unknown metric: {metric_id}"
+            raise ValueError(msg)
 
         metric = self.metrics[metric_id]
 
@@ -459,7 +503,7 @@ class EnterpriseAnalytics:
             return result
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to calculate metric {metric_id}: {e}")
+            logger.exception(f"[ANALYTICS] Failed to calculate metric {metric_id}: {e}")
             return {
                 "metric_id": metric_id,
                 "error": str(e),
@@ -467,20 +511,19 @@ class EnterpriseAnalytics:
             }
 
     def _get_metric_status(self, metric: BusinessMetric, value: float) -> str:
-        """Get metric status based on thresholds"""
+        """Get metric status based on thresholds."""
         if metric.threshold_critical is not None and value <= metric.threshold_critical:
             return "critical"
-        elif metric.threshold_warning is not None and value <= metric.threshold_warning:
+        if metric.threshold_warning is not None and value <= metric.threshold_warning:
             return "warning"
-        elif metric.target_value is not None and value >= metric.target_value:
+        if metric.target_value is not None and value >= metric.target_value:
             return "excellent"
-        else:
-            return "good"
+        return "good"
 
     def count_unique_users_24h(self, start_time: datetime, end_time: datetime) -> int:
-        """Calculate daily active users"""
+        """Calculate daily active users."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -498,13 +541,13 @@ class EnterpriseAnalytics:
             return result
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to calculate DAU: {e}")
+            logger.exception(f"[ANALYTICS] Failed to calculate DAU: {e}")
             return 0
 
     def avg_session_duration(self, start_time: datetime, end_time: datetime) -> float:
-        """Calculate average session duration"""
+        """Calculate average session duration."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -522,13 +565,16 @@ class EnterpriseAnalytics:
             return float(result)
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to calculate avg session duration: {e}")
+            logger.exception(
+                f"[ANALYTICS] Failed to calculate avg session duration: {e}"
+            )
             return 0.0
 
     def api_response_time_p95(self, start_time: datetime, end_time: datetime) -> float:
-        """Calculate 95th percentile API response time"""
+        """Calculate 95th percentile API response time."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            _ensure_numpy()
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -550,15 +596,19 @@ class EnterpriseAnalytics:
             return 0.0
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to calculate API response time P95: {e}")
+            logger.exception(
+                f"[ANALYTICS] Failed to calculate API response time P95: {e}"
+            )
             return 0.0
 
     def calculate_conversion_rate(
-        self, start_time: datetime, end_time: datetime
+        self,
+        start_time: datetime,
+        end_time: datetime,
     ) -> float:
-        """Calculate conversion rate"""
+        """Calculate conversion rate."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             # Count visitors
@@ -593,15 +643,18 @@ class EnterpriseAnalytics:
             return 0.0
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to calculate conversion rate: {e}")
+            logger.exception(f"[ANALYTICS] Failed to calculate conversion rate: {e}")
             return 0.0
 
     def _calculate_generic_metric(
-        self, metric_id: str, start_time: datetime, end_time: datetime
+        self,
+        metric_id: str,
+        start_time: datetime,
+        end_time: datetime,
     ) -> float:
-        """Calculate generic metric from stored values"""
+        """Calculate generic metric from stored values."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -619,15 +672,15 @@ class EnterpriseAnalytics:
             return float(result)
 
         except Exception as e:
-            logger.error(
-                f"[ANALYTICS] Failed to calculate generic metric {metric_id}: {e}"
+            logger.exception(
+                f"[ANALYTICS] Failed to calculate generic metric {metric_id}: {e}",
             )
             return 0.0
 
-    def _store_metric_value(self, metric_id: str, value: float):
-        """Store calculated metric value"""
+    def _store_metric_value(self, metric_id: str, value: float) -> None:
+        """Store calculated metric value."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -647,22 +700,24 @@ class EnterpriseAnalytics:
             conn.close()
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to store metric value: {e}")
+            logger.exception(f"[ANALYTICS] Failed to store metric value: {e}")
 
     def generate_report(
-        self, report_id: str, parameters: dict[str, Any] = None
+        self,
+        report_id: str,
+        parameters: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Generate a report"""
-
+        """Generate a report."""
         if report_id not in self.reports:
-            raise ValueError(f"Unknown report: {report_id}")
+            msg = f"Unknown report: {report_id}"
+            raise ValueError(msg)
 
         report_config = self.reports[report_id]
         start_time = datetime.now()
 
         try:
             # Execute report query
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
 
             # Substitute parameters in query
             query = report_config.query_template
@@ -671,16 +726,28 @@ class EnterpriseAnalytics:
                     query = query.replace(f"${key}", str(value))
 
             # Execute query
+            _ensure_pandas()
             df = pd.read_sql_query(query, conn)
             conn.close()
 
             # Format result based on output format
+            result_data: Sequence[Mapping[str, Any]] | str
             if report_config.output_format == "json":
-                result_data = df.to_dict(orient="records")
+                from typing import cast
+
+                result_data = cast(
+                    "Sequence[Mapping[str, Any]]",
+                    df.to_dict(orient="records"),
+                )
             elif report_config.output_format == "csv":
                 result_data = df.to_csv(index=False)
             else:
-                result_data = df.to_dict(orient="records")
+                from typing import cast
+
+                result_data = cast(
+                    "Sequence[Mapping[str, Any]]",
+                    df.to_dict(orient="records"),
+                )
 
             execution_time = (datetime.now() - start_time).total_seconds()
 
@@ -716,10 +783,14 @@ class EnterpriseAnalytics:
 
             # Store execution record
             self._store_report_execution(
-                report_id, execution_time, "error", result, str(e)
+                report_id,
+                execution_time,
+                "error",
+                result,
+                str(e),
             )
 
-            logger.error(f"[ANALYTICS] Failed to generate report {report_id}: {e}")
+            logger.exception(f"[ANALYTICS] Failed to generate report {report_id}: {e}")
             return result
 
     def _store_report_execution(
@@ -727,12 +798,12 @@ class EnterpriseAnalytics:
         report_id: str,
         duration: float,
         status: str,
-        result_data: dict,
-        error: str = None,
-    ):
-        """Store report execution record"""
+        result_data: dict[str, Any],
+        error: str | None = None,
+    ) -> None:
+        """Store report execution record."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -755,11 +826,10 @@ class EnterpriseAnalytics:
             conn.close()
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to store report execution: {e}")
+            logger.exception(f"[ANALYTICS] Failed to store report execution: {e}")
 
     def get_analytics_dashboard(self) -> dict[str, Any]:
-        """Get comprehensive analytics dashboard data"""
-
+        """Get comprehensive analytics dashboard data."""
         # Calculate key metrics
         key_metrics = {}
         for metric_id in [
@@ -773,8 +843,8 @@ class EnterpriseAnalytics:
                     metric_result = self.calculate_metric(metric_id)
                     key_metrics[metric_id] = metric_result
                 except Exception as e:
-                    logger.error(
-                        f"[ANALYTICS] Failed to calculate metric {metric_id}: {e}"
+                    logger.exception(
+                        f"[ANALYTICS] Failed to calculate metric {metric_id}: {e}",
                     )
 
         # Get recent events summary
@@ -803,9 +873,9 @@ class EnterpriseAnalytics:
         }
 
     def _get_recent_events_summary(self) -> dict[str, Any]:
-        """Get summary of recent events"""
+        """Get summary of recent events."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -819,7 +889,7 @@ class EnterpriseAnalytics:
                 GROUP BY event_type
                 ORDER BY count DESC
                 LIMIT 10
-            """
+            """,
             )
 
             results = cursor.fetchall()
@@ -834,13 +904,13 @@ class EnterpriseAnalytics:
             }
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to get recent events summary: {e}")
+            logger.exception(f"[ANALYTICS] Failed to get recent events summary: {e}")
             return {"event_summary": []}
 
     def _get_user_activity_trends(self) -> dict[str, Any]:
-        """Get user activity trends"""
+        """Get user activity trends."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -854,7 +924,7 @@ class EnterpriseAnalytics:
                   AND user_id IS NOT NULL
                 GROUP BY DATE(timestamp)
                 ORDER BY date DESC
-            """
+            """,
             )
 
             results = cursor.fetchall()
@@ -869,13 +939,13 @@ class EnterpriseAnalytics:
             }
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to get user activity trends: {e}")
+            logger.exception(f"[ANALYTICS] Failed to get user activity trends: {e}")
             return {"daily_trends": []}
 
     def _get_top_events(self) -> list[dict[str, Any]]:
-        """Get top events by frequency"""
+        """Get top events by frequency."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -891,7 +961,7 @@ class EnterpriseAnalytics:
                 GROUP BY event_type
                 ORDER BY frequency DESC
                 LIMIT 20
-            """
+            """,
             )
 
             results = cursor.fetchall()
@@ -908,13 +978,13 @@ class EnterpriseAnalytics:
             ]
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to get top events: {e}")
+            logger.exception(f"[ANALYTICS] Failed to get top events: {e}")
             return []
 
     def _get_performance_trends(self) -> dict[str, Any]:
-        """Get performance trends"""
+        """Get performance trends."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -928,27 +998,29 @@ class EnterpriseAnalytics:
                   AND metric_id IN ('api_response_time_p95', 'session_duration_avg')
                 GROUP BY DATE(timestamp), metric_id
                 ORDER BY date DESC
-            """
+            """,
             )
 
             results = cursor.fetchall()
             conn.close()
 
             # Group by metric
-            trends = defaultdict(list)
+            from typing import Any
+
+            trends: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
             for row in results:
                 trends[row[1]].append({"date": row[0], "value": row[2]})
 
             return dict(trends)
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to get performance trends: {e}")
+            logger.exception(f"[ANALYTICS] Failed to get performance trends: {e}")
             return {}
 
     def _count_events_today(self) -> int:
-        """Count total events today"""
+        """Count total events today."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -956,7 +1028,7 @@ class EnterpriseAnalytics:
                 SELECT COUNT(*)
                 FROM analytics_events
                 WHERE date(timestamp) = date('now')
-            """
+            """,
             )
 
             result = cursor.fetchone()[0] or 0
@@ -965,13 +1037,13 @@ class EnterpriseAnalytics:
             return result
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to count events today: {e}")
+            logger.exception(f"[ANALYTICS] Failed to count events today: {e}")
             return 0
 
     def _count_active_users_today(self) -> int:
-        """Count active users today"""
+        """Count active users today."""
         try:
-            conn = sqlite3.connect(self.database_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -979,7 +1051,7 @@ class EnterpriseAnalytics:
                 SELECT COUNT(DISTINCT user_id)
                 FROM analytics_events
                 WHERE date(timestamp) = date('now') AND user_id IS NOT NULL
-            """
+            """,
             )
 
             result = cursor.fetchone()[0] or 0
@@ -988,11 +1060,11 @@ class EnterpriseAnalytics:
             return result
 
         except Exception as e:
-            logger.error(f"[ANALYTICS] Failed to count active users today: {e}")
+            logger.exception(f"[ANALYTICS] Failed to count active users today: {e}")
             return 0
 
-    def _analytics_worker(self):
-        """Background analytics processing worker"""
+    def _analytics_worker(self) -> None:
+        """Background analytics processing worker."""
         while self._running:
             try:
                 time.sleep(3600)  # Run every hour
@@ -1002,18 +1074,18 @@ class EnterpriseAnalytics:
                     try:
                         self.calculate_metric(metric_id)
                     except Exception as e:
-                        logger.error(
-                            f"[ANALYTICS] Failed to calculate metric {metric_id}: {e}"
+                        logger.exception(
+                            f"[ANALYTICS] Failed to calculate metric {metric_id}: {e}",
                         )
 
                 logger.info("[ANALYTICS] Periodic metrics calculation completed")
 
             except Exception as e:
-                logger.error(f"[ANALYTICS] Analytics worker error: {e}")
+                logger.exception(f"[ANALYTICS] Analytics worker error: {e}")
                 time.sleep(3600)
 
-    def _cleanup_worker(self):
-        """Background cleanup worker"""
+    def _cleanup_worker(self) -> None:
+        """Background cleanup worker."""
         while self._running:
             try:
                 time.sleep(86400)  # Run daily
@@ -1021,7 +1093,7 @@ class EnterpriseAnalytics:
                 # Clean old events
                 cutoff_time = datetime.now() - timedelta(days=self.event_retention_days)
 
-                conn = sqlite3.connect(self.database_path)
+                conn = cast("ISyncConnection", sqlite3.connect(self.database_path))
                 cursor = conn.cursor()
 
                 cursor.execute(
@@ -1048,11 +1120,11 @@ class EnterpriseAnalytics:
                 logger.info("[ANALYTICS] Old analytics data cleaned up")
 
             except Exception as e:
-                logger.error(f"[ANALYTICS] Cleanup worker error: {e}")
+                logger.exception(f"[ANALYTICS] Cleanup worker error: {e}")
                 time.sleep(86400)
 
-    def shutdown(self):
-        """Shutdown the analytics system"""
+    def shutdown(self) -> None:
+        """Shutdown the analytics system."""
         self._running = False
         logger.info("[ANALYTICS] Analytics system shutdown")
 
@@ -1062,7 +1134,7 @@ analytics_system = None
 
 
 def get_analytics_system() -> EnterpriseAnalytics:
-    """Get global analytics system instance"""
+    """Get global analytics system instance."""
     global analytics_system
 
     if analytics_system is None:
@@ -1071,14 +1143,14 @@ def get_analytics_system() -> EnterpriseAnalytics:
     return analytics_system
 
 
-def initialize_enterprise_analytics():
-    """Initialize enterprise analytics system"""
+def initialize_enterprise_analytics() -> "EnterpriseAnalytics | None":
+    """Initialize enterprise analytics system and return it if successful."""
     try:
         analytics = get_analytics_system()
         logger.info("[ANALYTICS] Enterprise analytics system initialized")
         return analytics
     except Exception as e:
-        logger.error(f"[ANALYTICS] Failed to initialize analytics: {e}")
+        logger.exception(f"[ANALYTICS] Failed to initialize analytics: {e}")
         return None
 
 
@@ -1089,13 +1161,18 @@ if __name__ == "__main__":
     if analytics:
         # Track some test events
         analytics.track_event(
-            "page_view", user_id="user123", properties={"page": "/dashboard"}
+            "page_view",
+            user_id="user123",
+            properties={"page": "/dashboard"},
         )
         analytics.track_event(
-            "api_request", properties={"response_time": 150, "endpoint": "/api/users"}
+            "api_request",
+            properties={"response_time": 150, "endpoint": "/api/users"},
         )
         analytics.track_event(
-            "conversion", user_id="user123", properties={"value": 100}
+            "conversion",
+            user_id="user123",
+            properties={"value": 100},
         )
 
         # Wait a bit for processing
@@ -1103,15 +1180,12 @@ if __name__ == "__main__":
 
         # Generate dashboard
         dashboard = analytics.get_analytics_dashboard()
-        print(f"Analytics dashboard: {json.dumps(dashboard, indent=2, default=str)}")
 
         # Generate a report
         report = analytics.generate_report("daily_summary")
-        print(f"Daily summary report: {json.dumps(report, indent=2, default=str)}")
 
         # Calculate a metric
         metric = analytics.calculate_metric("daily_active_users")
-        print(f"DAU metric: {json.dumps(metric, indent=2, default=str)}")
 
         # Shutdown
         analytics.shutdown()

@@ -1,6 +1,4 @@
-"""
-Middleware for request / response logging, metrics, and monitoring.
-"""
+"""Middleware for request / response logging, metrics, and monitoring."""
 
 import time
 import uuid
@@ -8,7 +6,7 @@ from collections.abc import Callable
 
 import structlog
 from fastapi import Request, Response
-from prometheus_client import Counter, Histogram, generate_latest
+from prometheus_client import Counter, Gauge, Histogram, generate_latest
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import PlainTextResponse
 
@@ -19,7 +17,9 @@ logger = structlog.get_logger("middleware")
 
 # Prometheus metrics
 REQUEST_COUNT = Counter(
-    "http_requests_total", "Total HTTP requests", ["method", "endpoint", "status_code"]
+    "http_requests_total",
+    "Total HTTP requests",
+    ["method", "endpoint", "status_code"],
 )
 
 REQUEST_DURATION = Histogram(
@@ -28,7 +28,7 @@ REQUEST_DURATION = Histogram(
     ["method", "endpoint", "status_code"],
 )
 
-ACTIVE_REQUESTS = Counter("http_requests_active", "Active HTTP requests")
+ACTIVE_REQUESTS = Gauge("http_requests_active", "Active HTTP requests")
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
@@ -57,7 +57,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         except Exception as exc:
             # Log exception
             duration = time.time() - start_time
-            logger.error(
+            logger.exception(
                 "Request failed with exception",
                 method=request.method,
                 url=str(request.url),
@@ -110,11 +110,15 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             endpoint = self._get_endpoint_path(request)
 
             REQUEST_COUNT.labels(
-                method=request.method, endpoint=endpoint, status_code=500
+                method=request.method,
+                endpoint=endpoint,
+                status_code=500,
             ).inc()
 
             REQUEST_DURATION.labels(
-                method=request.method, endpoint=endpoint, status_code=500
+                method=request.method,
+                endpoint=endpoint,
+                status_code=500,
             ).observe(duration)
 
             ACTIVE_REQUESTS.dec()
@@ -126,11 +130,15 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 
         # Record metrics
         REQUEST_COUNT.labels(
-            method=request.method, endpoint=endpoint, status_code=response.status_code
+            method=request.method,
+            endpoint=endpoint,
+            status_code=response.status_code,
         ).inc()
 
         REQUEST_DURATION.labels(
-            method=request.method, endpoint=endpoint, status_code=response.status_code
+            method=request.method,
+            endpoint=endpoint,
+            status_code=response.status_code,
         ).observe(duration)
 
         # Decrement active requests
@@ -156,9 +164,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         path = re.sub(r"/\d+", "/{id}", path)
 
         # Replace wallet addresses (common pattern: rXXX...)
-        path = re.sub(r"/r[a-zA-Z0-9]{25,}", "/{wallet}", path)
-
-        return path
+        return re.sub(r"/r[a-zA-Z0-9]{25,}", "/{wallet}", path)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -194,7 +200,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                     "gyroscope=(), "
                     "speaker=()"
                 ),
-            }
+            },
         )
 
         return response
@@ -203,10 +209,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Simple in-memory rate limiting middleware."""
 
-    def __init__(self, app, requests_per_minute: int = 60):
+    def __init__(self, app, requests_per_minute: int = 60) -> None:
         super().__init__(app)
         self.requests_per_minute = requests_per_minute
-        self.requests = {}  # ip -> list of timestamps
+        self.requests: dict[str, list[float]] = {}  # ip -> list of timestamps
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         # Skip rate limiting for health checks
@@ -255,7 +261,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         """Remove requests older than 1 minute."""
         cutoff_time = current_time - 60  # 1 minute ago
 
-        for ip in list(self.requests.keys()):
+        for ip in list(self.requests):
             self.requests[ip] = [
                 timestamp for timestamp in self.requests[ip] if timestamp > cutoff_time
             ]
@@ -282,5 +288,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 def metrics_endpoint() -> PlainTextResponse:
     """Prometheus metrics endpoint."""
     return PlainTextResponse(
-        generate_latest(), media_type="text/plain; version=0.0.4; charset=utf-8"
+        generate_latest(),
+        media_type="text/plain; version=0.0.4; charset=utf-8",
     )

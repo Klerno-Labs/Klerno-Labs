@@ -1,14 +1,20 @@
 # app / notifications.py
 import os
+from typing import Any
 
 import httpx
 
-SLACK_WEBHOOK = (os.getenv("SLACK_WEBHOOK_URL") or "").strip()
 
+async def slack_notify(text: str) -> dict[str, Any]:
+    """Send a Slack notification if SLACK_WEBHOOK_URL is configured.
 
-async def slack_notify(text: str) -> dict:
-    if not SLACK_WEBHOOK:
+    The webhook URL is read at call time so importing this module doesn't
+    perform environment-dependent behavior.
+    """
+    webhook = (os.getenv("SLACK_WEBHOOK_URL") or "").strip()
+    if not webhook:
         return {"sent": False, "reason": "no webhook configured"}
+
     async with httpx.AsyncClient(timeout=10) as c:
-        r = await c.post(SLACK_WEBHOOK, json={"text": text})
-        return {"sent": (200 <= r.status_code < 300), "status": r.status_code}
+        r = await c.post(webhook, json={"text": text})
+        return {"sent": 200 <= r.status_code < 300, "status": r.status_code}

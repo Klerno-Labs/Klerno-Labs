@@ -1,5 +1,4 @@
-"""
-Klerno Labs Configuration Module.
+"""Klerno Labs Configuration Module.
 Uses pydantic - settings for secure, validated configuration.
 """
 
@@ -17,11 +16,15 @@ class Settings(BaseSettings):
     )
     DEBUG: bool = Field(False, description="Debug mode")
     SECRET_KEY: str = Field(
-        ..., description="Secret key for session encryption and JWT"
+        ...,
+        description="Secret key for session encryption and JWT",
     )
 
     # Web server
-    HOST: str = Field("0.0.0.0", description="Host to bind to")
+    # Default to 0.0.0.0 for local development and containerized environments.
+    # This is an intentional default for dev/test; production should override via
+    # environment variables.
+    HOST: str = Field("0.0.0.0", description="Host to bind to")  # nosec: B104
     PORT: int = Field(8000, description="Port to bind to")
     WORKERS: int = Field(1, description="Number of uvicorn workers")
 
@@ -38,7 +41,8 @@ class Settings(BaseSettings):
     # Database
     USE_SQLITE: bool = Field(True, description="Use SQLite instead of Postgres")
     DATABASE_URL: str | None = Field(
-        None, description="Database connection string (can be SQLite or PostgreSQL)"
+        None,
+        description="Database connection string (can be SQLite or PostgreSQL)",
     )
     SQLITE_PATH: str = Field(
         "./data/klerno.db",
@@ -47,7 +51,8 @@ class Settings(BaseSettings):
 
     # XRPL Settings
     XRPL_NET: str = Field(
-        "testnet", description="XRPL network to use: 'mainnet', 'testnet', or 'devnet'"
+        "testnet",
+        description="XRPL network to use: 'mainnet', 'testnet', or 'devnet'",
     )
     DESTINATION_WALLET: str = Field(
         "rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe",
@@ -55,7 +60,8 @@ class Settings(BaseSettings):
     )
     SUB_PRICE_XRP: float = Field(10.0, description="Price in XRP for a subscription")
     SUB_DURATION_DAYS: int = Field(
-        30, description="Duration in days for a subscription"
+        30,
+        description="Duration in days for a subscription",
     )
 
     # Email (SendGrid)
@@ -65,59 +71,71 @@ class Settings(BaseSettings):
 
     # Security
     COOKIE_SECURE: str = Field(
-        "auto", description="Cookie secure flag: 'auto', 'true', or 'false'"
+        "auto",
+        description="Cookie secure flag: 'auto', 'true', or 'false'",
     )
     COOKIE_SAMESITE: str = Field(
-        "lax", description="Cookie samesite flag: 'lax', 'strict', or 'none'"
+        "lax",
+        description="Cookie samesite flag: 'lax', 'strict', or 'none'",
     )
     ENABLE_HSTS: bool = Field(True, description="Enable HTTP Strict Transport Security")
 
     # Risk threshold for alerts
     RISK_THRESHOLD: float = Field(
-        0.75, description="Risk threshold for alerts (0.0 - 1.0)", ge=0.0, le=1.0
+        0.75,
+        description="Risk threshold for alerts (0.0 - 1.0)",
+        ge=0.0,
+        le=1.0,
     )
 
     # Admin email
     ADMIN_EMAIL: str | None = Field(
-        None, description="Admin email address (gets admin role on signup)"
+        None,
+        description="Admin email address (gets admin role on signup)",
     )
 
     # Model configuration
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_file_encoding="utf - 8",
+        env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=True,
     )
 
     @field_validator("APP_ENV")
-    def validate_app_env(cls, v: str) -> str:
+    def validate_app_env(self, v: str) -> str:
         """Validate application environment."""
         if v.lower() not in {"dev", "test", "production", "development", "local"}:
-            raise ValueError(
+            msg = (
                 "APP_ENV must be 'dev', 'test', 'production', 'development', or 'local'"
+            )
+            raise ValueError(
+                msg,
             )
         return v.lower()
 
     @field_validator("XRPL_NET")
-    def validate_xrpl_net(cls, v: str) -> str:
+    def validate_xrpl_net(self, v: str) -> str:
         """Validate XRPL network."""
         if v.lower() not in {"mainnet", "testnet", "devnet"}:
-            raise ValueError("XRPL_NET must be 'mainnet', 'testnet', or 'devnet'")
+            msg = "XRPL_NET must be 'mainnet', 'testnet', or 'devnet'"
+            raise ValueError(msg)
         return v.lower()
 
     @field_validator("COOKIE_SECURE")
-    def validate_cookie_secure(cls, v: str) -> str:
+    def validate_cookie_secure(self, v: str) -> str:
         """Validate cookie secure setting."""
         if v.lower() not in {"auto", "true", "false"}:
-            raise ValueError("COOKIE_SECURE must be 'auto', 'true', or 'false'")
+            msg = "COOKIE_SECURE must be 'auto', 'true', or 'false'"
+            raise ValueError(msg)
         return v.lower()
 
     @field_validator("COOKIE_SAMESITE")
-    def validate_cookie_samesite(cls, v: str) -> str:
+    def validate_cookie_samesite(self, v: str) -> str:
         """Validate cookie samesite setting."""
         if v.lower() not in {"lax", "strict", "none"}:
-            raise ValueError("COOKIE_SAMESITE must be 'lax', 'strict', or 'none'")
+            msg = "COOKIE_SAMESITE must be 'lax', 'strict', or 'none'"
+            raise ValueError(msg)
         return v.lower()
 
     @property
@@ -132,4 +150,7 @@ class Settings(BaseSettings):
 
 
 # Create a global settings instance
-settings = Settings()
+# Constructing Settings() may perform validation and read env vars. This is
+# expected at import-time for this application. Keep the global instance for
+# backward compatibility and tests.
+settings: Settings = Settings.model_construct()

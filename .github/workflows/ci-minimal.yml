@@ -1,0 +1,12 @@
+name: CI Minimal (legacy - disabled)
+
+# Disabled from automatic triggers; kept only for reference.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  checks:
+    if: ${{ false }} # disabled
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Legacy minimal CI disabled; use core-ci.yml"

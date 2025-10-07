@@ -1,6 +1,5 @@
-"""
-Klerno Labs - Advanced Security Hardening Module
-Enterprise-grade security for 0.01% quality applications
+"""Klerno Labs - Advanced Security Hardening Module
+Enterprise-grade security for 0.01% quality applications.
 """
 
 import base64
@@ -13,9 +12,12 @@ from collections import defaultdict, deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from cryptography.fernet import Fernet
+
+if TYPE_CHECKING:
+    from app._typing_shims import ISyncConnection
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +52,10 @@ class ThreatIntelligence:
 class AdvancedSecurityHardening:
     """Advanced security hardening with real-time threat detection."""
 
-    def __init__(self, db_path: str = "./data/security.db"):
+    def __init__(self, db_path: str = "./data/security.db") -> None:
         self.db_path = db_path
-        self.rate_limits: dict[str, deque] = defaultdict(deque)
+        # rate_limits stores timestamps (floats) per IP
+        self.rate_limits: dict[str, deque[float]] = defaultdict(deque)
         self.blocked_ips: set[str] = set()
         self.threat_intel: dict[str, ThreatIntelligence] = {}
         self.security_events: list[SecurityEvent] = []
@@ -82,7 +85,7 @@ class AdvancedSecurityHardening:
         """Initialize security monitoring database."""
         Path(self.db_path).parent.mkdir(exist_ok=True, parents=True)
 
-        conn = sqlite3.connect(self.db_path)
+        conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
         cursor = conn.cursor()
 
         # Security events table
@@ -100,7 +103,7 @@ class AdvancedSecurityHardening:
                 blocked BOOLEAN DEFAULT FALSE,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # Threat intelligence table
@@ -117,7 +120,7 @@ class AdvancedSecurityHardening:
                 description TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # Blocked IPs table
@@ -132,7 +135,7 @@ class AdvancedSecurityHardening:
                 permanent BOOLEAN DEFAULT FALSE,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # Failed authentication attempts
@@ -147,43 +150,43 @@ class AdvancedSecurityHardening:
                 timestamp TEXT NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # Create indexes for performance
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_security_events_ip ON security_events(source_ip)"
+            "CREATE INDEX IF NOT EXISTS idx_security_events_ip ON security_events(source_ip)",
         )
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_security_events_timestamp ON security_events(timestamp)"
+            "CREATE INDEX IF NOT EXISTS idx_security_events_timestamp ON security_events(timestamp)",
         )
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_threat_intel_ip ON threat_intelligence(ip_address)"
+            "CREATE INDEX IF NOT EXISTS idx_threat_intel_ip ON threat_intelligence(ip_address)",
         )
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_blocked_ips_ip ON blocked_ips(ip_address)"
+            "CREATE INDEX IF NOT EXISTS idx_blocked_ips_ip ON blocked_ips(ip_address)",
         )
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_failed_auth_ip ON failed_auth_attempts(ip_address)"
+            "CREATE INDEX IF NOT EXISTS idx_failed_auth_ip ON failed_auth_attempts(ip_address)",
         )
 
         conn.commit()
         conn.close()
 
-        logger.info("✅ Security database initialized")
+    logger.info("[OK] Security database initialized")
 
     def _get_or_create_encryption_key(self) -> bytes:
         """Get or create encryption key for sensitive data."""
         key_file = Path("./data/encryption.key")
 
         if key_file.exists():
-            with open(key_file, "rb") as f:
+            with key_file.open("rb") as f:
                 return f.read()
         else:
             # Generate new key
             key = Fernet.generate_key()
             key_file.parent.mkdir(exist_ok=True, parents=True)
-            with open(key_file, "wb") as f:
+            with key_file.open("wb") as f:
                 f.write(key)
             logger.info("🔐 Generated new encryption key")
             return key
@@ -191,7 +194,7 @@ class AdvancedSecurityHardening:
     def _load_threat_intelligence(self) -> None:
         """Load threat intelligence from database."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             cursor.execute("SELECT * FROM threat_intelligence")
@@ -221,12 +224,14 @@ class AdvancedSecurityHardening:
 
             conn.close()
 
+            loaded_count = len(self.threat_intel)
+            blocked_count = len(self.blocked_ips)
             logger.info(
-                f"✅ Loaded {len(self.threat_intel)} threat indicators and {len(self.blocked_ips)} blocked IPs"
+                f"[OK] Loaded {loaded_count} threat indicators and {blocked_count} blocked IPs",
             )
 
         except Exception as e:
-            logger.error(f"Error loading threat intelligence: {e}")
+            logger.exception(f"Error loading threat intelligence: {e}")
 
     def encrypt_sensitive_data(self, data: str) -> str:
         """Encrypt sensitive data."""
@@ -234,7 +239,7 @@ class AdvancedSecurityHardening:
             encrypted = self.cipher.encrypt(data.encode())
             return base64.b64encode(encrypted).decode()
         except Exception as e:
-            logger.error(f"Encryption error: {e}")
+            logger.exception(f"Encryption error: {e}")
             return data
 
     def decrypt_sensitive_data(self, encrypted_data: str) -> str:
@@ -244,7 +249,7 @@ class AdvancedSecurityHardening:
             decrypted = self.cipher.decrypt(encrypted_bytes)
             return decrypted.decode()
         except Exception as e:
-            logger.error(f"Decryption error: {e}")
+            logger.exception(f"Decryption error: {e}")
             return encrypted_data
 
     def is_ip_blocked(self, ip_address: str) -> bool:
@@ -252,13 +257,16 @@ class AdvancedSecurityHardening:
         return ip_address in self.blocked_ips
 
     def block_ip(
-        self, ip_address: str, reason: str, duration: timedelta | None = None
+        self,
+        ip_address: str,
+        reason: str,
+        duration: timedelta | None = None,
     ) -> None:
         """Block an IP address."""
         self.blocked_ips.add(ip_address)
 
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             blocked_at = datetime.now()
@@ -285,9 +293,13 @@ class AdvancedSecurityHardening:
             logger.warning(f"🚫 Blocked IP {ip_address}: {reason}")
 
         except Exception as e:
-            logger.error(f"Error blocking IP {ip_address}: {e}")
+            logger.exception(f"Error blocking IP {ip_address}: {e}")
 
-    def check_rate_limit(self, ip_address: str, max_requests: int = None) -> bool:
+    def check_rate_limit(
+        self,
+        ip_address: str,
+        max_requests: int | None = None,
+    ) -> bool:
         """Check if IP is within rate limits."""
         max_requests = max_requests or self.max_requests_per_minute
         now = time.time()
@@ -321,7 +333,7 @@ class AdvancedSecurityHardening:
 
     def detect_suspicious_patterns(self, request_data: dict[str, Any]) -> list[str]:
         """Detect suspicious patterns in request data."""
-        suspicious_findings = []
+        suspicious_findings: list[str] = []
 
         # Check URL path
         path = request_data.get("path", "")
@@ -335,7 +347,7 @@ class AdvancedSecurityHardening:
             for pattern in self.suspicious_patterns:
                 if re.search(pattern, str(value), re.IGNORECASE):
                     suspicious_findings.append(
-                        f"Suspicious pattern in parameter {key}: {pattern}"
+                        f"Suspicious pattern in parameter {key}: {pattern}",
                     )
 
         # Check headers
@@ -345,7 +357,7 @@ class AdvancedSecurityHardening:
                 for pattern in self.suspicious_patterns:
                     if re.search(pattern, str(value), re.IGNORECASE):
                         suspicious_findings.append(
-                            f"Suspicious pattern in header {header}: {pattern}"
+                            f"Suspicious pattern in header {header}: {pattern}",
                         )
 
         # Check for common attack indicators
@@ -376,7 +388,7 @@ class AdvancedSecurityHardening:
 
     def analyze_user_agent(self, user_agent: str) -> dict[str, Any]:
         """Analyze user agent for suspicious characteristics."""
-        analysis = {"suspicious": False, "reasons": [], "risk_score": 0}
+        analysis: dict[str, Any] = {"suspicious": False, "reasons": [], "risk_score": 0}
 
         if not user_agent or user_agent.strip() == "":
             analysis["suspicious"] = True
@@ -424,11 +436,12 @@ class AdvancedSecurityHardening:
         # In production, integrate with a real geolocation service
 
         # Placeholder logic - in production, use actual geolocation API
-        risk_analysis = {
+        reasons: list[str] = []
+        risk_analysis: dict[str, Any] = {
             "country": "Unknown",
             "high_risk": False,
             "risk_score": 0,
-            "reasons": [],
+            "reasons": reasons,
         }
 
         # Check if IP is in threat intelligence
@@ -449,7 +462,7 @@ class AdvancedSecurityHardening:
         source_ip: str,
         user_agent: str = "",
         endpoint: str = "",
-        details: dict[str, Any] = None,
+        details: dict[str, Any] | None = None,
         blocked: bool = False,
     ) -> None:
         """Log a security event."""
@@ -467,7 +480,7 @@ class AdvancedSecurityHardening:
         self.security_events.append(event)
 
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -493,16 +506,16 @@ class AdvancedSecurityHardening:
 
             if severity in ["high", "critical"]:
                 logger.warning(
-                    f"🚨 Security event: {event_type} from {source_ip} - {severity}"
+                    f"🚨 Security event: {event_type} from {source_ip} - {severity}",
                 )
 
         except Exception as e:
-            logger.error(f"Error logging security event: {e}")
+            logger.exception(f"Error logging security event: {e}")
 
     def log_failed_auth_attempt(
         self,
         ip_address: str,
-        username: str = None,
+        username: str | None = None,
         endpoint: str = "",
         user_agent: str = "",
     ) -> bool:
@@ -520,7 +533,7 @@ class AdvancedSecurityHardening:
 
         # Log to database
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -536,7 +549,7 @@ class AdvancedSecurityHardening:
             conn.close()
 
         except Exception as e:
-            logger.error(f"Error logging failed auth attempt: {e}")
+            logger.exception(f"Error logging failed auth attempt: {e}")
 
         # Check for brute force
         attempts_count = len(self.failed_attempts[ip_address])
@@ -571,7 +584,7 @@ class AdvancedSecurityHardening:
         user_agent = request_data.get("user_agent", "")
         path = request_data.get("path", "")
 
-        analysis = {
+        analysis: dict[str, Any] = {
             "blocked": False,
             "risk_score": 0,
             "findings": [],
@@ -631,7 +644,8 @@ class AdvancedSecurityHardening:
             # Auto-block very high risk requests
             if analysis["risk_score"] >= 90:
                 self.block_ip(
-                    ip_address, f"Automated block: risk score {analysis['risk_score']}"
+                    ip_address,
+                    f"Automated block: risk score {analysis['risk_score']}",
                 )
                 analysis["blocked"] = True
                 analysis["actions_taken"].append("IP auto-blocked for high risk")
@@ -641,7 +655,7 @@ class AdvancedSecurityHardening:
     def get_security_dashboard_data(self, hours: int = 24) -> dict[str, Any]:
         """Get security dashboard data."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             since = datetime.now() - timedelta(hours=hours)
@@ -658,7 +672,7 @@ class AdvancedSecurityHardening:
                 (since.isoformat(),),
             )
 
-            events_summary = {}
+            events_summary: dict[str, dict[str, int]] = {}
             for row in cursor.fetchall():
                 event_type = row[0]
                 if event_type not in events_summary:
@@ -678,7 +692,7 @@ class AdvancedSecurityHardening:
                 (since.isoformat(),),
             )
 
-            top_blocked_ips = [
+            top_blocked_ips: list[dict[str, int]] = [
                 {"ip": row[0], "events": row[1]} for row in cursor.fetchall()
             ]
 
@@ -717,7 +731,7 @@ class AdvancedSecurityHardening:
             }
 
         except Exception as e:
-            logger.error(f"Error getting security dashboard data: {e}")
+            logger.exception(f"Error getting security dashboard data: {e}")
             return {"error": str(e)}
 
 

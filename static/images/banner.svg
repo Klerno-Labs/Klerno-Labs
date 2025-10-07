@@ -1,0 +1,27 @@
+<svg width="1200" height="300" viewBox="0 0 1200 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bannerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <pattern id="dots" patternUnits="userSpaceOnUse" width="60" height="60">
+      <circle cx="30" cy="30" r="3" fill="rgba(255,255,255,0.1)"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="300" fill="url(#bannerGradient)"/>
+  <rect width="1200" height="300" fill="url(#dots)"/>
+
+  <!-- Main Title -->
+  <text x="600" y="120" text-anchor="middle" fill="white" font-family="Inter, Arial, sans-serif" font-weight="900" font-size="48">Klerno Labs</text>
+
+  <!-- Subtitle -->
+  <text x="600" y="160" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-family="Inter, Arial, sans-serif" font-weight="500" font-size="24">Enterprise Innovation Platform</text>
+
+  <!-- Description -->
+  <text x="600" y="200" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="Inter, Arial, sans-serif" font-weight="400" font-size="16">Empowering enterprises with cutting-edge technology solutions</text>
+
+  <!-- Call to Action -->
+  <rect x="500" y="220" width="200" height="50" rx="25" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+  <text x="600" y="250" text-anchor="middle" fill="white" font-family="Inter, Arial, sans-serif" font-weight="600" font-size="16">Get Started</text>
+</svg>

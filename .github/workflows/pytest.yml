@@ -1,0 +1,12 @@
+name: Run tests (legacy - disabled)
+
+# Disabled from automatic triggers to avoid duplicate runs; core-ci.yml handles tests.
+on:
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    if: ${{ false }} # disabled
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Legacy pytest workflow disabled; use core-ci.yml"

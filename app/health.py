@@ -1,5 +1,4 @@
-"""
-Klerno Labs - Enhanced Health Checks and Monitoring
+"""Klerno Labs - Enhanced Health Checks and Monitoring.
 ==================================================
 Comprehensive health checks and metrics for horizontal scaling
 """
@@ -7,17 +6,40 @@ Comprehensive health checks and metrics for horizontal scaling
 import asyncio
 import time
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import psutil
-import psycopg2
-import redis
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from ._typing_shims import IRedisLike
+
+psycopg2: Any | None = None
+try:
+    import psycopg2 as _psycopg2
+
+    psycopg2 = _psycopg2
+except Exception:
+    psycopg2 = None
+
+redis_lib: Any | None = None
+try:
+    import redis as _redis_lib
+
+    redis_lib = _redis_lib
+except Exception:
+    redis_lib = None
+
+# FastAPI / Pydantic are lightweight and used by the health endpoints; import at module
+# scope after optional heavy deps to avoid surprising import-time failures in minimal
+# dev environments used for tests. (Imports already performed above.)
+
 
 class HealthStatus(BaseModel):
-    """Health check response model"""
+    """Health check response model."""
 
     status: str
     timestamp: str
@@ -30,7 +52,7 @@ class HealthStatus(BaseModel):
 
 
 class MetricsResponse(BaseModel):
-    """Metrics response model"""
+    """Metrics response model."""
 
     timestamp: str
     instance_id: str | None = None
@@ -41,9 +63,9 @@ class MetricsResponse(BaseModel):
 
 
 class HealthChecker:
-    """Comprehensive health checking for all services"""
+    """Comprehensive health checking for all services."""
 
-    def __init__(self, app: FastAPI):
+    def __init__(self, app: FastAPI) -> None:
         self.app = app
         self.start_time = time.time()
         self.version = "1.0.0"  # Should be loaded from environment
@@ -51,7 +73,7 @@ class HealthChecker:
         self.instance_id = None  # Should be loaded from environment
 
     async def check_database(self) -> dict[str, Any]:
-        """Check PostgreSQL database connectivity and performance"""
+        """Check PostgreSQL database connectivity and performance."""
         try:
             # Use connection from settings
             from app.settings import get_settings
@@ -70,6 +92,13 @@ class HealthChecker:
             start_time = time.time()
 
             # Simple connection test
+            if psycopg2 is None:
+                return {
+                    "status": "unknown",
+                    "message": "psycopg2 not available in this environment",
+                    "response_time_ms": 0,
+                }
+
             conn = psycopg2.connect(db_url)
             cursor = conn.cursor()
             cursor.execute("SELECT 1")
@@ -89,19 +118,32 @@ class HealthChecker:
         except Exception as e:
             return {
                 "status": "unhealthy",
-                "message": f"Database connection failed: {str(e)}",
+                "message": f"Database connection failed: {e!s}",
                 "response_time_ms": 0,
             }
 
     async def check_cache(self) -> dict[str, Any]:
-        """Check Redis cache connectivity and performance"""
+        """Check Redis cache connectivity and performance."""
         try:
             start_time = time.time()
 
             # Use Redis URL from settings
-            redis_client = redis.Redis.from_url(
-                "redis://redis:6379 / 0", decode_responses=True
+            if redis_lib is None:
+                return {
+                    "status": "unknown",
+                    "message": "redis library not available",
+                    "response_time_ms": 0,
+                }
+
+            # Correct Redis URL (no spaces) and use the imported redis_lib
+            redis_client = redis_lib.Redis.from_url(
+                "redis://redis:6379/0",
+                decode_responses=True,
             )
+            redis_client = cast("IRedisLike", redis_client)
+
+            # Ensure redis_client is not None for static analysis; runtime still handles exceptions
+            assert redis_client is not None
 
             # Test basic operations
             test_key = "health_check_test"
@@ -111,27 +153,35 @@ class HealthChecker:
 
             response_time = (time.time() - start_time) * 1000
 
-            # Get cache info
+            # Get cache info and normalize result to a mapping
             info = redis_client.info()
+            # redis client implementations can return awaitable results in some environments
+            info_obj = await info if asyncio.iscoroutine(info) else info
+            # Cast to a mapping for the type checker; runtime will still work with dict-like objects
+            info_obj = cast("Mapping[str, Any]", info_obj)
 
+            # Now use info_obj as a mapping safely
             return {
                 "status": "healthy",
                 "message": "Cache connection successful",
                 "response_time_ms": round(response_time, 2),
-                "memory_usage_mb": round(info.get("used_memory", 0) / 1024 / 1024, 2),
-                "connected_clients": info.get("connected_clients", 0),
-                "total_commands_processed": info.get("total_commands_processed", 0),
+                "memory_usage_mb": round(
+                    info_obj.get("used_memory", 0) / 1024 / 1024,
+                    2,
+                ),
+                "connected_clients": info_obj.get("connected_clients", 0),
+                "total_commands_processed": info_obj.get("total_commands_processed", 0),
             }
 
         except Exception as e:
             return {
                 "status": "unhealthy",
-                "message": f"Cache connection failed: {str(e)}",
+                "message": f"Cache connection failed: {e!s}",
                 "response_time_ms": 0,
             }
 
     async def check_external_apis(self) -> dict[str, Any]:
-        """Check external API dependencies"""
+        """Check external API dependencies."""
         checks = {}
 
         # XRPL Network check
@@ -140,8 +190,12 @@ class HealthChecker:
 
             async with aiohttp.ClientSession() as session:
                 start_time = time.time()
+                from aiohttp import ClientTimeout
+
+                timeout = ClientTimeout(total=5)
                 async with session.get(
-                    "https://s2.ripple.com:51234", timeout=5
+                    "https://s2.ripple.com:51234",
+                    timeout=timeout,
                 ) as response:
                     response_time = (time.time() - start_time) * 1000
                     checks["xrpl"] = {
@@ -152,14 +206,14 @@ class HealthChecker:
         except Exception as e:
             checks["xrpl"] = {
                 "status": "unhealthy",
-                "message": f"XRPL connection failed: {str(e)}",
+                "message": f"XRPL connection failed: {e!s}",
                 "response_time_ms": 0,
             }
 
         return checks
 
     def get_system_metrics(self) -> dict[str, Any]:
-        """Get system resource metrics"""
+        """Get system resource metrics."""
         try:
             # CPU metrics
             cpu_percent = psutil.cpu_percent(interval=1)
@@ -186,29 +240,39 @@ class HealthChecker:
                     "total_gb": round(disk.total / 1024 / 1024 / 1024, 2),
                     "free_gb": round(disk.free / 1024 / 1024 / 1024, 2),
                     "used_gb": round(disk.used / 1024 / 1024 / 1024, 2),
-                    "percent": round((disk.used / disk.total) * 100, 2),
+                    "percent": (
+                        round((disk.used / disk.total) * 100, 2)
+                        if getattr(disk, "total", 0)
+                        else 0
+                    ),
                 },
                 "network": {
-                    "bytes_sent": network.bytes_sent,
-                    "bytes_recv": network.bytes_recv,
-                    "packets_sent": network.packets_sent,
-                    "packets_recv": network.packets_recv,
+                    "bytes_sent": getattr(network, "bytes_sent", 0),
+                    "bytes_recv": getattr(network, "bytes_recv", 0),
+                    "packets_sent": getattr(network, "packets_sent", 0),
+                    "packets_recv": getattr(network, "packets_recv", 0),
                 },
             }
         except Exception as e:
-            return {"error": f"Failed to get system metrics: {str(e)}"}
+            return {"error": f"Failed to get system metrics: {e!s}"}
 
     async def comprehensive_health_check(self) -> HealthStatus:
-        """Perform comprehensive health check"""
+        """Perform comprehensive health check."""
         start_time = time.time()
 
-        # Run all checks concurrently
-        database_check, cache_check, external_checks = await asyncio.gather(
+        # Run all checks concurrently and assign explicitly to avoid
+        # ambiguous multiple-assignment types that confuse static analysis.
+        results = await asyncio.gather(
             self.check_database(),
             self.check_cache(),
             self.check_external_apis(),
             return_exceptions=True,
         )
+
+        # Each result may be a dict or an Exception when return_exceptions=True
+        database_check: dict[str, Any] | BaseException = results[0]
+        cache_check: dict[str, Any] | BaseException = results[1]
+        external_checks: dict[str, Any] | BaseException = results[2]
 
         # Determine overall status
         checks = {
@@ -251,7 +315,7 @@ class HealthChecker:
         )
 
     async def get_metrics(self) -> MetricsResponse:
-        """Get comprehensive metrics for monitoring"""
+        """Get comprehensive metrics for monitoring."""
         try:
             # Get system metrics
             system_metrics = self.get_system_metrics()
@@ -265,10 +329,12 @@ class HealthChecker:
                 "threads": psutil.Process().num_threads(),
                 "memory_info": {
                     "rss_mb": round(
-                        psutil.Process().memory_info().rss / 1024 / 1024, 2
+                        psutil.Process().memory_info().rss / 1024 / 1024,
+                        2,
                     ),
                     "vms_mb": round(
-                        psutil.Process().memory_info().vms / 1024 / 1024, 2
+                        psutil.Process().memory_info().vms / 1024 / 1024,
+                        2,
                     ),
                 },
                 "cpu_percent": psutil.Process().cpu_percent(),
@@ -292,8 +358,8 @@ class HealthChecker:
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to get metrics: {str(e)}",
-            )
+                detail=f"Failed to get metrics: {e!s}",
+            ) from e
 
 
 # Global instance
@@ -301,15 +367,18 @@ health_checker = None
 
 
 def init_health_checker(app: FastAPI) -> HealthChecker:
-    """Initialize health checker"""
+    """Initialize health checker."""
+    # Assign the module-level health_checker so callers can retrieve it
+    # using get_health_checker(). We intentionally bind here.
     global health_checker
     health_checker = HealthChecker(app)
     return health_checker
 
 
 def get_health_checker() -> HealthChecker:
-    """Get health checker instance"""
-    global health_checker
+    """Get health checker instance."""
+    # No global statement required for read access; just ensure it's initialized.
     if health_checker is None:
-        raise RuntimeError("Health checker not initialized")
+        msg = "Health checker not initialized"
+        raise RuntimeError(msg)
     return health_checker

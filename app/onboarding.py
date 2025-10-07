@@ -1,6 +1,5 @@
-"""
-Onboarding and User Experience Module for Klerno Labs
-Provides guided onboarding, in - app tutorials, and user experience enhancements
+"""Onboarding and User Experience Module for Klerno Labs
+Provides guided onboarding, in - app tutorials, and user experience enhancements.
 """
 
 from datetime import UTC, datetime
@@ -11,7 +10,7 @@ from pydantic import BaseModel
 
 
 class OnboardingStep(str, Enum):
-    """Enumeration of onboarding steps"""
+    """Enumeration of onboarding steps."""
 
     WELCOME = "welcome"
     API_KEY_SETUP = "api_key_setup"
@@ -23,7 +22,7 @@ class OnboardingStep(str, Enum):
 
 
 class GuideType(str, Enum):
-    """Types of in - app guides"""
+    """Types of in - app guides."""
 
     ONBOARDING = "onboarding"
     FEATURE_INTRO = "feature_intro"
@@ -32,7 +31,7 @@ class GuideType(str, Enum):
 
 
 class OnboardingProgress(BaseModel):
-    """User's onboarding progress"""
+    """User's onboarding progress."""
 
     user_id: int
     current_step: OnboardingStep
@@ -45,7 +44,7 @@ class OnboardingProgress(BaseModel):
 
 
 class GuideStep(BaseModel):
-    """Individual step in a guide"""
+    """Individual step in a guide."""
 
     id: str
     title: str
@@ -57,7 +56,7 @@ class GuideStep(BaseModel):
 
 
 class Guide(BaseModel):
-    """In - app guide definition"""
+    """In - app guide definition."""
 
     id: str
     name: str
@@ -70,14 +69,14 @@ class Guide(BaseModel):
 
 
 class OnboardingManager:
-    """Manages user onboarding and guides"""
+    """Manages user onboarding and guides."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.guides = self._initialize_guides()
         self.user_progress: dict[int, OnboardingProgress] = {}
 
     def _initialize_guides(self) -> dict[str, Guide]:
-        """Initialize built - in guides"""
+        """Initialize built - in guides."""
         guides = {}
 
         # Main onboarding guide
@@ -91,28 +90,40 @@ class OnboardingManager:
                 GuideStep(
                     id="welcome",
                     title="Welcome to Klerno Labs!",
-                    content="Welcome to the world's most advanced AML risk intelligence platform. Let's get you set up in just a few steps.",
+                    content=(
+                        "Welcome to the world's most advanced AML risk intelligence "
+                        "platform. Let's get you set up in just a few steps."
+                    ),
                     target_element=".navbar - brand",
                     position="bottom",
                 ),
                 GuideStep(
                     id="dashboard_overview",
                     title="Your Analytics Dashboard",
-                    content="This is your main dashboard where you'll see real - time transaction analytics, risk scores, and alerts.",
+                    content=(
+                        "This is your main dashboard where you'll see real - time "
+                        "transaction analytics, risk scores, and alerts."
+                    ),
                     target_element=".metrics - overview",
                     position="bottom",
                 ),
                 GuideStep(
                     id="quick_actions",
                     title="Quick Actions",
-                    content="Use these buttons to analyze sample data, fetch XRPL transactions, or export your results.",
+                    content=(
+                        "Use these buttons to analyze sample data, fetch XRPL "
+                        "transactions, or export your results."
+                    ),
                     target_element=".quick - actions",
                     position="top",
                 ),
                 GuideStep(
                     id="load_sample",
                     title="Try Sample Data",
-                    content="Click 'Load demo data' to see how Klerno Labs analyzes transactions and identifies risks.",
+                    content=(
+                        "Click 'Load demo data' to see how Klerno Labs analyzes "
+                        "transactions and identifies risks."
+                    ),
                     target_element="button:contains('Load demo data')",
                     position="top",
                     action_required=True,
@@ -121,7 +132,10 @@ class OnboardingManager:
                 GuideStep(
                     id="view_results",
                     title="Review the Results",
-                    content="Great! Now you can see how transactions are categorized and scored for risk. High - risk transactions appear in red.",
+                    content=(
+                        "Great! Now you can see how transactions are categorized "
+                        "and scored for risk. High - risk transactions appear in red."
+                    ),
                     target_element=".recent - transactions",
                     position="top",
                 ),
@@ -138,7 +152,10 @@ class OnboardingManager:
                 GuideStep(
                     id="api_importance",
                     title="Why API Keys Matter",
-                    content="API keys allow you to programmatically access Klerno Labs functionality and integrate with your existing systems.",
+                    content=(
+                        "API keys allow you to programmatically access Klerno Labs "
+                        "functionality and integrate with your existing systems."
+                    ),
                     target_element=".nav - link[href*='admin']",
                     position="bottom",
                 ),
@@ -165,21 +182,30 @@ class OnboardingManager:
                 GuideStep(
                     id="explore_tab",
                     title="Explore Transactions",
-                    content="Use the Explore tab to search and filter transactions with advanced criteria.",
+                    content=(
+                        "Use the Explore tab to search and filter transactions with "
+                        "advanced criteria."
+                    ),
                     target_element="tab[name='Explore']",
                     position="bottom",
                 ),
                 GuideStep(
                     id="alerts_system",
                     title="Smart Alerts",
-                    content="The Alerts tab shows high - risk transactions that need your attention, complete with AI explanations.",
+                    content=(
+                        "The Alerts tab shows high - risk transactions that need your "
+                        "attention, complete with AI explanations."
+                    ),
                     target_element="tab[name='Alerts']",
                     position="bottom",
                 ),
                 GuideStep(
                     id="profile_reports",
                     title="Compliance Reports",
-                    content="Generate compliance reports and export data in formats suitable for regulatory filing.",
+                    content=(
+                        "Generate compliance reports and export data in formats "
+                        "suitable for regulatory filing."
+                    ),
                     target_element="tab[name='Profile']",
                     position="bottom",
                 ),
@@ -189,11 +215,11 @@ class OnboardingManager:
         return guides
 
     def get_user_progress(self, user_id: int) -> OnboardingProgress | None:
-        """Get onboarding progress for a user"""
+        """Get onboarding progress for a user."""
         return self.user_progress.get(user_id)
 
     def start_onboarding(self, user_id: int) -> OnboardingProgress:
-        """Start onboarding for a new user"""
+        """Start onboarding for a new user."""
         progress = OnboardingProgress(
             user_id=user_id,
             current_step=OnboardingStep.WELCOME,
@@ -206,9 +232,12 @@ class OnboardingManager:
         return progress
 
     def advance_step(
-        self, user_id: int, step: OnboardingStep, skipped: bool = False
+        self,
+        user_id: int,
+        step: OnboardingStep,
+        skipped: bool = False,
     ) -> OnboardingProgress:
-        """Advance user to the next onboarding step"""
+        """Advance user to the next onboarding step."""
         progress = self.user_progress.get(user_id)
         if not progress:
             progress = self.start_onboarding(user_id)
@@ -219,7 +248,7 @@ class OnboardingManager:
             progress.completed_steps.append(step)
 
         # Determine next step
-        all_steps = list(OnboardingStep)
+        all_steps = list[Any](OnboardingStep)
         current_index = all_steps.index(progress.current_step)
 
         if current_index < len(all_steps) - 1:
@@ -233,7 +262,7 @@ class OnboardingManager:
         return progress
 
     def get_available_guides(self, user_id: int) -> list[Guide]:
-        """Get guides available to a user based on their progress"""
+        """Get guides available to a user based on their progress."""
         progress = self.user_progress.get(user_id)
         if not progress:
             return [guide for guide in self.guides.values() if guide.auto_start]
@@ -248,8 +277,8 @@ class OnboardingManager:
 
         return available
 
-    def mark_guide_completed(self, user_id: int, guide_id: str):
-        """Mark a guide as completed for a user"""
+    def mark_guide_completed(self, user_id: int, guide_id: str) -> None:
+        """Mark a guide as completed for a user."""
         progress = self.user_progress.get(user_id)
         if not progress:
             return
@@ -258,7 +287,7 @@ class OnboardingManager:
         progress.last_active = datetime.now(UTC)
 
     def get_next_suggested_action(self, user_id: int) -> dict[str, Any] | None:
-        """Get the next suggested action for a user"""
+        """Get the next suggested action for a user."""
         progress = self.user_progress.get(user_id)
         if not progress:
             return {
@@ -305,13 +334,13 @@ class OnboardingManager:
 
 
 class ContextualHelp:
-    """Provides contextual help and tips throughout the application"""
+    """Provides contextual help and tips throughout the application."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.tips = self._initialize_tips()
 
     def _initialize_tips(self) -> dict[str, dict[str, Any]]:
-        """Initialize contextual help tips"""
+        """Initialize contextual help tips."""
         return {
             "dashboard": {
                 "title": "Dashboard Overview",
@@ -352,11 +381,11 @@ class ContextualHelp:
         }
 
     def get_tips_for_section(self, section: str) -> dict[str, Any] | None:
-        """Get contextual tips for a specific section"""
+        """Get contextual tips for a specific section."""
         return self.tips.get(section)
 
     def get_quick_tip(self, user_experience_level: str = "beginner") -> dict[str, str]:
-        """Get a quick tip based on user experience level"""
+        """Get a quick tip based on user experience level."""
         tips_by_level = {
             "beginner": [
                 "Start by loading sample data to see how the system works",
@@ -379,9 +408,9 @@ class ContextualHelp:
         }
 
         tips = tips_by_level.get(user_experience_level, tips_by_level["beginner"])
-        import random
+        import random  # nosec B311
 
-        selected_tip = random.choice(tips)
+        selected_tip = random.choice(tips)  # nosec B311
 
         # Use the actual level that has tips, not the requested level
         actual_level = (

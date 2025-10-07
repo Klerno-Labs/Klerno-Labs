@@ -1,0 +1,553 @@
+
+/* ===================================================================
+   KLERNO LABS PREMIUM UI FRAMEWORK
+   Top 0.1% Enterprise Design System
+   ================================================================= */
+
+/* CSS Variables for Design System */
+:root {
+    /* Premium Color Palette */
+    --klerno-primary: #6366f1;
+    --klerno-primary-dark: #4f46e5;
+    --klerno-primary-light: #818cf8;
+    --klerno-secondary: #ec4899;
+    --klerno-accent: #06b6d4;
+    --klerno-success: #10b981;
+    --klerno-warning: #f59e0b;
+    --klerno-error: #ef4444;
+
+    /* Neutral Palette */
+    --klerno-white: #ffffff;
+    --klerno-gray-50: #f9fafb;
+    --klerno-gray-100: #f3f4f6;
+    --klerno-gray-200: #e5e7eb;
+    --klerno-gray-300: #d1d5db;
+    --klerno-gray-400: #9ca3af;
+    --klerno-gray-500: #6b7280;
+    --klerno-gray-600: #4b5563;
+    --klerno-gray-700: #374151;
+    --klerno-gray-800: #1f2937;
+    --klerno-gray-900: #111827;
+
+    /* Typography */
+    --klerno-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --klerno-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    /* Spacing */
+    --klerno-space-xs: 0.25rem;
+    --klerno-space-sm: 0.5rem;
+    --klerno-space-md: 1rem;
+    --klerno-space-lg: 1.5rem;
+    --klerno-space-xl: 2rem;
+    --klerno-space-2xl: 3rem;
+    --klerno-space-3xl: 4rem;
+
+    /* Border Radius */
+    --klerno-radius-sm: 0.25rem;
+    --klerno-radius-md: 0.5rem;
+    --klerno-radius-lg: 0.75rem;
+    --klerno-radius-xl: 1rem;
+    --klerno-radius-2xl: 1.5rem;
+
+    /* Shadows */
+    --klerno-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --klerno-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --klerno-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --klerno-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --klerno-shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+    /* Transitions */
+    --klerno-transition-fast: 150ms ease-in-out;
+    --klerno-transition-medium: 250ms ease-in-out;
+    --klerno-transition-slow: 350ms ease-in-out;
+}
+
+/* ===================================================================
+   GLOBAL STYLES & RESET
+   ================================================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+}
+
+body {
+    font-family: var(--klerno-font-primary);
+    line-height: 1.6;
+    color: var(--klerno-gray-800);
+    background: linear-gradient(135deg, var(--klerno-gray-50) 0%, var(--klerno-gray-100) 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ===================================================================
+   PREMIUM LAYOUT SYSTEM
+   ================================================================= */
+
+.klerno-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 var(--klerno-space-lg);
+}
+
+.klerno-grid {
+    display: grid;
+    gap: var(--klerno-space-lg);
+}
+
+.klerno-grid-2 { grid-template-columns: repeat(2, 1fr); }
+.klerno-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.klerno-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+.klerno-flex {
+    display: flex;
+    gap: var(--klerno-space-md);
+}
+
+.klerno-flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.klerno-flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ===================================================================
+   PREMIUM HEADER & NAVIGATION
+   ================================================================= */
+
+.klerno-header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--klerno-gray-200);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: var(--klerno-transition-medium);
+}
+
+.klerno-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--klerno-space-md) var(--klerno-space-lg);
+}
+
+.klerno-logo {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--klerno-primary);
+    text-decoration: none;
+    background: linear-gradient(135deg, var(--klerno-primary), var(--klerno-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.klerno-nav-links {
+    display: flex;
+    list-style: none;
+    gap: var(--klerno-space-lg);
+}
+
+.klerno-nav-link {
+    color: var(--klerno-gray-600);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--klerno-transition-fast);
+    position: relative;
+}
+
+.klerno-nav-link:hover {
+    color: var(--klerno-primary);
+}
+
+.klerno-nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--klerno-primary), var(--klerno-secondary));
+    transition: var(--klerno-transition-fast);
+}
+
+.klerno-nav-link:hover::after {
+    width: 100%;
+}
+
+/* ===================================================================
+   PREMIUM BUTTONS & INTERACTIVE ELEMENTS
+   ================================================================= */
+
+.klerno-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--klerno-space-sm);
+    padding: var(--klerno-space-sm) var(--klerno-space-lg);
+    border: none;
+    border-radius: var(--klerno-radius-lg);
+    font-family: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--klerno-transition-fast);
+    position: relative;
+    overflow: hidden;
+}
+
+.klerno-btn:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: var(--klerno-transition-medium);
+}
+
+.klerno-btn:hover:before {
+    left: 100%;
+}
+
+.klerno-btn-primary {
+    background: linear-gradient(135deg, var(--klerno-primary), var(--klerno-primary-dark));
+    color: white;
+    box-shadow: var(--klerno-shadow-md);
+}
+
+.klerno-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--klerno-shadow-lg);
+}
+
+.klerno-btn-secondary {
+    background: var(--klerno-white);
+    color: var(--klerno-primary);
+    border: 2px solid var(--klerno-primary);
+}
+
+.klerno-btn-secondary:hover {
+    background: var(--klerno-primary);
+    color: white;
+}
+
+.klerno-btn-success {
+    background: linear-gradient(135deg, var(--klerno-success), #059669);
+    color: white;
+}
+
+/* ===================================================================
+   PREMIUM CARDS & PANELS
+   ================================================================= */
+
+.klerno-card {
+    background: var(--klerno-white);
+    border-radius: var(--klerno-radius-xl);
+    box-shadow: var(--klerno-shadow-sm);
+    border: 1px solid var(--klerno-gray-200);
+    overflow: hidden;
+    transition: all var(--klerno-transition-medium);
+}
+
+.klerno-card:hover {
+    box-shadow: var(--klerno-shadow-xl);
+    transform: translateY(-4px);
+}
+
+.klerno-card-header {
+    padding: var(--klerno-space-lg);
+    border-bottom: 1px solid var(--klerno-gray-200);
+    background: linear-gradient(135deg, var(--klerno-gray-50), var(--klerno-white));
+}
+
+.klerno-card-body {
+    padding: var(--klerno-space-lg);
+}
+
+.klerno-card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--klerno-gray-800);
+    margin-bottom: var(--klerno-space-sm);
+}
+
+.klerno-card-subtitle {
+    color: var(--klerno-gray-600);
+    font-size: 0.875rem;
+}
+
+/* ===================================================================
+   PREMIUM DASHBOARD COMPONENTS
+   ================================================================= */
+
+.klerno-dashboard {
+    padding: var(--klerno-space-2xl) 0;
+}
+
+.klerno-stat-card {
+    background: linear-gradient(135deg, var(--klerno-white), var(--klerno-gray-50));
+    border-radius: var(--klerno-radius-xl);
+    padding: var(--klerno-space-xl);
+    box-shadow: var(--klerno-shadow-md);
+    border: 1px solid var(--klerno-gray-200);
+    position: relative;
+    overflow: hidden;
+}
+
+.klerno-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--klerno-primary), var(--klerno-secondary));
+}
+
+.klerno-stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--klerno-gray-800);
+    margin-bottom: var(--klerno-space-sm);
+}
+
+.klerno-stat-label {
+    color: var(--klerno-gray-600);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.875rem;
+}
+
+.klerno-stat-change {
+    margin-top: var(--klerno-space-sm);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.klerno-stat-change.positive {
+    color: var(--klerno-success);
+}
+
+.klerno-stat-change.negative {
+    color: var(--klerno-error);
+}
+
+/* ===================================================================
+   PREMIUM FORMS
+   ================================================================= */
+
+.klerno-form-group {
+    margin-bottom: var(--klerno-space-lg);
+}
+
+.klerno-label {
+    display: block;
+    font-weight: 600;
+    color: var(--klerno-gray-700);
+    margin-bottom: var(--klerno-space-sm);
+}
+
+.klerno-input {
+    width: 100%;
+    padding: var(--klerno-space-md);
+    border: 2px solid var(--klerno-gray-300);
+    border-radius: var(--klerno-radius-lg);
+    font-family: inherit;
+    font-size: 1rem;
+    transition: var(--klerno-transition-fast);
+    background: var(--klerno-white);
+}
+
+.klerno-input:focus {
+    outline: none;
+    border-color: var(--klerno-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* ===================================================================
+   PREMIUM ANIMATIONS
+   ================================================================= */
+
+@keyframes klerno-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes klerno-slide-in {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes klerno-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes klerno-gradient-shift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.klerno-animate-fade-in {
+    animation: klerno-fade-in 0.6s ease-out;
+}
+
+.klerno-animate-slide-in {
+    animation: klerno-slide-in 0.5s ease-out;
+}
+
+.klerno-animate-pulse {
+    animation: klerno-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.klerno-gradient-animated {
+    background: linear-gradient(-45deg, var(--klerno-primary), var(--klerno-secondary), var(--klerno-accent), var(--klerno-primary));
+    background-size: 400% 400%;
+    animation: klerno-gradient-shift 15s ease infinite;
+}
+
+/* ===================================================================
+   PREMIUM RESPONSIVE DESIGN
+   ================================================================= */
+
+@media (max-width: 768px) {
+    .klerno-grid-2,
+    .klerno-grid-3,
+    .klerno-grid-4 {
+        grid-template-columns: 1fr;
+    }
+
+    .klerno-nav {
+        flex-direction: column;
+        gap: var(--klerno-space-md);
+    }
+
+    .klerno-nav-links {
+        gap: var(--klerno-space-md);
+    }
+
+    .klerno-stat-value {
+        font-size: 2rem;
+    }
+
+    .klerno-container {
+        padding: 0 var(--klerno-space-md);
+    }
+}
+
+/* ===================================================================
+   PREMIUM UTILITY CLASSES
+   ================================================================= */
+
+.klerno-text-center { text-align: center; }
+.klerno-text-left { text-align: left; }
+.klerno-text-right { text-align: right; }
+
+.klerno-text-primary { color: var(--klerno-primary); }
+.klerno-text-secondary { color: var(--klerno-secondary); }
+.klerno-text-success { color: var(--klerno-success); }
+.klerno-text-warning { color: var(--klerno-warning); }
+.klerno-text-error { color: var(--klerno-error); }
+
+.klerno-bg-primary { background-color: var(--klerno-primary); }
+.klerno-bg-gradient { background: linear-gradient(135deg, var(--klerno-primary), var(--klerno-secondary)); }
+
+.klerno-shadow-sm { box-shadow: var(--klerno-shadow-sm); }
+.klerno-shadow-md { box-shadow: var(--klerno-shadow-md); }
+.klerno-shadow-lg { box-shadow: var(--klerno-shadow-lg); }
+.klerno-shadow-xl { box-shadow: var(--klerno-shadow-xl); }
+
+.klerno-rounded-sm { border-radius: var(--klerno-radius-sm); }
+.klerno-rounded-md { border-radius: var(--klerno-radius-md); }
+.klerno-rounded-lg { border-radius: var(--klerno-radius-lg); }
+.klerno-rounded-xl { border-radius: var(--klerno-radius-xl); }
+
+/* ===================================================================
+   PREMIUM LOADING STATES
+   ================================================================= */
+
+.klerno-loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.klerno-loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: klerno-shimmer 2s infinite;
+}
+
+@keyframes klerno-shimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* ===================================================================
+   PREMIUM DARK MODE SUPPORT
+   ================================================================= */
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --klerno-gray-50: #1f2937;
+        --klerno-gray-100: #374151;
+        --klerno-gray-200: #4b5563;
+        --klerno-white: #1f2937;
+    }
+
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #e2e8f0;
+    }
+
+    .klerno-header {
+        background: rgba(15, 23, 42, 0.95);
+        border-bottom-color: #334155;
+    }
+
+    .klerno-card {
+        background: #1e293b;
+        border-color: #334155;
+    }
+}

@@ -1,0 +1,178 @@
+# DISABLED WORKFLOW - Contains references to missing production secrets
+# This workflow is disabled to prevent linting errors in development
+#
+# To re-enable this workflow:
+# 1. Set up required production secrets
+# 2. Uncomment the workflow definition below
+# 3. Test in staging environment first
+
+name: "DISABLED - Nightly Staging Smoke"
+on:
+  workflow_dispatch: {}
+jobs:
+  disabled:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Workflow Disabled"
+        run: echo "This workflow is currently disabled for development"
+# on:
+#   schedule:
+#     - cron: '0 3 * * *'  # daily at 03:00 UTC
+#   workflow_dispatch: {}
+#
+# jobs:
+#   nightly-smoke:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+#
+#       - name: Set up Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: '3.11'
+#
+#       - name: Install deps
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install httpx
+#
+#       - name: Run scheduled smoke test
+#         env:
+#           STAGING_URL: ${{ secrets.STAGING_URL }}
+#         run: |
+#           mkdir -p .run || true
+#           if [ -z "$STAGING_URL" ]; then
+#             echo 'STAGING_URL secret not set; aborting' && exit 2
+#           fi
+#           python tools/prod_smoke_test.py --url "$STAGING_URL" --token-file .run/dev_tokens.json > .run/scheduled-smoke.txt 2>&1 || true
+#
+#       - name: Upload artifact
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: scheduled-smoke
+#           path: .run/scheduled-smoke.txt
+#           if-no-files-found: warn
+#
+#       - name: Fail detection
+#         id: detect
+#         run: |
+#           set -e
+#           status="no-output"
+#           if [ -f .run/scheduled-smoke.txt ]; then
+#             if grep -q "FAIL" .run/scheduled-smoke.txt || grep -q "ERROR" .run/scheduled-smoke.txt; then
+#               status="failed"
+#             else
+#               status="ok"
+#             fi
+#           fi
+#           echo "smoke_status=$status" >> $GITHUB_OUTPUT
+#           mkdir -p .run || true
+#           echo "$status" > .run/smoke-status.txt
+#
+#       - name: Create issue on failure
+#         if: steps.detect.outputs.smoke_status == 'failed'
+#         uses: actions/github-script@v7
+#         env:
+#           SMOKE_ALERT_ISSUE_LABELS: ${{ secrets.SMOKE_ALERT_ISSUE_LABELS }}
+#           SMOKE_ALERT_ISSUE_ASSIGNEES: ${{ secrets.SMOKE_ALERT_ISSUE_ASSIGNEES }}
+#         with:
+#           github-token: ${{ secrets.GITHUB_TOKEN }}
+#           script: |
+#             const fs = require('fs');
+#             const status = fs.existsSync('.run/smoke-status.txt') ? fs.readFileSync('.run/smoke-status.txt','utf8').trim() : 'no-output';
+#             if (status !== 'failed') { console.log('No failure detected; skipping issue creation.'); return; }
+#             const bodyText = fs.existsSync('.run/scheduled-smoke.txt') ? fs.readFileSync('.run/scheduled-smoke.txt','utf8') : 'No output available';
+#             const title = `Nightly smoke test failed for ${context.repo.owner}/${context.repo.repo} on ${new Date().toISOString()}`;
+#             const issueBody = `Nightly smoke test failure:\n\n---\n\n${bodyText}`;
+#             const params = { owner: context.repo.owner, repo: context.repo.repo, title, body: issueBody };
+#             const labelsEnv = process.env.SMOKE_ALERT_ISSUE_LABELS || '';
+#             const assigneesEnv = process.env.SMOKE_ALERT_ISSUE_ASSIGNEES || '';
+#             if (labelsEnv) {
+#               const labels = labelsEnv.split(',').map(s => s.trim()).filter(Boolean);
+#               if (labels.length) params.labels = labels;
+#             }
+#             if (assigneesEnv) {
+#               const assignees = assigneesEnv.split(',').map(s => s.trim()).filter(Boolean);
+#               if (assignees.length) params.assignees = assignees;
+#             }
+#             await github.rest.issues.create(params);
+#
+#       - name: Post webhook alert on failure
+#         if: steps.detect.outputs.smoke_status == 'failed'
+#         uses: actions/github-script@v7
+#         env:
+#           SMOKE_ALERT_WEBHOOK: ${{ secrets.SMOKE_ALERT_WEBHOOK }}
+#           SMOKE_ALERT_MENTION: ${{ secrets.SMOKE_ALERT_MENTION }}
+#           SMOKE_ALERT_SECRET: ${{ secrets.SMOKE_ALERT_SECRET }}
+#         with:
+#           github-token: ${{ secrets.GITHUB_TOKEN }}
+#           script: |
+#             const fs = require('fs');
+#             const crypto = require('crypto');
+#             const webhook = process.env.SMOKE_ALERT_WEBHOOK;
+#             if (!webhook) { core.info('SMOKE_ALERT_WEBHOOK not set; skipping webhook alert'); return; }
+#             const status = fs.existsSync('.run/smoke-status.txt') ? fs.readFileSync('.run/smoke-status.txt','utf8').trim() : 'no-output';
+#             if (status !== 'failed') { core.info('No failure detected; skipping webhook alert.'); return; }
+#             let bodyText = 'No output available';
+#             try {
+#               bodyText = fs.existsSync('.run/scheduled-smoke.txt') ? fs.readFileSync('.run/scheduled-smoke.txt','utf8') : bodyText;
+#             } catch (err) { console.log('Failed reading scheduled-smoke.txt: ' + String(err)); }
+#             if (bodyText.length > 3500) bodyText = bodyText.slice(0,3500) + '\n\n...[truncated]';
+#             const repo = context.repo.owner + '/' + context.repo.repo;
+#             const runId = process.env.GITHUB_RUN_ID || '';
+#             const runUrl = runId ? `${process.env.GITHUB_SERVER_URL}/${repo}/actions/runs/${runId}` : '';
+#             const mention = process.env.SMOKE_ALERT_MENTION ? `${process.env.SMOKE_ALERT_MENTION} ` : '';
+#             const message = `${mention}Nightly smoke FAILED for ${repo} (run ${runId})\n${runUrl}\n\n${bodyText}`;
+#             const payload = { text: message };
+#             const jsonPayload = JSON.stringify(payload);
+#             const secret = process.env.SMOKE_ALERT_SECRET || '';
+#             const headersBase = { 'Content-Type': 'application/json' };
+#             // Standard signature header format: X-Hub-Signature-256: sha256=<hex>
+#             const makeSignature = (s, body) => {
+#               return 'sha256=' + crypto.createHmac('sha256', Buffer.from(s, 'utf8')).update(body).digest('hex');
+#             };
+#
+#             async function postWithRetry(url, body, headers) {
+#               const maxAttempts = 3;
+#               for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+#                 try {
+#                   if (typeof fetch === 'function') {
+#                     const res = await fetch(url, { method: 'POST', body, headers });
+#                     console.log(`Attempt ${attempt} - response: ${res.status}`);
+#                     if (res.ok) return true;
+#                     // treat 5xx as retryable
+#                     if (res.status >= 500 && attempt < maxAttempts) {
+#                       await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 1000));
+#                       continue;
+#                     }
+#                     return false;
+#                   } else {
+#                     await new Promise((resolve, reject) => {
+#                       const { request } = require('https');
+#                       const u = new URL(url);
+#                       const req = request({ hostname: u.hostname, path: u.pathname + (u.search||''), method: 'POST', headers }, res => {
+#                         console.log(`Attempt ${attempt} - response: ${res.statusCode}`);
+#                         if (res.statusCode >= 200 && res.statusCode < 300) resolve(true);
+#                         else if (res.statusCode >= 500 && attempt < maxAttempts) {
+#                           setTimeout(() => resolve(false), Math.pow(2, attempt) * 1000);
+#                         } else resolve(false);
+#                       });
+#                       req.on('error', e => reject(e));
+#                       req.write(body); req.end();
+#                     });
+#                     return true;
+#                   }
+#                 } catch (e) {
+#                   console.log(`Webhook attempt ${attempt} failed: ${String(e)}`);
+#                   if (attempt < maxAttempts) await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 1000));
+#                   else throw e;
+#                 }
+#               }
+#               return false;
+#             }
+#
+#             const headers = Object.assign({}, headersBase);
+#             if (secret) headers['X-Hub-Signature-256'] = makeSignature(secret, jsonPayload);
+#             await postWithRetry(webhook, jsonPayload, headers);
+#

@@ -1,6 +1,5 @@
-"""
-Klerno Labs - Advanced Performance Optimization
-Enterprise-grade performance optimization for 0.01% quality applications
+"""Klerno Labs - Advanced Performance Optimization
+Enterprise-grade performance optimization for 0.01% quality applications.
 """
 
 import asyncio
@@ -9,7 +8,7 @@ import gzip
 import hashlib
 import json
 import logging
-import pickle
+import pickle  # nosec: B403 - used for internal cache serialization only (not deserializing untrusted input)
 import sqlite3
 import threading
 import time
@@ -18,11 +17,45 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import psutil
 
+if TYPE_CHECKING:
+    from app._typing_shims import ISyncConnection
+
 logger = logging.getLogger(__name__)
+
+
+def _to_iso(timestamp: Any) -> str:
+    """Safely convert various timestamp representations to ISO string.
+
+    Accepts datetime, str, numeric (epoch) or objects with an `isoformat` method.
+    Falls back to current time when `timestamp` is None or conversion fails.
+    """
+    if timestamp is None:
+        return datetime.now().isoformat()
+
+    if isinstance(timestamp, str):
+        return timestamp
+
+    try:
+        iso = getattr(timestamp, "isoformat", None)
+        if callable(iso):
+            return str(iso())
+    except Exception:
+        pass
+
+    if isinstance(timestamp, (int, float)):
+        try:
+            return datetime.fromtimestamp(timestamp).isoformat()
+        except Exception:
+            pass
+
+    try:
+        return str(timestamp)
+    except Exception:
+        return datetime.now().isoformat()
 
 
 @dataclass
@@ -54,11 +87,13 @@ class CacheEntry:
 class AdvancedCache:
     """Multi-tier cache with intelligent eviction and compression."""
 
-    def __init__(self, max_size_mb: int = 100, compression_threshold: int = 1024):
+    def __init__(
+        self, max_size_mb: int = 100, compression_threshold: int = 1024
+    ) -> None:
         self.max_size_bytes = max_size_mb * 1024 * 1024
         self.compression_threshold = compression_threshold
         self.cache: dict[str, CacheEntry] = {}
-        self.access_order = deque()  # LRU tracking
+        self.access_order: deque[str] = deque()  # LRU tracking
         self.current_size_bytes = 0
         self.hit_count = 0
         self.miss_count = 0
@@ -66,12 +101,15 @@ class AdvancedCache:
         self._lock = threading.RLock()
 
         # Performance tracking
-        self.get_times = deque(maxlen=1000)
-        self.set_times = deque(maxlen=1000)
+        self.get_times: deque[float] = deque(maxlen=1000)
+        self.set_times: deque[float] = deque(maxlen=1000)
 
     def _serialize_value(self, value: Any) -> bytes:
         """Serialize and optionally compress value."""
-        serialized = pickle.dumps(value)
+        # Internal cache serialization: pickle is used for performance and
+        # compatibility with complex Python objects stored in memory. This
+        # is not deserializing untrusted external input.
+        serialized = pickle.dumps(value)  # nosec: B403,B301
 
         if len(serialized) > self.compression_threshold:
             serialized = gzip.compress(serialized)
@@ -83,16 +121,19 @@ class AdvancedCache:
         try:
             # Try decompression first
             decompressed = gzip.decompress(data)
-            return pickle.loads(decompressed)
-        except:
+            # Deserializing internal cache entries only. See justification
+            # above where data is written by the same process.
+            return pickle.loads(decompressed)  # nosec: B403,B301
+        except Exception:
             # If decompression fails, try direct pickle
-            return pickle.loads(data)
+            # See justification above: cache-local pickle deserialization.
+            return pickle.loads(data)  # nosec: B403,B301
 
     def _calculate_size(self, value: Any) -> int:
         """Calculate approximate size of value in bytes."""
         try:
             return len(self._serialize_value(value))
-        except:
+        except Exception:
             return 1024  # Default size if calculation fails
 
     def _evict_lru(self) -> None:
@@ -135,7 +176,7 @@ class AdvancedCache:
 
                 try:
                     return self._deserialize_value(entry.value)
-                except:
+                except Exception:
                     # If deserialization fails, remove entry
                     self.delete(key)
                     self.miss_count += 1
@@ -191,7 +232,7 @@ class AdvancedCache:
                 return True
 
         except Exception as e:
-            logger.error(f"Cache set error: {e}")
+            logger.exception(f"Cache set error: {e}")
             self.set_times.append((time.time() - start_time) * 1000)
             return False
 
@@ -241,13 +282,15 @@ class AdvancedCache:
 class PerformanceProfiler:
     """Advanced performance profiler with detailed analytics."""
 
-    def __init__(self, db_path: str = "./data/performance.db"):
+    def __init__(self, db_path: str = "./data/performance.db") -> None:
         self.db_path = db_path
         self.metrics: list[PerformanceMetric] = []
-        self.operation_times: dict[str, deque] = defaultdict(lambda: deque(maxlen=1000))
+        self.operation_times: defaultdict[str, deque[float]] = defaultdict(
+            lambda: deque(maxlen=1000),
+        )
         self.slow_query_threshold_ms = 1000
-        self.memory_samples = deque(maxlen=100)
-        self.cpu_samples = deque(maxlen=100)
+        self.memory_samples: deque[float] = deque(maxlen=100)
+        self.cpu_samples: deque[float] = deque(maxlen=100)
 
         # Initialize database
         self._init_performance_database()
@@ -259,7 +302,7 @@ class PerformanceProfiler:
         """Initialize performance monitoring database."""
         Path(self.db_path).parent.mkdir(exist_ok=True, parents=True)
 
-        conn = sqlite3.connect(self.db_path)
+        conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
         cursor = conn.cursor()
 
         # Performance metrics table
@@ -276,7 +319,7 @@ class PerformanceProfiler:
                 details TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # System metrics table
@@ -295,29 +338,29 @@ class PerformanceProfiler:
                 active_connections INTEGER,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
+        """,
         )
 
         # Create indexes
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_perf_operation ON performance_metrics(operation)"
+            "CREATE INDEX IF NOT EXISTS idx_perf_operation ON performance_metrics(operation)",
         )
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_perf_timestamp ON performance_metrics(timestamp)"
+            "CREATE INDEX IF NOT EXISTS idx_perf_timestamp ON performance_metrics(timestamp)",
         )
         cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_sys_timestamp ON system_metrics(timestamp)"
+            "CREATE INDEX IF NOT EXISTS idx_sys_timestamp ON system_metrics(timestamp)",
         )
 
         conn.commit()
         conn.close()
 
-        logger.info("✅ Performance database initialized")
+    logger.info("[OK] Performance database initialized")
 
     def _start_system_monitoring(self) -> None:
         """Start background system monitoring."""
 
-        def monitor_system():
+        def monitor_system() -> None:
             while True:
                 try:
                     # Collect system metrics
@@ -326,12 +369,32 @@ class PerformanceProfiler:
                     disk_io = psutil.disk_io_counters()
                     network_io = psutil.net_io_counters()
 
-                    self.cpu_samples.append(cpu_percent)
-                    self.memory_samples.append(memory.percent)
+                    self.cpu_samples.append(float(cpu_percent))
+                    self.memory_samples.append(float(memory.percent))
 
                     # Log to database periodically
                     now = datetime.now()
                     if now.second % 30 == 0:  # Every 30 seconds
+                        # Safely extract IO metrics regardless of dict or namedtuple types
+                        rb = 0
+                        wb = 0
+                        bs = 0
+                        br = 0
+                        if disk_io:
+                            if isinstance(disk_io, dict):
+                                rb = int(disk_io.get("read_bytes", 0) or 0)
+                                wb = int(disk_io.get("write_bytes", 0) or 0)
+                            else:
+                                rb = int(getattr(disk_io, "read_bytes", 0) or 0)
+                                wb = int(getattr(disk_io, "write_bytes", 0) or 0)
+                        if network_io:
+                            if isinstance(network_io, dict):
+                                bs = int(network_io.get("bytes_sent", 0) or 0)
+                                br = int(network_io.get("bytes_recv", 0) or 0)
+                            else:
+                                bs = int(getattr(network_io, "bytes_sent", 0) or 0)
+                                br = int(getattr(network_io, "bytes_recv", 0) or 0)
+
                         self._log_system_metrics(
                             {
                                 "timestamp": now,
@@ -339,24 +402,20 @@ class PerformanceProfiler:
                                 "memory_percent": memory.percent,
                                 "memory_available_mb": memory.available / 1024 / 1024,
                                 "disk_io_read_mb": (
-                                    disk_io.read_bytes / 1024 / 1024 if disk_io else 0
+                                    float(rb) / 1024 / 1024 if disk_io else 0
                                 ),
                                 "disk_io_write_mb": (
-                                    disk_io.write_bytes / 1024 / 1024 if disk_io else 0
+                                    float(wb) / 1024 / 1024 if disk_io else 0
                                 ),
-                                "network_bytes_sent": (
-                                    network_io.bytes_sent if network_io else 0
-                                ),
-                                "network_bytes_recv": (
-                                    network_io.bytes_recv if network_io else 0
-                                ),
-                            }
+                                "network_bytes_sent": float(bs) if network_io else 0,
+                                "network_bytes_recv": float(br) if network_io else 0,
+                            },
                         )
 
                     time.sleep(5)
 
                 except Exception as e:
-                    logger.error(f"System monitoring error: {e}")
+                    logger.exception(f"System monitoring error: {e}")
                     time.sleep(10)
 
         # Start monitoring thread
@@ -366,7 +425,7 @@ class PerformanceProfiler:
     def _log_system_metrics(self, metrics: dict[str, Any]) -> None:
         """Log system metrics to database."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             cursor.execute(
@@ -377,7 +436,7 @@ class PerformanceProfiler:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
-                    metrics["timestamp"].isoformat(),
+                    _to_iso(metrics.get("timestamp")),
                     metrics["cpu_percent"],
                     metrics["memory_percent"],
                     metrics["memory_available_mb"],
@@ -392,7 +451,7 @@ class PerformanceProfiler:
             conn.close()
 
         except Exception as e:
-            logger.error(f"Error logging system metrics: {e}")
+            logger.exception(f"Error logging system metrics: {e}")
 
     def measure_performance(self, operation: str):
         """Decorator to measure function performance."""
@@ -442,7 +501,7 @@ class PerformanceProfiler:
                     # Log slow operations
                     if duration_ms > self.slow_query_threshold_ms:
                         logger.warning(
-                            f"🐌 Slow operation: {operation} took {duration_ms:.2f}ms"
+                            f"🐌 Slow operation: {operation} took {duration_ms:.2f}ms",
                         )
 
             @functools.wraps(func)
@@ -454,8 +513,7 @@ class PerformanceProfiler:
                 error_details = {}
 
                 try:
-                    result = func(*args, **kwargs)
-                    return result
+                    return func(*args, **kwargs)
                 except Exception as e:
                     status = "error"
                     error_details = {"error": str(e), "type": type(e).__name__}
@@ -483,7 +541,7 @@ class PerformanceProfiler:
                     # Log slow operations
                     if duration_ms > self.slow_query_threshold_ms:
                         logger.warning(
-                            f"🐌 Slow operation: {operation} took {duration_ms:.2f}ms"
+                            f"🐌 Slow operation: {operation} took {duration_ms:.2f}ms",
                         )
 
             return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
@@ -505,7 +563,7 @@ class PerformanceProfiler:
             return
 
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             for metric in self.metrics:
@@ -514,9 +572,9 @@ class PerformanceProfiler:
                     INSERT INTO performance_metrics
                     (timestamp, operation, duration_ms, memory_used_mb, cpu_percent, status, details)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
+                    """,
                     (
-                        metric.timestamp.isoformat(),
+                        _to_iso(metric.timestamp),
                         metric.operation,
                         metric.duration_ms,
                         metric.memory_used_mb,
@@ -533,12 +591,12 @@ class PerformanceProfiler:
             self.metrics.clear()
 
         except Exception as e:
-            logger.error(f"Error flushing performance metrics: {e}")
+            logger.exception(f"Error flushing performance metrics: {e}")
 
     def get_performance_summary(self, hours: int = 1) -> dict[str, Any]:
         """Get performance summary for the last N hours."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = cast("ISyncConnection", sqlite3.connect(self.db_path))
             cursor = conn.cursor()
 
             since = datetime.now() - timedelta(hours=hours)
@@ -558,7 +616,7 @@ class PerformanceProfiler:
                 GROUP BY operation
                 ORDER BY avg_duration DESC
             """,
-                (since.isoformat(),),
+                (_to_iso(since),),
             )
 
             operations = []
@@ -575,7 +633,7 @@ class PerformanceProfiler:
                         "error_rate_percent": (
                             round((row[6] / row[1]) * 100, 2) if row[1] > 0 else 0
                         ),
-                    }
+                    },
                 )
 
             # Get system performance summary
@@ -612,7 +670,7 @@ class PerformanceProfiler:
                 ORDER BY duration_ms DESC
                 LIMIT 10
             """,
-                (since.isoformat(), self.slow_query_threshold_ms),
+                (_to_iso(since), self.slow_query_threshold_ms),
             )
 
             slow_operations = []
@@ -622,13 +680,13 @@ class PerformanceProfiler:
                         "operation": row[0],
                         "duration_ms": round(row[1], 2),
                         "timestamp": row[2],
-                    }
+                    },
                 )
 
             conn.close()
 
             return {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": _to_iso(datetime.now()),
                 "summary_period_hours": hours,
                 "operations": operations,
                 "system_summary": system_summary,
@@ -638,7 +696,7 @@ class PerformanceProfiler:
             }
 
         except Exception as e:
-            logger.error(f"Error getting performance summary: {e}")
+            logger.exception(f"Error getting performance summary: {e}")
             return {"error": str(e)}
 
 
@@ -668,7 +726,12 @@ def cached(ttl_seconds: int | None = None, key_func: Callable | None = None):
             if key_func:
                 cache_key = key_func(*args, **kwargs)
             else:
-                cache_key = f"{func.__name__}:{hashlib.md5(str(args + tuple(kwargs.items())).encode()).hexdigest()}"
+                # Keep cache key compact and safe for hashing
+                key_source = (func.__name__, args, tuple(sorted(kwargs.items())))
+                # Use SHA-256 for cache keys to avoid MD5 usage flagged by security
+                # scanners. These keys are non-secret identifiers used for caching,
+                # not for cryptographic verification.
+                cache_key = f"{func.__name__}:{hashlib.sha256(str(key_source).encode()).hexdigest()}"
 
             # Try to get from cache
             result = cache.get(cache_key)

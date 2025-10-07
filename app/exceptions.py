@@ -1,5 +1,4 @@
-"""
-Centralized exception handling for Klerno Labs.
+"""Centralized exception handling for Klerno Labs.
 Provides consistent error responses and logging.
 """
 
@@ -26,7 +25,7 @@ class KlernoException(Exception):
         error_code: str = "INTERNAL_ERROR",
         status_code: int = 500,
         details: dict[str, Any] | None = None,
-    ):
+    ) -> None:
         self.message = message
         self.error_code = error_code
         self.status_code = status_code
@@ -37,7 +36,12 @@ class KlernoException(Exception):
 class ValidationException(KlernoException):
     """Exception for validation errors."""
 
-    def __init__(self, message: str, field: str = None, details: dict[str, Any] = None):
+    def __init__(
+        self,
+        message: str,
+        field: str | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
         self.field = field
         super().__init__(
             message=message,
@@ -51,8 +55,10 @@ class AuthenticationException(KlernoException):
     """Exception for authentication errors."""
 
     def __init__(
-        self, message: str = "Authentication failed", details: dict[str, Any] = None
-    ):
+        self,
+        message: str = "Authentication failed",
+        details: dict[str, Any] | None = None,
+    ) -> None:
         super().__init__(
             message=message,
             error_code="AUTHENTICATION_ERROR",
@@ -64,7 +70,11 @@ class AuthenticationException(KlernoException):
 class AuthorizationException(KlernoException):
     """Exception for authorization errors."""
 
-    def __init__(self, message: str = "Access denied", details: dict[str, Any] = None):
+    def __init__(
+        self,
+        message: str = "Access denied",
+        details: dict[str, Any] | None = None,
+    ) -> None:
         super().__init__(
             message=message,
             error_code="AUTHORIZATION_ERROR",
@@ -77,8 +87,11 @@ class ResourceNotFoundException(KlernoException):
     """Exception for resource not found errors."""
 
     def __init__(
-        self, resource: str, identifier: str = None, details: dict[str, Any] = None
-    ):
+        self,
+        resource: str,
+        identifier: str | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
         message = f"{resource} not found"
         if identifier:
             message += f": {identifier}"
@@ -94,7 +107,11 @@ class ResourceNotFoundException(KlernoException):
 class RateLimitException(KlernoException):
     """Exception for rate limiting errors."""
 
-    def __init__(self, message: str = "Rate limit exceeded", retry_after: int = None):
+    def __init__(
+        self,
+        message: str = "Rate limit exceeded",
+        retry_after: int | None = None,
+    ) -> None:
         details = {}
         if retry_after:
             details["retry_after"] = retry_after
@@ -111,8 +128,11 @@ class ExternalServiceException(KlernoException):
     """Exception for external service errors."""
 
     def __init__(
-        self, service: str, message: str = None, details: dict[str, Any] = None
-    ):
+        self,
+        service: str,
+        message: str | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
         msg = message or f"External service '{service}' unavailable"
 
         super().__init__(
@@ -136,7 +156,7 @@ def create_error_response(
             "code": error_code,
             "message": message,
             "timestamp": logger._context.get("timestamp", ""),
-        }
+        },
     }
 
     if details:
@@ -149,7 +169,8 @@ def create_error_response(
 
 
 async def klerno_exception_handler(
-    request: Request, exc: KlernoException
+    request: Request,
+    exc: KlernoException,
 ) -> JSONResponse:
     """Handle Klerno application exceptions."""
     request_id = getattr(request.state, "request_id", None)
@@ -223,7 +244,8 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
 
 
 async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
+    request: Request,
+    exc: RequestValidationError,
 ) -> JSONResponse:
     """Handle request validation exceptions."""
     request_id = getattr(request.state, "request_id", None)
@@ -236,7 +258,7 @@ async def validation_exception_handler(
                 "field": ".".join(str(x) for x in error["loc"]),
                 "message": error["msg"],
                 "type": error["type"],
-            }
+            },
         )
 
     logger.warning(

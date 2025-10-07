@@ -1,5 +1,4 @@
-"""
-Enterprise Features Module for Klerno Labs.
+"""Enterprise Features Module for Klerno Labs.
 
 Provides enterprise - grade features including white - label solution, SLA guarantees,
     on - premise deployment capabilities, custom AI models, and dedicated support.
@@ -7,7 +6,6 @@ Provides enterprise - grade features including white - label solution, SLA guara
 
 from __future__ import annotations
 
-import os
 import uuid
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
@@ -117,8 +115,8 @@ class SupportTicket:
     description: str
     status: str = "open"  # "open", "in_progress", "resolved", "closed"
     assigned_to: str | None = None
-    created_at: datetime = None
-    updated_at: datetime = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
     resolved_at: datetime | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -136,10 +134,10 @@ class SupportTicket:
 class EnterpriseManager:
     """Manages enterprise - grade features and services."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._init_enterprise_tables()
 
-    def _init_enterprise_tables(self):
+    def _init_enterprise_tables(self) -> None:
         """Initialize enterprise feature tables."""
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -165,7 +163,7 @@ class EnterpriseManager:
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
         )
-        """
+        """,
         )
 
         # SLA agreements and metrics
@@ -180,7 +178,7 @@ class EnterpriseManager:
                 end_date TEXT NOT NULL,
                 created_at TEXT NOT NULL
         )
-        """
+        """,
         )
 
         cursor.execute(
@@ -199,7 +197,7 @@ class EnterpriseManager:
                 mttr_minutes REAL DEFAULT 0,
                 created_at TEXT NOT NULL
         )
-        """
+        """,
         )
 
         # Custom AI models
@@ -219,7 +217,7 @@ class EnterpriseManager:
                 is_active INTEGER DEFAULT 0,
                 created_at TEXT NOT NULL
         )
-        """
+        """,
         )
 
         # Support tickets
@@ -238,17 +236,19 @@ class EnterpriseManager:
                 updated_at TEXT NOT NULL,
                 resolved_at TEXT
         )
-        """
+        """,
         )
 
         conn.commit()
         conn.close()
 
     def setup_white_label(
-        self, user_id: str, config_level: WhiteLabelConfig, settings: WhiteLabelSettings
+        self,
+        user_id: str,
+        config_level: WhiteLabelConfig,
+        settings: WhiteLabelSettings,
     ) -> bool:
         """Set up white - label configuration for enterprise client."""
-
         conn = get_db_connection()
         cursor = conn.cursor()
         now = datetime.now(UTC)
@@ -325,10 +325,12 @@ class EnterpriseManager:
         )
 
     def create_sla_agreement(
-        self, user_id: str, tier: SLATier, duration_months: int = 12
+        self,
+        user_id: str,
+        tier: SLATier,
+        duration_months: int = 12,
     ) -> bool:
         """Create SLA agreement for enterprise client."""
-
         # SLA guarantees by tier
         guarantees = {
             SLATier.STANDARD: {"uptime": 99.5, "response_time": 1000},
@@ -374,7 +376,6 @@ class EnterpriseManager:
         metrics: SLAMetrics,
     ) -> bool:
         """Record SLA performance metrics."""
-
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -429,7 +430,7 @@ class EnterpriseManager:
         )
 
         rows = cursor.fetchall()
-        metrics = []
+        metrics: list[SLAMetrics] = []
 
         for row in rows:
             metric = SLAMetrics(
@@ -457,20 +458,21 @@ class EnterpriseManager:
         model_data: bytes,
     ) -> CustomAIModel:
         """Deploy custom AI model for enterprise client."""
-
         model_id = str(uuid.uuid4())
 
         # Save training data and model files
-        models_dir = f"data / custom_models/{user_id}"
-        os.makedirs(models_dir, exist_ok=True)
+        from pathlib import Path
 
-        training_data_path = os.path.join(models_dir, f"{model_id}_training.pkl")
-        model_file_path = os.path.join(models_dir, f"{model_id}_model.pkl")
+        models_dir = Path("data") / "custom_models" / user_id
+        models_dir.mkdir(parents=True, exist_ok=True)
 
-        with open(training_data_path, "wb") as f:
+        training_data_path = models_dir / f"{model_id}_training.pkl"
+        model_file_path = models_dir / f"{model_id}_model.pkl"
+
+        with training_data_path.open("wb") as f:
             f.write(training_data)
 
-        with open(model_file_path, "wb") as f:
+        with model_file_path.open("wb") as f:
             f.write(model_data)
 
         # Create model record
@@ -480,8 +482,8 @@ class EnterpriseManager:
             name=name,
             description=description,
             model_type=model_type,
-            training_data_path=training_data_path,
-            model_file_path=model_file_path,
+            training_data_path=str(training_data_path),
+            model_file_path=str(model_file_path),
             accuracy=0.95,  # Mock accuracy - would be calculated during training
             last_trained=now,
             version="1.0.0",
@@ -505,8 +507,8 @@ class EnterpriseManager:
                 name,
                 description,
                 model_type,
-                training_data_path,
-                model_file_path,
+                str(training_data_path),
+                str(model_file_path),
                 model.accuracy,
                 now.isoformat(),
                 model.version,
@@ -537,7 +539,7 @@ class EnterpriseManager:
         )
 
         rows = cursor.fetchall()
-        models = []
+        models: list[CustomAIModel] = []
 
         for row in rows:
             model = CustomAIModel(
@@ -558,10 +560,14 @@ class EnterpriseManager:
         return models
 
     def create_support_ticket(
-        self, user_id: str, priority: str, category: str, subject: str, description: str
+        self,
+        user_id: str,
+        priority: str,
+        category: str,
+        subject: str,
+        description: str,
     ) -> SupportTicket:
         """Create dedicated support ticket."""
-
         ticket_id = str(uuid.uuid4())
         now = datetime.now(UTC)
 
@@ -605,7 +611,9 @@ class EnterpriseManager:
         return ticket
 
     def get_support_tickets(
-        self, user_id: str, status: str = None
+        self,
+        user_id: str,
+        status: str | None = None,
     ) -> list[SupportTicket]:
         """Get support tickets for user."""
         conn = get_db_connection()
@@ -627,7 +635,7 @@ class EnterpriseManager:
 
         cursor.execute(query, params)
         rows = cursor.fetchall()
-        tickets = []
+        tickets: list[SupportTicket] = []
 
         for row in rows:
             ticket = SupportTicket(
@@ -650,9 +658,8 @@ class EnterpriseManager:
 
     def generate_on_premise_deployment_package(self, user_id: str) -> dict[str, Any]:
         """Generate on - premise deployment package."""
-
         # Generate deployment configuration
-        config = {
+        config: dict[str, Any] = {
             "version": "1.0.0",
             "deployment_type": "on_premise",
             "user_id": user_id,
@@ -714,7 +721,9 @@ enterprise_manager = EnterpriseManager()
 
 
 def setup_white_label(
-    user_id: str, config_level: WhiteLabelConfig, settings: WhiteLabelSettings
+    user_id: str,
+    config_level: WhiteLabelConfig,
+    settings: WhiteLabelSettings,
 ) -> bool:
     """Set up white - label configuration."""
     return enterprise_manager.setup_white_label(user_id, config_level, settings)
@@ -726,7 +735,9 @@ def get_white_label_config(user_id: str) -> WhiteLabelSettings | None:
 
 
 def create_sla_agreement(
-    user_id: str, tier: SLATier, duration_months: int = 12
+    user_id: str,
+    tier: SLATier,
+    duration_months: int = 12,
 ) -> bool:
     """Create SLA agreement."""
     return enterprise_manager.create_sla_agreement(user_id, tier, duration_months)
@@ -747,20 +758,33 @@ def deploy_custom_ai_model(
 ) -> CustomAIModel:
     """Deploy custom AI model."""
     return enterprise_manager.deploy_custom_ai_model(
-        user_id, name, description, model_type, training_data, model_data
+        user_id,
+        name,
+        description,
+        model_type,
+        training_data,
+        model_data,
     )
 
 
 def create_support_ticket(
-    user_id: str, priority: str, category: str, subject: str, description: str
+    user_id: str,
+    priority: str,
+    category: str,
+    subject: str,
+    description: str,
 ) -> SupportTicket:
     """Create support ticket."""
     return enterprise_manager.create_support_ticket(
-        user_id, priority, category, subject, description
+        user_id,
+        priority,
+        category,
+        subject,
+        description,
     )
 
 
-def get_support_tickets(user_id: str, status: str = None) -> list[SupportTicket]:
+def get_support_tickets(user_id: str, status: str | None = None) -> list[SupportTicket]:
     """Get support tickets."""
     return enterprise_manager.get_support_tickets(user_id, status)
 

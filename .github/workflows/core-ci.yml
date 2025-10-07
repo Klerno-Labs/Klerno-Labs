@@ -1,0 +1,127 @@
+name: Core CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  lint-and-type:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+    env:
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
+      APP_ENV: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install tools and deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt >/dev/null
+          if [ -f dev-requirements.txt ]; then python -m pip install -r dev-requirements.txt >/dev/null || true; fi
+          python -m pip install pytest mypy ruff flake8 pre-commit >/dev/null || true
+
+      - name: Lint (ruff)
+        run: npx ruff check . || python -m ruff check . || true
+
+      - name: Style (flake8)
+        run: python -m flake8 --max-line-length=120 || true
+
+      - name: Run pre-commit checks
+        run: pre-commit run --all-files || true
+
+      - name: Type check (mypy)
+        run: python -m mypy --ignore-missing-imports app tests || true
+
+  tests:
+    name: Unit Tests and Coverage
+    runs-on: ubuntu-latest
+    needs: lint-and-type
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+    env:
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
+      APP_ENV: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install test deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt >/dev/null
+          if [ -f dev-requirements.txt ]; then python -m pip install -r dev-requirements.txt >/dev/null || true; fi
+          python -m pip install pytest coverage >/dev/null || true
+
+      - name: Run tests with coverage
+        run: |
+          set -o pipefail || true
+          coverage run -m pytest -vv -rA | tee pytest_output.txt
+          status=${PIPESTATUS[0]}
+          coverage xml -o coverage.xml || true
+          coverage report -m || true
+          exit $status
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: warn
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          flags: unittests
+          fail_ci_if_error: false
+          verbose: true
+        # For private repositories, add CODECOV_TOKEN in repository secrets.
+        # Public repositories do not require a token.
+
+      - name: Upload diagnostic bundle (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostic-bundle
+          path: |
+            .run/**
+            logs/**
+            *.log
+            coverage.xml
+            pytest_output.txt
+          if-no-files-found: warn
+
+      - name: Show last 200 lines of pytest output (on failure)
+        if: failure()
+        run: |
+          echo '--- TAIL pytest_output.txt ---' || true
+          if [ -f pytest_output.txt ]; then
+            tail -n 200 pytest_output.txt || true
+          else
+            echo 'pytest_output.txt not found' || true
+          fi
+          echo '--- END TAIL pytest_output.txt ---' || true

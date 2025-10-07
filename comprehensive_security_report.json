@@ -1,0 +1,1077 @@
+{
+  "scan_timestamp": "2025-10-04 16:22:56",
+  "bandit_analysis": {
+    "scan_successful": false,
+    "error": "Failed to run Bandit scan: Command '['python', '-m', 'bandit', '-r', '.', '-f', 'json', '-x', '.venv*,node_modules,__pycache__,*.pyc']' timed out after 120 seconds"
+  },
+  "dependency_vulnerabilities": {
+    "scan_performed": true,
+    "vulnerabilities_found": [],
+    "recommendations": [
+      "Install 'safety' package for dependency vulnerability scanning: pip install safety"
+    ],
+    "safety_available": false
+  },
+  "sensitive_data_exposure": {
+    "sensitive_data_found": true,
+    "findings": [
+      {
+        "file": "comprehensive_security_validator.py",
+        "line": 178,
+        "type": "Password",
+        "content": "{\"pattern\": \"password\", \"type\": \"Password\"},"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "line": 179,
+        "type": "Secret",
+        "content": "{\"pattern\": \"secret\", \"type\": \"Secret\"},"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "line": 180,
+        "type": "Token",
+        "content": "{\"pattern\": \"token\", \"type\": \"Token\"},"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "line": 181,
+        "type": "API Key",
+        "content": "{\"pattern\": \"api_key\", \"type\": \"API Key\"},"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "line": 182,
+        "type": "Private Key",
+        "content": "{\"pattern\": \"private_key\", \"type\": \"Private Key\"},"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "line": 183,
+        "type": "Database URL",
+        "content": "{\"pattern\": \"database_url\", \"type\": \"Database URL\"},"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "line": 232,
+        "type": "Password",
+        "content": "\"HTTPBearer\", \"HTTPBasic\", \"OAuth2PasswordBearer\","
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "line": 233,
+        "type": "Token",
+        "content": "\"Security\", \"Depends\", \"@auth\", \"jwt\", \"token\""
+      },
+      {
+        "file": "database_validation_report.py",
+        "line": 75,
+        "type": "Password",
+        "content": "required_columns = [\"email\", \"password_hash\", \"role\", \"subscription_active\"]"
+      },
+      {
+        "file": "enterprise_config.py",
+        "line": 6,
+        "type": "Secret",
+        "content": "import secrets"
+      },
+      {
+        "file": "enterprise_config.py",
+        "line": 71,
+        "type": "Secret",
+        "content": "jwt_secret: str | None = None"
+      },
+      {
+        "file": "enterprise_config.py",
+        "line": 91,
+        "type": "Secret",
+        "content": "config.jwt_secret = os.getenv(\"JWT_SECRET\", \"your-secret-key-here\")"
+      },
+      {
+        "file": "enterprise_config.py",
+        "line": 94,
+        "type": "Secret",
+        "content": "# provide temporary secrets so the app can start locally without"
+      },
+      {
+        "file": "enterprise_config.py",
+        "line": 95,
+        "type": "Secret",
+        "content": "# requiring secret provisioning. These values are intentionally"
+      },
+      {
+        "file": "enterprise_config.py",
+        "line": 100,
+        "type": "Secret",
+        "content": "config.encryption_key = f\"dev-{secrets.token_hex(16)}\""
+      },
+      {
+        "file": "enterprise_config.py",
+        "line": 100,
+        "type": "Token",
+        "content": "config.encryption_key = f\"dev-{secrets.token_hex(16)}\""
+      },
+      {
+        "file": "enterprise_config.py",
+        "line": 101,
+        "type": "Secret",
+        "content": "if not config.jwt_secret or config.jwt_secret == \"your-secret-key-here\":"
+      },
+      {
+        "file": "enterprise_config.py",
+        "line": 102,
+        "type": "Secret",
+        "content": "config.jwt_secret = f\"dev-jwt-{secrets.token_hex(16)}\""
+      },
+      {
+        "file": "enterprise_config.py",
+        "line": 102,
+        "type": "Token",
+        "content": "config.jwt_secret = f\"dev-jwt-{secrets.token_hex(16)}\""
+      },
+      {
+        "file": "enterprise_config.py",
+        "line": 161,
+        "type": "Secret",
+        "content": "if self.features.security_hardening and not self.jwt_secret:"
+      }
+    ],
+    "total_findings": 1206,
+    "recommendation": "Review and secure any sensitive data found in code"
+  },
+  "authentication_security": {
+    "authentication_present": true,
+    "authorization_present": false,
+    "security_headers": false,
+    "recommendations": [
+      "Add rate limiting to prevent brute force attacks",
+      "Implement CORS properly for production",
+      "Add security headers (HSTS, CSP, etc.)",
+      "Use HTTPS in production environment"
+    ],
+    "implementations_found": [
+      {
+        "file": "advanced_error_handler.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "cicd_pipeline_validator.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "pattern": "HTTPBearer",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "pattern": "HTTPBasic",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "pattern": "OAuth2PasswordBearer",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "pattern": "Depends",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "pattern": "@auth",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "comprehensive_security_validator.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "enterprise_config.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "enterprise_config.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "enterprise_config.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "enterprise_dashboard.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "enterprise_feature_validator.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "enterprise_main_v2.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "enterprise_main_v2.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "enterprise_security.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "final_enterprise_certification.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "financial_compliance.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "financial_compliance.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "performance_optimization_final.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "premium_branding_system.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "sitecustomize.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "stunning_data_visualization.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\admin.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\admin.py",
+        "pattern": "Depends",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\advanced_security.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\advanced_security.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\advanced_security_hardening.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\analytics_dashboard.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\analytics_dashboard.py",
+        "pattern": "Depends",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\audit_logger.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\auth.py",
+        "pattern": "Depends",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\auth.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\auth.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\comprehensive_testing.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\config.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\csp.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\csp.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\deps.py",
+        "pattern": "Depends",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\deps.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\deps.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\enterprise_cicd_pipeline.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\enterprise_integration.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\enterprise_security.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\enterprise_security.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\enterprise_security.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\enterprise_security_enhanced.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\hardening.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\hardening.py",
+        "pattern": "Depends",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\hardening.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\iso20022_compliance.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\iso20022_compliance.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\legacy_helpers.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\legacy_helpers.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\logging_config.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\main.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\main.py",
+        "pattern": "Depends",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\main.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\metrics.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\middleware.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\multi_chain_support.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\paywall.py",
+        "pattern": "Depends",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\rate_limit.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\rate_limit_redis.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\referral_system.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\refresh_tokens.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\refresh_tokens.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\security.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\security_hardening_advanced.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\security_middleware.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\security_session.py",
+        "pattern": "HTTPBearer",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\security_session.py",
+        "pattern": "Depends",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\security_session.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\security_session.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\settings.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\settings.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\settings.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\subscriptions.py",
+        "pattern": "Depends",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\system_monitor.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\test_support.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\transactions.py",
+        "pattern": "Depends",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\__init__.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\core\\security.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\core\\security.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\routes\\analyze_tags.py",
+        "pattern": "Depends",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\security\\__init__.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\security\\__init__.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\security_modules\\mfa.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "app\\security_modules\\password_policy.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "CLEAN_APP\\tests\\conftest.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "integrations\\bscscan.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tests\\conftest.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tests\\conftest.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tests\\test_api_edge_cases.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tests\\test_check_prod_readiness.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tests\\test_integration.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tests\\test_integration.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tests\\test_integration_comprehensive.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tests\\test_operational_endpoints.py",
+        "pattern": "Security",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tests\\test_refresh_token.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tests\\test_unit_comprehensive.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tests\\test_unit_comprehensive.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tools\\login_probe.py",
+        "pattern": "jwt",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tools\\login_probe.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tools\\prod_smoke_test.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      },
+      {
+        "file": "tools\\run_local_smoke.py",
+        "pattern": "token",
+        "type": "Authentication/Authorization"
+      }
+    ]
+  },
+  "configuration_security": {
+    "debug_mode_issues": [
+      "comprehensive_security_validator.py"
+    ],
+    "insecure_configurations": [],
+    "missing_security_features": [],
+    "recommendations": [
+      "Use environment variables for sensitive configuration",
+      "Disable debug mode in production",
+      "Implement proper logging without sensitive data",
+      "Use secure session management",
+      "Implement input validation and sanitization",
+      "Add request timeout configurations",
+      "Use secure database connection strings"
+    ],
+    "environment_variables": {
+      "environment_variable_usage": true,
+      "files_using_env": [
+        {
+          "file": "comprehensive_security_validator.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "comprehensive_security_validator.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "comprehensive_security_validator.py",
+          "pattern": "env."
+        },
+        {
+          "file": "comprehensive_security_validator.py",
+          "pattern": "Environment"
+        },
+        {
+          "file": "enterprise_config.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "enterprise_main_v2.py",
+          "pattern": "env."
+        },
+        {
+          "file": "enterprise_main_v2.py",
+          "pattern": "Environment"
+        },
+        {
+          "file": "alembic\\env.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\admin.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\advanced_security_hardening.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\analytics.py",
+          "pattern": "Environment"
+        },
+        {
+          "file": "app\\audit_logger.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\auth.py",
+          "pattern": "env."
+        },
+        {
+          "file": "app\\csp.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\csp.py",
+          "pattern": "Environment"
+        },
+        {
+          "file": "app\\enterprise_cicd_pipeline.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "app\\enterprise_cicd_pipeline.py",
+          "pattern": "env."
+        },
+        {
+          "file": "app\\enterprise_cicd_pipeline.py",
+          "pattern": "Environment"
+        },
+        {
+          "file": "app\\enterprise_security.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\enterprise_security.py",
+          "pattern": "Environment"
+        },
+        {
+          "file": "app\\enterprise_security_enhanced.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\hardening.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\legacy_helpers.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\llm.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\mailer.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\main.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\notifications.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\paywall.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\paywall_hooks.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\performance_optimization.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\rate_limit.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\rate_limit_redis.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\rate_limit_redis.py",
+          "pattern": "Environment"
+        },
+        {
+          "file": "app\\refresh_tokens.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\refresh_tokens.py",
+          "pattern": "Environment"
+        },
+        {
+          "file": "app\\security.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\security_middleware.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\security_session.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\security_session.py",
+          "pattern": "env."
+        },
+        {
+          "file": "app\\settings.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "app\\settings.py",
+          "pattern": "Environment"
+        },
+        {
+          "file": "app\\shared_constants.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\store.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\core\\security.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\routers\\operational.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\security\\__init__.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\security_modules\\mfa.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "app\\security_modules\\password_policy.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "CLEAN_APP\\tests\\conftest.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "integrations\\bsc.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "integrations\\bscscan.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "integrations\\xrp.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "scripts\\bootstrap_admin.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "scripts\\bootstrap_admin.py",
+          "pattern": "Environment"
+        },
+        {
+          "file": "scripts\\check_prod_readiness.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "scripts\\check_prod_readiness.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "scripts\\init_db_if_needed.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "scripts\\run_local.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "scripts\\run_local.py",
+          "pattern": "getenv"
+        },
+        {
+          "file": "tests\\conftest.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "tests\\test_api.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "tests\\test_api_edge_cases.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "tests\\test_auth_flow.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "tests\\test_auth_form_and_cookie.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "tests\\test_integration.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "tools\\concurrent_transactions.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "tools\\debug_concurrency.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "tools\\debug_store_lookup.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "tools\\debug_transactions.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "tools\\inspect_login.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "tools\\login_hash_debug.py",
+          "pattern": "os.environ"
+        },
+        {
+          "file": "tools\\login_hash_debug.py",
+          "pattern": "env."
+        }
+      ],
+      "recommendation": "Good practice: Using environment variables for configuration"
+    }
+  },
+  "overall_security_score": {
+    "security_score": 85,
+    "security_tier": "GOOD",
+    "breakdown": {
+      "bandit_deductions": 0,
+      "config_deductions": 15,
+      "total_deductions": 15
+    }
+  },
+  "critical_issues": [],
+  "remediation_plan": {
+    "immediate_actions": [
+      {
+        "action": "Fix Critical Vulnerabilities",
+        "description": "Address all HIGH severity issues identified by Bandit scan",
+        "timeline": "1-2 days",
+        "priority": "CRITICAL"
+      },
+      {
+        "action": "Secure Configuration",
+        "description": "Disable debug mode, secure environment variables",
+        "timeline": "0.5 days",
+        "priority": "HIGH"
+      },
+      {
+        "action": "Input Validation",
+        "description": "Implement comprehensive input validation and sanitization",
+        "timeline": "1 day",
+        "priority": "HIGH"
+      }
+    ],
+    "short_term_actions": [
+      {
+        "action": "Authentication Enhancement",
+        "description": "Implement robust authentication and authorization",
+        "timeline": "2-3 days",
+        "priority": "MEDIUM"
+      },
+      {
+        "action": "Security Headers",
+        "description": "Add comprehensive security headers (HSTS, CSP, etc.)",
+        "timeline": "1 day",
+        "priority": "MEDIUM"
+      },
+      {
+        "action": "Dependency Updates",
+        "description": "Update dependencies to latest secure versions",
+        "timeline": "1 day",
+        "priority": "MEDIUM"
+      }
+    ],
+    "long_term_actions": [
+      {
+        "action": "Security Monitoring",
+        "description": "Implement continuous security monitoring and alerting",
+        "timeline": "1 week",
+        "priority": "LOW"
+      },
+      {
+        "action": "Penetration Testing",
+        "description": "Conduct comprehensive penetration testing",
+        "timeline": "1 week",
+        "priority": "LOW"
+      },
+      {
+        "action": "Security Training",
+        "description": "Security awareness and secure coding practices",
+        "timeline": "Ongoing",
+        "priority": "LOW"
+      }
+    ]
+  }
+}

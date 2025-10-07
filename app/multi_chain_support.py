@@ -1,5 +1,4 @@
-"""
-Multi - Chain Support Module for Klerno Labs.
+"""Multi - Chain Support Module for Klerno Labs.
 
 Provides comprehensive multi - blockchain support for Professional and Enterprise tiers.
 """
@@ -14,6 +13,37 @@ from enum import Enum
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+
+def _to_iso(timestamp: Any) -> str:
+    """Safely convert timestamp-like values to ISO string.
+
+    Accepts datetime, str, epoch numbers, or objects with `isoformat`.
+    Falls back to current UTC time string when conversion fails or timestamp is None.
+    """
+    if timestamp is None:
+        return datetime.now(UTC).isoformat()
+
+    if isinstance(timestamp, str):
+        return timestamp
+
+    try:
+        iso = getattr(timestamp, "isoformat", None)
+        if callable(iso):
+            return str(iso())
+    except Exception:
+        pass
+
+    if isinstance(timestamp, (int, float)):
+        try:
+            return datetime.fromtimestamp(timestamp, UTC).isoformat()
+        except Exception:
+            pass
+
+    try:
+        return str(timestamp)
+    except Exception:
+        return datetime.now(UTC).isoformat()
 
 
 class SupportedChain(str, Enum):
@@ -40,7 +70,7 @@ class ChainInfo:
     explorer_url: str
     api_endpoint: str
     confirmations_required: int
-    average_block_time: int  # seconds
+    average_block_time: float  # seconds (allow fractional block times like Solana)
     transaction_fee_unit: str
     supports_smart_contracts: bool
     native_token: str
@@ -56,7 +86,7 @@ class ChainTransaction:
     to_address: str
     amount: float
     fee: float
-    timestamp: datetime
+    timestamp: datetime | str
     block_number: int | None = None
     confirmations: int = 0
     status: str = "pending"  # pending, confirmed, failed
@@ -66,7 +96,8 @@ class ChainTransaction:
     def to_dict(self) -> dict[str, Any]:
         """Convert transaction to dictionary."""
         result = asdict(self)
-        result["timestamp"] = self.timestamp.isoformat()
+        # timestamp may be a datetime, string, or epoch number - normalize safely
+        result["timestamp"] = _to_iso(self.timestamp)
         return result
 
 
@@ -85,9 +116,9 @@ class MultiChainAnalytics:
 class MultiChainEngine:
     """Multi - blockchain support and analytics engine."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.chain_configs = self._initialize_chain_configs()
-        self.rate_limiters = {}
+        self.rate_limiters: dict[SupportedChain, dict[str, Any]] = {}
         self._init_rate_limiting()
 
     def _initialize_chain_configs(self) -> dict[SupportedChain, ChainInfo]:
@@ -96,8 +127,8 @@ class MultiChainEngine:
             SupportedChain.BITCOIN: ChainInfo(
                 name="Bitcoin",
                 symbol="BTC",
-                explorer_url="https://blockstream.info / tx/",
-                api_endpoint="https://blockstream.info / api",
+                explorer_url="https://blockstream.info/tx/",
+                api_endpoint="https://blockstream.info/api",
                 confirmations_required=6,
                 average_block_time=600,
                 transaction_fee_unit="satoshi / byte",
@@ -107,8 +138,8 @@ class MultiChainEngine:
             SupportedChain.ETHEREUM: ChainInfo(
                 name="Ethereum",
                 symbol="ETH",
-                explorer_url="https://etherscan.io / tx/",
-                api_endpoint="https://api.etherscan.io / api",
+                explorer_url="https://etherscan.io/tx/",
+                api_endpoint="https://api.etherscan.io/api",
                 confirmations_required=12,
                 average_block_time=15,
                 transaction_fee_unit="gwei",
@@ -118,7 +149,7 @@ class MultiChainEngine:
             SupportedChain.XRP: ChainInfo(
                 name="XRP Ledger",
                 symbol="XRP",
-                explorer_url="https://xrpscan.com / tx/",
+                explorer_url="https://xrpscan.com/tx/",
                 api_endpoint="https://s1.ripple.com:51234",
                 confirmations_required=1,
                 average_block_time=4,
@@ -129,8 +160,8 @@ class MultiChainEngine:
             SupportedChain.POLYGON: ChainInfo(
                 name="Polygon",
                 symbol="MATIC",
-                explorer_url="https://polygonscan.com / tx/",
-                api_endpoint="https://api.polygonscan.com / api",
+                explorer_url="https://polygonscan.com/tx/",
+                api_endpoint="https://api.polygonscan.com/api",
                 confirmations_required=12,
                 average_block_time=2,
                 transaction_fee_unit="gwei",
@@ -140,8 +171,8 @@ class MultiChainEngine:
             SupportedChain.BSC: ChainInfo(
                 name="Binance Smart Chain",
                 symbol="BNB",
-                explorer_url="https://bscscan.com / tx/",
-                api_endpoint="https://api.bscscan.com / api",
+                explorer_url="https://bscscan.com/tx/",
+                api_endpoint="https://api.bscscan.com/api",
                 confirmations_required=12,
                 average_block_time=3,
                 transaction_fee_unit="gwei",
@@ -151,8 +182,8 @@ class MultiChainEngine:
             SupportedChain.CARDANO: ChainInfo(
                 name="Cardano",
                 symbol="ADA",
-                explorer_url="https://cardanoscan.io / transaction/",
-                api_endpoint="https://cardano - mainnet.blockfrost.io / api / v0",
+                explorer_url="https://cardanoscan.io/transaction/",
+                api_endpoint="https://cardano-mainnet.blockfrost.io/api/v0",
                 confirmations_required=15,
                 average_block_time=20,
                 transaction_fee_unit="lovelace",
@@ -162,8 +193,8 @@ class MultiChainEngine:
             SupportedChain.SOLANA: ChainInfo(
                 name="Solana",
                 symbol="SOL",
-                explorer_url="https://explorer.solana.com / tx/",
-                api_endpoint="https://api.mainnet - beta.solana.com",
+                explorer_url="https://explorer.solana.com/tx/",
+                api_endpoint="https://api.mainnet-beta.solana.com",
                 confirmations_required=1,
                 average_block_time=0.4,
                 transaction_fee_unit="lamports",
@@ -183,7 +214,7 @@ class MultiChainEngine:
             ),
         }
 
-    def _init_rate_limiting(self):
+    def _init_rate_limiting(self) -> None:
         """Initialize rate limiting for API calls."""
         for chain in SupportedChain:
             self.rate_limiters[chain] = {
@@ -192,76 +223,81 @@ class MultiChainEngine:
             }
 
     async def get_transaction(
-        self, chain: SupportedChain, tx_hash: str
+        self,
+        chain: SupportedChain,
+        tx_hash: str,
     ) -> ChainTransaction | None:
         """Get transaction details from any supported chain."""
-
         if not self._check_rate_limit(chain):
-            raise Exception(f"Rate limit exceeded for {chain.value}")
+            msg = f"Rate limit exceeded for {chain.value}"
+            raise Exception(msg)
 
         try:
             if chain == SupportedChain.BITCOIN:
                 return await self._get_bitcoin_transaction(tx_hash)
-            elif chain == SupportedChain.ETHEREUM:
+            if chain == SupportedChain.ETHEREUM:
                 return await self._get_ethereum_transaction(tx_hash)
-            elif chain == SupportedChain.XRP:
+            if chain == SupportedChain.XRP:
                 return await self._get_xrp_transaction(tx_hash)
-            elif chain == SupportedChain.POLYGON:
+            if chain == SupportedChain.POLYGON:
                 return await self._get_polygon_transaction(tx_hash)
-            elif chain == SupportedChain.BSC:
+            if chain == SupportedChain.BSC:
                 return await self._get_bsc_transaction(tx_hash)
-            elif chain == SupportedChain.CARDANO:
+            if chain == SupportedChain.CARDANO:
                 return await self._get_cardano_transaction(tx_hash)
-            elif chain == SupportedChain.SOLANA:
+            if chain == SupportedChain.SOLANA:
                 return await self._get_solana_transaction(tx_hash)
-            elif chain == SupportedChain.AVALANCHE:
+            if chain == SupportedChain.AVALANCHE:
                 return await self._get_avalanche_transaction(tx_hash)
-            else:
-                raise ValueError(f"Unsupported chain: {chain}")
+            msg = f"Unsupported chain: {chain}"
+            raise ValueError(msg)
 
         except Exception as e:
-            logger.error(f"Error getting {chain.value} transaction {tx_hash}: {e}")
+            logger.exception(f"Error getting {chain.value} transaction {tx_hash}: {e}")
             return None
 
     async def get_address_transactions(
-        self, chain: SupportedChain, address: str, limit: int = 100
+        self,
+        chain: SupportedChain,
+        address: str,
+        limit: int = 100,
     ) -> list[ChainTransaction]:
         """Get transactions for an address on any chain."""
-
         if not self._check_rate_limit(chain):
-            raise Exception(f"Rate limit exceeded for {chain.value}")
+            msg = f"Rate limit exceeded for {chain.value}"
+            raise Exception(msg)
 
         try:
             if chain == SupportedChain.BITCOIN:
                 return await self._get_bitcoin_address_transactions(address, limit)
-            elif chain == SupportedChain.ETHEREUM:
+            if chain == SupportedChain.ETHEREUM:
                 return await self._get_ethereum_address_transactions(address, limit)
-            elif chain == SupportedChain.XRP:
+            if chain == SupportedChain.XRP:
                 return await self._get_xrp_address_transactions(address, limit)
-            elif chain == SupportedChain.POLYGON:
+            if chain == SupportedChain.POLYGON:
                 return await self._get_polygon_address_transactions(address, limit)
-            elif chain == SupportedChain.BSC:
+            if chain == SupportedChain.BSC:
                 return await self._get_bsc_address_transactions(address, limit)
-            elif chain == SupportedChain.CARDANO:
+            if chain == SupportedChain.CARDANO:
                 return await self._get_cardano_address_transactions(address, limit)
-            elif chain == SupportedChain.SOLANA:
+            if chain == SupportedChain.SOLANA:
                 return await self._get_solana_address_transactions(address, limit)
-            elif chain == SupportedChain.AVALANCHE:
+            if chain == SupportedChain.AVALANCHE:
                 return await self._get_avalanche_address_transactions(address, limit)
-            else:
-                return []
+            return []
 
         except Exception as e:
-            logger.error(
-                f"Error getting {chain.value} address transactions for {address}: {e}"
+            logger.exception(
+                f"Error getting {chain.value} address transactions for {address}: {e}",
             )
             return []
 
     async def analyze_cross_chain_activity(
-        self, addresses: dict[SupportedChain, list[str]], days: int = 30
+        self,
+        addresses: dict[SupportedChain, list[str]],
+        days: int = 30,
     ) -> MultiChainAnalytics:
         """Analyze activity across multiple chains."""
-
         all_transactions = []
         chain_distribution = {}
         total_value_usd = 0.0
@@ -277,7 +313,13 @@ class MultiChainEngine:
 
                 # Filter by date range
                 cutoff_date = datetime.now(UTC) - timedelta(days=days)
-                recent_txs = [tx for tx in txs if tx.timestamp >= cutoff_date]
+                # Only compare timestamps that are actual datetimes
+                recent_txs = [
+                    tx
+                    for tx in txs
+                    if isinstance(tx.timestamp, datetime)
+                    and tx.timestamp >= cutoff_date
+                ]
 
                 chain_txs.extend(recent_txs)
                 unique_addresses.add(address)
@@ -298,7 +340,8 @@ class MultiChainEngine:
 
         # Calculate cross - chain risk metrics
         risk_metrics = self._calculate_cross_chain_risks(
-            all_transactions, chain_distribution
+            all_transactions,
+            chain_distribution,
         )
 
         return MultiChainAnalytics(
@@ -322,37 +365,32 @@ class MultiChainEngine:
                     "supports_smart_contracts": info.supports_smart_contracts,
                     "average_block_time": info.average_block_time,
                     "confirmations_required": info.confirmations_required,
-                }
+                },
             )
         return chains
 
     def detect_chain_from_address(self, address: str) -> SupportedChain | None:
         """Auto - detect blockchain from address format."""
-
         # Bitcoin patterns
-        if (
-            address.startswith("1")
-            or address.startswith("3")
-            or address.startswith("bc1")
-        ):
+        if address.startswith(("1", "3", "bc1")):
             return SupportedChain.BITCOIN
 
         # Ethereum / EVM patterns (40 hex chars after 0x)
-        elif address.startswith("0x") and len(address) == 42:
+        if address.startswith("0x") and len(address) == 42:
             # Could be Ethereum, Polygon, BSC, or Avalanche
             # Default to Ethereum, but would need more context in real implementation
             return SupportedChain.ETHEREUM
 
         # XRP pattern
-        elif address.startswith("r") and len(address) >= 25 and len(address) <= 34:
+        if address.startswith("r") and len(address) >= 25 and len(address) <= 34:
             return SupportedChain.XRP
 
         # Cardano pattern
-        elif address.startswith("addr1"):
+        if address.startswith("addr1"):
             return SupportedChain.CARDANO
 
         # Solana pattern (base58, 32 - 44 chars)
-        elif len(address) >= 32 and len(address) <= 44 and address.isalnum():
+        if len(address) >= 32 and len(address) <= 44 and address.isalnum():
             return SupportedChain.SOLANA
 
         return None
@@ -393,7 +431,6 @@ class MultiChainEngine:
         chain_distribution: dict[str, dict[str, Any]],
     ) -> dict[str, float]:
         """Calculate cross - chain risk metrics."""
-
         if not transactions:
             return {}
 
@@ -415,7 +452,7 @@ class MultiChainEngine:
         frequency_risk = min(1.0, avg_daily_txs / 100)  # Normalize to 0 - 1
 
         # Cross - chain movement detection
-        cross_chain_movements = 0
+        cross_chain_movements = 0.0
         # This would analyze transaction patterns to detect funds moving between chains
         # For now, mock calculation
         cross_chain_movements = len(transactions) * 0.1  # 10% assumed cross - chain
@@ -534,7 +571,9 @@ class MultiChainEngine:
     # Address transaction methods (simplified - would return lists)
 
     async def _get_bitcoin_address_transactions(
-        self, address: str, limit: int
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_bitcoin_transaction(f"mock_tx_{i}")
@@ -542,7 +581,9 @@ class MultiChainEngine:
         ]
 
     async def _get_ethereum_address_transactions(
-        self, address: str, limit: int
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_ethereum_transaction(f"mock_tx_{i}")
@@ -550,7 +591,9 @@ class MultiChainEngine:
         ]
 
     async def _get_xrp_address_transactions(
-        self, address: str, limit: int
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_xrp_transaction(f"mock_tx_{i}")
@@ -558,7 +601,9 @@ class MultiChainEngine:
         ]
 
     async def _get_polygon_address_transactions(
-        self, address: str, limit: int
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_polygon_transaction(f"mock_tx_{i}")
@@ -566,7 +611,9 @@ class MultiChainEngine:
         ]
 
     async def _get_bsc_address_transactions(
-        self, address: str, limit: int
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_bsc_transaction(f"mock_tx_{i}")
@@ -574,7 +621,9 @@ class MultiChainEngine:
         ]
 
     async def _get_cardano_address_transactions(
-        self, address: str, limit: int
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_cardano_transaction(f"mock_tx_{i}")
@@ -582,7 +631,9 @@ class MultiChainEngine:
         ]
 
     async def _get_solana_address_transactions(
-        self, address: str, limit: int
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_solana_transaction(f"mock_tx_{i}")
@@ -590,7 +641,9 @@ class MultiChainEngine:
         ]
 
     async def _get_avalanche_address_transactions(
-        self, address: str, limit: int
+        self,
+        address: str,
+        limit: int,
     ) -> list[ChainTransaction]:
         return [
             await self._get_avalanche_transaction(f"mock_tx_{i}")
@@ -603,21 +656,25 @@ multi_chain_engine = MultiChainEngine()
 
 
 async def get_transaction(
-    chain: SupportedChain, tx_hash: str
+    chain: SupportedChain,
+    tx_hash: str,
 ) -> ChainTransaction | None:
     """Get transaction from any supported chain."""
     return await multi_chain_engine.get_transaction(chain, tx_hash)
 
 
 async def get_address_transactions(
-    chain: SupportedChain, address: str, limit: int = 100
+    chain: SupportedChain,
+    address: str,
+    limit: int = 100,
 ) -> list[ChainTransaction]:
     """Get transactions for address on any chain."""
     return await multi_chain_engine.get_address_transactions(chain, address, limit)
 
 
 async def analyze_cross_chain_activity(
-    addresses: dict[SupportedChain, list[str]], days: int = 30
+    addresses: dict[SupportedChain, list[str]],
+    days: int = 30,
 ) -> MultiChainAnalytics:
     """Analyze cross - chain activity."""
     return await multi_chain_engine.analyze_cross_chain_activity(addresses, days)

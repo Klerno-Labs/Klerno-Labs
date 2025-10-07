@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - Klerno Labs{% endblock %}
+
+{% block head %}
+<style>
+    .error-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .error-content {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 3rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        max-width: 500px;
+        width: 90%;
+        animation: slideIn 0.8s ease-out;
+    }
+
+    .error-code {
+        font-size: 6rem;
+        font-weight: 700;
+        color: #fff;
+        text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+        margin-bottom: 1rem;
+        animation: pulse 2s infinite;
+    }
+
+    .error-message {
+        font-size: 1.5rem;
+        color: #fff;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+
+    .error-description {
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    .error-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-error {
+        padding: 12px 24px;
+        border-radius: 25px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-error:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .error-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-bg"></div>
+    <div class="error-content">
+        <div class="error-code">404</div>
+        <h1 class="error-message">Page Not Found</h1>
+        <p class="error-description">
+            The page you're looking for doesn't exist. It might have been moved, deleted, or you entered the wrong URL.
+        </p>
+        <div class="error-actions">
+            <a href="/" class="btn-error btn-primary">
+                <i class="fas fa-home"></i>
+                Go Home
+            </a>
+            <button onclick="history.back()" class="btn-error btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Go Back
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Add some interactive particles
+        const container = document.querySelector('.error-container');
+
+        for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.style.cssText = `
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            left: ${Math.random() * 100}%;
+            top: ${Math.random() * 100}%;
+            animation: float ${3 + Math.random() * 4}s ease-in-out infinite;
+            animation-delay: ${Math.random() * 2}s;
+        `;
+            container.appendChild(particle);
+        }
+
+        // Add floating animation
+        const style = document.createElement('style');
+        style.textContent = `
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+                opacity: 0.6;
+            }
+            33% {
+                transform: translateY(-10px) rotate(120deg);
+                opacity: 1;
+            }
+            66% {
+                transform: translateY(5px) rotate(240deg);
+                opacity: 0.8;
+            }
+        }
+    `;
+        document.head.appendChild(style);
+    });
+</script>
+{% endblock %}

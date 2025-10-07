@@ -1,0 +1,382 @@
+[
+  {
+    "module": "__init__",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "admin",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "advanced_ai_risk",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "advanced_caching",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "advanced_monitoring",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "advanced_security",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "advanced_security_hardening",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "ai_agent",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "analytics",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "analytics_dashboard",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "audit_logger",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "auth",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "community",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "compliance",
+    "refs": 2,
+    "examples": "tests/test_compliance.py;tests/test_unit_comprehensive.py"
+  },
+  {
+    "module": "compliance_reporting",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "comprehensive_testing",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "config",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "crypto_iso20022_integration",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "custom_dashboards",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "deps",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "enterprise_analytics_reporting",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "enterprise_cicd_pipeline",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "enterprise_database_async",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "enterprise_error_handling",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "enterprise_features",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "enterprise_health_dashboard",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "enterprise_integration",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "enterprise_integration_hub",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "enterprise_monitoring",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "enterprise_monitoring_enhanced",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "enterprise_security",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "enterprise_security_enhanced",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "exceptions",
+    "refs": 2,
+    "examples": "tests/test_integration.py;app/middleware.py"
+  },
+  {
+    "module": "guardian",
+    "refs": 2,
+    "examples": "tests/test_guardian.py;guardian.py"
+  },
+  {
+    "module": "hardening",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "health",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "iso20022_compliance",
+    "refs": 2,
+    "examples": "tests/test_iso20022.py;tests/test_iso_parsers.py"
+  },
+  {
+    "module": "legacy_helpers",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "llm",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "logging_config",
+    "refs": 2,
+    "examples": "tests/test_integration.py;app/middleware.py"
+  },
+  {
+    "module": "mailer",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "main",
+    "refs": 3,
+    "examples": "tests/test_iso_endpoints.py;tests/test_api.py;tests/conftest.py"
+  },
+  {
+    "module": "main_integration",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "middleware",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "models",
+    "refs": 3,
+    "examples": "tests/test_models.py;integrations/bsc.py;integrations/xrp.py"
+  },
+  {
+    "module": "multi_chain_support",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "notifications",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "onboarding",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "paywall",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "paywall_hooks",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "performance",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "performance_optimization",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "performance_optimization_advanced",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "plugin_system",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "referral_system",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "reporter",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "resilience_system",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "schemas",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "security",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "security_hardening_advanced",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "security_middleware",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "security_session",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "seed_rag_data",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "settings",
+    "refs": 2,
+    "examples": "tests/test_integration.py;enterprise_main_v2.py"
+  },
+  {
+    "module": "shared_constants",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "store",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "subscriptions",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "system_monitor",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "tasks",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "transactions",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "utils",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "websocket_alerts",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "worker",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "xrpl",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "xrpl_payments",
+    "refs": 0,
+    "examples": ""
+  },
+  {
+    "module": "xrpl_payments_mock",
+    "refs": 0,
+    "examples": ""
+  }
+]

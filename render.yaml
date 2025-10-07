@@ -1,47 +1,27 @@
 services:
   - type: web
     name: klerno-labs
-    runtime: python
-    region: oregon
+    runtime: docker
+    repo: https://github.com/Klerno-Labs/Klerno-Labs
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: starter
-    buildCommand: pip install -r requirements.txt
-    startCommand: bash render_start.sh
-    healthCheckPath: /
-    numInstances: 1
     autoDeploy: true
+    healthCheckPath: /health
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.11.9"
       - key: APP_ENV
-        value: "production"
-      - key: HOST
-        value: "0.0.0.0"
-      - key: PORT
-        fromService:
-          name: klerno-labs
-          type: web
-          property: port
-      - key: WORKERS
+        value: production
+      # Allow Render to inject PORT; app honors ${PORT} in Dockerfile CMD
+      # HOST defaults to 0.0.0.0 in Dockerfile, no need to override here
+      - key: READINESS_FAIL_OPEN
         value: "1"
-      - key: USE_SQLITE
-        value: "true"
-      - key: DEMO_MODE
-        value: "false"
-      - key: XRPL_NET
-        value: "testnet"
-      - key: SECRET_KEY
+      - key: STATIC_VERSION
+        # Render exposes RENDER_GIT_COMMIT or RENDER_GIT_COMMIT_SHA depending on runtime; use the latter if available
+        # This ensures immutable, versioned assets per deploy
+        value: ${RENDER_GIT_COMMIT_SHA}
+      - key: JWT_SECRET
         generateValue: true
-      - key: COOKIE_SECURE
-        value: "true"
-      - key: COOKIE_SAMESITE
-        value: "lax"
-      - key: ENABLE_HSTS
-        value: "true"
-      - key: RISK_THRESHOLD
-        value: "0.75"
-      - key: DESTINATION_WALLET
-        value: rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe
-      - key: SUB_PRICE_XRP
-        value: 10.0
-      - key: SUB_DURATION_DAYS
-        value: 30
+      - key: DATABASE_URL
+        value: ""
+      - key: REDIS_URL
+        value: ""

@@ -192,6 +192,7 @@ local/
 .local/
 dev/
 .dev/
+.run/
 
 # Backup Files
 *.bak
@@ -211,3 +212,7 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+vendor/neon-data-api-neon-auth/node_modules/
+vendor/neon-data-api-neon-auth/logs/
+vendor/neon-data-api-neon-auth/.env
+vendor/neon-data-api-neon-auth/.env.*

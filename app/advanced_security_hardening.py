@@ -1,15 +1,24 @@
-# Provide a getter for analytics_dashboard compatibility
-def get_security_middleware():
-    global security_middleware
-    if not security_middleware:
-        security_middleware = AdvancedSecurityMiddleware(None)
-    return security_middleware
-
+from __future__ import annotations
 
 """
 Advanced Security Hardening for Klerno Labs
 Enhanced rate limiting, IP whitelisting, and threat protection
 """
+
+"""Module-level globals and utilities."""
+
+# Initialize global security components early to avoid NameError during import
+# in case other modules call getters during circular imports.
+security_middleware: AdvancedSecurityMiddleware | None = None
+
+
+# Provide a getter for analytics_dashboard compatibility
+def get_security_middleware() -> AdvancedSecurityMiddleware:
+    global security_middleware
+    if security_middleware is None:
+        security_middleware = AdvancedSecurityMiddleware(None)
+    return security_middleware
+
 
 import contextlib
 import ipaddress
@@ -18,6 +27,7 @@ import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -37,21 +47,25 @@ class SecurityEvent:
     timestamp: float
     event_type: str
     threat_level: ThreatLevel
-    details: dict
+    details: dict[str, Any]
     blocked: bool = False
 
 
 class AdvancedRateLimiter:
-    """Advanced rate limiting with different strategies"""
+    """Advanced rate limiting with different strategies."""
 
-    def __init__(self):
-        self.requests = defaultdict(deque)  # IP -> deque of timestamps
-        self.blocked_ips = defaultdict(float)  # IP -> unblock_time
-        self.failed_attempts = defaultdict(int)  # IP -> failed_count
-        self.suspicious_patterns = defaultdict(list)  # IP -> patterns
+    def __init__(self) -> None:
+        self.requests: dict[str, deque[float]] = defaultdict(
+            deque
+        )  # IP -> deque of timestamps
+        self.blocked_ips: dict[str, float] = defaultdict(float)  # IP -> unblock_time
+        self.failed_attempts: dict[str, int] = defaultdict(int)  # IP -> failed_count
+        self.suspicious_patterns: dict[str, list[Any]] = defaultdict(
+            list
+        )  # IP -> patterns
 
     def is_rate_limited(self, ip: str, endpoint: str, limit: int, window: int) -> bool:
-        """Check if IP is rate limited for specific endpoint"""
+        """Check if IP is rate limited for specific endpoint."""
         now = time.time()
 
         # Check if IP is temporarily blocked
@@ -74,25 +88,25 @@ class AdvancedRateLimiter:
         request_times.append(now)
         return False
 
-    def block_ip(self, ip: str, duration: int):
-        """Temporarily block an IP address"""
+    def block_ip(self, ip: str, duration: int) -> None:
+        """Temporarily block an IP address."""
         self.blocked_ips[ip] = time.time() + duration
 
     def add_failed_attempt(self, ip: str) -> int:
-        """Track failed login attempts"""
+        """Track failed login attempts."""
         self.failed_attempts[ip] += 1
         return self.failed_attempts[ip]
 
-    def clear_failed_attempts(self, ip: str):
-        """Clear failed attempts for successful login"""
+    def clear_failed_attempts(self, ip: str) -> None:
+        """Clear failed attempts for successful login."""
         if ip in self.failed_attempts:
             del self.failed_attempts[ip]
 
 
 class IPWhitelist:
-    """Advanced IP whitelisting with CIDR support"""
+    """Advanced IP whitelisting with CIDR support."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.whitelist: set[str] = set()
         self.whitelist_networks: list[ipaddress.IPv4Network] = []
         self.admin_whitelist: set[str] = set()
@@ -104,8 +118,8 @@ class IPWhitelist:
         self.add_network("172.16.0.0/12")  # Private network
         self.add_network("192.168.0.0/16")  # Private network
 
-    def add_ip(self, ip: str, category: str = "general"):
-        """Add IP to whitelist"""
+    def add_ip(self, ip: str, category: str = "general") -> None:
+        """Add IP to whitelist."""
         if category == "admin":
             self.admin_whitelist.add(ip)
         elif category == "api":
@@ -113,13 +127,13 @@ class IPWhitelist:
         else:
             self.whitelist.add(ip)
 
-    def add_network(self, network: str):
-        """Add network CIDR to whitelist"""
+    def add_network(self, network: str) -> None:
+        """Add network CIDR to whitelist."""
         with contextlib.suppress(ValueError):
             self.whitelist_networks.append(ipaddress.IPv4Network(network))
 
     def is_whitelisted(self, ip: str, category: str = "general") -> bool:
-        """Check if IP is whitelisted"""
+        """Check if IP is whitelisted."""
         # Check direct IP whitelist
         if category == "admin" and ip in self.admin_whitelist:
             return True
@@ -141,9 +155,9 @@ class IPWhitelist:
 
 
 class ThreatDetector:
-    """Advanced threat detection and analysis"""
+    """Advanced threat detection and analysis."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.malicious_ips: set[str] = set()
         self.suspicious_user_agents: list[str] = [
             "sqlmap",
@@ -163,17 +177,19 @@ class ThreatDetector:
                 re.IGNORECASE,
             ),
             "xss": re.compile(
-                r"(<script.*?>|javascript:|onload=|onerror=)", re.IGNORECASE
+                r"(<script.*?>|javascript:|onload=|onerror=)",
+                re.IGNORECASE,
             ),
             "path_traversal": re.compile(
-                r"(\.\./|\.\.\\\\|%2e%2e%2f|%2e%2e%5c)", re.IGNORECASE
+                r"(\.\./|\.\.\\\\|%2e%2e%2f|%2e%2e%5c)",
+                re.IGNORECASE,
             ),
             "command_injection": re.compile(r"(;|\||&|\$\(|\`)", re.IGNORECASE),
         }
         self.security_events: list[SecurityEvent] = []
 
     def detect_threats(self, request: Request) -> list[SecurityEvent]:
-        """Detect various threats in the request"""
+        """Detect various threats in the request."""
         threats = []
         ip = self.get_client_ip(request)
 
@@ -186,7 +202,7 @@ class ThreatDetector:
                     event_type="malicious_ip",
                     threat_level=ThreatLevel.HIGH,
                     details={"reason": "Known malicious IP"},
-                )
+                ),
             )
 
         # Check user agent
@@ -200,7 +216,7 @@ class ThreatDetector:
                         event_type="suspicious_user_agent",
                         threat_level=ThreatLevel.MEDIUM,
                         details={"user_agent": user_agent, "pattern": suspicious_ua},
-                    )
+                    ),
                 )
 
         # Check for attack patterns in URL and parameters
@@ -214,7 +230,7 @@ class ThreatDetector:
                         event_type=f"attack_pattern_{attack_type}",
                         threat_level=ThreatLevel.HIGH,
                         details={"url": full_url, "attack_type": attack_type},
-                    )
+                    ),
                 )
 
         # Log all threats
@@ -223,7 +239,7 @@ class ThreatDetector:
         return threats
 
     def get_client_ip(self, request: Request) -> str:
-        """Get real client IP considering proxies"""
+        """Get real client IP considering proxies."""
         # Check X-Forwarded-For header first (for proxies/load balancers)
         forwarded_for = request.headers.get("x-forwarded-for")
         if forwarded_for:
@@ -238,20 +254,20 @@ class ThreatDetector:
         # Fallback to direct connection IP
         return request.client.host if request.client else "127.0.0.1"
 
-    def add_malicious_ip(self, ip: str):
-        """Add IP to malicious list"""
+    def add_malicious_ip(self, ip: str) -> None:
+        """Add IP to malicious list[Any]."""
         self.malicious_ips.add(ip)
 
     def get_recent_events(self, hours: int = 24) -> list[SecurityEvent]:
-        """Get recent security events"""
+        """Get recent security events."""
         cutoff = time.time() - (hours * 3600)
         return [event for event in self.security_events if event.timestamp > cutoff]
 
 
 class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
-    """Comprehensive security middleware"""
+    """Comprehensive security middleware."""
 
-    def __init__(self, app):
+    def __init__(self, app) -> None:
         super().__init__(app)
         self.rate_limiter = AdvancedRateLimiter()
         self.ip_whitelist = IPWhitelist()
@@ -276,8 +292,8 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
             "/api/upload": {"limit": 5, "window": 300},  # 5 uploads per 5 minutes
         }
 
-    async def dispatch(self, request: Request, call_next):
-        """Main security dispatch"""
+    async def dispatch(self, request: Request, call_next) -> Any:
+        """Main security dispatch."""
         start_time = time.time()
         ip = self.threat_detector.get_client_ip(request)
         path = request.url.path
@@ -318,12 +334,13 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
 
             # 2. IP Whitelisting for sensitive endpoints
             if path.startswith("/admin/") and not self.ip_whitelist.is_whitelisted(
-                ip, "admin"
+                ip,
+                "admin",
             ):
                 return JSONResponse(
                     status_code=403,
                     content={
-                        "error": "Access denied: IP not whitelisted for admin access"
+                        "error": "Access denied: IP not whitelisted for admin access",
                     },
                 )
 
@@ -332,19 +349,27 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
 
             # Check specific endpoint limits
             for endpoint, limits in self.rate_limits.items():
-                if endpoint != "general" and endpoint != "api":
-                    if path.startswith(endpoint):
-                        if self.rate_limiter.is_rate_limited(
-                            ip, endpoint, limits["limit"], limits["window"]
-                        ):
-                            rate_limited = True
-                            break
+                if (
+                    endpoint not in {"general", "api"}
+                    and path.startswith(endpoint)
+                    and self.rate_limiter.is_rate_limited(
+                        ip,
+                        endpoint,
+                        limits["limit"],
+                        limits["window"],
+                    )
+                ):
+                    rate_limited = True
+                    break
 
             # Check general API limits
             if not rate_limited and path.startswith("/api/"):
                 api_limits = self.rate_limits["api"]
                 if self.rate_limiter.is_rate_limited(
-                    ip, "api", api_limits["limit"], api_limits["window"]
+                    ip,
+                    "api",
+                    api_limits["limit"],
+                    api_limits["window"],
                 ):
                     rate_limited = True
 
@@ -352,7 +377,10 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
             if not rate_limited:
                 general_limits = self.rate_limits["general"]
                 if self.rate_limiter.is_rate_limited(
-                    ip, "general", general_limits["limit"], general_limits["window"]
+                    ip,
+                    "general",
+                    general_limits["limit"],
+                    general_limits["window"],
                 ):
                     rate_limited = True
 
@@ -366,7 +394,8 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
             content_length = request.headers.get("content-length")
             if content_length and int(content_length) > 10 * 1024 * 1024:  # 10MB limit
                 return JSONResponse(
-                    status_code=413, content={"error": "Request too large"}
+                    status_code=413,
+                    content={"error": "Request too large"},
                 )
 
             # Process request
@@ -395,14 +424,13 @@ class AdvancedSecurityMiddleware(BaseHTTPMiddleware):
 
             return response
 
-        except Exception as e:
+        except Exception:
             # Log security middleware errors
-            print(f"Security middleware error: {e}")
             return await call_next(request)
 
 
-def create_security_config():
-    """Create security configuration"""
+def create_security_config() -> dict[str, Any]:
+    """Create security configuration."""
     return {
         "rate_limiting": {
             "enabled": True,
@@ -422,12 +450,8 @@ def create_security_config():
     }
 
 
-# Initialize global security components
-security_middleware = None
-
-
-def initialize_security():
-    """Initialize security components"""
+def initialize_security() -> Any:
+    """Initialize security components."""
     global security_middleware
     if not security_middleware:
         security_middleware = AdvancedSecurityMiddleware(None)

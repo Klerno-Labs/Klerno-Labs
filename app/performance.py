@@ -1,5 +1,4 @@
-"""
-Performance monitoring and optimization utilities for Klerno Labs.
+"""Performance monitoring and optimization utilities for Klerno Labs.
 Provides response time tracking, caching, and real - time performance metrics.
 """
 
@@ -11,7 +10,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any
+from typing import Any, cast
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -33,7 +32,7 @@ class PerformanceMetrics:
 class PerformanceMonitor:
     """Tracks API performance metrics with sub - 100ms targeting."""
 
-    def __init__(self, max_metrics: int = 1000):
+    def __init__(self, max_metrics: int = 1000) -> None:
         self.metrics: deque = deque(maxlen=max_metrics)
         self.endpoint_stats: dict[str, dict[str, Any]] = defaultdict(
             lambda: {
@@ -44,10 +43,10 @@ class PerformanceMonitor:
                 "max_time": 0.0,
                 "p95_time": 0.0,
                 "recent_times": deque(maxlen=100),
-            }
+            },
         )
 
-    def record_metric(self, metric: PerformanceMetrics):
+    def record_metric(self, metric: PerformanceMetrics) -> None:
         """Record a performance metric."""
         self.metrics.append(metric)
 
@@ -69,7 +68,8 @@ class PerformanceMonitor:
             stats["p95_time"] = sorted_times[p95_index]
 
     def get_slow_endpoints(
-        self, threshold_ms: float = 100.0
+        self,
+        threshold_ms: float = 100.0,
     ) -> dict[str, dict[str, Any]]:
         """Get endpoints exceeding the response time threshold."""
         return {
@@ -100,11 +100,11 @@ class PerformanceMonitor:
 class PerformanceMiddleware(BaseHTTPMiddleware):
     """Middleware to track API response times with sub - 100ms targeting."""
 
-    def __init__(self, app, monitor: PerformanceMonitor):
+    def __init__(self, app: Any, monitor: PerformanceMonitor) -> None:
         super().__init__(app)
         self.monitor = monitor
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Callable[..., Any]) -> Any:
         start_time = time.perf_counter()
 
         response = await call_next(request)
@@ -126,9 +126,10 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
         self.monitor.record_metric(metric)
 
         # Add performance headers
-        response.headers["X - Response - Time - Ms"] = str(round(response_time_ms, 2))
+        metric.user_agent = request.headers.get("user-agent")
+        response.headers["X-Response-Time-Ms"] = str(round(response_time_ms, 2))
         if response_time_ms > 100:
-            response.headers["X - Performance - Warning"] = "slow - response"
+            response.headers["X-Performance-Warning"] = "slow-response"
 
         return response
 
@@ -136,7 +137,7 @@ class PerformanceMiddleware(BaseHTTPMiddleware):
 class InMemoryCache:
     """Simple in - memory cache with TTL support for high - performance data access."""
 
-    def __init__(self, default_ttl: int = 300):  # 5 minutes default
+    def __init__(self, default_ttl: int = 300) -> None:  # 5 minutes default
         self.cache: dict[str, dict[str, Any]] = {}
         self.default_ttl = default_ttl
 
@@ -194,14 +195,17 @@ class InMemoryCache:
         }
 
 
-def performance_cache(ttl: int = 60, key_func: Callable | None = None):
+def performance_cache(
+    ttl: int = 60,
+    key_func: Callable | None = None,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator for caching function results with TTL."""
 
-    def decorator(func: Callable):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         cache = InMemoryCache(default_ttl=ttl)
 
         @wraps(func)
-        async def async_wrapper(*args, **kwargs):
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
             # Generate cache key
             if key_func:
                 cache_key = key_func(*args, **kwargs)
@@ -221,7 +225,7 @@ def performance_cache(ttl: int = 60, key_func: Callable | None = None):
             return result
 
         @wraps(func)
-        def sync_wrapper(*args, **kwargs):
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             # Generate cache key
             if key_func:
                 cache_key = key_func(*args, **kwargs)
@@ -242,11 +246,10 @@ def performance_cache(ttl: int = 60, key_func: Callable | None = None):
 
         # Return appropriate wrapper based on whether function is async
         if asyncio.iscoroutinefunction(func):
-            async_wrapper.cache = cache
+            cast("Any", async_wrapper).cache = cache
             return async_wrapper
-        else:
-            sync_wrapper.cache = cache
-            return sync_wrapper
+        cast("Any", sync_wrapper).cache = cache
+        return sync_wrapper
 
     return decorator
 
@@ -262,10 +265,10 @@ app_cache = InMemoryCache()
 class OptimizedLiveHub:
     """Enhanced LiveHub with performance optimizations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._clients: dict[Any, set[str]] = {}
         self._lock = asyncio.Lock()
-        self._connection_pool = weakref.WeakSet()
+        self._connection_pool: weakref.WeakSet = weakref.WeakSet()
         self._message_queue: asyncio.Queue = asyncio.Queue(maxsize=1000)
         self._stats = {
             "messages_sent": 0,
@@ -273,14 +276,14 @@ class OptimizedLiveHub:
             "messages_queued": 0,
             "reconnections": 0,
         }
-        self._processor_task = None
+        self._processor_task: asyncio.Task[Any] | None = None
 
-    async def _start_processor(self):
+    async def _start_processor(self) -> None:
         """Start the background message processor if not already running."""
         if self._processor_task is None or self._processor_task.done():
             self._processor_task = asyncio.create_task(self._process_messages())
 
-    async def add(self, ws):
+    async def add(self, ws: Any) -> None:
         """Add WebSocket with immediate acceptance."""
         await ws.accept()
         async with self._lock:
@@ -291,19 +294,19 @@ class OptimizedLiveHub:
         # Start processor if needed
         await self._start_processor()
 
-    async def remove(self, ws):
+    async def remove(self, ws: Any) -> None:
         """Remove WebSocket connection."""
         async with self._lock:
             self._clients.pop(ws, None)
             self._stats["connections_active"] = len(self._clients)
 
-    async def update_watch(self, ws, watch: set[str]):
+    async def update_watch(self, ws: Any, watch: set[str]) -> None:
         """Update watch list for WebSocket."""
         async with self._lock:
             if ws in self._clients:
                 self._clients[ws] = {w.strip().lower() for w in watch if w}
 
-    async def publish(self, item: dict):
+    async def publish(self, item: dict[str, Any]) -> None:
         """Publish message to relevant clients with queuing."""
         fa = (item.get("from_addr") or "").lower()
         ta = (item.get("to_addr") or "").lower()
@@ -325,7 +328,7 @@ class OptimizedLiveHub:
                 # Skip if queue is full to prevent blocking
                 pass
 
-    async def _process_messages(self):
+    async def _process_messages(self) -> None:
         """Background task to process message queue."""
         while True:
             try:

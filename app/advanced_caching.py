@@ -1,13 +1,12 @@
-"""
-Advanced Caching Middleware for Klerno Labs
-Implements HTTP caching headers, static asset optimization, and browser cache control
+"""Advanced Caching Middleware for Klerno Labs
+Implements HTTP caching headers, static asset optimization, and browser cache control.
 """
 
 import hashlib
 import mimetypes
-import os
 import time
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import Request, Response
 from fastapi.staticfiles import StaticFiles
@@ -15,15 +14,15 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class AdvancedCachingMiddleware(BaseHTTPMiddleware):
-    """Enhanced caching middleware with smart cache strategies"""
+    """Enhanced caching middleware with smart cache strategies."""
 
-    def __init__(self, app, cache_rules: dict | None = None):
+    def __init__(self, app, cache_rules: dict | None = None) -> None:
         super().__init__(app)
         self.cache_rules = cache_rules or self._default_cache_rules()
-        self.etag_cache = {}  # Simple in-memory ETag cache
+        self.etag_cache: dict[str, str] = {}  # Simple in-memory ETag cache
 
     def _default_cache_rules(self) -> dict:
-        """Default caching rules for different content types"""
+        """Default caching rules for different content types."""
         return {
             # Static assets - Long cache with versioning
             "text/css": {
@@ -59,35 +58,35 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
         }
 
     def _generate_etag(self, content: bytes, path: str) -> str:
-        """Generate ETag for content validation"""
+        """Generate ETag for content validation."""
         import logging
 
         # Use SHA-256 for content hash (more secure than MD5)
         try:
             content_hash = hashlib.sha256(content).hexdigest()[:16]
         except Exception as e:
-            logging.error(f"ETag hash generation failed: {e}")
+            logging.exception(f"ETag hash generation failed: {e}")
             content_hash = "errorhash"
         # Try to get file modification time for static files
         if path.startswith("/static/"):
             try:
-                file_path = f"app{path}"
-                if os.path.exists(file_path):
-                    mtime = os.path.getmtime(file_path)
+                file_path = Path("app") / path.lstrip("/")
+                if file_path.exists():
+                    mtime = file_path.stat().st_mtime
                     return f'"{content_hash}-{int(mtime)}"'
             except Exception as e:
                 logging.warning(f"ETag mtime lookup failed: {e}")
         return f'"{content_hash}"'
 
     def _get_cache_control(self, content_type: str, path: str) -> str:
-        """Generate Cache-Control header based on content type and path"""
+        """Generate Cache-Control header based on content type and path."""
         # Get content type without charset
         base_content_type = content_type.split(";")[0].strip()
 
         # Special handling for different paths
         if path.startswith("/api/"):
             rules = {"max_age": 0, "no_cache": True, "no_store": True}
-        elif path.startswith("/admin/") or path.startswith("/auth/"):
+        elif path.startswith(("/admin/", "/auth/")):
             rules = {"max_age": 0, "private": True, "no_cache": True}
         elif path.startswith("/static/vendor/"):
             # Third-party assets can be cached longer
@@ -114,8 +113,8 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
 
         return ", ".join(parts)
 
-    def _add_security_headers(self, response: Response, path: str):
-        """Add security-related caching headers"""
+    def _add_security_headers(self, response: Response, path: str) -> None:
+        """Add security-related caching headers."""
         # Prevent caching of sensitive pages
         if any(
             sensitive in path for sensitive in ["/login", "/signup", "/admin", "/auth"]
@@ -124,8 +123,8 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
 
-    def _add_performance_headers(self, response: Response, content_type: str):
-        """Add performance optimization headers"""
+    def _add_performance_headers(self, response: Response, content_type: str) -> None:
+        """Add performance optimization headers."""
         # Enable compression hints
         if content_type.startswith("text/") or "json" in content_type:
             response.headers["Vary"] = "Accept-Encoding"
@@ -138,7 +137,7 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
             )
 
     async def dispatch(self, request: Request, call_next):
-        """Main middleware dispatch method"""
+        """Main middleware dispatch method."""
         start_time = time.time()
 
         # Check for conditional requests
@@ -169,11 +168,11 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
             # Add Last-Modified for static files
             if path.startswith("/static/"):
                 try:
-                    file_path = f"app{path}"
-                    if os.path.exists(file_path):
-                        mtime = os.path.getmtime(file_path)
+                    file_path = Path("app") / path.lstrip("/")
+                    if file_path.exists():
+                        mtime = file_path.stat().st_mtime
                         last_modified = datetime.fromtimestamp(mtime).strftime(
-                            "%a, %d %b %Y %H:%M:%S GMT"
+                            "%a, %d %b %Y %H:%M:%S GMT",
                         )
                         response.headers["Last-Modified"] = last_modified
 
@@ -181,14 +180,15 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
                         if if_modified_since:
                             try:
                                 client_time = datetime.strptime(
-                                    if_modified_since, "%a, %d %b %Y %H:%M:%S GMT"
+                                    if_modified_since,
+                                    "%a, %d %b %Y %H:%M:%S GMT",
                                 )
                                 file_time = datetime.fromtimestamp(mtime)
                                 if client_time >= file_time:
                                     return Response(status_code=304)
                             except ValueError:
                                 pass
-                except:
+                except Exception:
                     pass
 
             # Add security headers
@@ -205,9 +205,9 @@ class AdvancedCachingMiddleware(BaseHTTPMiddleware):
 
 
 class OptimizedStaticFiles(StaticFiles):
-    """Enhanced static file serving with advanced caching"""
+    """Enhanced static file serving with advanced caching."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.compression_types = {
             ".js": "gzip",
@@ -218,7 +218,7 @@ class OptimizedStaticFiles(StaticFiles):
         }
 
     def _get_optimized_headers(self, path: str, stat_result) -> dict[str, str]:
-        """Get optimized headers for static files"""
+        """Get optimized headers for static files."""
         headers = {}
 
         # Content-Type with proper charset
@@ -228,7 +228,7 @@ class OptimizedStaticFiles(StaticFiles):
         headers["content-type"] = content_type
 
         # Cache headers for different file types
-        file_ext = os.path.splitext(path)[1].lower()
+        file_ext = Path(path).suffix.lower()
 
         if file_ext in [".css", ".js"]:
             # Long cache for CSS/JS with immutable
@@ -259,7 +259,7 @@ class OptimizedStaticFiles(StaticFiles):
 
 
 def create_cache_optimization_config():
-    """Create caching configuration for production deployment"""
+    """Create caching configuration for production deployment."""
     return {
         "static_files": {
             "max_age": 31536000,  # 1 year for static assets
@@ -285,16 +285,14 @@ def create_cache_optimization_config():
 
 
 # Cache warming utilities
-async def warm_cache_on_startup():
-    """Warm up cache with frequently accessed resources"""
-
+async def warm_cache_on_startup() -> None:
+    """Warm up cache with frequently accessed resources."""
     # This would be implemented with actual HTTP requests in production
-    print("🔥 Cache warming completed for critical resources")
 
 
 def generate_cache_manifest():
-    """Generate cache manifest for PWA"""
-    manifest = {
+    """Generate cache manifest for PWA."""
+    return {
         "version": "1.0.0",
         "cache_urls": [
             "/static/css/design-system.css",
@@ -308,4 +306,3 @@ def generate_cache_manifest():
         ],
         "no_cache_urls": ["/api/*", "/admin/*", "/auth/*"],
     }
-    return manifest

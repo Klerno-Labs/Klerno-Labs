@@ -1,23 +1,24 @@
 # app / security_middleware.py
-"""
-Enhanced security middleware for TLS enforcement and security headers.
-"""
+"""Enhanced security middleware for TLS enforcement and security headers."""
+
 from __future__ import annotations
 
 import os
-from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, Any
 
-from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse, Response
 
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+    from fastapi import Request
+
 
 class TLSEnforcementMiddleware(BaseHTTPMiddleware):
-    """
-    Enforces HTTPS in production environments by redirecting HTTP to HTTPS.
-    """
+    """Enforces HTTPS in production environments by redirecting HTTP to HTTPS."""
 
-    def __init__(self, app, enforce_tls: bool = None):
+    def __init__(self, app: Any, enforce_tls: bool | None = None) -> None:
         super().__init__(app)
         # Default to enforcing TLS in production
         if enforce_tls is None:
@@ -27,7 +28,9 @@ class TLSEnforcementMiddleware(BaseHTTPMiddleware):
             self.enforce_tls = enforce_tls
 
     async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         # Skip TLS enforcement for health checks and development
         if not self.enforce_tls or request.url.path in ["/health", "/healthz"]:
@@ -40,12 +43,12 @@ class TLSEnforcementMiddleware(BaseHTTPMiddleware):
             # Redirect HTTP GET requests to HTTPS
             secure_url = request.url.replace(scheme="https")
             return RedirectResponse(url=str(secure_url), status_code=301)
-        elif not is_secure:
+        if not is_secure:
             # For non - GET requests, return 400 Bad Request
             return Response(
                 content="HTTPS required",
                 status_code=400,
-                headers={"Content - Type": "text / plain"},
+                headers={"Content-Type": "text/plain"},
             )
 
         return await call_next(request)
@@ -67,34 +70,34 @@ class TLSEnforcementMiddleware(BaseHTTPMiddleware):
 
 
 class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """
-    Enhanced security headers middleware with production - grade configurations.
-    """
+    """Enhanced security headers middleware with production - grade configurations."""
 
-    def __init__(self, app):
+    def __init__(self, app: Any) -> None:
         super().__init__(app)
         self.app_env = os.getenv("APP_ENV", "dev").lower()
         self.is_production = self.app_env in ("production", "prod")
 
     async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         response = await call_next(request)
 
         # Enhanced Content Security Policy
         csp_directives = [
-            "default - src 'self'",
-            "script - src 'self' 'unsafe - inline' https://cdn.jsdelivr.net https://js.stripe.com",
-            "style - src 'self' 'unsafe - inline' https://cdn.jsdelivr.net",
-            "img - src 'self' data: https:",
-            "font - src 'self' data: https://cdn.jsdelivr.net",
-            "connect - src 'self' ws: wss: https://api.stripe.com",
-            "frame - src https://js.stripe.com https://hooks.stripe.com",
-            "object - src 'none'",
-            "base - uri 'self'",
-            "frame - ancestors 'none'",
-            "form - action 'self'",
-            "upgrade - insecure - requests" if self.is_production else "",
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://js.stripe.com",
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+            "img-src 'self' data: https:",
+            "font-src 'self' data: https://cdn.jsdelivr.net",
+            "connect-src 'self' ws: wss: https://api.stripe.com",
+            "frame-src https://js.stripe.com https://hooks.stripe.com",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "frame-ancestors 'none'",
+            "form-action 'self'",
+            "upgrade-insecure-requests" if self.is_production else "",
         ]
         csp = "; ".join(filter(None, csp_directives))
 
@@ -103,15 +106,15 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Content-Security-Policy": csp,
             "X-Content-Type-Options": "nosniff",
             "X-Frame-Options": "DENY",
-            "X - XSS - Protection": "1; mode=block",
+            "X-XSS-Protection": "1; mode=block",
             "Referrer-Policy": "strict-origin-when-cross-origin",
-            "Permissions - Policy": (
+            "Permissions-Policy": (
                 "camera=(), microphone=(), geolocation=(), "
                 "payment=(), usb=(), magnetometer=(), gyroscope=()"
             ),
-            "Cross - Origin - Embedder - Policy": "require - corp",
-            "Cross - Origin - Opener - Policy": "same - origin",
-            "Cross - Origin - Resource - Policy": "same - origin",
+            "Cross-Origin-Embedder-Policy": "require-corp",
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Resource-Policy": "same-origin",
         }
 
         # HSTS for HTTPS requests
@@ -119,12 +122,12 @@ class EnhancedSecurityHeadersMiddleware(BaseHTTPMiddleware):
             if self.is_production:
                 # Production: long max - age with preload
                 security_headers["Strict-Transport-Security"] = (
-                    "max - age=31536000; includeSubDomains; preload"
+                    "max-age=31536000; includeSubDomains; preload"
                 )
             else:
                 # Staging: shorter max - age, no preload
                 security_headers["Strict-Transport-Security"] = (
-                    "max - age=86400; includeSubDomains"
+                    "max-age=86400; includeSubDomains"
                 )
 
         # Apply headers that aren't already set

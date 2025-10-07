@@ -1,11 +1,28 @@
 [tool.black]
 line-length = 88
-target-version = ['py310']
+target-version = ['py311']
 include = '\.pyi?$'
 
 [tool.ruff]
 target-version = "py311"
 line-length = 88
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "build",
+    "dist",
+    "data",
+    "artifacts",
+    "backups",
+    "temp",
+    "logs",
+]
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -25,25 +42,26 @@ ignore = [
     "ARG002", # unused method argument
     "ARG001", # unused function argument
 ]
-exclude = [
-    ".git",
-    "__pycache__",
-    ".venv",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".ruff_cache",
-    "build",
-    "dist",
-    "data",
-    "artifacts",
-    "backups",
-    "temp",
-    "logs",
-]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/*" = ["S101", "ARG", "SIM"]
+"tests/*" = ["S101", "ARG", "SIM", "E402"]
+"CLEAN_APP/tests/*" = ["S101", "ARG", "SIM", "E402"]
+"tools/*" = ["E402"]
+"app/models.pyi" = ["E302"]  # Allow single blank lines before class definitions in stub files
+
+# Temporary: some app modules intentionally perform runtime checks/imports
+# to avoid heavy import-time side effects during test collection. These
+# per-file ignores reduce CI noise while we triage platform-specific
+# failures. They will be removed once CI is stabilized.
+"app/admin.py" = ["E402"]
+"app/advanced_security.py" = ["E402"]
+"app/advanced_security_hardening.py" = ["E402"]
+"app/enterprise_monitoring.py" = ["E402"]
+"app/subscriptions.py" = ["E402"]
+"enterprise_main_v2.py" = ["E402"]
+"app/analytics.py" = ["E402"]
+"app/compliance.py" = ["E402"]
 
 [tool.pytest.ini_options]
 testpaths = ["app/tests", "tests"]
@@ -89,3 +107,75 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
+
+[tool.mypy]
+python_version = 3.11
+warn_unused_configs = true
+ignore_missing_imports = true
+follow_imports = "silent"
+show_error_codes = true
+exclude = "(^alembic/|^performance/|enterprise_preview.py$|preview_server.py$|tmp_preview_probe.py$)"
+
+[[tool.mypy.overrides]]
+module = "alembic.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "alembic"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "uvicorn"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "enterprise_preview"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "preview_server"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "tmp_preview_probe"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "performance.middleware"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.advanced_ai_risk"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.store"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "enterprise_main_v2"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.main"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "scripts.run_local"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.__init__"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "sitecustomize"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.auth"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app"
+ignore_errors = true

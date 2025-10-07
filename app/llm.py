@@ -16,36 +16,51 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 _LLM_MODEL = os.getenv("OPENAI_MODEL", "gpt - 4o - mini")
 
 _use_v1 = False
-_client_v1 = None
+_client_v1: Any = None
+_openai_mod: Any = None
+_openai_legacy: Any = None
 
-# Try the modern SDK first (v1+)
+
+# Try the modern SDK first (v1+) using importlib to avoid static import errors
 try:
-    from openai import OpenAI  # only in v1+
+    import importlib
 
-    _client_v1 = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else OpenAI()
-    _use_v1 = True
+    _openai_mod = importlib.import_module("openai")
+    OpenAI_cls = getattr(_openai_mod, "OpenAI", None)
+    if OpenAI_cls is not None:
+        _client_v1 = (
+            OpenAI_cls(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else OpenAI_cls()
+        )
+        _use_v1 = True
+    else:
+        _use_v1 = False
 except Exception:
     _use_v1 = False
 
 if not _use_v1:
     # Fall back to legacy 0.28.x
-    import openai as _openai_legacy
+    import importlib as _importlib_legacy
 
-    if OPENAI_API_KEY:
-        _openai_legacy.api_key = OPENAI_API_KEY
+    try:
+        _openai_legacy = _importlib_legacy.import_module("openai")
+        if OPENAI_API_KEY:
+            _openai_legacy.api_key = OPENAI_API_KEY
+    except Exception:
+        _openai_legacy = None
 
 
 def _safe_llm(system: str, user: str, temperature: float = 0.2) -> str:
-    """
-    Ask the LLM safely. If anything fails, return a graceful fallback string.
+    """Ask the LLM safely. If anything fails, return a graceful fallback string.
     Works with both OpenAI SDK v1+ and legacy 0.28.x.
     """
     if not OPENAI_API_KEY:
         return "LLM not configured: set OPENAI_API_KEY."
 
     try:
-        if _use_v1:
-            resp = _client_v1.chat.completions.create(
+        if _use_v1 and _client_v1 is not None:
+            # New SDK v1+ shape: client.chat.completions.create(...)
+            client = _client_v1
+            resp = client.chat.completions.create(
                 model=_LLM_MODEL,
                 temperature=temperature,
                 messages=[
@@ -53,7 +68,11 @@ def _safe_llm(system: str, user: str, temperature: float = 0.2) -> str:
                     {"role": "user", "content": user},
                 ],
             )
-            return (resp.choices[0].message.content or "").strip()
+            # defensive access
+            try:
+                return (resp.choices[0].message.content or "").strip()
+            except Exception:
+                return str(resp)
         else:
             resp = _openai_legacy.ChatCompletion.create(
                 model=_LLM_MODEL if _LLM_MODEL else "gpt - 3.5 - turbo",
@@ -63,7 +82,10 @@ def _safe_llm(system: str, user: str, temperature: float = 0.2) -> str:
                     {"role": "user", "content": user},
                 ],
             )
-            return (resp["choices"][0]["message"]["content"] or "").strip()
+            try:
+                return (resp["choices"][0]["message"]["content"] or "").strip()
+            except Exception:
+                return str(resp)
     except Exception as e:
         return f"(LLM error: {e})"
 
@@ -93,9 +115,7 @@ def _parse_iso(ts: Any) -> datetime | None:
 
 
 def explain_tx(tx: dict[str, Any]) -> str:
-    """
-    Return a natural - language explanation of a single transaction.
-    """
+    """Return a natural - language explanation of a single transaction."""
     pre = [
         f"Transaction {tx.get('tx_id', '—')} on {tx.get('chain', 'unknown')}:",
         f"  from {tx.get('from_addr', '—')} to {tx.get('to_addr', '—')}",
@@ -110,7 +130,9 @@ def explain_tx(tx: dict[str, Any]) -> str:
         "direction, counterparties, and any anomalies. Avoid hedging."
     )
     user = "Explain this JSON transaction for a compliance analyst:\n" + json.dumps(
-        tx, ensure_ascii=False, indent=2
+        tx,
+        ensure_ascii=False,
+        indent=2,
     )
     llm = _safe_llm(system, user)
     return preface + "\n\n" + llm
@@ -122,21 +144,28 @@ def explain_tx(tx: dict[str, Any]) -> str:
 
 
 def explain_batch(txs: list[dict[str, Any]]) -> dict[str, Any]:
-    """
-    For a list of tx dicts, return:
-      { items: [ {tx_id, explanation}, ... ], summary: "..." }
+    """For a list of tx dicts, return:
+    { items: [ {tx_id, explanation}, ... ], summary: "..." }.
     """
     items = []
     for t in txs:
         text = explain_tx(t)
         items.append({"tx_id": t.get("tx_id"), "explanation": text})
 
-    amounts = [
-        float(t.get("amount", 0) or 0)
-        for t in txs
-        if isinstance(t.get("amount", 0), (int, float, str))
-    ]
-    risk_scores = [float(t.get("risk_score", 0) or 0) for t in txs]
+    amounts = []
+    for t in txs:
+        val = t.get("amount", 0) or 0
+        if isinstance(val, (int, float, str)):
+            try:
+                amounts.append(float(val))
+            except Exception:
+                continue
+    risk_scores = []
+    for t in txs:
+        try:
+            risk_scores.append(float(t.get("risk_score", 0) or 0))
+        except Exception:
+            continue
 
     total = len(txs)
     total_amt = sum(a for a in amounts if not math.isnan(a))
@@ -163,8 +192,7 @@ def explain_batch(txs: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def ask_to_filters(question: str) -> dict[str, Any]:
-    """
-    Convert a question into a JSON filter spec.
+    """Convert a question into a JSON filter spec.
     Keys: date_from, date_to, min_risk, max_risk, categories, include_wallets, exclude_wallets.
     """
     system = (
@@ -177,7 +205,8 @@ def ask_to_filters(question: str) -> dict[str, Any]:
     try:
         spec = json.loads(raw)
         if not isinstance(spec, dict):
-            raise ValueError("Spec was not a dict")
+            msg = "Spec was not a dict"
+            raise ValueError(msg)
         return spec
     except Exception:
         return {}
@@ -189,7 +218,8 @@ def ask_to_filters(question: str) -> dict[str, Any]:
 
 
 def apply_filters(
-    rows: list[dict[str, Any]], spec: dict[str, Any]
+    rows: list[dict[str, Any]],
+    spec: dict[str, Any],
 ) -> list[dict[str, Any]]:
     if not rows:
         return []
@@ -197,8 +227,19 @@ def apply_filters(
     df = spec  # shorthand
     date_from = _parse_iso(df.get("date_from")) if df.get("date_from") else None
     date_to = _parse_iso(df.get("date_to")) if df.get("date_to") else None
-    min_risk = float(df.get("min_risk", 0)) if df.get("min_risk") is not None else None
-    max_risk = float(df.get("max_risk", 1)) if df.get("max_risk") is not None else None
+    min_risk = None
+    if df.get("min_risk") is not None:
+        try:
+            min_risk = float(str(df.get("min_risk")))
+        except Exception:
+            min_risk = None
+
+    max_risk = None
+    if df.get("max_risk") is not None:
+        try:
+            max_risk = float(str(df.get("max_risk")))
+        except Exception:
+            max_risk = None
     cats = {str(c).lower() for c in (df.get("categories") or [])}
     inc_w = {str(w) for w in (df.get("include_wallets") or [])}
     exc_w = {str(w) for w in (df.get("exclude_wallets") or [])}
@@ -213,9 +254,8 @@ def apply_filters(
 
         risk = None
         try:
-            risk = (
-                float(r.get("risk_score")) if r.get("risk_score") is not None else None
-            )
+            rv = r.get("risk_score")
+            risk = float(str(rv)) if rv is not None else None
         except Exception:
             risk = None
 
@@ -251,7 +291,12 @@ def explain_selection(question: str, rows: list[dict[str, Any]]) -> str:
     if n == 0:
         return "No rows matched the criteria."
 
-    risks = [float(r.get("risk_score", 0) or 0) for r in rows]
+    risks = []
+    for r in rows:
+        try:
+            risks.append(float(r.get("risk_score", 0) or 0))
+        except Exception:
+            continue
     avg_risk = round(sum(risks) / len(risks), 3) if risks else 0.0
     cats: dict[str, int] = {}
     for r in rows:
@@ -276,7 +321,8 @@ def explain_selection(question: str, rows: list[dict[str, Any]]) -> str:
 
 
 def summarize_rows(
-    rows: list[dict[str, Any]], title: str = "Summary"
+    rows: list[dict[str, Any]],
+    title: str = "Summary",
 ) -> dict[str, Any]:
     n = len(rows)
     if n == 0:

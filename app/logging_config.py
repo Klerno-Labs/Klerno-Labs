@@ -1,5 +1,4 @@
-"""
-Structured logging configuration for Klerno Labs.
+"""Structured logging configuration for Klerno Labs.
 Provides consistent, structured logging throughout the application.
 """
 
@@ -12,6 +11,23 @@ import structlog
 from pythonjsonlogger.json import JsonFormatter
 
 from app.settings import get_settings
+
+
+def _to_iso(timestamp: Any) -> str:
+    """Safely convert timestamp-like values to ISO string for logging."""
+    try:
+        if timestamp is None:
+            return datetime.now(UTC).isoformat()
+        if isinstance(timestamp, str):
+            return timestamp
+        iso = getattr(timestamp, "isoformat", None)
+        if callable(iso):
+            return str(iso())
+        if isinstance(timestamp, (int, float)):
+            return datetime.fromtimestamp(timestamp, UTC).isoformat()
+        return str(timestamp)
+    except Exception:
+        return datetime.now(UTC).isoformat()
 
 
 def configure_logging() -> None:
@@ -28,7 +44,8 @@ def configure_logging() -> None:
         "dev": "DEBUG",
         "test": "DEBUG",
     }
-    log_level_str = env_to_level.get(settings.app_env.lower(), "DEBUG")
+    app_env = getattr(settings, "app_env", None) or "development"
+    log_level_str = env_to_level.get(str(app_env).lower(), "DEBUG")
     log_level = getattr(logging, log_level_str)
 
     # Remove existing handlers
@@ -44,7 +61,19 @@ def configure_logging() -> None:
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     # File handler for Promtail/Loki
-    file_handler = logging.FileHandler("logs/app.log", mode="a", encoding="utf-8")
+    # Ensure logs directory exists to avoid FileNotFoundError on startup/tests
+    from contextlib import suppress
+    from pathlib import Path
+
+    logs_path = Path("logs")
+    with suppress(Exception):
+        logs_path.mkdir(parents=True, exist_ok=True)
+
+    file_handler = logging.FileHandler(
+        str(logs_path / "app.log"),
+        mode="a",
+        encoding="utf-8",
+    )
 
     if settings.app_env == "production":
         console_handler.setFormatter(json_formatter)
@@ -52,14 +81,17 @@ def configure_logging() -> None:
     else:
         # Human-readable format for development
         formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S"
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            datefmt="%H:%M:%S",
         )
         console_handler.setFormatter(formatter)
         file_handler.setFormatter(json_formatter)
 
     # Configure root logger
     logging.basicConfig(
-        level=log_level, handlers=[console_handler, file_handler], force=True
+        level=log_level,
+        handlers=[console_handler, file_handler],
+        force=True,
     )
 
     # Configure structlog
@@ -71,13 +103,23 @@ def configure_logging() -> None:
             structlog.dev.set_exc_info,
             structlog.processors.TimeStamper(fmt="iso"),
             (
-                structlog.dev.ConsoleRenderer()
-                if settings.app_env == "dev"
-                else structlog.processors.JSONRenderer()
+                # ConsoleRenderer returns an object that mypy may not infer as a Callable;
+                # use typing.cast to silence the list-item typing warning.
+                __import__("typing").cast(
+                    __import__("typing").Any,
+                    (
+                        structlog.dev.ConsoleRenderer()
+                        if settings.app_env == "dev"
+                        else structlog.processors.JSONRenderer()
+                    ),
+                )
             ),
         ],
         wrapper_class=structlog.make_filtering_bound_logger(log_level),
-        logger_factory=structlog.PrintLoggerFactory(),
+        # Use the stdlib LoggerFactory so processors (which expect a logging.Logger)
+        # can access attributes like .name without error. PrintLoggerFactory returns
+        # a lightweight PrintLogger that doesn't expose the full API needed.
+        logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
     )
 
@@ -101,14 +143,14 @@ def log_request_response(
     url: str,
     status_code: int,
     duration: float,
-    request_id: str = None,
-    user_id: str = None,
-    **kwargs,
+    request_id: str | None = None,
+    user_id: str | None = None,
+    **kwargs: Any,
 ) -> None:
     """Log HTTP request / response details."""
     logger = get_logger("http")
 
-    log_data = {
+    log_data: dict[str, Any] = {
         "method": method,
         "url": url,
         "status_code": status_code,
@@ -122,7 +164,11 @@ def log_request_response(
     if user_id:
         log_data["user_id"] = user_id
 
-    log_data.update(kwargs)
+    if kwargs:
+        from contextlib import suppress
+
+        with suppress(Exception):
+            log_data.update(dict(kwargs))
 
     if status_code >= 500:
         logger.error("HTTP request failed", **log_data)
@@ -134,15 +180,15 @@ def log_request_response(
 
 def log_security_event(
     event_type: str,
-    user_id: str = None,
-    ip_address: str = None,
-    details: dict[str, Any] = None,
-    **kwargs,
+    user_id: str | None = None,
+    ip_address: str | None = None,
+    details: dict[str, Any] | None = None,
+    **kwargs: Any,
 ) -> None:
     """Log security - related events."""
     logger = get_logger("security")
 
-    log_data = {
+    log_data: dict[str, Any] = {
         "event_type": event_type,
         "timestamp": datetime.now(UTC).isoformat(),
     }
@@ -154,9 +200,18 @@ def log_security_event(
         log_data["ip_address"] = ip_address
 
     if details:
-        log_data["details"] = details
+        try:
+            log_data["details"] = (
+                dict(details) if not isinstance(details, str) else details
+            )
+        except Exception:
+            log_data["details"] = str(details)
 
-    log_data.update(kwargs)
+    if kwargs:
+        from contextlib import suppress
+
+        with suppress(Exception):
+            log_data.update(dict(kwargs))
 
     # Security events are always important
     if event_type in [
@@ -171,16 +226,16 @@ def log_security_event(
 
 def log_business_event(
     event_type: str,
-    entity_type: str = None,
-    entity_id: str = None,
-    user_id: str = None,
-    details: dict[str, Any] = None,
-    **kwargs,
+    entity_type: str | None = None,
+    entity_id: str | None = None,
+    user_id: str | None = None,
+    details: dict[str, Any] | None = None,
+    **kwargs: Any,
 ) -> None:
     """Log business logic events."""
     logger = get_logger("business")
 
-    log_data = {
+    log_data: dict[str, Any] = {
         "event_type": event_type,
         "timestamp": datetime.now(UTC).isoformat(),
     }
@@ -195,9 +250,18 @@ def log_business_event(
         log_data["user_id"] = user_id
 
     if details:
-        log_data["details"] = details
+        try:
+            log_data["details"] = (
+                dict(details) if not isinstance(details, str) else details
+            )
+        except Exception:
+            log_data["details"] = str(details)
 
-    log_data.update(kwargs)
+    if kwargs:
+        from contextlib import suppress
+
+        with suppress(Exception):
+            log_data.update(dict(kwargs))
 
     logger.info("Business event", **log_data)
 
@@ -206,13 +270,13 @@ def log_performance_metric(
     operation: str,
     duration: float,
     success: bool = True,
-    details: dict[str, Any] = None,
-    **kwargs,
+    details: dict[str, Any] | None = None,
+    **kwargs: Any,
 ) -> None:
     """Log performance metrics."""
     logger = get_logger("performance")
 
-    log_data = {
+    log_data: dict[str, Any] = {
         "operation": operation,
         "duration_ms": round(duration * 1000, 2),
         "success": success,
@@ -220,9 +284,18 @@ def log_performance_metric(
     }
 
     if details:
-        log_data["details"] = details
+        try:
+            log_data["details"] = (
+                dict(details) if not isinstance(details, str) else details
+            )
+        except Exception:
+            log_data["details"] = str(details)
 
-    log_data.update(kwargs)
+    if kwargs:
+        from contextlib import suppress
+
+        with suppress(Exception):
+            log_data.update(dict(kwargs))
 
     if not success or duration > 5.0:  # Log slow operations as warnings
         logger.warning("Performance metric", **log_data)

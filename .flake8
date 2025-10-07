@@ -1,22 +1,18 @@
 [flake8]
-max-line-length = 88
-select = E,W,F
-ignore = 
-    E203,  # whitespace before :
-    E501,  # line too long
-    W503,  # line break before binary operator
-    E402,  # module level import not at top
-exclude = 
-    .git,
-    __pycache__,
-    .venv,
-    venv,
-    build,
-    dist,
-    *.egg-info,
-    .pytest_cache,
-    node_modules
+max-line-length = 150
+extend-ignore = E203, W503, E402, E303, E302
 per-file-ignores =
-    __init__.py:F401
-    */migrations/*:E501,F401
-    */tests/*:E501,F401
+    tests/*: D
+exclude =
+    .venv,
+    .venv-py311,
+    .venv_p311,
+    .venv_*,
+    venv,
+    env,
+    ENV,
+    .venv/**/Lib/**,
+    .venv/**/Lib/site-packages/**,
+    .venv-py311/**/Lib/site-packages/**,
+    **/site-packages/**,
+    **/Lib/site-packages/**

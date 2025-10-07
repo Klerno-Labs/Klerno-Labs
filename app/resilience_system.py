@@ -1,5 +1,4 @@
-"""
-Advanced Error Handling & Resilience System
+"""Advanced Error Handling & Resilience System.
 
 Implements circuit breakers, retry mechanisms, graceful degradation,
     failover systems, disaster recovery, and self - healing capabilities
@@ -11,17 +10,19 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
-import random
+import random  # nosec B311
 import threading
 import time
 import traceback
 from collections import defaultdict, deque
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from functools import wraps
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 # weakref not used
 
@@ -80,7 +81,7 @@ class RetryPolicy:
     max_delay: float = 60.0
     exponential_base: float = 2.0
     jitter: bool = True
-    retry_on_exceptions: list[type] = None
+    retry_on_exceptions: list[type] | None = None
 
 
 @dataclass
@@ -96,21 +97,21 @@ class CircuitBreakerConfig:
 class CircuitBreaker:
     """Advanced circuit breaker implementation."""
 
-    def __init__(self, name: str, config: CircuitBreakerConfig):
+    def __init__(self, name: str, config: CircuitBreakerConfig) -> None:
         self.name = name
         self.config = config
         self.state = CircuitState.CLOSED
         self.failure_count = 0
         self.success_count = 0
-        self.last_failure_time = None
+        self.last_failure_time: float | None = None
         self.request_count = 0
         self.success_request_count = 0
         self.lock = threading.RLock()
 
         # Statistics
-        self.total_requests = 0
-        self.total_failures = 0
-        self.state_transitions = []
+        self.total_requests: int = 0
+        self.total_failures: int = 0
+        self.state_transitions: list[dict[str, Any]] = []
 
     def call(self, func: Callable[..., T], *args, **kwargs) -> T:
         """Execute function with circuit breaker protection."""
@@ -123,8 +124,9 @@ class CircuitBreaker:
                     self.success_count = 0
                     logger.info(f"Circuit breaker {self.name} moved to HALF_OPEN")
                 else:
+                    msg = f"Circuit breaker {self.name} is OPEN"
                     raise CircuitBreakerOpenError(
-                        f"Circuit breaker {self.name} is OPEN"
+                        msg,
                     )
 
             try:
@@ -136,7 +138,7 @@ class CircuitBreaker:
                 self._on_failure(e)
                 raise
 
-    async def call_async(self, func: Callable[..., T], *args, **kwargs) -> T:
+    async def call_async(self, func: Callable[..., Awaitable[T]], *args, **kwargs) -> T:
         """Execute async function with circuit breaker protection."""
         with self.lock:
             self.total_requests += 1
@@ -147,8 +149,9 @@ class CircuitBreaker:
                     self.success_count = 0
                     logger.info(f"Circuit breaker {self.name} moved to HALF_OPEN")
                 else:
+                    msg = f"Circuit breaker {self.name} is OPEN"
                     raise CircuitBreakerOpenError(
-                        f"Circuit breaker {self.name} is OPEN"
+                        msg,
                     )
 
             try:
@@ -186,23 +189,27 @@ class CircuitBreaker:
             if self.state == CircuitState.HALF_OPEN:
                 self.state = CircuitState.OPEN
                 logger.warning(
-                    f"Circuit breaker {self.name} moved to OPEN (failure in HALF_OPEN)"
+                    f"Circuit breaker {self.name} moved to OPEN (failure in HALF_OPEN)",
                 )
                 self._record_state_transition(CircuitState.OPEN)
             elif self.state == CircuitState.CLOSED:
                 if self.failure_count >= self.config.failure_threshold:
                     self.state = CircuitState.OPEN
                     logger.warning(
-                        f"Circuit breaker {self.name} moved to OPEN (threshold reached)"
+                        f"Circuit breaker {self.name} moved to OPEN (threshold reached)",
                     )
                     self._record_state_transition(CircuitState.OPEN)
 
     def _should_attempt_reset(self) -> bool:
         """Check if circuit breaker should attempt to reset."""
-        return (
-            self.last_failure_time
-            and time.time() - self.last_failure_time >= self.config.timeout_duration
-        )
+        # Ensure we always return a plain bool. Using `and` can return None or a
+        # numeric value which causes type-checkers to complain (and is less
+        # explicit). If there was no previous failure time, we should not
+        # attempt a reset.
+        if self.last_failure_time is None:
+            return False
+
+        return (time.time() - self.last_failure_time) >= self.config.timeout_duration
 
     def _record_state_transition(self, new_state: CircuitState) -> None:
         """Record state transition for monitoring."""
@@ -213,7 +220,7 @@ class CircuitBreaker:
                 "timestamp": datetime.now(UTC),
                 "failure_count": self.failure_count,
                 "success_count": self.success_count,
-            }
+            },
         )
 
         # Keep only last 100 transitions
@@ -253,20 +260,19 @@ class CircuitBreaker:
 class CircuitBreakerOpenError(Exception):
     """Exception raised when circuit breaker is open."""
 
-    pass
-
 
 class RetryManager:
     """Advanced retry mechanism with various strategies."""
 
-    def __init__(self):
-        self.retry_stats = defaultdict(
+    def __init__(self) -> None:
+        # Map function name -> stats dict
+        self.retry_stats: defaultdict[str, dict[str, int]] = defaultdict(
             lambda: {
                 "total_attempts": 0,
                 "successful_retries": 0,
                 "failed_retries": 0,
                 "avg_retry_count": 0,
-            }
+            },
         )
 
     def retry(self, policy: RetryPolicy):
@@ -276,7 +282,10 @@ class RetryManager:
             @wraps(func)
             async def async_wrapper(*args, **kwargs):
                 return await self._execute_with_retry_async(
-                    func, policy, *args, **kwargs
+                    func,
+                    policy,
+                    *args,
+                    **kwargs,
                 )
 
             @wraps(func)
@@ -285,18 +294,20 @@ class RetryManager:
 
             if asyncio.iscoroutinefunction(func):
                 return async_wrapper
-            else:
-                return sync_wrapper
+            return sync_wrapper
 
         return decorator
 
     async def _execute_with_retry_async(
-        self, func: Callable, policy: RetryPolicy, *args, **kwargs
+        self,
+        func: Callable[..., Awaitable[Any]],
+        policy: RetryPolicy,
+        *args,
+        **kwargs,
     ) -> Any:
         """Execute async function with retry logic."""
         func_name = func.__name__
         last_exception = None
-
         for attempt in range(policy.max_attempts):
             try:
                 self.retry_stats[func_name]["total_attempts"] += 1
@@ -311,12 +322,10 @@ class RetryManager:
                 last_exception = e
 
                 # Check if we should retry this exception
-                if policy.retry_on_exceptions:
-                    if not any(
-                        isinstance(e, exc_type)
-                        for exc_type in policy.retry_on_exceptions
-                    ):
-                        raise e
+                if policy.retry_on_exceptions and not any(
+                    isinstance(e, exc_type) for exc_type in policy.retry_on_exceptions
+                ):
+                    raise
 
                 if attempt < policy.max_attempts - 1:
                     delay = self._calculate_delay(attempt, policy)
@@ -330,19 +339,26 @@ class RetryManager:
                     await asyncio.sleep(delay)
                 else:
                     self.retry_stats[func_name]["failed_retries"] += 1
-                    logger.error(
-                        f"All {policy.max_attempts} attempts failed for {func_name}"
+                    logger.exception(
+                        f"All {policy.max_attempts} attempts failed for {func_name}",
                     )
 
-        raise last_exception
+        # Ensure we never raise None which would be an invalid exception.
+        if last_exception:
+            raise last_exception
+        msg = f"All {policy.max_attempts} retry attempts failed"
+        raise RuntimeError(msg)
 
     def _execute_with_retry_sync(
-        self, func: Callable, policy: RetryPolicy, *args, **kwargs
+        self,
+        func: Callable,
+        policy: RetryPolicy,
+        *args,
+        **kwargs,
     ) -> Any:
         """Execute sync function with retry logic."""
         func_name = func.__name__
         last_exception = None
-
         for attempt in range(policy.max_attempts):
             try:
                 self.retry_stats[func_name]["total_attempts"] += 1
@@ -357,12 +373,10 @@ class RetryManager:
                 last_exception = e
 
                 # Check if we should retry this exception
-                if policy.retry_on_exceptions:
-                    if not any(
-                        isinstance(e, exc_type)
-                        for exc_type in policy.retry_on_exceptions
-                    ):
-                        raise e
+                if policy.retry_on_exceptions and not any(
+                    isinstance(e, exc_type) for exc_type in policy.retry_on_exceptions
+                ):
+                    raise
 
                 if attempt < policy.max_attempts - 1:
                     delay = self._calculate_delay(attempt, policy)
@@ -376,22 +390,31 @@ class RetryManager:
                     time.sleep(delay)
                 else:
                     self.retry_stats[func_name]["failed_retries"] += 1
-                    logger.error(
-                        f"All {policy.max_attempts} attempts failed for {func_name}"
+                    logger.exception(
+                        f"All {policy.max_attempts} attempts failed for {func_name}",
                     )
 
-        raise last_exception
+        if last_exception:
+            raise last_exception
+        msg = f"All {policy.max_attempts} retry attempts failed"
+        raise RuntimeError(msg)
 
     def _calculate_delay(self, attempt: int, policy: RetryPolicy) -> float:
         """Calculate retry delay with exponential backoff and jitter."""
         delay = min(
-            policy.base_delay * (policy.exponential_base**attempt), policy.max_delay
+            policy.base_delay * (policy.exponential_base**attempt),
+            policy.max_delay,
         )
 
         if policy.jitter:
-            # Add random jitter (±25%)
+            # Add random jitter (±25%). This jitter is non-cryptographic and
+            # used purely to avoid synchronized retries across processes; using
+            # the standard random module is acceptable here (not security-sensitive).
             jitter_range = delay * 0.25
-            delay += random.uniform(-jitter_range, jitter_range)
+            delay += random.uniform(
+                -jitter_range,
+                jitter_range,
+            )  # nosec: B311 - non-crypto jitter for backoff, cryptographic randomness not required
 
         return max(0, delay)
 
@@ -403,11 +426,11 @@ class RetryManager:
 class FailoverManager:
     """Manages service failover and redundancy."""
 
-    def __init__(self):
-        self.services = {}
-        self.health_checks = {}
-        self.failover_groups = {}
-        self.active_services = {}
+    def __init__(self) -> None:
+        self.services: dict[str, dict[str, Any]] = {}
+        self.health_checks: dict[str, Callable | None] = {}
+        self.failover_groups: dict[str, list[str]] = {}
+        self.active_services: dict[str, str] = {}
         self.lock = threading.RLock()
 
     def register_service(
@@ -440,7 +463,8 @@ class FailoverManager:
         """Get currently active endpoint for service."""
         with self.lock:
             if service_name not in self.services:
-                raise ValueError(f"Service {service_name} not registered")
+                msg = f"Service {service_name} not registered"
+                raise ValueError(msg)
 
             return self.active_services[service_name]
 
@@ -468,7 +492,7 @@ class FailoverManager:
             result = await health_check_func(self.active_services[service_name])
             return HealthStatus(result.get("status", "healthy"))
         except Exception as e:
-            logger.error(f"Health check failed for {service_name}: {e}")
+            logger.exception(f"Health check failed for {service_name}: {e}")
             return HealthStatus.UNHEALTHY
 
     async def _perform_failover(self, service_name: str) -> bool:
@@ -489,7 +513,7 @@ class FailoverManager:
 
             if not available_backups:
                 logger.error(
-                    f"No healthy backup endpoints available for {service_name}"
+                    f"No healthy backup endpoints available for {service_name}",
                 )
                 return False
 
@@ -508,7 +532,9 @@ class FailoverManager:
             return True
 
     def force_failover(
-        self, service_name: str, target_endpoint: str | None = None
+        self,
+        service_name: str,
+        target_endpoint: str | None = None,
     ) -> bool:
         """Manually force failover to specific endpoint."""
         with self.lock:
@@ -525,19 +551,17 @@ class FailoverManager:
                     service_info["current_endpoint"] = target_endpoint
                     self.active_services[service_name] = target_endpoint
                     logger.info(
-                        f"Manual failover for {service_name} to {target_endpoint}"
+                        f"Manual failover for {service_name} to {target_endpoint}",
                     )
                     return True
-                else:
-                    logger.error(
-                        "Target endpoint %s not configured for %s",
-                        target_endpoint,
-                        service_name,
-                    )
-                    return False
-            else:
-                # Failover to next available backup
-                return asyncio.run(self._perform_failover(service_name))
+                logger.error(
+                    "Target endpoint %s not configured for %s",
+                    target_endpoint,
+                    service_name,
+                )
+                return False
+            # Failover to next available backup
+            return asyncio.run(self._perform_failover(service_name))
 
     def reset_failed_endpoints(self, service_name: str) -> None:
         """Reset failed endpoints list (for recovery)."""
@@ -565,10 +589,10 @@ class FailoverManager:
 class GracefulDegradationManager:
     """Manages graceful service degradation."""
 
-    def __init__(self):
-        self.degradation_rules = {}
-        self.current_degradations = {}
-        self.feature_flags = {}
+    def __init__(self) -> None:
+        self.degradation_rules: dict[str, dict[str, Any]] = {}
+        self.current_degradations: dict[str, str] = {}
+        self.feature_flags: dict[str, bool] = {}
         self.lock = threading.RLock()
 
     def register_degradation_rule(
@@ -594,7 +618,9 @@ class GracefulDegradationManager:
             logger.info(f"Feature flag {feature_name} set to {enabled}")
 
     async def evaluate_degradation(
-        self, service_name: str, context: dict[str, Any]
+        self,
+        service_name: str,
+        context: dict[str, Any],
     ) -> str:
         """Evaluate if service should degrade and to what level."""
         if service_name not in self.degradation_rules:
@@ -620,8 +646,8 @@ class GracefulDegradationManager:
 
                         return level
             except Exception as e:
-                logger.error(
-                    f"Error evaluating degradation condition for {service_name}: {e}"
+                logger.exception(
+                    f"Error evaluating degradation condition for {service_name}: {e}",
                 )
 
         # No degradation needed
@@ -631,19 +657,24 @@ class GracefulDegradationManager:
         return "normal"
 
     async def execute_with_degradation(
-        self, service_name: str, context: dict[str, Any], **kwargs
+        self,
+        service_name: str,
+        context: dict[str, Any],
+        **kwargs,
     ) -> Any:
         """Execute service function with appropriate degradation level."""
         current_level = await self.evaluate_degradation(service_name, context)
 
         if service_name not in self.degradation_rules:
-            raise ValueError(f"Service {service_name} not registered for degradation")
+            msg = f"Service {service_name} not registered for degradation"
+            raise ValueError(msg)
 
         rule = self.degradation_rules[service_name]
         degradation_func = rule["levels"].get(current_level)
 
         if not degradation_func:
-            raise ValueError(f"No degradation function for level {current_level}")
+            msg = f"No degradation function for level {current_level}"
+            raise ValueError(msg)
 
         return await degradation_func(context, **kwargs)
 
@@ -656,10 +687,10 @@ class GracefulDegradationManager:
 class SelfHealingManager:
     """Manages self - healing capabilities."""
 
-    def __init__(self):
-        self.healing_rules = {}
-        self.healing_history = []
-        self.auto_healing_enabled = True
+    def __init__(self) -> None:
+        self.healing_rules: dict[str, dict[str, Any]] = {}
+        self.healing_history: list[dict[str, Any]] = []
+        self.auto_healing_enabled: bool = True
         self.lock = threading.RLock()
 
     def register_healing_rule(
@@ -692,7 +723,10 @@ class SelfHealingManager:
             for pattern, rule in self.healing_rules.items():
                 if pattern in error_message:
                     return await self._execute_healing_action(
-                        pattern, rule, error, context
+                        pattern,
+                        rule,
+                        error,
+                        context,
                     )
 
         return False
@@ -749,8 +783,8 @@ class SelfHealingManager:
             return result
 
         except Exception as heal_error:
-            logger.error(
-                f"Self - healing action failed for pattern {pattern}: {heal_error}"
+            logger.exception(
+                f"Self - healing action failed for pattern {pattern}: {heal_error}",
             )
             return False
 
@@ -774,7 +808,7 @@ class SelfHealingManager:
     def get_healing_stats(self) -> dict[str, Any]:
         """Get self - healing statistics."""
         with self.lock:
-            stats = {
+            stats: dict[str, Any] = {
                 "auto_healing_enabled": self.auto_healing_enabled,
                 "total_rules": len(self.healing_rules),
                 "recent_attempts": self.healing_history[-10:],
@@ -795,19 +829,21 @@ class SelfHealingManager:
 class ResilienceOrchestrator:
     """Main orchestrator for resilience features."""
 
-    def __init__(self):
-        self.circuit_breakers = {}
+    def __init__(self) -> None:
+        self.circuit_breakers: dict[str, CircuitBreaker] = {}
         self.retry_manager = RetryManager()
         self.failover_manager = FailoverManager()
         self.degradation_manager = GracefulDegradationManager()
         self.healing_manager = SelfHealingManager()
-        self.error_events = deque(maxlen=1000)
+        self.error_events: deque[ErrorEvent] = deque(maxlen=1000)
         self.lock = threading.RLock()
 
         self._setup_default_healing_rules()
 
     def create_circuit_breaker(
-        self, name: str, config: CircuitBreakerConfig
+        self,
+        name: str,
+        config: CircuitBreakerConfig,
     ) -> CircuitBreaker:
         """Create and register circuit breaker."""
         with self.lock:
@@ -821,11 +857,16 @@ class ResilienceOrchestrator:
         return self.circuit_breakers.get(name)
 
     async def handle_error(
-        self, error: Exception, service_name: str, context: dict[str, Any]
+        self,
+        error: Exception,
+        service_name: str,
+        context: dict[str, Any],
     ) -> None:
         """Comprehensive error handling with resilience features."""
+        # Use SHA-256 for generated IDs to avoid weak-hash warnings (MD5).
+        # These IDs are non-secret identifiers for internal error events.
         error_event = ErrorEvent(
-            id=hashlib.md5(f"{service_name}{time.time()}".encode()).hexdigest(),
+            id=hashlib.sha256(f"{service_name}{time.time()}".encode()).hexdigest(),
             service=service_name,
             error_type=type(error).__name__,
             error_message=str(error),
@@ -851,7 +892,9 @@ class ResilienceOrchestrator:
             try:
                 await self.failover_manager._perform_failover(service_name)
             except Exception as failover_error:
-                logger.error(f"Failover failed for {service_name}: {failover_error}")
+                logger.exception(
+                    f"Failover failed for {service_name}: {failover_error}"
+                )
 
     def _classify_error_severity(self, error: Exception) -> ErrorSeverity:
         """Classify error severity based on type and message."""
@@ -905,7 +948,8 @@ class ResilienceOrchestrator:
         # Database connection healing
 
         async def heal_database_connection(
-            error: Exception, context: dict[str, Any]
+            error: Exception,
+            context: dict[str, Any],
         ) -> bool:
             try:
                 # Attempt to restart database connection
@@ -925,7 +969,8 @@ class ResilienceOrchestrator:
         # Memory pressure healing
 
         async def heal_memory_pressure(
-            error: Exception, context: dict[str, Any]
+            error: Exception,
+            context: dict[str, Any],
         ) -> bool:
             try:
                 logger.info("Attempting to heal memory pressure")
@@ -937,7 +982,10 @@ class ResilienceOrchestrator:
                 return False
 
         self.healing_manager.register_healing_rule(
-            "out of memory", heal_memory_pressure, max_attempts=2, cooldown_period=30
+            "out of memory",
+            heal_memory_pressure,
+            max_attempts=2,
+            cooldown_period=30,
         )
 
     def get_resilience_dashboard(self) -> dict[str, Any]:
@@ -949,10 +997,12 @@ class ResilienceOrchestrator:
                 cb_stats[name] = cb.get_stats()
 
             # Recent errors by severity
-            recent_errors = list(self.error_events)[-50:]  # Last 50 errors
-            error_counts = defaultdict(int)
+            recent_errors: list[ErrorEvent] = list(self.error_events)[
+                -50:
+            ]  # Last 50 errors
+            error_counts: defaultdict[str, int] = defaultdict(int)
             for error in recent_errors:
-                error_counts[error.severity.value] += 1
+                error_counts[str(error.severity.value)] += 1
 
             # Auto - resolution rate
             resolved_errors = sum(1 for error in recent_errors if error.resolved)
@@ -978,19 +1028,19 @@ class ResilienceOrchestrator:
 
     def _calculate_system_health(self) -> dict[str, Any]:
         """Calculate overall system health score."""
-        health_factors = []
+        health_factors: list[float] = []
 
         # Circuit breaker health
-        cb_health = 0
+        cb_health: float = 0.0
         if self.circuit_breakers:
             closed_breakers = sum(
                 1
                 for cb in self.circuit_breakers.values()
                 if cb.state == CircuitState.CLOSED
             )
-            cb_health = (closed_breakers / len(self.circuit_breakers)) * 100
+            cb_health = (closed_breakers / len(self.circuit_breakers)) * 100.0
         else:
-            cb_health = 100  # No circuit breakers=no circuit breaker issues
+            cb_health = 100.0  # No circuit breakers=no circuit breaker issues
 
         health_factors.append(cb_health)
 
@@ -999,20 +1049,20 @@ class ResilienceOrchestrator:
         critical_errors = sum(
             1 for error in recent_errors if error.severity == ErrorSeverity.CRITICAL
         )
-        error_health = max(
-            0, 100 - (critical_errors * 10)
+        error_health: float = float(
+            max(0, 100 - (critical_errors * 10)),
         )  # 10 points per critical error
         health_factors.append(error_health)
 
         # Auto - resolution health
         resolved_errors = sum(1 for error in recent_errors if error.resolved)
-        resolution_health = (
-            resolved_errors / len(recent_errors) * 100 if recent_errors else 100
+        resolution_health: float = (
+            (resolved_errors / len(recent_errors) * 100.0) if recent_errors else 100.0
         )
         health_factors.append(resolution_health)
 
-        overall_health = (
-            sum(health_factors) / len(health_factors) if health_factors else 100
+        overall_health: float = (
+            (sum(health_factors) / len(health_factors)) if health_factors else 100.0
         )
 
         return {
@@ -1027,14 +1077,13 @@ class ResilienceOrchestrator:
         """Get health status based on score."""
         if score >= 95:
             return "excellent"
-        elif score >= 85:
+        if score >= 85:
             return "good"
-        elif score >= 70:
+        if score >= 70:
             return "fair"
-        elif score >= 50:
+        if score >= 50:
             return "poor"
-        else:
-            return "critical"
+        return "critical"
 
 
 # Global resilience orchestrator
@@ -1043,7 +1092,7 @@ resilience_orchestrator = ResilienceOrchestrator()
 # Convenience decorators and functions
 
 
-def circuit_breaker(name: str, config: CircuitBreakerConfig = None):
+def circuit_breaker(name: str, config: CircuitBreakerConfig | None = None):
     """Circuit breaker decorator."""
     if config is None:
         config = CircuitBreakerConfig()
@@ -1061,13 +1110,12 @@ def circuit_breaker(name: str, config: CircuitBreakerConfig = None):
 
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
-        else:
-            return sync_wrapper
+        return sync_wrapper
 
     return decorator
 
 
-def retry_on_failure(policy: RetryPolicy = None):
+def retry_on_failure(policy: RetryPolicy | None = None):
     """Retry decorator."""
     if policy is None:
         policy = RetryPolicy()
@@ -1076,8 +1124,10 @@ def retry_on_failure(policy: RetryPolicy = None):
 
 
 async def handle_service_error(
-    error: Exception, service_name: str, context: dict[str, Any] = None
-):
+    error: Exception,
+    service_name: str,
+    context: dict[str, Any] | None = None,
+) -> None:
     """Handle service error with full resilience features."""
     await resilience_orchestrator.handle_error(error, service_name, context or {})
 
@@ -1096,15 +1146,15 @@ def initialize_resilience_system() -> None:
 __all__ = [
     "CircuitBreaker",
     "CircuitBreakerConfig",
-    "RetryPolicy",
-    "RetryManager",
     "FailoverManager",
     "GracefulDegradationManager",
-    "SelfHealingManager",
     "ResilienceOrchestrator",
+    "RetryManager",
+    "RetryPolicy",
+    "SelfHealingManager",
     "circuit_breaker",
-    "retry_on_failure",
-    "handle_service_error",
     "get_resilience_dashboard",
+    "handle_service_error",
     "initialize_resilience_system",
+    "retry_on_failure",
 ]
