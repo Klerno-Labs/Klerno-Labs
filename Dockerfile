@@ -41,4 +41,4 @@ ENV HOST=0.0.0.0
 # Run a fast readiness check at container start to fail fast on misconfiguration
 # The readiness script exits non-zero when critical checks fail. If it succeeds,
 # we exec uvicorn normally.
-CMD ["/bin/sh", "-c", "python scripts/check_prod_readiness.py || (echo 'Readiness check failed' && exit 1); exec python -m uvicorn app.main:app --host ${HOST:-0.0.0.0} --port ${PORT:-8000}"]
+CMD ["/bin/sh", "-c", "python -m scripts.check_prod_readiness || (echo 'Readiness check failed' && exit 1); exec python -m uvicorn app.main:app --host ${HOST:-0.0.0.0} --port ${PORT:-8000}"]

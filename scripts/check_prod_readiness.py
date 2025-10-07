@@ -16,6 +16,18 @@ from pathlib import Path
 
 WEAK_SECRETS = {"changeme", "secret", "dev", "your-secret-key-change-in-production"}
 
+# Ensure repository root is on sys.path so 'app' package can be imported when
+# this script is executed as a file (python scripts/check_prod_readiness.py).
+# When run as a module (python -m scripts.check_prod_readiness), this is not required,
+# but adding it here makes imports robust in both cases.
+try:
+    _this_dir = Path(__file__).resolve()
+    _repo_root = _this_dir.parent.parent
+    if str(_repo_root) not in sys.path:
+        sys.path.insert(0, str(_repo_root))
+except Exception:
+    pass
+
 
 def warn(msg: str) -> None:
     sys.stdout.write(f"[WARN] {msg}\n")
