@@ -37,7 +37,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
 # Use uvicorn with app.main:app (enterprise_main_v2 kept for legacy but not default)
-ENV HOST=0.0.0.0 PORT=8000
+ENV HOST=0.0.0.0
 # Run a fast readiness check at container start to fail fast on misconfiguration
 # The readiness script exits non-zero when critical checks fail. If it succeeds,
 # we exec uvicorn normally.

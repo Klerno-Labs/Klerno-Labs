@@ -3,6 +3,7 @@ services:
     name: klerno-labs
     runtime: docker
     repo: https://github.com/Klerno-Labs/Klerno-Labs
+    branch: main
     dockerfilePath: ./Dockerfile
     dockerContext: .
     plan: starter
