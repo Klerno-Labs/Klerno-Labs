@@ -68,7 +68,13 @@ class ReadyResponse(BaseModel):
     uptime_seconds: float
 
 
-@router.get("/health", response_model=HealthResponse)
+@router.get(
+    "/health",
+    response_model=HealthResponse,
+    tags=["operational"],
+    summary="Liveness check",
+    name="getHealth",
+)
 async def health_check() -> HealthResponse:
     """Liveness probe."""
     uptime = (datetime.now(UTC) - START_TIME).total_seconds()
@@ -79,13 +85,25 @@ async def health_check() -> HealthResponse:
     )
 
 
-@router.get("/healthz", response_model=HealthResponse)
+@router.get(
+    "/healthz",
+    response_model=HealthResponse,
+    tags=["operational"],
+    summary="Liveness check (alias)",
+    name="getHealthz",
+)
 async def healthz_check() -> HealthResponse:
     """Alias kept for backwards compatibility."""
     return await health_check()
 
 
-@router.get("/status", response_model=StatusResponse)
+@router.get(
+    "/status",
+    response_model=StatusResponse,
+    tags=["operational"],
+    summary="Basic status",
+    name="getStatus",
+)
 async def status() -> StatusResponse:
     return StatusResponse(
         status="running",
@@ -94,7 +112,13 @@ async def status() -> StatusResponse:
     )
 
 
-@router.get("/status/details", response_model=StatusDetailsResponse)
+@router.get(
+    "/status/details",
+    response_model=StatusDetailsResponse,
+    tags=["operational"],
+    summary="Detailed status including toggles",
+    name="getStatusDetails",
+)
 async def status_details() -> StatusDetailsResponse:
     # Strict auth toggle via environment variable
     strict_auth = os.getenv("STRICT_AUTH_TRANSACTIONS", "").lower() in {
@@ -125,7 +149,14 @@ async def status_details() -> StatusDetailsResponse:
     )
 
 
-@router.get("/ready", response_model=ReadyResponse)
+@router.get(
+    "/ready",
+    response_model=ReadyResponse,
+    tags=["operational"],
+    summary="Readiness (DB connectivity)",
+    name="getReady",
+    responses={503: {"description": "Not ready"}},
+)
 async def readiness() -> ReadyResponse | JSONResponse:
     """Readiness probe verifying DB connectivity."""
     uptime = (datetime.now(UTC) - START_TIME).total_seconds()
@@ -155,7 +186,12 @@ async def readiness() -> ReadyResponse | JSONResponse:
     return ReadyResponse(status="ready", db=db_status, uptime_seconds=uptime)
 
 
-@router.get("/favicon.ico")
+@router.get(
+    "/favicon.ico",
+    tags=["assets"],
+    summary="PNG favicon with ETag and caching",
+    name="getFavicon",
+)
 async def favicon(request: Request) -> Any:
     """Serve PNG favicon with ETag and Cache-Control, supporting 304.
 

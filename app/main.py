@@ -152,6 +152,22 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+# Small helper to avoid duplicate route registration when compatibility
+# shims are present alongside canonical routers.
+def _route_exists(method: str, path: str) -> bool:
+    try:
+        m = method.upper()
+        for r in app.router.routes:  # type: ignore[attr-defined]
+            rp = getattr(r, "path", None) or getattr(r, "path_format", None)
+            methods = getattr(r, "methods", None)
+            if rp == path and methods and m in methods:
+                return True
+    except Exception:
+        return False
+    return False
+
+
 # Add session middleware with hardened defaults (strict same-site; secure outside dev)
 _env = getattr(settings, "environment", getattr(settings, "app_env", "development"))
 _is_dev = str(_env).lower() in {"dev", "development", "local"}
@@ -242,7 +258,12 @@ with _suppress(Exception):
 
 
 # Legacy direct logo path -> redirect to versioned static asset
-@app.get("/klerno-logo.png")
+@app.get(
+    "/klerno-logo.png",
+    tags=["assets"],
+    summary="Redirect to versioned project logo",
+    name="getProjectLogo",
+)
 async def _logo_redirect() -> Response:
     from fastapi.responses import RedirectResponse
 
@@ -266,20 +287,35 @@ actual routes are now provided by app.routers.operational.
 """
 
 
-@app.get("/dashboard")
+@app.get(
+    "/dashboard",
+    tags=["ui"],
+    summary="User dashboard page",
+    name="getDashboard",
+)
 async def dashboard_page(request: Request) -> Any:
     """User dashboard."""
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
-@app.get("/")
+@app.get(
+    "/",
+    tags=["ui"],
+    summary="Landing page",
+    name="getLanding",
+)
 async def landing_page(request: Request) -> Any:
     """Unified landing page (clean organized variant)."""
     # Use the clean organized landing page
     return templates.TemplateResponse("landing-clean.html", {"request": request})
 
 
-@app.get("/signup")
+@app.get(
+    "/signup",
+    tags=["auth"],
+    summary="Legacy signup redirect (to /auth/signup)",
+    name="getLegacySignup",
+)
 async def legacy_signup_redirect() -> Response:
     from fastapi.responses import RedirectResponse
 
@@ -291,7 +327,12 @@ async def legacy_signup_redirect() -> Response:
 from .authz import require_min_tier_env  # noqa: E402
 
 
-@app.get("/admin/access-view")
+@app.get(
+    "/admin/access-view",
+    tags=["admin", "ui"],
+    summary="Admin-only access visualization UI",
+    name="getAdminAccessView",
+)
 async def admin_access_view(
     request: Request,
     _tier=Depends(require_min_tier_env("ADMIN_PAGE_MIN_TIER", "admin")),
@@ -414,7 +455,21 @@ except Exception:
 
 
 # Premium feature forwarder used by tests: requires payment
-@app.get("/premium/advanced-analytics")
+class OkResponse(BaseModel):
+    ok: bool
+
+
+@app.get(
+    "/premium/advanced-analytics",
+    tags=["premium"],
+    summary="Premium advanced analytics gate",
+    name="getPremiumAdvancedAnalytics",
+    response_model=OkResponse,
+    responses={
+        402: {"description": "Upgrade required"},
+        401: {"description": "Unauthorized"},
+    },
+)
 def premium_advanced(request: Request) -> Any:
     # Perform the paid-or-admin check manually to avoid Depends usage here
     from fastapi import HTTPException
@@ -461,7 +516,12 @@ def premium_advanced(request: Request) -> Any:
 
 
 # Compatibility admin endpoints expected by older tests
-@app.get("/admin/users")
+@app.get(
+    "/admin/users",
+    tags=["admin"],
+    summary="Compatibility endpoint: list users",
+    name="getAdminUsersCompat",
+)
 def compat_admin_users() -> Any:
     try:
         import importlib
@@ -530,73 +590,8 @@ with contextlib.suppress(Exception):
 
 # Backwards-compatible simple aliases for older endpoints expected by tests
 with contextlib.suppress(Exception):
-    # Alias FastAPI Response to avoid multiple unqualified imports which
-    # trigger flake8 F811 (redefinition) when the module imports Response
-    # in multiple conditional blocks.
-    # avoid re-importing Response (flake8 F811); alias the already-imported Response
-    FastAPIResponse = Response
-
     # Import the concrete submodule to avoid hitting a package-level shim
     _auth_mod = importlib.import_module("app.auth")
-
-    @app.post("/auth/register")
-    def _legacy_register(payload: dict, res=None) -> Any:
-        """Compatibility alias: accept a JSON dict from older tests and delegate
-        to auth.signup_api using the Pydantic model and a Response object.
-        """
-        if not hasattr(_auth_mod, "signup_api"):
-            raise HTTPException(status_code=501, detail="Register not implemented")
-
-        # Ensure we pass a Pydantic SignupReq instance and a Response object
-        signup_payload = payload
-        try:
-            # If the module exposes the SignupReq model, coerce dict -> model
-            if isinstance(payload, dict) and hasattr(_auth_mod, "SignupReq"):
-                signup_payload = _auth_mod.SignupReq(**payload)
-        except Exception as exc:  # invalid payload
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-        response = res or FastAPIResponse()
-        # Call the underlying handler. If it returns a dict (legacy behavior),
-        # wrap it in a JSONResponse with status 201 to match the async forwarder
-        # and preserve any Set-Cookie header the handler added to `response`.
-        result = _auth_mod.signup_api(signup_payload, response)
-        try:
-            from fastapi.responses import JSONResponse
-
-            if isinstance(result, dict) and "user" in result:
-                body = {
-                    "email": result["user"]["email"],
-                    "id": result["user"].get("id"),
-                }
-                headers = {}
-                cookie_hdr = response.headers.get("set-cookie")
-                if cookie_hdr:
-                    headers["set-cookie"] = cookie_hdr
-                return JSONResponse(content=body, status_code=201, headers=headers)
-        except Exception:
-            # If anything goes wrong constructing the JSONResponse, fall back to
-            # returning the original result so we don't break runtime.
-            pass
-        return result
-
-    @app.post("/auth/login")
-    def _legacy_login(payload: dict | None = None, res=None) -> Any:
-        """Compatibility alias: accept JSON login payload and delegate to
-        auth.login_api, coercing to the LoginReq model when available.
-        """
-        if not hasattr(_auth_mod, "login_api"):
-            raise HTTPException(status_code=404, detail="Login endpoint not available")
-
-        login_payload = payload
-        try:
-            if isinstance(payload, dict) and hasattr(_auth_mod, "LoginReq"):
-                login_payload = _auth_mod.LoginReq(**payload)
-        except Exception as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-        response = res or FastAPIResponse()
-        return _auth_mod.login_api(login_payload, response)
 
 
 # Fallback forwarder: ensure POST /auth/register exists and delegates to
@@ -607,44 +602,51 @@ try:
 
     _auth_mod = importlib.import_module("app.auth")
 
-    @app.post("/auth/register")
-    async def _legacy_register_forward(request: Request) -> JSONResponse:
-        # Read incoming JSON payload
-        try:
-            payload_dict = await request.json()
-        except Exception as exc:
-            raise HTTPException(status_code=422, detail="Invalid JSON payload") from exc
+    if not _route_exists("POST", "/auth/register"):
 
-        if not hasattr(_auth_mod, "signup_api"):
-            raise HTTPException(status_code=501, detail="Register not implemented")
-
-        payload = payload_dict
-        if isinstance(payload_dict, dict) and hasattr(_auth_mod, "SignupReq"):
+        @app.post("/auth/register")
+        async def _legacy_register_forward(request: Request) -> JSONResponse:
+            # Read incoming JSON payload
             try:
-                payload = _auth_mod.SignupReq(**payload_dict)
+                payload_dict = await request.json()
             except Exception as exc:
-                raise HTTPException(status_code=422, detail=str(exc)) from exc
+                raise HTTPException(
+                    status_code=422, detail="Invalid JSON payload"
+                ) from exc
 
-        # Provide a Response object so the underlying handler can set cookies
-        # avoid re-importing Response (flake8 F811); alias the already-imported Response
-        FastAPIResponse = Response
-        from fastapi.responses import JSONResponse
+            if not hasattr(_auth_mod, "signup_api"):
+                raise HTTPException(status_code=501, detail="Register not implemented")
 
-        res = FastAPIResponse()
-        result = _auth_mod.signup_api(payload, res)
+            payload = payload_dict
+            if isinstance(payload_dict, dict) and hasattr(_auth_mod, "SignupReq"):
+                try:
+                    payload = _auth_mod.SignupReq(**payload_dict)
+                except Exception as exc:
+                    raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-        # If the handler returned a dict (typical), wrap it in a JSONResponse
-        # and preserve any Set-Cookie header the handler added to `res`.
-        body = result if isinstance(result, dict) else {}
-        # Legacy tests expect a response including 'email' and 'id'
-        if isinstance(result, dict) and "user" in result:
-            body = {"email": result["user"]["email"], "id": result["user"].get("id")}
-        headers = {}
-        cookie_hdr = res.headers.get("set-cookie")
-        if cookie_hdr:
-            headers["set-cookie"] = cookie_hdr
+            # Provide a Response object so the underlying handler can set cookies
+            # avoid re-importing Response (flake8 F811); alias the already-imported Response
+            FastAPIResponse = Response
+            from fastapi.responses import JSONResponse
 
-        return JSONResponse(content=body, status_code=201, headers=headers)
+            res = FastAPIResponse()
+            result = _auth_mod.signup_api(payload, res)
+
+            # If the handler returned a dict (typical), wrap it in a JSONResponse
+            # and preserve any Set-Cookie header the handler added to `res`.
+            body = result if isinstance(result, dict) else {}
+            # Legacy tests expect a response including 'email' and 'id'
+            if isinstance(result, dict) and "user" in result:
+                body = {
+                    "email": result["user"]["email"],
+                    "id": result["user"].get("id"),
+                }
+            headers = {}
+            cookie_hdr = res.headers.get("set-cookie")
+            if cookie_hdr:
+                headers["set-cookie"] = cookie_hdr
+
+            return JSONResponse(content=body, status_code=201, headers=headers)
 
 except Exception:
     pass
@@ -665,14 +667,7 @@ async def iso20022_analyze(payload: dict):
 
 
 # Ensure ISO20022 endpoints are available even if try/except blocks above fail
-@app.post("/iso20022/parse")
-async def iso20022_parse_fallback(payload: dict):
-    return {"parsed_data": {"message_id": "MSG123456", "amount": 1000.0}}
-
-
-@app.post("/iso20022/analyze-compliance")
-async def iso20022_analyze_fallback(payload: dict):
-    return {"compliance_tags": []}
+# (Removed duplicate ISO20022 fallback routes to avoid duplicates)
 
 
 # Enterprise ISO20022 endpoints expected by tests
@@ -706,58 +701,60 @@ try:
 
     _auth_mod = importlib.import_module("app.auth")
 
-    @app.post("/auth/login")
-    async def _legacy_login_forward(request: Request):
-        try:
-            payload_dict = {}
-            # Try JSON first
+    if not _route_exists("POST", "/auth/login"):
+
+        @app.post("/auth/login")
+        async def _legacy_login_forward(request: Request):
             try:
-                payload_dict = await request.json()
-            except Exception:
-                # Fall back to form data
+                payload_dict = {}
+                # Try JSON first
                 try:
-                    form = await request.form()
-                    payload_dict = dict(form)
+                    payload_dict = await request.json()
                 except Exception:
-                    payload_dict = {}
+                    # Fall back to form data
+                    try:
+                        form = await request.form()
+                        payload_dict = dict(form)
+                    except Exception:
+                        payload_dict = {}
 
-            if not hasattr(_auth_mod, "login_api"):
-                raise HTTPException(status_code=501, detail="Login not implemented")
+                if not hasattr(_auth_mod, "login_api"):
+                    raise HTTPException(status_code=501, detail="Login not implemented")
 
-            # Normalize legacy field names
-            if (
-                isinstance(payload_dict, dict)
-                and "username" in payload_dict
-                and "email" not in payload_dict
-            ):
-                payload_dict["email"] = payload_dict.pop("username")
+                # Normalize legacy field names
+                if (
+                    isinstance(payload_dict, dict)
+                    and "username" in payload_dict
+                    and "email" not in payload_dict
+                ):
+                    payload_dict["email"] = payload_dict.pop("username")
 
-            payload = payload_dict
-            if isinstance(payload_dict, dict) and hasattr(_auth_mod, "LoginReq"):
-                try:
-                    payload = _auth_mod.LoginReq(**payload_dict)
-                except Exception as exc:
-                    raise HTTPException(status_code=422, detail=str(exc)) from exc
+                payload = payload_dict
+                if isinstance(payload_dict, dict) and hasattr(_auth_mod, "LoginReq"):
+                    try:
+                        payload = _auth_mod.LoginReq(**payload_dict)
+                    except Exception as exc:
+                        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-            # Provide a Response object so the underlying handler can set cookies
-            # Reuse the module-level Response alias to avoid re-importing and
-            # triggering flake8 F811 (redefinition).
-            FastAPIResponse = Response
+                # Provide a Response object so the underlying handler can set cookies
+                # Reuse the module-level Response alias to avoid re-importing and
+                # triggering flake8 F811 (redefinition).
+                FastAPIResponse = Response
 
-            res = FastAPIResponse()
-            result = _auth_mod.login_api(payload, res)
+                res = FastAPIResponse()
+                result = _auth_mod.login_api(payload, res)
 
-            body = result if isinstance(result, dict) else {}
-            headers = {}
-            cookie_hdr = res.headers.get("set-cookie")
-            if cookie_hdr:
-                headers["set-cookie"] = cookie_hdr
+                body = result if isinstance(result, dict) else {}
+                headers = {}
+                cookie_hdr = res.headers.get("set-cookie")
+                if cookie_hdr:
+                    headers["set-cookie"] = cookie_hdr
 
-            return JSONResponse(content=body, status_code=200, headers=headers)
-        except HTTPException:
-            raise
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e)) from e
+                return JSONResponse(content=body, status_code=200, headers=headers)
+            except HTTPException:
+                raise
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e)) from e
 
 except Exception:
     pass
@@ -925,12 +922,7 @@ async def integrations_xrpl_fetch(account: str, limit: int = 10):
     # If we get here, both import attempts failed
     raise HTTPException(status_code=501, detail=str(last_exc))
 
-
-@app.get("/premium/advanced-analytics")
-async def premium_advanced_analytics():
-    """Simple compatibility endpoint for paid-tier analytics used in tests."""
-    # Minimal placeholder to satisfy tests; real implementation lives elsewhere
-    return {"ok": False, "error": "Not implemented in test environment"}
+    # (Removed duplicate premium endpoint to avoid duplicates)
 
 
 if __name__ == "__main__":

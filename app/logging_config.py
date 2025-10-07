@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import structlog
+
 try:
     from pythonjsonlogger.json import JsonFormatter
 except Exception:  # pragma: no cover - optional dependency in some envs
