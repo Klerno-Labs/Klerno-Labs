@@ -346,6 +346,7 @@ async def admin_access_view(
 
 from .routers import (  # import after app creation to avoid circulars  # noqa: E402
     operational,
+    media,
 )
 
 with contextlib.suppress(Exception):
@@ -353,6 +354,12 @@ with contextlib.suppress(Exception):
     if router_obj is not None:
         app.include_router(router_obj)
         logger.info("router.operational.included")
+
+with contextlib.suppress(Exception):
+    mrouter = getattr(media, "router", None)
+    if mrouter is not None:
+        app.include_router(mrouter)
+        logger.info("router.media.included")
 
 try:
     from .routers import neon_proxy  # noqa: E402
