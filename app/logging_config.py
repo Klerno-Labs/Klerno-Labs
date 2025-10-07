@@ -8,7 +8,10 @@ from datetime import UTC, datetime
 from typing import Any
 
 import structlog
-from pythonjsonlogger.json import JsonFormatter
+try:
+    from pythonjsonlogger.json import JsonFormatter
+except Exception:  # pragma: no cover - optional dependency in some envs
+    JsonFormatter = None  # type: ignore[assignment]
 
 from app.settings import get_settings
 
@@ -52,11 +55,17 @@ def configure_logging() -> None:
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
 
-    # JSON formatter for structured logs
-    json_formatter = JsonFormatter(
-        fmt="%(asctime)s %(name)s %(levelname)s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+    # JSON formatter for structured logs (fallback to basic if missing)
+    if JsonFormatter is not None:
+        json_formatter = JsonFormatter(
+            fmt="%(asctime)s %(name)s %(levelname)s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+    else:
+        json_formatter = logging.Formatter(
+            "%(asctime)s %(name)s %(levelname)s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
 
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
