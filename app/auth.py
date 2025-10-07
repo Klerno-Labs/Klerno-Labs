@@ -58,6 +58,20 @@ def static_url(path: str) -> str:
 
 templates.env.globals["static_url"] = static_url
 
+# Expose CSP nonce helper to templates (returns empty string if not present)
+def _tpl_csp_nonce(request: Request) -> str:
+    try:
+        state = getattr(request, "state", None)
+        if state is None:
+            return ""
+        nonce = getattr(state, "csp_nonce", "")
+        return str(nonce or "")
+    except Exception:
+        return ""
+
+
+templates.env.globals["csp_nonce"] = _tpl_csp_nonce
+
 
 logger = logging.getLogger(__name__)
 # Logging is configured centrally in app.logging_config.configure_logging()
@@ -980,21 +994,29 @@ def login_form(
                 user_id=str(user["id"]),
                 request=request,
             )
-        # Always return JSON with access token and set cookie (satisfies tests
-        # that call /auth/login expecting a token in the JSON body while also
-        # asserting that the session cookie is set).
-        from fastapi.responses import JSONResponse
+        # Content negotiation: browsers navigating a page get a redirect to the
+        # dashboard; API clients (Accept: application/json) get JSON.
+        accept = (request.headers.get("accept") or "").lower()
+        sec_fetch_mode = (request.headers.get("sec-fetch-mode") or "").lower()
+        wants_html = ("text/html" in accept) or (sec_fetch_mode == "navigate")
 
-        tmp = Response()
-        _set_session_cookie(tmp, token)
-        headers = {}
-        cookie_hdr = tmp.headers.get("set-cookie")
-        if cookie_hdr:
-            headers["set-cookie"] = cookie_hdr
-        return JSONResponse(
-            {"ok": True, "access_token": token, "token_type": "bearer"},
-            headers=headers,
-        )
+        if wants_html:
+            resp = RedirectResponse(url="/dashboard", status_code=302)
+            _set_session_cookie(resp, token)
+            return resp
+        else:
+            from fastapi.responses import JSONResponse
+
+            tmp = Response()
+            _set_session_cookie(tmp, token)
+            headers = {}
+            cookie_hdr = tmp.headers.get("set-cookie")
+            if cookie_hdr:
+                headers["set-cookie"] = cookie_hdr
+            return JSONResponse(
+                {"ok": True, "access_token": token, "token_type": "bearer"},
+                headers=headers,
+            )
     except Exception:
         # Keep template-facing errors concise; details are available in logs
         return templates.TemplateResponse(

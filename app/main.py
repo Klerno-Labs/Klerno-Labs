@@ -227,9 +227,23 @@ async def add_security_headers(
         "Strict-Transport-Security",
         "max-age=63072000; includeSubDomains",
     )
-    # Provide a minimal baseline CSP only when nonce system disabled so we don't conflict.
+    # Provide a baseline CSP only when nonce system disabled so we don't conflict.
+    # Include allowances for inline styles/scripts since some templates use them.
     if not csp_enabled():
-        response.headers.setdefault("Content-Security-Policy", "default-src 'self'")
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "; ".join(
+                [
+                    "default-src 'self'",
+                    # Allow images and fonts commonly used by the UI
+                    "img-src 'self' data: blob:",
+                    "font-src 'self' https://fonts.gstatic.com data:",
+                    # Allow styles and scripts from our app and trusted CDNs
+                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
+                    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+                ]
+            ),
+        )
     # Strengthen caching for versioned static assets
     try:
         path = request.url.path
@@ -345,8 +359,8 @@ async def admin_access_view(
 
 
 from .routers import (  # import after app creation to avoid circulars  # noqa: E402
-    operational,
     media,
+    operational,
 )
 
 with contextlib.suppress(Exception):

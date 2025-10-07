@@ -4,7 +4,7 @@
 
 {% block head %}
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
+<style nonce="{{ csp_nonce(request) }}">
   :root {
     --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     --glass-bg: rgba(255, 255, 255, 0.1);
@@ -394,7 +394,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce(request) }}">
   // Add loading states to OAuth buttons
   document.querySelectorAll('.oauth-btn').forEach(btn => {
     btn.addEventListener('click', function () {
