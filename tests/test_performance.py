@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from app.performance_consolidated import cached
+from app.performance_optimization import cached
 
 
 def test_cached_decorator_basic() -> None:

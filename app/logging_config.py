@@ -11,8 +11,10 @@ import structlog
 
 try:
     from pythonjsonlogger.json import JsonFormatter
+
+    JsonFormatterClass: type[JsonFormatter] | None = JsonFormatter
 except Exception:  # pragma: no cover - optional dependency in some envs
-    JsonFormatter = None  # type: ignore[assignment]
+    JsonFormatterClass = None
 
 from app.settings import get_settings
 
@@ -46,10 +48,20 @@ def configure_logging() -> None:
         "stage": "INFO",
         "development": "DEBUG",
         "dev": "DEBUG",
-        "test": "DEBUG",
+        "test": "WARNING",  # Reduce test noise significantly
     }
     app_env = getattr(settings, "app_env", None) or "development"
-    log_level_str = env_to_level.get(str(app_env).lower(), "DEBUG")
+
+    # Detect if we're running under pytest
+    is_testing = (
+        "pytest" in sys.modules or "PYTEST_CURRENT_TEST" in __import__("os").environ
+    )
+
+    if is_testing:
+        log_level_str = "WARNING"  # Force WARNING level during tests
+    else:
+        log_level_str = env_to_level.get(str(app_env).lower(), "DEBUG")
+
     log_level = getattr(logging, log_level_str)
 
     # Remove existing handlers
@@ -57,8 +69,9 @@ def configure_logging() -> None:
         logging.root.removeHandler(handler)
 
     # JSON formatter for structured logs (fallback to basic if missing)
-    if JsonFormatter is not None:
-        json_formatter = JsonFormatter(
+    json_formatter: logging.Formatter
+    if JsonFormatterClass is not None:
+        json_formatter = JsonFormatterClass(
             fmt="%(asctime)s %(name)s %(levelname)s %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
@@ -103,6 +116,30 @@ def configure_logging() -> None:
         handlers=[console_handler, file_handler],
         force=True,
     )
+
+    # Silence noisy third-party loggers, especially during tests
+    noisy_loggers = [
+        "multipart.multipart",
+        "passlib.utils.compat",
+        "passlib.registry",
+        "psycopg.pq",
+        "httpx",
+        "app.store",  # Database debug messages
+        "klerno.audit",  # Audit messages during tests
+        "asyncio",
+    ]
+
+    if is_testing:
+        # During tests, be even more aggressive about silencing noise
+        for logger_name in noisy_loggers:
+            logging.getLogger(logger_name).setLevel(logging.ERROR)
+        # Also silence INFO messages from app loggers during tests
+        logging.getLogger("app.main").setLevel(logging.WARNING)
+    else:
+        # In development, just reduce DEBUG spam from third parties
+        for logger_name in noisy_loggers:
+            if logger_name != "app.store":  # Keep store debug in dev
+                logging.getLogger(logger_name).setLevel(logging.INFO)
 
     # Configure structlog
     structlog.configure(
