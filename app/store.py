@@ -27,9 +27,7 @@ from pathlib import Path
 from typing import Any, cast
 
 try:
-    from typing import NotRequired
-
-    from typing_extensions import TypedDict
+    from typing_extensions import NotRequired, TypedDict
 except Exception:  # pragma: no cover
     from typing import NotRequired, TypedDict
 
@@ -360,11 +358,13 @@ def init_db() -> None:
         except Exception:
             # Do not crash application startup if Postgres is temporarily unavailable.
             # We will skip schema init and allow the service to start; readiness/ops can retry later.
-            with contextlib.suppress(Exception):
+            try:
                 logger.warning(
                     "db.init.postgres_connect_failed",
                     exc_info=True,
                 )
+            except Exception:
+                pass
             return
     cur = con.cursor()
 

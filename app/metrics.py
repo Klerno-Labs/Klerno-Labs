@@ -146,11 +146,7 @@ def setup_metrics(app: FastAPI) -> None:  # pragma: no cover
 
     # Publish to module-level globals for helper functions
     global _prom_available, _registry, _req_counter, _latency_hist, _rl_allow_counter
-    global \
-        _rl_deny_counter, \
-        _csp_violation_counter, \
-        _neon_req_counter, \
-        _neon_latency_hist
+    global _rl_deny_counter, _csp_violation_counter, _neon_req_counter, _neon_latency_hist
     _prom_available = prom_available
     _registry = registry
     _req_counter = req_counter

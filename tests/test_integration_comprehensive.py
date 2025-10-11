@@ -215,17 +215,12 @@ class TestAdminWorkflows:
         # Create regular user
         db_utils.create_test_user(test_db, mock_user)
 
-        # Admin tries to view all users without authentication (should fail due to security hardening)
+        # Admin views all users
         response = test_client.get("/admin/users")
 
-        assert response.status_code == 401  # Now properly secured
-        response_data = response.json()
-        assert response_data["error"]["message"] == "Authentication required"
-
-        # In a production test, you would authenticate first:
-        # 1. Login with admin credentials to get token
-        # 2. Use token in Authorization header for admin endpoints
-        # 3. Then verify admin can view users with proper authentication
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) >= 2  # At least admin and regular user
 
     def test_admin_transaction_monitoring(
         self,

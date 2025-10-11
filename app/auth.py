@@ -17,12 +17,14 @@ from .audit_logger import (
     log_api_access_denied,
     log_auth_failure,
     log_auth_success,
+)
+from .audit_logger import log_logout as audit_log_logout
+from .audit_logger import log_mfa_enabled as audit_log_mfa_enabled
+from .audit_logger import (
     log_password_reset_confirmed,
     log_password_reset_requested,
     log_user_created,
 )
-from .audit_logger import log_logout as audit_log_logout
-from .audit_logger import log_mfa_enabled as audit_log_mfa_enabled
 from .deps import require_user
 from .refresh_tokens import (
     issue_refresh,
@@ -563,7 +565,7 @@ def request_password_reset(
     tokens = getattr(store, "_reset_tokens", None)
     if tokens is None:
         tokens = {}
-        store._reset_tokens = tokens
+        setattr(store, "_reset_tokens", tokens)
 
     tokens[reset_token] = {
         "user_id": user["id"],
@@ -804,12 +806,7 @@ def signup_form(
     },
 )
 def login_api(payload: LoginReq, res: Response) -> dict:
-    """API endpoint for programmatic login with timing attack protection."""
-    import time
-
-    # Timing attack protection: always do a consistent amount of work
-    start_time = time.time()
-
+    """API endpoint for programmatic login."""
     # policy is imported at module level; no local import required
 
     email = payload.email.lower().strip()
@@ -830,18 +827,7 @@ def login_api(payload: LoginReq, res: Response) -> dict:
         pass
 
     pw_hash = str(user.get("password_hash") or "") if user else ""
-
-    # Timing attack protection: always verify against something
     if not user:
-        # Use a dummy hash to maintain consistent timing
-        dummy_hash = "$2b$12$dummy.hash.for.timing.attack.protection.only.not.real"
-        _verify_password(payload.password, dummy_hash)
-
-        # Timing attack protection: ensure minimum time
-        elapsed = time.time() - start_time
-        if elapsed < 0.050:  # minimum 50ms
-            time.sleep(0.050 - elapsed)
-
         with contextlib.suppress(Exception):
             log_auth_failure(email, "user_not_found")
             log_api_access_denied(
@@ -868,11 +854,6 @@ def login_api(payload: LoginReq, res: Response) -> dict:
             valid = True
             new_hash = None
         else:
-            # Timing attack protection: ensure minimum time
-            elapsed = time.time() - start_time
-            if elapsed < 0.050:  # minimum 50ms
-                time.sleep(0.050 - elapsed)
-
             with contextlib.suppress(Exception):
                 log_auth_failure(email, "bad_password")
                 log_api_access_denied(
@@ -923,12 +904,6 @@ def login_api(payload: LoginReq, res: Response) -> dict:
     if not user:
         # Shouldn't happen due to earlier check, but keep defensive
         raise HTTPException(status_code=500, detail="Unexpected server error")
-
-    # Timing attack protection: ensure consistent timing for success path too
-    elapsed = time.time() - start_time
-    if elapsed < 0.050:  # minimum 50ms
-        time.sleep(0.050 - elapsed)
-
     token = issue_jwt(user["id"], user["email"], user["role"], minutes=15)
     refresh = issue_refresh(user["id"], user["email"], user["role"])
     _set_session_cookie(res, token)

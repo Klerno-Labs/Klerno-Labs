@@ -7,9 +7,7 @@ from enum import Enum
 from typing import Any
 
 try:  # Pydantic v2 requires typing_extensions.TypedDict on Python < 3.12
-    from typing import NotRequired  # type: ignore
-
-    from typing_extensions import TypedDict
+    from typing_extensions import NotRequired, TypedDict  # type: ignore
 except Exception:  # pragma: no cover - fallback for Python >= 3.12
     from typing import NotRequired, TypedDict  # type: ignore
 
