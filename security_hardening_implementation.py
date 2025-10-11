@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Immediate security hardening implementation."""
+"""Immediate security hardening implementation.
+
+Legacy note:
+- This module programmatically writes example security components into
+    `security_implementations/` (headers middleware, input validation, etc.).
+- The main application in `app/main.py` does NOT import or use these, since it
+    already has consolidated security middleware (security headers + CSP nonce)
+    and centralized exception handling.
+- Keep these files as reference/educational artifacts. They are not part of
+    the runtime path to avoid redundancy.
+"""
 
 import json
 import time

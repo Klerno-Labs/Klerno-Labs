@@ -3,6 +3,7 @@ Provides consistent error responses and logging.
 """
 
 import traceback
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
@@ -151,11 +152,19 @@ def create_error_response(
     request_id: str | None = None,
 ) -> JSONResponse:
     """Create standardized error response."""
+    # Prefer logger context timestamp if present; otherwise use current UTC ISO
+    ts = logger._context.get("timestamp", "") if hasattr(logger, "_context") else ""
+    if not ts:
+        try:
+            ts = datetime.now(UTC).isoformat()
+        except Exception:
+            ts = ""
+
     content = {
         "error": {
             "code": error_code,
             "message": message,
-            "timestamp": logger._context.get("timestamp", ""),
+            "timestamp": ts,
         },
     }
 

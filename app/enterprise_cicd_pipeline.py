@@ -394,9 +394,9 @@ class CICDPipeline:
                     stage_result["output"] += f"Command: {command}\n{stdout}\n"
 
                     if process.returncode != 0:
-                        stage_result[
-                            "error"
-                        ] += f"Command failed: {command}\n{stderr}\n"
+                        stage_result["error"] += (
+                            f"Command failed: {command}\n{stderr}\n"
+                        )
                         raise subprocess.CalledProcessError(
                             process.returncode,
                             command,

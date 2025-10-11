@@ -1,0 +1,63 @@
+name: ruff-create-pr
+
+on:
+    workflow_dispatch: {}
+
+jobs:
+    format-and-create-pr:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "3.11"
+            - name: Install ruff
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install ruff
+            - name: Run ruff format
+              id: ruff_format
+              run: |
+                  python -m ruff format . || true
+                  if [ -z "$(git status --porcelain)" ]; then
+                    echo "no_changes=true" >> $GITHUB_OUTPUT
+                  else
+                    echo "no_changes=false" >> $GITHUB_OUTPUT
+                  fi
+            - name: Stop if no changes
+              if: steps.ruff_format.outputs.no_changes == 'true'
+              run: |
+                  echo "No formatting changes detected. Nothing to do."
+            - name: Create branch with fixes
+              id: create_branch
+              if: steps.ruff_format.outputs.no_changes == 'false'
+              run: |
+                  BRANCH_NAME="ruff/format-fixes-${{ github.run_id }}"
+                  git checkout -b "$BRANCH_NAME"
+                  git add -A
+                  git commit -m "chore: ruff format fixes (CI)"
+                  # Use PUSH_TOKEN to push branch back to repo; reference via environment
+                  if [ -z "$PUSH_TOKEN" ]; then
+                    echo "PUSH_TOKEN secret not set. Cannot push branch. Add a repository secret named PUSH_TOKEN containing a PAT with repo:contents write access."
+                    exit 1
+                  fi
+                  git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${{ github.repository }}.git"
+                  git push --set-upstream origin "$BRANCH_NAME"
+                  echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_OUTPUT
+            - name: Create PR
+              if: steps.ruff_format.outputs.no_changes == 'false'
+              uses: peter-evans/create-pull-request@v5
+              with:
+                  token: ${{ secrets.PUSH_TOKEN }}
+                  commit-message: "chore: ruff format fixes (CI)"
+                  title: "chore: ruff format fixes (CI)"
+                  body: |
+                      This PR was created automatically by the ruff CI workflow to apply formatting changes.
+                  head: ${{ steps.create_branch.outputs.BRANCH_NAME }}
+                  base: main
+              env:
+                  PUSH_TOKEN: ${{ secrets.PUSH_TOKEN }}

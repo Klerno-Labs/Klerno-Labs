@@ -1,6 +1,12 @@
 # ===================================================================
-# KLERNO LABS REAL-TIME FASTAPI INTEGRATION
-# Add to your main FastAPI application
+# KLERNO LABS REAL-TIME FASTAPI INTEGRATION (Standalone Example)
+#
+# Note: This file defines a self-contained FastAPI app that demonstrates
+# real-time features (WebSockets, SSE, live metrics). It is NOT imported
+# or mounted by the primary application in `app/main.py`.
+#
+# Purpose: Keep as a reference/demo without creating routing or middleware
+# duplication in the production app. You can run it independently if needed.
 # ===================================================================
 
 import asyncio

@@ -358,6 +358,25 @@ Fallback: If Postgres is unavailable the app will continue to work with SQLite.
 
 ### Static asset versioning and caching
 
+### Standardized error responses and correlation
+
+This makes it easy to wire client SDKs and observability tooling around a single, predictable error contract.
+
+All non-HTML endpoints return a consistent error envelope via centralized exception handlers:
+
+### Developer Documentation
+
+- API error contract: `docs/api-error-contract.md` (served locally at `/developer/api-error-contract.md`)
+
+Optional: For a rendered HTML view of docs, visit `/developer/view/api-error-contract.md`. If you see a message about the `markdown` package, install it in your environment to enable rendering.
+
+- Shape: `{ "error": { "code": string, "message": string, "timestamp": ISO-8601, "request_id"?: string, "details"?: object } }`
+- Request correlation: `X-Request-ID` header is set on all responses and echoed in error bodies.
+- OpenAPI: `ErrorEnvelope` schema is published, and common error responses (400, 401, 403, 404, 422, 429, 500) are documented for operations that don't explicitly override them.
+
+This makes it easy to wire client SDKs and observability tooling around a single, predictable error contract.
+
+
 This app uses versioned static URLs via a helper that appends `?v=<STATIC_VERSION>` to `/static/...` paths. In production, set `STATIC_VERSION` to a release identifier (for example the git commit SHA) so browsers can cache assets immutably and only fetch new versions on deploy.
 
 - If `STATIC_VERSION` is not set, the app falls back to the current git short SHA or a timestamp.

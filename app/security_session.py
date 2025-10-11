@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from typing_extensions import TypedDict  # type: ignore
+    from typing_extensions import TypedDict
 except Exception:  # pragma: no cover
-    from typing import TypedDict  # type: ignore
+    from typing import TypedDict
 
 import jwt
 from fastapi import Depends, HTTPException, status

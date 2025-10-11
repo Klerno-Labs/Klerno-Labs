@@ -44,5 +44,5 @@ if (-not $python) {
 }
 
 Write-Host "Using Python interpreter: $python"
-Write-Host "Starting uvicorn app.main:app (use Ctrl+C to stop)..."
-& $python -m uvicorn app.main:app --reload
+Write-Host "Starting local dev via scripts/run_local.py (use Ctrl+C to stop)..."
+& $python scripts/run_local.py

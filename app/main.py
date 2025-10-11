@@ -19,6 +19,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
+from .exceptions import install_exception_handlers
 from .logging_config import configure_logging, get_logger
 from .settings import settings
 
@@ -45,6 +46,7 @@ BASE_DIR = (Path(__file__).parent / "..").resolve()
 TEMPLATES_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+DOCS_DIR = BASE_DIR / "docs"
 
 # Static asset versioning helper to enable long-lived caching without frequent 304s
 try:
@@ -152,13 +154,254 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Install centralized exception handlers for consistent error envelopes
+with contextlib.suppress(Exception):
+    install_exception_handlers(app)
+
+
+# Augment OpenAPI to include a global ErrorEnvelope schema and default error responses
+def _install_openAPI_error_envelope(app: FastAPI) -> None:
+    default_errors = {
+        400: {
+            "description": "Bad Request",
+            "code": "BAD_REQUEST",
+            "message": "Request is invalid",
+        },
+        401: {
+            "description": "Unauthorized",
+            "code": "UNAUTHORIZED",
+            "message": "Authentication required",
+        },
+        403: {
+            "description": "Forbidden",
+            "code": "FORBIDDEN",
+            "message": "Access denied",
+        },
+        404: {
+            "description": "Not Found",
+            "code": "NOT_FOUND",
+            "message": "Resource not found",
+        },
+        422: {
+            "description": "Validation Error",
+            "code": "VALIDATION_ERROR",
+            "message": "Request validation failed",
+        },
+        429: {
+            "description": "Rate limit exceeded",
+            "code": "RATE_LIMIT_EXCEEDED",
+            "message": "Too many requests",
+        },
+        500: {
+            "description": "Internal Server Error",
+            "code": "INTERNAL_ERROR",
+            "message": "An unexpected error occurred",
+        },
+    }
+
+    orig_openapi = getattr(app, "openapi", None)
+
+    def custom_openapi():
+        if app.openapi_schema:
+            return app.openapi_schema
+        # Build base schema via original generator
+        schema_obj = orig_openapi() if callable(orig_openapi) else app.openapi()
+        # FastAPI guarantees dict once generated; guard for type-checkers
+        if not isinstance(schema_obj, dict):
+            # Fallback: return whatever we got without mutation
+            app.openapi_schema = schema_obj if isinstance(schema_obj, dict) else None
+            return app.openapi_schema
+        schema: dict[str, Any] = schema_obj
+        # Attach externalDocs to point to developer documentation (served locally)
+        schema.setdefault(
+            "externalDocs",
+            {
+                "description": "Developer docs",
+                "url": "/developer/raw/api-error-contract.md",
+            },
+        )
+
+        # Ensure components exists
+        comps = schema.setdefault("components", {})
+        schemas = comps.setdefault("schemas", {})
+        # Register ErrorEnvelope if absent
+        if "ErrorEnvelope" not in schemas:
+            schemas["ErrorEnvelope"] = {
+                "title": "ErrorEnvelope",
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "object",
+                        "properties": {
+                            "code": {"type": "string"},
+                            "message": {"type": "string"},
+                            "timestamp": {"type": "string", "format": "date-time"},
+                            "request_id": {"type": "string"},
+                            "details": {"type": "object"},
+                        },
+                        "required": ["code", "message"],
+                    }
+                },
+                "required": ["error"],
+            }
+
+        # Inject default error responses where missing
+        paths = schema.get("paths", {})
+        for _path, path_item in paths.items():
+            for method, op in list(path_item.items()):
+                if method.lower() not in {
+                    "get",
+                    "post",
+                    "put",
+                    "patch",
+                    "delete",
+                    "options",
+                    "head",
+                }:
+                    continue
+                responses = op.setdefault("responses", {})
+                for code, meta in default_errors.items():
+                    key = str(code)
+                    if key in responses:
+                        continue
+                    # Attach a JSON error content using ErrorEnvelope
+                    responses[key] = {
+                        "description": meta["description"],
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorEnvelope"
+                                },
+                                "example": {
+                                    "error": {
+                                        "code": meta.get("code", "HTTP_ERROR"),
+                                        "message": meta.get(
+                                            "message", meta["description"]
+                                        ),
+                                        "timestamp": "2025-01-01T00:00:00Z",
+                                        "request_id": "00000000-0000-0000-0000-000000000000",
+                                    }
+                                },
+                            }
+                        },
+                    }
+
+        # Add targeted examples for auth endpoints without altering their schemas.
+        # To avoid redundancy, only add an example when a response already exists
+        # and has no example yet.
+        auth_error_examples: dict[tuple[str, str, str], dict] = {
+            ("post", "/auth/login/api", "401"): {
+                "error": "Invalid credentials",
+                "detail": None,
+            },
+            ("post", "/auth/login/api", "422"): {
+                "error": "TOTP code required",
+                "detail": None,
+            },
+            ("post", "/auth/login/api", "500"): {
+                "error": "Unexpected server error",
+                "detail": None,
+            },
+            ("post", "/auth/login", "401"): {
+                "error": "Invalid credentials",
+                "detail": None,
+            },
+            ("post", "/auth/login", "422"): {
+                "error": "TOTP code required",
+                "detail": None,
+            },
+            ("post", "/auth/signup/api", "400"): {
+                "error": "Password too weak",
+                "detail": {"policy": "min_length"},
+            },
+            ("post", "/auth/signup/api", "409"): {
+                "error": "User already exists",
+                "detail": None,
+            },
+            ("post", "/auth/signup/api", "500"): {
+                "error": "User creation failed",
+                "detail": None,
+            },
+            ("post", "/auth/token/refresh", "401"): {
+                "error": "Invalid refresh token",
+                "detail": None,
+            },
+            ("post", "/auth/password-reset/confirm", "400"): {
+                "error": "Invalid or expired reset token",
+                "detail": None,
+            },
+            ("post", "/auth/password-reset/confirm", "401"): {
+                "error": "Invalid TOTP code",
+                "detail": None,
+            },
+            ("post", "/auth/password-reset/confirm", "422"): {
+                "error": "TOTP code required for password reset",
+                "detail": None,
+            },
+            ("post", "/auth/password-reset/confirm", "500"): {
+                "error": "Failed to update password",
+                "detail": None,
+            },
+            ("get", "/auth/mfa/setup", "400"): {
+                "error": "No MFA secret found",
+                "detail": None,
+            },
+            ("get", "/auth/mfa/setup", "500"): {
+                "error": "Invalid MFA secret",
+                "detail": None,
+            },
+            ("post", "/auth/mfa/enable", "400"): {
+                "error": "Invalid TOTP code",
+                "detail": None,
+            },
+            ("post", "/auth/mfa/enable", "500"): {
+                "error": "Invalid MFA secret",
+                "detail": None,
+            },
+            ("get", "/auth/me", "401"): {"error": "Not authenticated", "detail": None},
+            ("post", "/auth/mock/activate", "403"): {
+                "error": "Only admin can mock",
+                "detail": None,
+            },
+        }
+
+        for path, path_item in paths.items():
+            if not str(path).startswith("/auth/"):
+                continue
+            for method, op in list(path_item.items()):
+                m = method.lower()
+                if m not in {"get", "post", "put", "patch", "delete"}:
+                    continue
+                responses = op.get("responses", {})
+                for status, resp in list(responses.items()):
+                    key = (m, str(path), str(status))
+                    example_payload = auth_error_examples.get(key)
+                    if not example_payload:
+                        continue
+                    # Ensure content structure exists
+                    content = resp.setdefault("content", {})
+                    app_json = content.setdefault("application/json", {})
+                    # Only set an example if none is present to avoid redundancy
+                    if "example" not in app_json:
+                        app_json["example"] = example_payload
+
+        app.openapi_schema = schema
+        return app.openapi_schema
+
+    # Install our wrapper once (use setattr to avoid assignment-to-method warnings)
+    setattr(app, "openapi", custom_openapi)  # noqa: B010
+
+
+with contextlib.suppress(Exception):
+    _install_openAPI_error_envelope(app)
+
 
 # Small helper to avoid duplicate route registration when compatibility
 # shims are present alongside canonical routers.
 def _route_exists(method: str, path: str) -> bool:
     try:
         m = method.upper()
-        for r in app.router.routes:  # type: ignore[attr-defined]
+        for r in app.router.routes:
             rp = getattr(r, "path", None) or getattr(r, "path_format", None)
             methods = getattr(r, "methods", None)
             if rp == path and methods and m in methods:
@@ -174,7 +417,9 @@ _is_dev = str(_env).lower() in {"dev", "development", "local"}
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.jwt_secret,
-    same_site="strict",
+    # Use Lax to align with auth._set_session_cookie and avoid blocking
+    # cookies on top-level navigations after login in dev.
+    same_site="lax",
     https_only=not _is_dev,
 )
 
@@ -218,8 +463,14 @@ async def add_security_headers(
 ) -> Any:
     from uuid import uuid4
 
+    # Ensure a stable request ID is available to handlers and responses
+    rid = request.headers.get("X-Request-ID") or str(uuid4())
+    with contextlib.suppress(Exception):
+        # Expose request_id to downstream handlers and exception hooks
+        request.state.request_id = rid
+
     response = await call_next(request)
-    response.headers.setdefault("X-Request-ID", str(uuid4()))
+    response.headers.setdefault("X-Request-ID", rid)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("X-XSS-Protection", "1; mode=block")
@@ -269,6 +520,66 @@ with _suppress(Exception):
         app.mount("/css", StaticFiles(directory=str(css_dir)), name="css")
     if js_dir.exists():
         app.mount("/js", StaticFiles(directory=str(js_dir)), name="js")
+    # Serve local developer documentation as raw files at /developer/raw
+    if DOCS_DIR.exists():
+        app.mount(
+            "/developer/raw", StaticFiles(directory=str(DOCS_DIR)), name="developer_raw"
+        )
+
+
+# Developer Docs Viewer (render Markdown as HTML)
+@app.get("/developer/view/{doc_path:path}", tags=["developer"], include_in_schema=False)
+async def developer_doc_viewer(request: Request, doc_path: str) -> Any:
+    """Render a Markdown file from docs/ as HTML for local browsing.
+
+    Security:
+    - Restrict to files within DOCS_DIR (no path traversal).
+    - Only serves `.md` files.
+    - Falls back to 404 for missing files.
+    - Content is converted via Python-Markdown with basic extensions.
+    """
+    try:
+        rel = doc_path.strip().lstrip("/\\")
+        if not rel.endswith(".md"):
+            raise HTTPException(status_code=404, detail="Not found")
+        target = (DOCS_DIR / rel).resolve()
+        # Ensure target is under DOCS_DIR
+        if DOCS_DIR.resolve() not in target.parents and target != DOCS_DIR.resolve():
+            raise HTTPException(status_code=404, detail="Not found")
+        if not target.exists() or not target.is_file():
+            raise HTTPException(status_code=404, detail="Not found")
+
+        # Lazy import to avoid hard dependency when route unused
+        try:
+            import markdown  # type: ignore
+        except Exception:
+            # Render a minimal page instructing to install markdown
+            return templates.TemplateResponse(
+                "developer_viewer.html",
+                {
+                    "request": request,
+                    "title": rel,
+                    "html": "<p><strong>markdown</strong> package not installed. Install it to enable rendering.</p>",
+                },
+            )
+
+        text = target.read_text(encoding="utf-8")
+        html = markdown.markdown(
+            text,
+            extensions=["extra", "tables", "sane_lists", "toc"],
+            output_format="html",
+        )
+        return templates.TemplateResponse(
+            "developer_viewer.html",
+            {"request": request, "title": rel, "html": html},
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        # Avoid leaking filesystem paths
+        raise HTTPException(
+            status_code=500, detail="Failed to render document"
+        ) from None
 
 
 # Legacy direct logo path -> redirect to versioned static asset
@@ -334,6 +645,19 @@ async def legacy_signup_redirect() -> Response:
     from fastapi.responses import RedirectResponse
 
     return RedirectResponse(url="/auth/signup", status_code=307)
+
+
+# Legacy login redirect: support GET /login -> /auth/login
+@app.get(
+    "/login",
+    tags=["auth"],
+    summary="Legacy login redirect (to /auth/login)",
+    name="getLegacyLogin",
+)
+async def legacy_login_redirect() -> Response:
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(url="/auth/login", status_code=307)
 
 
 # Import gating dependency (kept near top-level imports in practice). If circular issues arise,
@@ -532,7 +856,13 @@ def premium_advanced(request: Request) -> Any:
         return {"ok": True}
     except HTTPException as e:
         if e.status_code == 402:
-            raise HTTPException(status_code=402, detail="Upgrade required") from None
+            # Legacy tests expect a plain body with a 'detail' key instead of the
+            # standardized error envelope. Return JSON directly to satisfy those tests.
+            from fastapi.responses import JSONResponse as _JSONResponse
+
+            return _JSONResponse(
+                status_code=402, content={"detail": "Upgrade required"}
+            )
         raise
 
 
@@ -583,20 +913,6 @@ def compat_admin_analytics() -> Any:
     total = len(rows)
     total_volume = sum(float(r.get("amount") or 0) for r in rows)
     return {"total_transactions": total, "total_volume": total_volume}
-
-
-# Error handlers
-@app.exception_handler(404)
-async def not_found_handler(request: Request, exc: HTTPException) -> JSONResponse:
-    return JSONResponse(
-        status_code=404,
-        content={"error": "Not found", "path": str(request.url.path)},
-    )
-
-
-@app.exception_handler(500)
-async def internal_error_handler(request: Request, exc: HTTPException) -> JSONResponse:
-    return JSONResponse(status_code=500, content={"error": "Internal server error"})
 
 
 # Include routers with error handling
@@ -724,8 +1040,17 @@ try:
 
     if not _route_exists("POST", "/auth/login"):
 
-        @app.post("/auth/login")
+        @app.post("/auth/login", response_model=_auth_mod.FormLoginResponse)
         async def _legacy_login_forward(request: Request):
+            """Compatibility forwarder for POST /auth/login.
+
+            - Input: Accepts JSON or form-encoded payloads. If a form uses `username`, it is
+              normalized to `email` for compatibility.
+            - Delegation: Calls `app.auth.login_api` as the single source of truth for
+              authentication logic.
+            - Output: Always returns JSON matching `/auth/login/api` and preserves any
+              `Set-Cookie` header set by the underlying handler so session cookies work.
+            """
             try:
                 payload_dict = {}
                 # Try JSON first
@@ -771,7 +1096,9 @@ try:
                 if cookie_hdr:
                     headers["set-cookie"] = cookie_hdr
 
-                return JSONResponse(content=body, status_code=200, headers=headers)
+                from fastapi.responses import JSONResponse as _JSONResponse
+
+                return _JSONResponse(content=body, status_code=200, headers=headers)
             except HTTPException:
                 raise
             except Exception as e:

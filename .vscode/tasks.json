@@ -99,6 +99,22 @@
 			"args": [],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Dev: Uvicorn (8025)",
+			"type": "shell",
+			"command": "C:\\Users\\Somli\\OneDrive\\Desktop\\Klerno Labs\\.venv-1\\Scripts\\python.exe",
+			"args": [
+				"-m",
+				"uvicorn",
+				"app.main:app",
+				"--host",
+				"127.0.0.1",
+				"--port",
+				"8025"
+			],
+			"isBackground": true,
+			"group": "build"
 		}
 	],
 	"inputs": [

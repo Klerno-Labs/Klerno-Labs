@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · Developer Docs{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ static_url('css/design-system.css') }}" />
+<link rel="stylesheet" href="{{ static_url('css/app.css') }}" />
+<div class="container" style="max-width: 960px; margin: 2rem auto;">
+    <nav style="margin-bottom: 1rem; display:flex; gap:.75rem; align-items:center;">
+        <a href="/developer/view/api-error-contract.md" class="nav-link">API Error Contract</a>
+        <span style="opacity:.6">·</span>
+        <a href="/developer/raw/api-error-contract.md" class="nav-link">View raw</a>
+    </nav>
+    <article class="card" style="padding: 1.25rem;">
+        <h1 style="margin-bottom: 1rem;">{{ title }}</h1>
+        <div class="prose" style="line-height:1.7;">
+            {{ html | safe }}
+        </div>
+    </article>
+</div>
+{% endblock %}

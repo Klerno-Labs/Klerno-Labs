@@ -163,9 +163,9 @@ class TestPerformanceBenchmarks:
                 )
 
                 # Response sizes should be reasonable
-                assert (
-                    response_size < 10000
-                ), f"{endpoint} response too large: {response_size} bytes"
+                assert response_size < 10000, (
+                    f"{endpoint} response too large: {response_size} bytes"
+                )
 
     def test_cold_start_performance(self, client) -> None:
         """Test cold start performance (first request after initialization)."""
