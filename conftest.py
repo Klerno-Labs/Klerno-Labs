@@ -50,3 +50,43 @@ def ensure_db_initialized() -> None:
     except Exception:
         # Re-raise so CI log captures the traceback for triage.
         raise
+
+
+@pytest.fixture(autouse=True)
+def ensure_per_test_sqlite_initialized(monkeypatch, request) -> None:
+    """Ensure per-test sqlite databases (pytest tmp DBs) have legacy tables.
+
+    Some tests create temporary sqlite files under pytest's tmpdir or use
+    per-test DATABASE_URLs. The session-scoped initializer covers the
+    repository-level fallback DB, but it won't affect DB files created later
+    during individual tests. This lightweight fixture detects sqlite-based
+    DATABASE_URL values and runs the same repo initializer against that
+    URL so tests see the legacy `txs` table.
+
+    The fixture is intentionally minimal:
+    - only runs when DATABASE_URL is an sqlite URL
+    - calls the repository helper `scripts.init_db_if_needed.main(url)`
+    - ignores errors for non-critical failures (let tests surface real
+      assertions) but logs the initializer return code for debugging
+    """
+    import os
+
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        return
+
+    # Only handle sqlite URLs here. Avoid touching Postgres or other DBs.
+    if not url.startswith("sqlite:"):
+        return
+
+    try:
+        from scripts import init_db_if_needed as _init
+
+        # Run initializer for this per-test DB. Keep failures non-fatal so
+        # test assertions remain the primary failure signal, but log rc.
+        rc = _init.main(url)
+        if rc != 0:
+            print(f"[conftest.ensure_per_test_sqlite_initialized] init returned {rc} for {url}")
+    except Exception as exc:  # pragma: no cover - best-effort logging
+        print(f"[conftest.ensure_per_test_sqlite_initialized] exception: {exc}")
+        # Do not raise here; let tests fail on their own assertions.
