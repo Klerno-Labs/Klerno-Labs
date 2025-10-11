@@ -114,7 +114,17 @@ class _DBPath:
         # Prefer explicit sqlite DATABASE_URL when present
         runtime_db = os.getenv("DATABASE_URL") or ""
         if runtime_db and runtime_db.startswith("sqlite://"):
-            path = runtime_db.split("sqlite://", 1)[1].lstrip("/")
+            # Split off the scheme; SQLAlchemy accepts both
+            # - sqlite:///relative/path.db  -> raw == '///relative/path.db'
+            # - sqlite:////absolute/path.db -> raw == '////absolute/path.db'
+            # We must preserve the single leading '/' for absolute paths.
+            raw = runtime_db.split("sqlite://", 1)[1]
+            if raw.startswith("////"):
+                # absolute unix path: keep a single leading slash
+                path = "/" + raw.lstrip("/")
+            else:
+                # relative path or windows-style path: strip leading slashes
+                path = raw.lstrip("/")
             if path:
                 return path
             # if no path fragment, fall back to default

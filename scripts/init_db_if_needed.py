@@ -36,6 +36,19 @@ def main(url: str | None = None) -> int:
         Column("id", Integer, primary_key=True),
         Column("email", String(255), nullable=False, unique=True),
         Column("password_hash", String(255), nullable=True),
+        # Additional columns commonly expected by runtime code/tests
+        Column("oauth_provider", String(64), nullable=True),
+        Column("oauth_id", String(255), nullable=True),
+        Column("display_name", String(255), nullable=True),
+        Column("avatar_url", String(1024), nullable=True),
+        Column("wallet_addresses", String(2048), nullable=True),
+        Column("totp_secret", String(255), nullable=True),
+        Column("mfa_enabled", Boolean, nullable=False, server_default=text("false")),
+        Column("mfa_type", String(32), nullable=True),
+        Column("recovery_codes", String(2048), nullable=True),
+        Column(
+            "has_hardware_key", Boolean, nullable=False, server_default=text("false")
+        ),
         Column("role", String(50), nullable=False, server_default="user"),
         Column(
             "subscription_active",
