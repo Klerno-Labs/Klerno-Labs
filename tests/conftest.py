@@ -132,7 +132,15 @@ def ensure_test_db_initialized(test_db: str) -> Generator[None, None, None]:
     # Ensure DATABASE_URL points to the temporary DB used by the tests.
     # Use a POSIX path so SQLAlchemy correctly resolves absolute Windows paths
     # (avoid creating tables on an unexpected path due to backslashes).
-    os.environ["DATABASE_URL"] = f"sqlite:///{Path(test_db).as_posix()}"
+    posix_path = Path(test_db).as_posix()
+    os.environ["DATABASE_URL"] = f"sqlite:///{posix_path}"
+    # Also export DB_PATH as an absolute filesystem path so code that opens
+    # sqlite directly (sqlite3.connect(store.DB_PATH) or tests that import
+    # store early) always targets the same file the initializer created.
+    try:
+        os.environ["DB_PATH"] = str(Path(test_db).resolve())
+    except Exception:
+        os.environ["DB_PATH"] = str(test_db)
     # Ensure tests have a deterministic, sufficiently-strong JWT secret so the
     # application does not emit a RuntimeWarning about weak/missing secrets.
     # This value is only used for tests and should not be used in production.
@@ -160,7 +168,9 @@ def ensure_test_db_initialized(test_db: str) -> Generator[None, None, None]:
         # Best-effort: don't fail test collection if initializer can't run.
         # Tests will surface schema-related errors themselves.
         pass
-    return
+    # Yield control back to pytest (session-scoped fixture). The fixture does
+    # not need to provide a value; yielding allows teardown logic if needed.
+    yield
 
 
 @pytest.fixture
