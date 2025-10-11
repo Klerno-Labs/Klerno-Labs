@@ -279,7 +279,9 @@ def stub_neon_data_api(request) -> None:
                 host = request.url.host or ""
             except Exception:
                 host = ""
-            if host and host not in {"testserver", "127.0.0.1", "localhost"}:
+            # Treat the ASGI test host ('test') as local as well so our stub
+            # doesn't intercept in-process ASGITransport requests used by tests.
+            if host and host not in {"test", "testserver", "127.0.0.1", "localhost"}:
                 # If the endpoint expects auth, simulate 401 when missing
                 if _requires_auth():
                     return Response(401, json={"message": "Unauthorized"})
