@@ -19,6 +19,21 @@ import app.store as store
 pytest_plugins = ["asyncio"]
 
 
+def _sqlite_url_for_path(path: str) -> str:
+    """Return a sqlite URL suitable for the current platform for an absolute path.
+
+    On Windows use three slashes with a drive letter (sqlite:///C:/path.db).
+    On POSIX use four slashes to denote an absolute path (sqlite:////abs/path.db).
+    """
+    try:
+        if os.name == "nt" or (len(path) > 1 and path[1] == ":"):
+            # Normalize to forward slashes which SQLAlchemy accepts on Windows
+            return "sqlite:///" + path.replace("\\", "/")
+    except Exception:
+        pass
+    return "sqlite:////" + path.lstrip("/")
+
+
 # Create a session-level sqlite DB as early as possible (module import time)
 # so tests that import the application and create a TestClient at import
 # time won't trigger import-time DB access against a non-initialized DB.
@@ -31,7 +46,14 @@ if not os.getenv("DATABASE_URL"):
             prefix="klerno_pytest_session_"
         )
         _klerno_dbfile = Path(_klerno_pytest_session_tmpdir) / "klerno_session.db"
-        _klerno_url = f"sqlite:///{_klerno_dbfile}"
+        # Use explicit absolute sqlite URL (four slashes) to ensure the
+        # initializer writes to the exact filesystem path other code will
+        # open (store.DB_PATH / sqlite3.connect()).
+        try:
+            _abs = str(_klerno_dbfile.resolve())
+        except Exception:
+            _abs = str(_klerno_dbfile)
+        _klerno_url = _sqlite_url_for_path(_abs)
         # Force the env var so other modules import will see this DB URL
         os.environ["DATABASE_URL"] = _klerno_url
         # Also set DB_PATH env var to the absolute filesystem path so code that
@@ -68,7 +90,13 @@ def pytest_configure(config) -> None:
     try:
         tmpdir = tempfile.mkdtemp(prefix="klerno_pytest_session_")
         dbfile = Path(tmpdir) / "klerno_session.db"
-        url = f"sqlite:///{dbfile}"
+        # Construct an absolute sqlite URL so SQLAlchemy targets the same
+        # filesystem file referenced by store.DB_PATH.
+        try:
+            _abs = str(dbfile.resolve())
+        except Exception:
+            _abs = str(dbfile)
+        url = _sqlite_url_for_path(_abs)
         os.environ.setdefault("DATABASE_URL", url)
         # Mirror the environment selection on the store module so module-
         # level constants reflect the runtime DB used by the initializer.
@@ -128,7 +156,13 @@ def ensure_per_test_sqlite_initialized(
     test_name = request.node.name
     # Keep names filesystem-safe by using the node id hash if necessary
     dbfile = tmp_path / f"{test_name}.db"
-    url = f"sqlite:///{dbfile}"
+    # Resolve absolute filesystem path and construct a sqlite URL that
+    # unambiguously targets that file (use four slashes for absolute paths).
+    try:
+        abs_path = str(dbfile.resolve())
+    except Exception:
+        abs_path = str(dbfile)
+    url = _sqlite_url_for_path(abs_path)
     monkeypatch.setenv("DATABASE_URL", url)
     # Also update store module-level DATABASE_URL so import-time values
     # align with the per-test env override (helps modules that read the
@@ -140,9 +174,8 @@ def ensure_per_test_sqlite_initialized(
 
     # Export DB_PATH as an absolute filesystem path so direct sqlite.connect
     # calls (or code that reads DB_PATH env) use the same file the initializer
-    # created. Use resolve() to normalize symlinks/relative fragments.
+    # created. Use the previously-computed abs_path to guarantee consistency.
     try:
-        abs_path = str(Path(dbfile).resolve())
         monkeypatch.setenv("DB_PATH", abs_path)
         os.environ["DB_PATH"] = abs_path
     except Exception:
@@ -160,13 +193,11 @@ def ensure_per_test_sqlite_initialized(
         # show intermittent races where create_all() returns before the test's
         # sqlite connection sees the tables. Retry a few times to make this
         # robust while keeping the change low-risk.
+        # Call initializer against the explicit absolute URL we constructed
         _init_main(url)
         try:
-            # Compute filesystem path from sqlite URL (preserve leading slash semantics)
-            raw = url.split("sqlite://", 1)[1]
-            db_path = (
-                "/" + raw.lstrip("/") if raw.startswith("////") else raw.lstrip("/")
-            )
+            # We already have the absolute filesystem path in `abs_path`.
+            db_path = abs_path
             # Relaxed verification: ensure core tables are present
             import sqlite3
             import time
