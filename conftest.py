@@ -86,7 +86,9 @@ def ensure_per_test_sqlite_initialized(monkeypatch, request) -> None:
         # test assertions remain the primary failure signal, but log rc.
         rc = _init.main(url)
         if rc != 0:
-            print(f"[conftest.ensure_per_test_sqlite_initialized] init returned {rc} for {url}")
+            print(
+                f"[conftest.ensure_per_test_sqlite_initialized] init returned {rc} for {url}"
+            )
     except Exception as exc:  # pragma: no cover - best-effort logging
         print(f"[conftest.ensure_per_test_sqlite_initialized] exception: {exc}")
         # Do not raise here; let tests fail on their own assertions.
