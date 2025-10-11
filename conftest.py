@@ -33,6 +33,12 @@ def pytest_configure(config) -> None:
         dbfile = Path(tmpdir) / "klerno_session.db"
         url = f"sqlite:///{dbfile}"
         os.environ.setdefault("DATABASE_URL", url)
+        # Mirror the environment selection on the store module so module-
+        # level constants reflect the runtime DB used by the initializer.
+        try:
+            store.DATABASE_URL = os.getenv("DATABASE_URL") or ""
+        except Exception:
+            pass
         # Call canonical initializer; ignore errors so pytest can proceed
         from scripts.init_db_if_needed import main as _init_main
 
@@ -76,6 +82,13 @@ def ensure_per_test_sqlite_initialized(
     dbfile = tmp_path / f"{test_name}.db"
     url = f"sqlite:///{dbfile}"
     monkeypatch.setenv("DATABASE_URL", url)
+    # Also update store module-level DATABASE_URL so import-time values
+    # align with the per-test env override (helps modules that read the
+    # module-global value instead of os.getenv at call time).
+    try:
+        store.DATABASE_URL = url
+    except Exception:
+        pass
 
     # Call the canonical initializer from scripts/init_db_if_needed.py
     try:
