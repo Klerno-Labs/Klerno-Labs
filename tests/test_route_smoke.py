@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
-ALLOWED = {200, 201, 202, 204, 301, 302, 303, 307, 308, 401, 403, 405, 422, 402}
+ALLOWED = {200, 201, 202, 204, 301, 302, 303, 307, 308, 401, 402, 403, 405, 422}
 
 # Known environment-dependent or synthetic routes to skip in generic smoke
 SKIP_EXACT = {
