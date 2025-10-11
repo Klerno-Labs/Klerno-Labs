@@ -17,14 +17,12 @@ from .audit_logger import (
     log_api_access_denied,
     log_auth_failure,
     log_auth_success,
-)
-from .audit_logger import log_logout as audit_log_logout
-from .audit_logger import log_mfa_enabled as audit_log_mfa_enabled
-from .audit_logger import (
     log_password_reset_confirmed,
     log_password_reset_requested,
     log_user_created,
 )
+from .audit_logger import log_logout as audit_log_logout
+from .audit_logger import log_mfa_enabled as audit_log_mfa_enabled
 from .deps import require_user
 from .refresh_tokens import (
     issue_refresh,
@@ -565,7 +563,7 @@ def request_password_reset(
     tokens = getattr(store, "_reset_tokens", None)
     if tokens is None:
         tokens = {}
-        setattr(store, "_reset_tokens", tokens)
+        store._reset_tokens = tokens
 
     tokens[reset_token] = {
         "user_id": user["id"],

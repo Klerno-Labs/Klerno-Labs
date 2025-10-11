@@ -390,7 +390,7 @@ def _install_openAPI_error_envelope(app: FastAPI) -> None:
         return app.openapi_schema
 
     # Install our wrapper once (use setattr to avoid assignment-to-method warnings)
-    setattr(app, "openapi", custom_openapi)
+    setattr(app, "openapi", custom_openapi)  # noqa: B010
 
 
 with contextlib.suppress(Exception):
@@ -466,11 +466,9 @@ async def add_security_headers(
 
     # Ensure a stable request ID is available to handlers and responses
     rid = request.headers.get("X-Request-ID") or str(uuid4())
-    try:
+    with contextlib.suppress(Exception):
         # Expose request_id to downstream handlers and exception hooks
         request.state.request_id = rid
-    except Exception:
-        pass
 
     response = await call_next(request)
     response.headers.setdefault("X-Request-ID", rid)
@@ -580,7 +578,9 @@ async def developer_doc_viewer(request: Request, doc_path: str) -> Any:
         raise
     except Exception:
         # Avoid leaking filesystem paths
-        raise HTTPException(status_code=500, detail="Failed to render document")
+        raise HTTPException(
+            status_code=500, detail="Failed to render document"
+        ) from None
 
 
 # Legacy direct logo path -> redirect to versioned static asset
