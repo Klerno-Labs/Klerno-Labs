@@ -74,6 +74,21 @@ jobs:
           if [ -f dev-requirements.txt ]; then python -m pip install -r dev-requirements.txt >/dev/null || true; fi
           python -m pip install pytest coverage >/dev/null || true
 
+      - name: Ensure fallback DB tables exist
+        # Run lightweight initializer to create legacy-compatible tables
+        # (uses scripts/init_db_if_needed.py which the repo already provides).
+        run: |
+          # Ensure SQLAlchemy is available for the initializer
+          python -m pip install --upgrade pip sqlalchemy >/dev/null || true
+          # Make sure a ./data dir exists for sqlite fallbacks
+          mkdir -p ./data || true
+          # If CI didn't set DATABASE_URL, fall back to local sqlite DB used by tests
+          if [ -z "$DATABASE_URL" ]; then
+            export DATABASE_URL="sqlite:///./data/klerno.db"
+          fi
+          # Run the repo-provided initializer; ignore failures so tests can still run and surface errors
+          python scripts/init_db_if_needed.py || true
+
       - name: Run tests with coverage
         run: |
           set -o pipefail || true
