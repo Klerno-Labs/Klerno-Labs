@@ -38,8 +38,15 @@ def ensure_db_initialized() -> None:
         # Import and call the repository initializer helper (no duplication).
         from scripts import init_db_if_needed as _init
 
-        _init.main(url)
+        # Log what we're initializing so CI output can explain failures.
+        print(f"[conftest.ensure_db_initialized] DATABASE_URL={url}")
+
+        rc = _init.main(url)
+        print(f"[conftest.ensure_db_initialized] init_db_if_needed.main returned {rc}")
+
+        # If the helper reported an error, raise so CI fails with a clear cause.
+        if rc != 0:
+            raise RuntimeError(f"init_db_if_needed reported non-zero exit: {rc}")
     except Exception:
-        # If initialization fails, allow tests to run so failures surface in
-        # CI logs; don't raise here to avoid masking helpful pytest output.
-        pass
+        # Re-raise so CI log captures the traceback for triage.
+        raise
