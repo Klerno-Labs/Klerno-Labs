@@ -187,7 +187,12 @@ def _sqlite_conn() -> ISyncConnection:
     # Allow DATABASE_URL to override DB path at runtime. Tests may set this.
     runtime_db = os.getenv("DATABASE_URL") or ""
     if runtime_db and runtime_db.startswith("sqlite://"):
-        path = runtime_db.split("sqlite://", 1)[1].lstrip("/")
+        # Keep parity with _DBPath._compute(): preserve a single leading
+        # slash for absolute unix paths. Example inputs:
+        # - 'sqlite:///relative/path.db' -> raw == '///relative/path.db'
+        # - 'sqlite:////absolute/path.db' -> raw == '////absolute/path.db'
+        raw = runtime_db.split("sqlite://", 1)[1]
+        path = "/" + raw.lstrip("/") if raw.startswith("////") else raw.lstrip("/")
         db_path = path or DB_PATH
     else:
         db_path = DB_PATH
