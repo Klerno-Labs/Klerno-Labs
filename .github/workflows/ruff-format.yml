@@ -1,40 +1,57 @@
 name: ruff-format
 
 on:
-    pull_request:
-        branches:
-            - main
-    workflow_dispatch: {}
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: {}
 
 jobs:
-    format:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-              with:
-                  persist-credentials: true
-            - name: Set up Python
-              uses: actions/setup-python@v4
-              with:
-                  python-version: "3.11"
-            - name: Install ruff
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install ruff
-            - name: Run ruff check
-              run: |
-                  python -m ruff check .
-            - name: Run ruff format (fix on manual dispatch)
-              if: github.event_name == 'workflow_dispatch'
-              run: |
-                  python -m ruff format --fix .
-                  if [ -n "$(git status --porcelain)" ]; then
-                    git config user.name "github-actions[bot]"
-                    git config user.email "github-actions[bot]@users.noreply.github.com"
-                    git add -A
-                    git commit -m "chore: ruff format --fix (CI)"
-                    git push
-                  else
-                    echo "No formatting changes to commit"
-                  fi
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install ruff
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+      - name: Run ruff check
+        run: |
+          python -m ruff check .
+      - name: Always run ruff format --fix and commit changes when allowed
+        run: |
+          # Run the formatter to apply fixes
+          python -m ruff format --fix .
+
+          # If no changes, exit successfully
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No formatting changes to commit"
+            exit 0
+          fi
+
+          # Skip pushing changes for forked PRs where token lacks write access
+          # The default GITHUB_TOKEN can push to branches in the same repo but
+          # not to forks. We detect forks via github.event.pull_request.head.repo.full_name
+          # vs repository full name. If they differ, skip push and print instructions.
+          REPO_FULL_NAME="${{ github.repository }}"
+          PR_HEAD_REPO_FULL_NAME="${{ github.event.pull_request.head.repo.full_name }}"
+          if [ "$REPO_FULL_NAME" != "$PR_HEAD_REPO_FULL_NAME" ]; then
+            echo "Pull request originates from a fork; formatting changes were made locally in the runner but cannot be pushed back."
+            echo "Please run 'ruff format --fix' locally and push the changes, or allow a maintainer to run the workflow with push permissions."
+            git --no-pager diff --name-only
+            exit 0
+          fi
+
+          # Configure git author for the commit and push changes
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: ruff format --fix (CI)"
+          git push origin HEAD:refs/heads/${{ github.head_ref }}
