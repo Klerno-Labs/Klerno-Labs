@@ -6,6 +6,8 @@ the asyncio plugin; declare it once at the repository root.
 """
 
 import os
+import shutil
+import tempfile
 from collections.abc import Iterator
 
 import pytest
@@ -13,6 +15,41 @@ import pytest
 import app.store as store
 
 pytest_plugins = ["asyncio"]
+
+
+def pytest_configure(config) -> None:
+    """Prepare a session-level sqlite DB so import-time app code finds tables.
+
+    This runs before collection and ensures modules that access the DB at
+    import-time won't see a missing schema. We create a temporary DB file and
+    call the canonical initializer. The per-test fixture still provides fresh
+    sqlite DBs for test isolation, but this session DB prevents import-time
+    race conditions in CI.
+    """
+    try:
+        tmpdir = tempfile.mkdtemp(prefix="klerno_pytest_session_")
+        dbfile = os.path.join(tmpdir, "klerno_session.db")
+        url = f"sqlite:///{dbfile}"
+        os.environ.setdefault("DATABASE_URL", url)
+        # Call canonical initializer; ignore errors so pytest can proceed
+        from scripts.init_db_if_needed import main as _init_main
+
+        _init_main(url)
+        # store tmpdir for cleanup
+        setattr(config, "klerno_pytest_tmpdir", tmpdir)
+    except Exception:
+        # best-effort; let tests fail later if something else breaks
+        pass
+
+
+def pytest_unconfigure(config) -> None:
+    """Cleanup the temporary session DB directory created in pytest_configure."""
+    try:
+        tmpdir = getattr(config, "klerno_pytest_tmpdir", None)
+        if tmpdir and os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir, ignore_errors=True)
+    except Exception:
+        pass
 
 
 @pytest.fixture(autouse=True)
@@ -74,4 +111,57 @@ def seed_test_users(ensure_per_test_sqlite_initialized) -> None:
     except Exception:
         # If store isn't ready yet (import-time), let tests fail afterwards
         # rather than blocking initialization here.
+        pass
+
+
+@pytest.fixture(scope="session", autouse=True)
+def stub_neon_data_api(request) -> None:
+    """Stub outbound Neon Data API calls made via httpx so CI doesn't need network.
+
+    This session-scoped fixture avoids depending on the function-scoped
+    `monkeypatch` fixture by doing a manual attribute swap on
+    httpx.AsyncClient.send and registering a finalizer to restore it.
+    """
+    try:
+        import httpx
+        from httpx import Request, Response
+
+        async def _fake_send(self, request: Request, *args, **kwargs):
+            url = str(request.url)
+            # Minimal stubs for common Neon endpoints used in tests
+            if "/api/neon/notes" in url:
+                return Response(200, json={"notes": []})
+            if "/api/neon/paragraphs" in url:
+                return Response(200, json={"paragraphs": []})
+            if "/api/neon/whatever_else" in url:
+                return Response(200, json={})
+            # Fallback: call original send if present, otherwise return 502
+            if _orig_send is None:
+                return Response(502, json={})
+            return await _orig_send(self, request, *args, **kwargs)
+
+        # Save original and replace
+        _orig_send = getattr(httpx.AsyncClient, "send", None)
+        try:
+            setattr(httpx.AsyncClient, "send", _fake_send)
+        except Exception:
+            # best-effort; if we can't set it, continue without stub
+            return
+
+        # Register finalizer to restore original behavior at session end
+        def _restore():
+            try:
+                if _orig_send is None:
+                    try:
+                        delattr(httpx.AsyncClient, "send")
+                    except Exception:
+                        pass
+                else:
+                    setattr(httpx.AsyncClient, "send", _orig_send)
+            except Exception:
+                pass
+
+        request.addfinalizer(_restore)
+    except Exception:
+        # If httpx isn't importable or another error occurs, skip stubbing.
         pass
