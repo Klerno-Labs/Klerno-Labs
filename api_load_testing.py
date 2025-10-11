@@ -19,7 +19,8 @@ import os
 import random
 import statistics
 import time
-from typing import Any, Callable, cast
+from collections.abc import Callable
+from typing import Any, cast
 
 import httpx
 
