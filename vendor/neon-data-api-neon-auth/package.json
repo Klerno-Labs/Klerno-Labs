@@ -19,7 +19,7 @@
     "@radix-ui/react-slot": "^1.2.0",
     "@radix-ui/react-toggle": "^1.1.6",
     "@stackframe/react": "^2.8.8",
-    "@supabase/postgrest-js": "^1.19.4",
+    "@supabase/postgrest-js": "^2.75.0",
     "@tailwindcss/vite": "^4.1.4",
     "@tanstack/react-query": "^5.74.4",
     "@tanstack/react-router": "^1.117.1",
