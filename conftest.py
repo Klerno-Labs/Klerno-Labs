@@ -152,6 +152,17 @@ def ensure_per_test_sqlite_initialized(
     schema logic. A unique sqlite file is created under `tmp_path` for
     each test to guarantee isolation and deterministic behavior.
     """
+    # If the test declares its own `test_db` fixture (legacy tests in
+    # `tests/conftest.py` create a NamedTemporaryFile and set DATABASE_URL),
+    # avoid overriding DATABASE_URL/DB_PATH here. That fixture intends to
+    # control the DB the test uses; our autouse initializer would otherwise
+    # point the app at a different sqlite file and break tests that write
+    # directly to their `test_db`.
+    if "test_db" in getattr(request, "fixturenames", []):
+        # noop; let the test's `test_db` fixture control DATABASE_URL
+        yield
+        return
+
     # Build a unique sqlite path per test
     test_name = request.node.name
     # Keep names filesystem-safe by using the node id hash if necessary

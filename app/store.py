@@ -111,7 +111,16 @@ class _DBPath:
         self._default = default_path
 
     def _compute(self) -> str:
-        # Prefer explicit sqlite DATABASE_URL when present
+        # Prefer an explicit DB_PATH environment variable when present so
+        # test fixtures that set DB_PATH (absolute filesystem path) are
+        # honored even if DATABASE_URL was set earlier or in a different
+        # format. This prevents mismatches between the initializer and
+        # direct sqlite3.connect calls used in tests.
+        explicit = os.getenv("DB_PATH")
+        if explicit:
+            return explicit
+
+        # Otherwise prefer explicit sqlite DATABASE_URL when present
         runtime_db = os.getenv("DATABASE_URL") or ""
         if runtime_db and runtime_db.startswith("sqlite://"):
             # Split off the scheme; SQLAlchemy accepts both
@@ -185,17 +194,22 @@ logger = logging.getLogger(__name__)
 def _sqlite_conn() -> ISyncConnection:
     # honor DB_PATH and ensure directory exists
     # Allow DATABASE_URL to override DB path at runtime. Tests may set this.
-    runtime_db = os.getenv("DATABASE_URL") or ""
-    if runtime_db and runtime_db.startswith("sqlite://"):
-        # Keep parity with _DBPath._compute(): preserve a single leading
-        # slash for absolute unix paths. Example inputs:
-        # - 'sqlite:///relative/path.db' -> raw == '///relative/path.db'
-        # - 'sqlite:////absolute/path.db' -> raw == '////absolute/path.db'
-        raw = runtime_db.split("sqlite://", 1)[1]
-        path = "/" + raw.lstrip("/") if raw.startswith("////") else raw.lstrip("/")
-        db_path = path or DB_PATH
+    # If a DB_PATH env var is set, prefer it (tests set this explicitly).
+    explicit = os.getenv("DB_PATH")
+    if explicit:
+        db_path = explicit
     else:
-        db_path = DB_PATH
+        runtime_db = os.getenv("DATABASE_URL") or ""
+        if runtime_db and runtime_db.startswith("sqlite://"):
+            # Keep parity with _DBPath._compute(): preserve a single leading
+            # slash for absolute unix paths. Example inputs:
+            # - 'sqlite:///relative/path.db' -> raw == '///relative/path.db'
+            # - 'sqlite:////absolute/path.db' -> raw == '////absolute/path.db'
+            raw = runtime_db.split("sqlite://", 1)[1]
+            path = "/" + raw.lstrip("/") if raw.startswith("////") else raw.lstrip("/")
+            db_path = path or DB_PATH
+        else:
+            db_path = DB_PATH
 
     # (no debug prints) ensure we don't leave unused imports behind
 

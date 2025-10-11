@@ -297,20 +297,34 @@ class DatabaseTestUtils:
     @staticmethod
     def create_test_user(db_path: str, user_data: dict[str, Any]) -> int:
         """Create a test user in the database."""
+        import time
+
         conn = cast("ISyncConnection", sqlite3.connect(db_path, timeout=5.0))
         cursor = conn.cursor()
 
         # Try to insert; if the email already exists, return existing id.
-        cursor.execute(
-            "INSERT OR IGNORE INTO users (email, hashed_password, is_active, is_admin) VALUES (?, ?, ?, ?)",
-            (
-                user_data["email"],
-                user_data["hashed_password"],
-                user_data["is_active"],
-                user_data["is_admin"],
-            ),
-        )
-        conn.commit()
+        # Retry briefly on sqlite 'database is locked' to make CI robust
+        # to transient locks created by the app test client.
+        tries = 0
+        while True:
+            try:
+                cursor.execute(
+                    "INSERT OR IGNORE INTO users (email, hashed_password, is_active, is_admin) VALUES (?, ?, ?, ?)",
+                    (
+                        user_data["email"],
+                        user_data["hashed_password"],
+                        user_data["is_active"],
+                        user_data["is_admin"],
+                    ),
+                )
+                conn.commit()
+                break
+            except sqlite3.OperationalError as e:
+                if "locked" in str(e).lower() and tries < 8:
+                    time.sleep(0.05 * (tries + 1))
+                    tries += 1
+                    continue
+                raise
 
         # Fetch id (either newly inserted or existing)
         cursor.execute("SELECT id FROM users WHERE email = ?", (user_data["email"],))
@@ -335,20 +349,32 @@ class DatabaseTestUtils:
     @staticmethod
     def create_test_transaction(db_path: str, transaction_data: dict[str, Any]) -> int:
         """Create a test transaction in the database."""
-        conn = cast("ISyncConnection", sqlite3.connect(db_path))
+        import time
+
+        conn = cast("ISyncConnection", sqlite3.connect(db_path, timeout=5.0))
         cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO transactions (user_id, amount, currency, status) VALUES (?, ?, ?, ?)",
-            (
-                transaction_data["user_id"],
-                transaction_data["amount"],
-                transaction_data["currency"],
-                transaction_data["status"],
-            ),
-        )
-        transaction_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
+        tries = 0
+        while True:
+            try:
+                cursor.execute(
+                    "INSERT INTO transactions (user_id, amount, currency, status) VALUES (?, ?, ?, ?)",
+                    (
+                        transaction_data["user_id"],
+                        transaction_data["amount"],
+                        transaction_data["currency"],
+                        transaction_data["status"],
+                    ),
+                )
+                transaction_id = cursor.lastrowid
+                conn.commit()
+                conn.close()
+                break
+            except sqlite3.OperationalError as e:
+                if "locked" in str(e).lower() and tries < 8:
+                    time.sleep(0.05 * (tries + 1))
+                    tries += 1
+                    continue
+                raise
         # Ensure we return an int (sqlite may expose lastrowid as Optional)
         if transaction_id is None:
             msg = "Failed to create transaction; lastrowid is None"
