@@ -135,8 +135,9 @@ def seed_default_admin(ensure_db_initialized) -> None:
     try:
         from app import store
 
-        # Common admin email used by a handful of tests; create if missing.
-        admin_email = "admin@example.com"
+    # Common admin email used by a handful of tests; create if missing.
+    # Use the project's test/admin account configured by the user.
+    admin_email = "klerno@outlook.com"
         with __import__("contextlib").suppress(Exception):
             existing = store.get_user_by_email(admin_email)
             if not existing:
@@ -149,6 +150,39 @@ def seed_default_admin(ensure_db_initialized) -> None:
                 )
     except Exception:
         # Best-effort seeding; don't fail test collection if seeding fails.
+        with __import__("contextlib").suppress(Exception):
+            _ = None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def seed_test_users(ensure_db_initialized) -> None:
+    """Seed a small set of deterministic test user accounts used across tests.
+
+    This is low-risk and idempotent: it uses the public `app.store` APIs
+    (`get_user_by_email` and `create_user`) so we don't duplicate schema
+    knowledge. It runs after `ensure_db_initialized` to ensure tables exist.
+    """
+    try:
+        from app import store
+
+        emails = [
+            "test@example.com",
+            "newuser@example.com",
+            "pytest_test@example.com",
+            "refreshuser@example.com",
+            "refreshlogin@example.com",
+            "rotuser@example.com",
+            "revokeuser@example.com",
+            "form_user@example.com",
+        ]
+
+        for e in emails:
+            with __import__("contextlib").suppress(Exception):
+                if not store.get_user_by_email(e):
+                    # Create with minimal fields; password_hash may be None
+                    store.create_user(email=e, password_hash=None, role="viewer")
+    except Exception:
+        # Best-effort; do not fail test collection if seeding fails.
         with __import__("contextlib").suppress(Exception):
             _ = None
 
