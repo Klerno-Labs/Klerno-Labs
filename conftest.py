@@ -22,19 +22,21 @@ def disable_rate_limiting_for_tests(monkeypatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def ensure_db_initialized(monkeypatch, tmp_path) -> None:
-    """Ensure the canonical DB initializer runs for the test session.
+def ensure_per_test_sqlite_initialized(
+    monkeypatch, tmp_path, request
+) -> Iterator[None]:
+    """Provide a fresh sqlite DB per test and initialize the schema.
 
     This reuses scripts/init_db_if_needed.py rather than duplicating
-    schema logic. For tests that set DATABASE_URL earlier (via
-    monkeypatch), the initializer will be invoked with that URL.
+    schema logic. A unique sqlite file is created under `tmp_path` for
+    each test to guarantee isolation and deterministic behavior.
     """
-    # If tests set DATABASE_URL, use it; otherwise create a temp sqlite.
-    url = os.getenv("DATABASE_URL")
-    if not url:
-        dbfile = tmp_path / "session_test.db"
-        url = f"sqlite:///{dbfile}"
-        monkeypatch.setenv("DATABASE_URL", url)
+    # Build a unique sqlite path per test
+    test_name = request.node.name
+    # Keep names filesystem-safe by using the node id hash if necessary
+    dbfile = tmp_path / f"{test_name}.db"
+    url = f"sqlite:///{dbfile}"
+    monkeypatch.setenv("DATABASE_URL", url)
 
     # Call the canonical initializer from scripts/init_db_if_needed.py
     try:
@@ -42,26 +44,20 @@ def ensure_db_initialized(monkeypatch, tmp_path) -> None:
 
         _init_main(url)
     except Exception:
-        # Keep test initialization best-effort; tests will surface errors
-        # during execution if initialization failed.
+        # Best-effort initialization; let tests surface errors during run
         pass
 
-
-@pytest.fixture(autouse=True)
-def ensure_per_test_sqlite_initialized(monkeypatch, tmp_path) -> Iterator[None]:
-    """Provide a fresh sqlite DB per test when tests request it.
-
-    Several tests use temporary sqlite DATABASE_URL values; ensure the
-    canonical initializer runs for those too.
-    """
     yield
+    # tmp_path is automatically cleaned by pytest; no explicit teardown needed
 
 
 @pytest.fixture(autouse=True)
-def seed_test_users() -> None:
+def seed_test_users(ensure_per_test_sqlite_initialized) -> None:
     """Idempotently seed a small set of users used by tests.
 
-    Uses the public store.create_user / get_user_by_email APIs to avoid
+    This fixture depends on `ensure_per_test_sqlite_initialized` so the
+    DB schema is present before attempting to create users. It uses the
+    public store.create_user / get_user_by_email APIs to avoid
     duplicating SQL or schema logic.
     """
     admin_email = os.getenv("DEV_ADMIN_EMAIL", "klerno@outlook.com").strip()
