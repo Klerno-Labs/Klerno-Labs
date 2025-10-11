@@ -19,6 +19,36 @@ import app.store as store
 pytest_plugins = ["asyncio"]
 
 
+# Create a session-level sqlite DB as early as possible (module import time)
+# so tests that import the application and create a TestClient at import
+# time won't trigger import-time DB access against a non-initialized DB.
+# We only do this when DATABASE_URL is not already set in the environment
+# to avoid clobbering intentionally provided DB settings.
+_klerno_pytest_session_tmpdir: str | None = None
+if not os.getenv("DATABASE_URL"):
+    try:
+        _klerno_pytest_session_tmpdir = tempfile.mkdtemp(
+            prefix="klerno_pytest_session_"
+        )
+        _klerno_dbfile = Path(_klerno_pytest_session_tmpdir) / "klerno_session.db"
+        _klerno_url = f"sqlite:///{_klerno_dbfile}"
+        # Force the env var so other modules import will see this DB URL
+        os.environ["DATABASE_URL"] = _klerno_url
+        try:
+            store.DATABASE_URL = os.getenv("DATABASE_URL") or ""
+        except Exception:
+            pass
+        # Initialize schema using canonical initializer; ignore failures
+        try:
+            from scripts.init_db_if_needed import main as _init_main
+
+            _init_main(_klerno_url)
+        except Exception:
+            pass
+    except Exception:
+        _klerno_pytest_session_tmpdir = None
+
+
 def pytest_configure(config) -> None:
     """Prepare a session-level sqlite DB so import-time app code finds tables.
 
@@ -56,6 +86,17 @@ def pytest_unconfigure(config) -> None:
         tmpdir = getattr(config, "klerno_pytest_tmpdir", None)
         if tmpdir and Path(tmpdir).is_dir():
             shutil.rmtree(tmpdir, ignore_errors=True)
+        # Also cleanup the module-level tmpdir if we created one at import time
+        try:
+            global _klerno_pytest_session_tmpdir
+            if (
+                _klerno_pytest_session_tmpdir
+                and Path(_klerno_pytest_session_tmpdir).is_dir()
+            ):
+                shutil.rmtree(_klerno_pytest_session_tmpdir, ignore_errors=True)
+                _klerno_pytest_session_tmpdir = None
+        except Exception:
+            pass
     except Exception:
         pass
 
