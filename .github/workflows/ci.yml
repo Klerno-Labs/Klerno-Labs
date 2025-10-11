@@ -35,7 +35,19 @@ jobs:
       - name: Test with coverage (pytest)
         env:
           PYTHONWARNINGS: ignore
-        run: pytest -q --cov=app --cov-report=xml
+        run: |
+          # Ensure a fallback DATABASE_URL is available for tests and persist it
+          mkdir -p ./data || true
+          if [ -z "$DATABASE_URL" ]; then
+            echo "DATABASE_URL=sqlite:///./data/klerno.db" >> $GITHUB_ENV
+          else
+            # persist whatever DATABASE_URL the job has so later steps see it
+            echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
+          fi
+          # Install sqlalchemy for the initializer and run repo-provided init
+          python -m pip install --upgrade pip sqlalchemy >/dev/null || true
+          python -m scripts.init_db_if_needed || true
+          pytest -q --cov=app --cov-report=xml
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4

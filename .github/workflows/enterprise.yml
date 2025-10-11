@@ -100,7 +100,9 @@ jobs:
           mkdir -p .run
           # If CI didn't set DATABASE_URL, fall back to a local sqlite file.
           if [ -z "$DATABASE_URL" ]; then
-            export DATABASE_URL="sqlite:///./data/klerno.db"
+            echo "DATABASE_URL=sqlite:///./data/klerno.db" >> $GITHUB_ENV
+          else
+            echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
           fi
           # Run alembic pointing explicitly at the repo alembic.ini so the
           # migrations use the correct configuration in CI. Capture verbose
@@ -123,7 +125,7 @@ jobs:
         # a differently named table or partially failed.
         run: |
           python -m pip install --upgrade pip sqlalchemy
-          python scripts/init_db_if_needed.py || true
+          python -m scripts.init_db_if_needed || true
 
       - name: Run Enterprise Application Tests
         run: |
