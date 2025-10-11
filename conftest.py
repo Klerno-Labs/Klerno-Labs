@@ -89,6 +89,24 @@ def ensure_per_test_sqlite_initialized(monkeypatch, request) -> None:
             print(
                 f"[conftest.ensure_per_test_sqlite_initialized] init returned {rc} for {url}"
             )
+        # Also ensure the resolved `store.DB_PATH` file (if used directly by
+        # tests) is initialized. This covers calls like
+        # `sqlite3.connect(store.DB_PATH)` where DB_PATH may be a path-like.
+        try:
+            from app import store as _store
+
+            resolved = str(_store.DB_PATH)
+            if resolved and resolved != "":
+                sqlite_url = f"sqlite:///{resolved}"
+                rc2 = _init.main(sqlite_url)
+                if rc2 != 0:
+                    print(
+                        f"[conftest.ensure_per_test_sqlite_initialized] init returned {rc2} for {sqlite_url}"
+                    )
+        except Exception:
+            # Best-effort only; don't fail tests on logging issues.
+            with __import__("contextlib").suppress(Exception):
+                _ = None
     except Exception as exc:  # pragma: no cover - best-effort logging
         print(f"[conftest.ensure_per_test_sqlite_initialized] exception: {exc}")
         # Do not raise here; let tests fail on their own assertions.
