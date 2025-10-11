@@ -50,7 +50,7 @@ jobs:
                   echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_OUTPUT
             - name: Create PR
               if: steps.ruff_format.outputs.no_changes == 'false'
-              uses: peter-evans/create-pull-request@v5
+              uses: peter-evans/create-pull-request@v7
               with:
                   token: ${{ secrets.PUSH_TOKEN }}
                   commit-message: "chore: ruff format fixes (CI)"
