@@ -8,17 +8,36 @@ from app.analytics import AdvancedAnalytics, AnalyticsMetrics, InsightsEngine
 def test_empty_analytics() -> None:
     """Test analytics with no data."""
     # Clear transactions table for this test (use correct table name)
-    from app import store
-
     # Use store._conn() to perform the delete so we use the same connection
     # configuration (PRAGMA, timeout) as the application code. This reduces
     # cross-connection locking issues where an external connection holds a
     # lock that prevents a separate sqlite3.connect() call from executing.
-    conn = store._conn()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM txs")
-    conn.commit()
-    conn.close()
+    # Try to remove rows from txs with a resilient retry loop. Some CI
+    # runners show transient exclusive locks during parallel test startup
+    # (TestClient lifespan / initializers). Reopen a fresh sqlite3 connection
+    # each attempt and use a busy timeout to wait for locks to clear.
+    import sqlite3
+    import time
+
+    from app import store
+
+    db_path = str(store.DB_PATH)
+    tries = 0
+    while True:
+        try:
+            con = sqlite3.connect(db_path, timeout=30.0)
+            con.execute("PRAGMA busy_timeout = 10000;")
+            cur = con.cursor()
+            cur.execute("DELETE FROM txs")
+            con.commit()
+            con.close()
+            break
+        except sqlite3.OperationalError as e:
+            if "locked" in str(e).lower() and tries < 60:
+                time.sleep(0.05 * (tries + 1))
+                tries += 1
+                continue
+            raise
 
     # Clear ALL cache entries to ensure fresh data
     store._cache.clear()

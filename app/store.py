@@ -313,6 +313,34 @@ def _ph() -> str:
     return "%s" if USING_POSTGRES else "?"
 
 
+def _execute_with_retry(
+    con: Any, cur: Any, sql: str, params: tuple, max_retries: int = 16
+) -> None:
+    """Execute a cursor statement and retry briefly on sqlite 'database is locked'.
+
+    This helper is conservative: it only retries sqlite OperationalError with
+    'locked' in the message. For other errors it re-raises immediately.
+    """
+    if USING_POSTGRES:
+        cur.execute(sql, params)
+        return
+
+    tries = 0
+    while True:
+        try:
+            cur.execute(sql, params)
+            return
+        except sqlite3.OperationalError as e:
+            if "locked" in str(e).lower() and tries < max_retries:
+                time.sleep(0.05 * (tries + 1))
+                tries += 1
+                # best-effort: try to rollback any half-open transaction before retry
+                with contextlib.suppress(Exception):
+                    con.rollback()
+                continue
+            raise
+
+
 def wait_for_row(
     select_sql: str,
     params: tuple = (),
@@ -1232,7 +1260,9 @@ def create_user(
                 {_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()}
             )
             """  # nosec: B608 - parameterized placeholders used
-            cur.execute(
+            _execute_with_retry(
+                con,
+                cur,
                 sql,
                 (
                     email,
@@ -1268,7 +1298,9 @@ def create_user(
                                             {_ph()},{_ph()},{_ph()},{_ph()}, datetime('now')
                                         )
                     """  # nosec: B608 - parameterized placeholders used
-                    cur.execute(
+                    _execute_with_retry(
+                        con,
+                        cur,
                         sql,
                         (
                             email,
