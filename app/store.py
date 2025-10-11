@@ -661,6 +661,53 @@ def _ensure_schema_on_connection(con: Any) -> None:
                 created_at TEXT NOT NULL DEFAULT (datetime('now'))
         );""",
         )
+        # Ensure additional columns expected by newer codepaths exist.
+        # SQLite doesn't support DROP/RENAME easily here, but ALTER TABLE ADD
+        # COLUMN is supported and is safe for adding nullable/text/integer
+        # compatibility columns. Detect existing columns and add any that
+        # are missing so tests that rely on fields like oauth_provider don't
+        # fail with OperationalError.
+        try:
+            cur.execute("PRAGMA table_info(users)")
+            rows = cur.fetchall() or []
+            existing = {r[1] for r in rows}  # pragma: no cover - defensive
+
+            to_add = []
+            if "oauth_provider" not in existing:
+                to_add.append("ALTER TABLE users ADD COLUMN oauth_provider TEXT")
+            if "oauth_id" not in existing:
+                to_add.append("ALTER TABLE users ADD COLUMN oauth_id TEXT")
+            if "display_name" not in existing:
+                to_add.append("ALTER TABLE users ADD COLUMN display_name TEXT")
+            if "avatar_url" not in existing:
+                to_add.append("ALTER TABLE users ADD COLUMN avatar_url TEXT")
+            if "wallet_addresses" not in existing:
+                to_add.append("ALTER TABLE users ADD COLUMN wallet_addresses TEXT")
+            if "totp_secret" not in existing:
+                to_add.append("ALTER TABLE users ADD COLUMN totp_secret TEXT")
+            if "mfa_enabled" not in existing:
+                to_add.append(
+                    "ALTER TABLE users ADD COLUMN mfa_enabled INTEGER DEFAULT 0"
+                )
+            if "mfa_type" not in existing:
+                to_add.append("ALTER TABLE users ADD COLUMN mfa_type TEXT")
+            if "recovery_codes" not in existing:
+                to_add.append("ALTER TABLE users ADD COLUMN recovery_codes TEXT")
+            if "has_hardware_key" not in existing:
+                to_add.append(
+                    "ALTER TABLE users ADD COLUMN has_hardware_key INTEGER DEFAULT 0"
+                )
+
+            for sql in to_add:
+                try:
+                    cur.execute(sql)
+                except Exception:
+                    # Best-effort: ignore if column addition fails for any reason
+                    with contextlib.suppress(Exception):
+                        _ = None
+        except Exception:
+            with contextlib.suppress(Exception):
+                _ = None
         con.commit()
     except Exception:
         with contextlib.suppress(Exception):
