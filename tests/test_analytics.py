@@ -8,12 +8,15 @@ from app.analytics import AdvancedAnalytics, AnalyticsMetrics, InsightsEngine
 def test_empty_analytics() -> None:
     """Test analytics with no data."""
     # Clear transactions table for this test (use correct table name)
-    import sqlite3
-
     from app import store
 
-    conn = sqlite3.connect(store.DB_PATH)
-    conn.execute("DELETE FROM txs")  # Changed from 'transactions' to 'txs'
+    # Use store._conn() to perform the delete so we use the same connection
+    # configuration (PRAGMA, timeout) as the application code. This reduces
+    # cross-connection locking issues where an external connection holds a
+    # lock that prevents a separate sqlite3.connect() call from executing.
+    conn = store._conn()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM txs")
     conn.commit()
     conn.close()
 

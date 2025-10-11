@@ -63,6 +63,10 @@ if not os.getenv("DATABASE_URL"):
             os.environ["DB_PATH"] = str(Path(_klerno_dbfile).resolve())
         except Exception:
             os.environ["DB_PATH"] = str(_klerno_dbfile)
+        # Mark that the import-time initializer created DB_PATH so later
+        # fixtures can distinguish between an import-time created DB file
+        # and a test-level fixture that intentionally set DB_PATH.
+        os.environ.setdefault("KLERNO_PYTEST_IMPORT_DB", "1")
         try:
             store.DATABASE_URL = os.getenv("DATABASE_URL") or ""
         except Exception:
@@ -160,6 +164,19 @@ def ensure_per_test_sqlite_initialized(
     # directly to their `test_db`.
     if "test_db" in getattr(request, "fixturenames", []):
         # noop; let the test's `test_db` fixture control DATABASE_URL
+        yield
+        return
+
+    # If a DB_PATH env var is already present (for example a session-scoped
+    # `test_db` fixture wrote it), prefer that and do not create a per-test
+    # sqlite file. This avoids races where the autouse initializer would
+    # otherwise override a test's chosen DB file and cause schema/data
+    # visibility mismatches.
+    # Only skip autouse initialization when DB_PATH is present and it was
+    # not created by our import-time helper. If DB_PATH was set by the
+    # import-time initializer (KLERNO_PYTEST_IMPORT_DB=1), we should still
+    # perform a per-test DB initialization so each test is isolated.
+    if os.getenv("DB_PATH") and not os.getenv("KLERNO_PYTEST_IMPORT_DB"):
         yield
         return
 

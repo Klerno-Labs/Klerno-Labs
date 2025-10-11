@@ -112,6 +112,15 @@ def main(url: str | None = None) -> int:
         # ensure variables are referenced so linters don't flag them
         _ = (users, transactions, txs)
         meta.create_all(engine)
+        # Dispose the engine to close any pooled connections which can
+        # otherwise keep the sqlite file locked on some platforms/SQLAlchemy
+        # versions. This is low-risk and avoids transient "database is locked"
+        # errors in CI where tests open direct sqlite connections immediately
+        # after initialization.
+        try:
+            engine.dispose()
+        except Exception:
+            pass
         return 0
     except Exception:  # pragma: no cover - CI helper
         return 2
