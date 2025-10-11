@@ -19,7 +19,7 @@ import os
 import random
 import statistics
 import time
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -45,7 +45,7 @@ async def run_load(n: int = 1000) -> dict[str, Any]:
     first_id: int | None = None
 
     async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
+        transport=httpx.ASGITransport(app=cast(Any, app)), base_url="http://test"
     ) as client:
         # Warm-up health check
         r = await client.get("/health")
