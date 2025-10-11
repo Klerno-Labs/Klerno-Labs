@@ -49,9 +49,21 @@ jobs:
                     exit 0
                   fi
 
-                  # Configure git author for the commit and push changes
+                  # Configure git author for the commit
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
                   git add -A
                   git commit -m "chore: ruff format --fix (CI)"
-                  git push origin HEAD:refs/heads/${{ github.head_ref }}
+
+                  # If a PUSH_TOKEN secret (PAT) is available, use it to push changes back to the branch.
+                  # Create a repo secret named `PUSH_TOKEN` with a PAT that has 'repo' scope and (optionally) 'workflow' if needed.
+                  if [ -n "${{ secrets.PUSH_TOKEN }}" ]; then
+                    echo "PUSH_TOKEN found: pushing formatting commit back to branch"
+                    git remote set-url origin "https://x-access-token:${{ secrets.PUSH_TOKEN }}@github.com/${{ github.repository }}.git"
+                    git push origin HEAD:refs/heads/${{ github.head_ref }}
+                  else
+                    echo "Repository secret PUSH_TOKEN not set. Skipping push."
+                    echo "To enable automatic push, create a PAT with 'repo' scope and add it as a repository secret named 'PUSH_TOKEN'."
+                    echo "Alternatively, run 'ruff format .' locally and push the changes."
+                    git --no-pager diff --name-only
+                  fi
