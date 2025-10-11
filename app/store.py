@@ -357,9 +357,14 @@ def init_db() -> None:
             _ = None
 
     # If DATABASE_URL points to a sqlite file (used by tests), connect directly
+    # Use the same sqlite URL parsing strategy as _sqlite_conn() and _DBPath._compute()
+    # so that the initializer (which may use SQLAlchemy) and runtime both target
+    # the exact same file path. Preserve a single leading slash for absolute
+    # unix paths ("sqlite:////absolute/path.db").
     runtime_db = os.getenv("DATABASE_URL") or ""
     if runtime_db and runtime_db.startswith("sqlite://"):
-        path = runtime_db.split("sqlite://", 1)[1].lstrip("/")
+        raw = runtime_db.split("sqlite://", 1)[1]
+        path = "/" + raw.lstrip("/") if raw.startswith("////") else raw.lstrip("/")
         db_path = path or DB_PATH
         # ensure directory
         data_dir = Path(db_path).resolve().parent

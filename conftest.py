@@ -143,13 +143,33 @@ def stub_neon_data_api(request) -> None:
 
         async def _fake_send(self, request: Request, *args, **kwargs):
             url = str(request.url)
-            # Minimal stubs for common Neon endpoints used in tests
-            if "/api/neon/notes" in url:
-                return Response(200, json={"notes": []})
-            if "/api/neon/paragraphs" in url:
-                return Response(200, json={"paragraphs": []})
-            if "/api/neon/whatever_else" in url:
-                return Response(200, json={})
+            # Minimal stubs for common Neon endpoints used in tests.
+            # Support both the proxied routes (e.g. /api/neon/notes) and the
+            # Data API paths (e.g. /rest/v1/notes) the app may call directly.
+
+            def _ok_json(obj):
+                return Response(200, json=obj)
+
+            # Simple auth simulation: if Authorization header missing and
+            # NEON_API_KEY env not set, return 401 for protected endpoints.
+            auth_header = request.headers.get("authorization")
+            neon_key_env = os.getenv("NEON_API_KEY")
+
+            def _requires_auth():
+                return not (auth_header or neon_key_env)
+
+            if "/api/neon/notes" in url or "/rest/v1/notes" in url:
+                if _requires_auth():
+                    return Response(401, json={"message": "Unauthorized"})
+                # Return a PostgREST-style list of rows (empty by default)
+                return _ok_json([])
+            if "/api/neon/paragraphs" in url or "/rest/v1/paragraphs" in url:
+                if _requires_auth():
+                    return Response(401, json={"message": "Unauthorized"})
+                return _ok_json([])
+            # Generic Neon proxy endpoints under /api/neon may expect simple JSON
+            if "/api/neon/" in url:
+                return _ok_json({})
             # Fallback: call original send if present, otherwise return 502
             if _orig_send is None:
                 return Response(502, json={})
