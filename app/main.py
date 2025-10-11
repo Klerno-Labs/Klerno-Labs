@@ -161,7 +161,6 @@ with contextlib.suppress(Exception):
 
 # Augment OpenAPI to include a global ErrorEnvelope schema and default error responses
 def _install_openAPI_error_envelope(app: FastAPI) -> None:
-
     default_errors = {
         400: {
             "description": "Bad Request",
