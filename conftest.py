@@ -34,6 +34,13 @@ if not os.getenv("DATABASE_URL"):
         _klerno_url = f"sqlite:///{_klerno_dbfile}"
         # Force the env var so other modules import will see this DB URL
         os.environ["DATABASE_URL"] = _klerno_url
+        # Also set DB_PATH env var to the absolute filesystem path so code that
+        # opens sqlite directly using store.DB_PATH or os.getenv('DB_PATH') will
+        # target the same file the initializer wrote to.
+        try:
+            os.environ["DB_PATH"] = str(Path(_klerno_dbfile).resolve())
+        except Exception:
+            os.environ["DB_PATH"] = str(_klerno_dbfile)
         try:
             store.DATABASE_URL = os.getenv("DATABASE_URL") or ""
         except Exception:
@@ -130,6 +137,20 @@ def ensure_per_test_sqlite_initialized(
         store.DATABASE_URL = url
     except Exception:
         pass
+
+    # Export DB_PATH as an absolute filesystem path so direct sqlite.connect
+    # calls (or code that reads DB_PATH env) use the same file the initializer
+    # created. Use resolve() to normalize symlinks/relative fragments.
+    try:
+        abs_path = str(Path(dbfile).resolve())
+        monkeypatch.setenv("DB_PATH", abs_path)
+        os.environ["DB_PATH"] = abs_path
+    except Exception:
+        try:
+            monkeypatch.setenv("DB_PATH", str(dbfile))
+            os.environ["DB_PATH"] = str(dbfile)
+        except Exception:
+            pass
 
     # Call the canonical initializer from scripts/init_db_if_needed.py
     try:
