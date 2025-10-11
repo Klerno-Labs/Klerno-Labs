@@ -5,10 +5,12 @@ conftest files live in subpackages (like CLEAN_APP/tests). Tests expect
 the asyncio plugin; declare it once at the repository root.
 """
 
+import contextlib
 import os
 import shutil
 import tempfile
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 
@@ -28,7 +30,7 @@ def pytest_configure(config) -> None:
     """
     try:
         tmpdir = tempfile.mkdtemp(prefix="klerno_pytest_session_")
-        dbfile = os.path.join(tmpdir, "klerno_session.db")
+        dbfile = Path(tmpdir) / "klerno_session.db"
         url = f"sqlite:///{dbfile}"
         os.environ.setdefault("DATABASE_URL", url)
         # Call canonical initializer; ignore errors so pytest can proceed
@@ -36,7 +38,7 @@ def pytest_configure(config) -> None:
 
         _init_main(url)
         # store tmpdir for cleanup
-        setattr(config, "klerno_pytest_tmpdir", tmpdir)
+        config.klerno_pytest_tmpdir = tmpdir
     except Exception:
         # best-effort; let tests fail later if something else breaks
         pass
@@ -46,7 +48,7 @@ def pytest_unconfigure(config) -> None:
     """Cleanup the temporary session DB directory created in pytest_configure."""
     try:
         tmpdir = getattr(config, "klerno_pytest_tmpdir", None)
-        if tmpdir and os.path.isdir(tmpdir):
+        if tmpdir and Path(tmpdir).is_dir():
             shutil.rmtree(tmpdir, ignore_errors=True)
     except Exception:
         pass
@@ -143,23 +145,18 @@ def stub_neon_data_api(request) -> None:
         # Save original and replace
         _orig_send = getattr(httpx.AsyncClient, "send", None)
         try:
-            setattr(httpx.AsyncClient, "send", _fake_send)
+            httpx.AsyncClient.send = _fake_send  # direct assignment is fine here
         except Exception:
             # best-effort; if we can't set it, continue without stub
             return
 
         # Register finalizer to restore original behavior at session end
         def _restore():
-            try:
-                if _orig_send is None:
-                    try:
-                        delattr(httpx.AsyncClient, "send")
-                    except Exception:
-                        pass
-                else:
-                    setattr(httpx.AsyncClient, "send", _orig_send)
-            except Exception:
-                pass
+            if _orig_send is None:
+                with contextlib.suppress(Exception):
+                    delattr(httpx.AsyncClient, "send")
+            else:
+                httpx.AsyncClient.send = _orig_send
 
         request.addfinalizer(_restore)
     except Exception:

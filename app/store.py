@@ -119,12 +119,9 @@ class _DBPath:
             # - sqlite:////absolute/path.db -> raw == '////absolute/path.db'
             # We must preserve the single leading '/' for absolute paths.
             raw = runtime_db.split("sqlite://", 1)[1]
-            if raw.startswith("////"):
-                # absolute unix path: keep a single leading slash
-                path = "/" + raw.lstrip("/")
-            else:
-                # relative path or windows-style path: strip leading slashes
-                path = raw.lstrip("/")
+            # Preserve single leading slash for absolute unix paths;
+            # use a concise ternary per ruff suggestion.
+            path = "/" + raw.lstrip("/") if raw.startswith("////") else raw.lstrip("/")
             if path:
                 return path
             # if no path fragment, fall back to default
