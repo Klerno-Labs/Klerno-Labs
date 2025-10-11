@@ -35,7 +35,7 @@ itsdangerous
 PyYAML==6.0.2
 email-validator==2.1.1
 structlog==24.2.0
-redis==5.0.1
+redis==6.4.0
 passlib==1.7.4
 pydantic-settings==2.11.0
 
