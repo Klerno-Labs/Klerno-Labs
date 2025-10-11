@@ -374,8 +374,8 @@ def _install_openAPI_error_envelope(app: FastAPI) -> None:
                     continue
                 responses = op.get("responses", {})
                 for status, resp in list(responses.items()):
-                    key = (m, str(path), str(status))
-                    example_payload = auth_error_examples.get(key)
+                    auth_key = (m, str(path), str(status))
+                    example_payload = auth_error_examples.get(auth_key)
                     if not example_payload:
                         continue
                     # Ensure content structure exists

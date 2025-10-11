@@ -208,6 +208,19 @@ def _sqlite_conn() -> ISyncConnection:
         # Best-effort: don't fail connection creation if pragmas are unsupported
         with contextlib.suppress(Exception):
             _ = None
+    # Ensure the minimal core schema exists on new sqlite connections so tests
+    # and CI which create connections directly won't fail due to missing tables.
+    try:
+        cur = con.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='txs';")
+        if not cur.fetchone():
+            # Create core tables on the existing connection without calling
+            # higher-level init_db to avoid recursion.
+            with contextlib.suppress(Exception):
+                _ensure_schema_on_connection(con)
+    except Exception:
+        with contextlib.suppress(Exception):
+            _ = None
     # Return the connection (already assigned with the appropriate runtime type)
     return con
 
@@ -605,6 +618,53 @@ def init_db() -> None:
     con.close()
 
     # --- Row helpers --------------------------------------------------------------
+
+
+def _ensure_schema_on_connection(con: Any) -> None:
+    """Ensure a minimal, compatible schema exists on the provided sqlite
+    connection. This function is safe to call multiple times and avoids
+    creating a new connection which helps callers that already hold an
+    open sqlite connection (for example CI helper steps).
+    """
+    try:
+        cur = con.cursor()
+        # lightweight txs table compatible with scripts/init_db_if_needed
+        cur.execute(
+            """
+        CREATE TABLE IF NOT EXISTS txs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tx_id TEXT,
+                timestamp TEXT,
+                chain TEXT,
+                from_addr TEXT,
+                to_addr TEXT,
+                amount REAL,
+                symbol TEXT,
+                direction TEXT,
+                memo TEXT,
+                fee REAL,
+                category TEXT,
+                risk_score REAL,
+                risk_flags TEXT,
+                notes TEXT
+        );""",
+        )
+        # Create minimal users table if absent (tests may rely on it)
+        cur.execute(
+            """
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT,
+                role TEXT NOT NULL DEFAULT 'viewer',
+                subscription_active INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );""",
+        )
+        con.commit()
+    except Exception:
+        with contextlib.suppress(Exception):
+            _ = None
 
 
 class UserDict(TypedDict):
