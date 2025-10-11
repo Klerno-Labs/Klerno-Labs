@@ -37,7 +37,7 @@
     "unique-names-generator": "^4.7.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "2.2.5",
     "@tanstack/react-router-devtools": "^1.117.1",
     "@tanstack/router-plugin": "^1.117.2",
     "@types/node": "^22.15.2",
