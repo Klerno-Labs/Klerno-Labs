@@ -200,6 +200,20 @@ def ensure_per_test_sqlite_initialized(
     except Exception:
         pass
 
+    # Also set the store module's DB_PATH value to the absolute path so
+    # runtime code that reads `store.DB_PATH` (import-time or call-time)
+    # will target the exact same file the initializer created. This is a
+    # conservative, low-risk override that avoids mismatches between the
+    # initializer and direct sqlite connections used by tests.
+    try:
+        # Some environments expect DB_PATH to be a plain string; assign
+        # the absolute path to avoid the module-level _DBPath resolution
+        # race where earlier imports captured a different default.
+        store.DB_PATH = abs_path
+    except Exception:
+        # Best-effort: do not fail tests if we can't write the attribute.
+        pass
+
     # Export DB_PATH as an absolute filesystem path so direct sqlite.connect
     # calls (or code that reads DB_PATH env) use the same file the initializer
     # created. Use the previously-computed abs_path to guarantee consistency.
