@@ -57,6 +57,18 @@ def test_db() -> Generator[str, None, None]:
 
     # Initialize test database
     conn = cast("ISyncConnection", sqlite3.connect(db_path))
+    # Improve concurrency for tests: enable WAL and set a generous busy timeout so
+    # concurrent readers/writers don't immediately fail with "database is locked".
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+    except Exception:
+        # Best-effort: ignore if the platform doesn't support WAL.
+        pass
+    try:
+        conn.execute("PRAGMA busy_timeout = 10000")
+    except Exception:
+        pass
+
     conn.execute(
         """
         CREATE TABLE users (
@@ -141,6 +153,25 @@ def ensure_test_db_initialized(test_db: str) -> Generator[None, None, None]:
         os.environ["DB_PATH"] = str(Path(test_db).resolve())
     except Exception:
         os.environ["DB_PATH"] = str(test_db)
+    # Mirror the environment into the app.store module so runtime code that
+    # reads module-level values (instead of calling os.getenv) will see the
+    # same DB configuration the initializer used. This avoids mismatches
+    # between SQLAlchemy-created schema and direct sqlite connections.
+    try:
+        import app.store as _store
+
+        _store.DATABASE_URL = os.environ.get("DATABASE_URL")
+        # assign the DB_PATH as a plain string to avoid any import-time
+        # resolution races in the module's _DBPath helper
+        try:
+            _store.DB_PATH = os.environ.get("DB_PATH")
+        except Exception:
+            # best-effort: ignore attribute setting failures
+            pass
+    except Exception:
+        # If we can't access app.store for any reason, proceed silently; the
+        # initializer will still run and tests will surface any issues.
+        pass
     # Ensure tests have a deterministic, sufficiently-strong JWT secret so the
     # application does not emit a RuntimeWarning about weak/missing secrets.
     # This value is only used for tests and should not be used in production.
@@ -299,7 +330,16 @@ class DatabaseTestUtils:
         """Create a test user in the database."""
         import time
 
-        conn = cast("ISyncConnection", sqlite3.connect(db_path, timeout=5.0))
+        conn = cast("ISyncConnection", sqlite3.connect(db_path, timeout=30.0))
+        # Improve concurrency for test helper connections
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+        except Exception:
+            pass
+        try:
+            conn.execute("PRAGMA busy_timeout = 10000")
+        except Exception:
+            pass
         cursor = conn.cursor()
 
         # Try to insert; if the email already exists, return existing id.
@@ -320,7 +360,9 @@ class DatabaseTestUtils:
                 conn.commit()
                 break
             except sqlite3.OperationalError as e:
-                if "locked" in str(e).lower() and tries < 8:
+                if "locked" in str(e).lower() and tries < 16:
+                    # Back off progressively to allow the app side to finish its
+                    # write and release the lock.
                     time.sleep(0.05 * (tries + 1))
                     tries += 1
                     continue
@@ -351,7 +393,15 @@ class DatabaseTestUtils:
         """Create a test transaction in the database."""
         import time
 
-        conn = cast("ISyncConnection", sqlite3.connect(db_path, timeout=5.0))
+        conn = cast("ISyncConnection", sqlite3.connect(db_path, timeout=30.0))
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+        except Exception:
+            pass
+        try:
+            conn.execute("PRAGMA busy_timeout = 10000")
+        except Exception:
+            pass
         cursor = conn.cursor()
         tries = 0
         while True:
@@ -370,7 +420,7 @@ class DatabaseTestUtils:
                 conn.close()
                 break
             except sqlite3.OperationalError as e:
-                if "locked" in str(e).lower() and tries < 8:
+                if "locked" in str(e).lower() and tries < 16:
                     time.sleep(0.05 * (tries + 1))
                     tries += 1
                     continue
