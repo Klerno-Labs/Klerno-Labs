@@ -246,7 +246,8 @@ def ensure_per_test_sqlite_initialized(
                     return False
 
             tries = 0
-            while tries < 3 and not _has_tables(db_path):
+            # Increase attempts to make CI more robust under load
+            while tries < 8 and not _has_tables(db_path):
                 # Small backoff and attempt to initialize again
                 time.sleep(0.05 * (tries + 1))
                 _init_main(url)

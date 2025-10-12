@@ -117,25 +117,34 @@ class _DBPath:
         # format. This prevents mismatches between the initializer and
         # direct sqlite3.connect calls used in tests.
         explicit = os.getenv("DB_PATH")
-        if explicit:
-            return explicit
 
-        # Otherwise prefer explicit sqlite DATABASE_URL when present
+        # If DATABASE_URL explicitly points to sqlite, prefer its resolved
+        # sqlite path when it is present. This avoids a longstanding race
+        # where an import-time helper sets DB_PATH to a temporary file and
+        # later a test session fixture sets DATABASE_URL to a different
+        # sqlite file; callers reading DB_PATH would otherwise open the
+        # wrong file and observe "no such table" errors.
         runtime_db = os.getenv("DATABASE_URL") or ""
         if runtime_db and runtime_db.startswith("sqlite://"):
-            # Split off the scheme; SQLAlchemy accepts both
-            # - sqlite:///relative/path.db  -> raw == '///relative/path.db'
-            # - sqlite:////absolute/path.db -> raw == '////absolute/path.db'
-            # We must preserve the single leading '/' for absolute paths.
             raw = runtime_db.split("sqlite://", 1)[1]
-            # Preserve single leading slash for absolute unix paths;
-            # use a concise ternary per ruff suggestion.
             path = "/" + raw.lstrip("/") if raw.startswith("////") else raw.lstrip("/")
             if path:
+                # If DB_PATH was explicitly set and matches the DATABASE_URL
+                # derived path, return it. Otherwise prefer DATABASE_URL as
+                # the canonical source of truth when it points to sqlite.
+                try:
+                    if explicit and str(Path(explicit).resolve()) == str(
+                        Path(path).resolve()
+                    ):
+                        return explicit
+                except Exception:
+                    # If resolution fails, still prefer the DATABASE_URL path
+                    pass
                 return path
-            # if no path fragment, fall back to default
-        # else prefer explicit DB_PATH env var or default
-        return os.getenv("DB_PATH", self._default)
+
+        # If no sqlite DATABASE_URL present, fall back to explicit DB_PATH
+        # environment variable or the module default.
+        return explicit or os.getenv("DB_PATH", self._default)
 
     def __fspath__(self) -> str:  # pathlib / os.fspath compatibility
         return self._compute()
@@ -207,18 +216,22 @@ def _sqlite_conn() -> ISyncConnection:
             # - 'sqlite:////absolute/path.db' -> raw == '////absolute/path.db'
             raw = runtime_db.split("sqlite://", 1)[1]
             path = "/" + raw.lstrip("/") if raw.startswith("////") else raw.lstrip("/")
-            db_path = path or DB_PATH
+            # Prefer the DATABASE_URL-derived path; if it's empty, fall back
+            # to DB_PATH which will resolve to the module default or env var.
+            db_path = path or str(DB_PATH)
         else:
-            db_path = DB_PATH
+            db_path = str(DB_PATH)
 
     # (no debug prints) ensure we don't leave unused imports behind
 
     data_dir = Path(db_path).resolve().parent
     data_dir.mkdir(parents=True, exist_ok=True)
     # use a small timeout so concurrent writers don't immediately fail
+    # Use a slightly larger timeout to allow the initializer to finish
+    # creating tables on CI runners under heavy load.
     con = cast(
         "ISyncConnection",
-        sqlite3.connect(db_path, check_same_thread=False, timeout=5.0),
+        sqlite3.connect(db_path, check_same_thread=False, timeout=15.0),
     )
     con.row_factory = sqlite3.Row  # return dict - like rows to unify handling
     # Improve concurrency/performance for test and multi-request workloads:
@@ -227,6 +240,9 @@ def _sqlite_conn() -> ISyncConnection:
     # - temp_store=MEMORY keeps temporary tables in memory
     try:
         with contextlib.suppress(Exception):
+            # Reduce write-lock contention and improve visibility under heavy test load
+            # Keep timeout in milliseconds - align with test helpers that set 10000
+            con.execute("PRAGMA busy_timeout=10000;")
             con.execute("PRAGMA journal_mode=WAL;")
             con.execute("PRAGMA synchronous=NORMAL;")
             con.execute("PRAGMA temp_store=MEMORY;")
