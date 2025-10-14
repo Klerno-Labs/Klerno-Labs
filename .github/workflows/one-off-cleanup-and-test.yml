@@ -19,7 +19,19 @@ jobs:
                   pip install -r requirements.txt
 
             - name: Cleanup tmp DBs (cross-platform)
-              run: python scripts/cleanup_tmpdbs.py
+              run: |
+                if [ -f ./scripts/cleanup_tmpdbs.py ]; then
+                  python scripts/cleanup_tmpdbs.py
+                else
+                  echo "scripts/cleanup_tmpdbs.py not found; running inline cleanup"
+                  # safe shell-based cleanup in the repo root (non-recursive)
+                  for f in tmp_*.db; do
+                    if [ -f "$f" ]; then
+                      echo "Removing $f"
+                      rm -f "$f" || echo "Failed to remove $f"
+                    fi
+                  done
+                fi
 
             - name: Run tests
               id: run_tests
