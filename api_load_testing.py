@@ -19,7 +19,8 @@ import os
 import random
 import statistics
 import time
-from typing import Any
+from collections.abc import Callable
+from typing import Any, cast
 
 import httpx
 
@@ -44,8 +45,11 @@ async def run_load(n: int = 1000) -> dict[str, Any]:
     successes = 0
     first_id: int | None = None
 
+    # ASGITransport expects a plain ASGI callable; mypy's FastAPI type is
+    # narrower, so cast to Callable[..., Any] to satisfy the checker.
+    asgi_app = cast(Callable[..., Any], app)
     async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://test"
+        transport=httpx.ASGITransport(app=asgi_app), base_url="http://test"
     ) as client:
         # Warm-up health check
         r = await client.get("/health")

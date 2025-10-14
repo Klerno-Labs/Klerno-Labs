@@ -57,6 +57,18 @@ def test_db() -> Generator[str, None, None]:
 
     # Initialize test database
     conn = cast("ISyncConnection", sqlite3.connect(db_path))
+    # Improve concurrency for tests: enable WAL and set a generous busy timeout so
+    # concurrent readers/writers don't immediately fail with "database is locked".
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+    except Exception:
+        # Best-effort: ignore if the platform doesn't support WAL.
+        pass
+    try:
+        conn.execute("PRAGMA busy_timeout = 10000")
+    except Exception:
+        pass
+
     conn.execute(
         """
         CREATE TABLE users (
@@ -132,7 +144,34 @@ def ensure_test_db_initialized(test_db: str) -> Generator[None, None, None]:
     # Ensure DATABASE_URL points to the temporary DB used by the tests.
     # Use a POSIX path so SQLAlchemy correctly resolves absolute Windows paths
     # (avoid creating tables on an unexpected path due to backslashes).
-    os.environ["DATABASE_URL"] = f"sqlite:///{Path(test_db).as_posix()}"
+    posix_path = Path(test_db).as_posix()
+    os.environ["DATABASE_URL"] = f"sqlite:///{posix_path}"
+    # Also export DB_PATH as an absolute filesystem path so code that opens
+    # sqlite directly (sqlite3.connect(store.DB_PATH) or tests that import
+    # store early) always targets the same file the initializer created.
+    try:
+        os.environ["DB_PATH"] = str(Path(test_db).resolve())
+    except Exception:
+        os.environ["DB_PATH"] = str(test_db)
+    # Mirror the environment into the app.store module so runtime code that
+    # reads module-level values (instead of calling os.getenv) will see the
+    # same DB configuration the initializer used. This avoids mismatches
+    # between SQLAlchemy-created schema and direct sqlite connections.
+    try:
+        import app.store as _store
+
+        _store.DATABASE_URL = os.environ.get("DATABASE_URL")
+        # assign the DB_PATH as a plain string to avoid any import-time
+        # resolution races in the module's _DBPath helper
+        try:
+            _store.DB_PATH = os.environ.get("DB_PATH")
+        except Exception:
+            # best-effort: ignore attribute setting failures
+            pass
+    except Exception:
+        # If we can't access app.store for any reason, proceed silently; the
+        # initializer will still run and tests will surface any issues.
+        pass
     # Ensure tests have a deterministic, sufficiently-strong JWT secret so the
     # application does not emit a RuntimeWarning about weak/missing secrets.
     # This value is only used for tests and should not be used in production.
@@ -160,7 +199,9 @@ def ensure_test_db_initialized(test_db: str) -> Generator[None, None, None]:
         # Best-effort: don't fail test collection if initializer can't run.
         # Tests will surface schema-related errors themselves.
         pass
-    return
+    # Yield control back to pytest (session-scoped fixture). The fixture does
+    # not need to provide a value; yielding allows teardown logic if needed.
+    yield
 
 
 @pytest.fixture
@@ -287,20 +328,45 @@ class DatabaseTestUtils:
     @staticmethod
     def create_test_user(db_path: str, user_data: dict[str, Any]) -> int:
         """Create a test user in the database."""
-        conn = cast("ISyncConnection", sqlite3.connect(db_path, timeout=5.0))
+        import time
+
+        conn = cast("ISyncConnection", sqlite3.connect(db_path, timeout=30.0))
+        # Improve concurrency for test helper connections
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+        except Exception:
+            pass
+        try:
+            conn.execute("PRAGMA busy_timeout = 10000")
+        except Exception:
+            pass
         cursor = conn.cursor()
 
         # Try to insert; if the email already exists, return existing id.
-        cursor.execute(
-            "INSERT OR IGNORE INTO users (email, hashed_password, is_active, is_admin) VALUES (?, ?, ?, ?)",
-            (
-                user_data["email"],
-                user_data["hashed_password"],
-                user_data["is_active"],
-                user_data["is_admin"],
-            ),
-        )
-        conn.commit()
+        # Retry briefly on sqlite 'database is locked' to make CI robust
+        # to transient locks created by the app test client.
+        tries = 0
+        while True:
+            try:
+                cursor.execute(
+                    "INSERT OR IGNORE INTO users (email, hashed_password, is_active, is_admin) VALUES (?, ?, ?, ?)",
+                    (
+                        user_data["email"],
+                        user_data["hashed_password"],
+                        user_data["is_active"],
+                        user_data["is_admin"],
+                    ),
+                )
+                conn.commit()
+                break
+            except sqlite3.OperationalError as e:
+                if "locked" in str(e).lower() and tries < 16:
+                    # Back off progressively to allow the app side to finish its
+                    # write and release the lock.
+                    time.sleep(0.05 * (tries + 1))
+                    tries += 1
+                    continue
+                raise
 
         # Fetch id (either newly inserted or existing)
         cursor.execute("SELECT id FROM users WHERE email = ?", (user_data["email"],))
@@ -325,20 +391,40 @@ class DatabaseTestUtils:
     @staticmethod
     def create_test_transaction(db_path: str, transaction_data: dict[str, Any]) -> int:
         """Create a test transaction in the database."""
-        conn = cast("ISyncConnection", sqlite3.connect(db_path))
+        import time
+
+        conn = cast("ISyncConnection", sqlite3.connect(db_path, timeout=30.0))
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+        except Exception:
+            pass
+        try:
+            conn.execute("PRAGMA busy_timeout = 10000")
+        except Exception:
+            pass
         cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO transactions (user_id, amount, currency, status) VALUES (?, ?, ?, ?)",
-            (
-                transaction_data["user_id"],
-                transaction_data["amount"],
-                transaction_data["currency"],
-                transaction_data["status"],
-            ),
-        )
-        transaction_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
+        tries = 0
+        while True:
+            try:
+                cursor.execute(
+                    "INSERT INTO transactions (user_id, amount, currency, status) VALUES (?, ?, ?, ?)",
+                    (
+                        transaction_data["user_id"],
+                        transaction_data["amount"],
+                        transaction_data["currency"],
+                        transaction_data["status"],
+                    ),
+                )
+                transaction_id = cursor.lastrowid
+                conn.commit()
+                conn.close()
+                break
+            except sqlite3.OperationalError as e:
+                if "locked" in str(e).lower() and tries < 16:
+                    time.sleep(0.05 * (tries + 1))
+                    tries += 1
+                    continue
+                raise
         # Ensure we return an int (sqlite may expose lastrowid as Optional)
         if transaction_id is None:
             msg = "Failed to create transaction; lastrowid is None"

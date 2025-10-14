@@ -36,6 +36,19 @@ def main(url: str | None = None) -> int:
         Column("id", Integer, primary_key=True),
         Column("email", String(255), nullable=False, unique=True),
         Column("password_hash", String(255), nullable=True),
+        # Additional columns commonly expected by runtime code/tests
+        Column("oauth_provider", String(64), nullable=True),
+        Column("oauth_id", String(255), nullable=True),
+        Column("display_name", String(255), nullable=True),
+        Column("avatar_url", String(1024), nullable=True),
+        Column("wallet_addresses", String(2048), nullable=True),
+        Column("totp_secret", String(255), nullable=True),
+        Column("mfa_enabled", Boolean, nullable=False, server_default=text("false")),
+        Column("mfa_type", String(32), nullable=True),
+        Column("recovery_codes", String(2048), nullable=True),
+        Column(
+            "has_hardware_key", Boolean, nullable=False, server_default=text("false")
+        ),
         Column("role", String(50), nullable=False, server_default="user"),
         Column(
             "subscription_active",
@@ -99,6 +112,15 @@ def main(url: str | None = None) -> int:
         # ensure variables are referenced so linters don't flag them
         _ = (users, transactions, txs)
         meta.create_all(engine)
+        # Dispose the engine to close any pooled connections which can
+        # otherwise keep the sqlite file locked on some platforms/SQLAlchemy
+        # versions. This is low-risk and avoids transient "database is locked"
+        # errors in CI where tests open direct sqlite connections immediately
+        # after initialization.
+        try:
+            engine.dispose()
+        except Exception:
+            pass
         return 0
     except Exception:  # pragma: no cover - CI helper
         return 2

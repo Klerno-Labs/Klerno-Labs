@@ -111,15 +111,40 @@ class _DBPath:
         self._default = default_path
 
     def _compute(self) -> str:
-        # Prefer explicit sqlite DATABASE_URL when present
+        # Prefer an explicit DB_PATH environment variable when present so
+        # test fixtures that set DB_PATH (absolute filesystem path) are
+        # honored even if DATABASE_URL was set earlier or in a different
+        # format. This prevents mismatches between the initializer and
+        # direct sqlite3.connect calls used in tests.
+        explicit = os.getenv("DB_PATH")
+
+        # If DATABASE_URL explicitly points to sqlite, prefer its resolved
+        # sqlite path when it is present. This avoids a longstanding race
+        # where an import-time helper sets DB_PATH to a temporary file and
+        # later a test session fixture sets DATABASE_URL to a different
+        # sqlite file; callers reading DB_PATH would otherwise open the
+        # wrong file and observe "no such table" errors.
         runtime_db = os.getenv("DATABASE_URL") or ""
         if runtime_db and runtime_db.startswith("sqlite://"):
-            path = runtime_db.split("sqlite://", 1)[1].lstrip("/")
+            raw = runtime_db.split("sqlite://", 1)[1]
+            path = "/" + raw.lstrip("/") if raw.startswith("////") else raw.lstrip("/")
             if path:
+                # If DB_PATH was explicitly set and matches the DATABASE_URL
+                # derived path, return it. Otherwise prefer DATABASE_URL as
+                # the canonical source of truth when it points to sqlite.
+                try:
+                    if explicit and str(Path(explicit).resolve()) == str(
+                        Path(path).resolve()
+                    ):
+                        return explicit
+                except Exception:
+                    # If resolution fails, still prefer the DATABASE_URL path
+                    pass
                 return path
-            # if no path fragment, fall back to default
-        # else prefer explicit DB_PATH env var or default
-        return os.getenv("DB_PATH", self._default)
+
+        # If no sqlite DATABASE_URL present, fall back to explicit DB_PATH
+        # environment variable or the module default.
+        return explicit or os.getenv("DB_PATH", self._default)
 
     def __fspath__(self) -> str:  # pathlib / os.fspath compatibility
         return self._compute()
@@ -178,21 +203,35 @@ logger = logging.getLogger(__name__)
 def _sqlite_conn() -> ISyncConnection:
     # honor DB_PATH and ensure directory exists
     # Allow DATABASE_URL to override DB path at runtime. Tests may set this.
-    runtime_db = os.getenv("DATABASE_URL") or ""
-    if runtime_db and runtime_db.startswith("sqlite://"):
-        path = runtime_db.split("sqlite://", 1)[1].lstrip("/")
-        db_path = path or DB_PATH
+    # If a DB_PATH env var is set, prefer it (tests set this explicitly).
+    explicit = os.getenv("DB_PATH")
+    if explicit:
+        db_path = explicit
     else:
-        db_path = DB_PATH
+        runtime_db = os.getenv("DATABASE_URL") or ""
+        if runtime_db and runtime_db.startswith("sqlite://"):
+            # Keep parity with _DBPath._compute(): preserve a single leading
+            # slash for absolute unix paths. Example inputs:
+            # - 'sqlite:///relative/path.db' -> raw == '///relative/path.db'
+            # - 'sqlite:////absolute/path.db' -> raw == '////absolute/path.db'
+            raw = runtime_db.split("sqlite://", 1)[1]
+            path = "/" + raw.lstrip("/") if raw.startswith("////") else raw.lstrip("/")
+            # Prefer the DATABASE_URL-derived path; if it's empty, fall back
+            # to DB_PATH which will resolve to the module default or env var.
+            db_path = path or str(DB_PATH)
+        else:
+            db_path = str(DB_PATH)
 
     # (no debug prints) ensure we don't leave unused imports behind
 
     data_dir = Path(db_path).resolve().parent
     data_dir.mkdir(parents=True, exist_ok=True)
     # use a small timeout so concurrent writers don't immediately fail
+    # Use a slightly larger timeout to allow the initializer to finish
+    # creating tables on CI runners under heavy load.
     con = cast(
         "ISyncConnection",
-        sqlite3.connect(db_path, check_same_thread=False, timeout=5.0),
+        sqlite3.connect(db_path, check_same_thread=False, timeout=15.0),
     )
     con.row_factory = sqlite3.Row  # return dict - like rows to unify handling
     # Improve concurrency/performance for test and multi-request workloads:
@@ -201,6 +240,9 @@ def _sqlite_conn() -> ISyncConnection:
     # - temp_store=MEMORY keeps temporary tables in memory
     try:
         with contextlib.suppress(Exception):
+            # Reduce write-lock contention and improve visibility under heavy test load
+            # Keep timeout in milliseconds - align with test helpers that set 10000
+            con.execute("PRAGMA busy_timeout=10000;")
             con.execute("PRAGMA journal_mode=WAL;")
             con.execute("PRAGMA synchronous=NORMAL;")
             con.execute("PRAGMA temp_store=MEMORY;")
@@ -287,6 +329,34 @@ def _ph() -> str:
     return "%s" if USING_POSTGRES else "?"
 
 
+def _execute_with_retry(
+    con: Any, cur: Any, sql: str, params: tuple, max_retries: int = 16
+) -> None:
+    """Execute a cursor statement and retry briefly on sqlite 'database is locked'.
+
+    This helper is conservative: it only retries sqlite OperationalError with
+    'locked' in the message. For other errors it re-raises immediately.
+    """
+    if USING_POSTGRES:
+        cur.execute(sql, params)
+        return
+
+    tries = 0
+    while True:
+        try:
+            cur.execute(sql, params)
+            return
+        except sqlite3.OperationalError as e:
+            if "locked" in str(e).lower() and tries < max_retries:
+                time.sleep(0.05 * (tries + 1))
+                tries += 1
+                # best-effort: try to rollback any half-open transaction before retry
+                with contextlib.suppress(Exception):
+                    con.rollback()
+                continue
+            raise
+
+
 def wait_for_row(
     select_sql: str,
     params: tuple = (),
@@ -345,9 +415,14 @@ def init_db() -> None:
             _ = None
 
     # If DATABASE_URL points to a sqlite file (used by tests), connect directly
+    # Use the same sqlite URL parsing strategy as _sqlite_conn() and _DBPath._compute()
+    # so that the initializer (which may use SQLAlchemy) and runtime both target
+    # the exact same file path. Preserve a single leading slash for absolute
+    # unix paths ("sqlite:////absolute/path.db").
     runtime_db = os.getenv("DATABASE_URL") or ""
     if runtime_db and runtime_db.startswith("sqlite://"):
-        path = runtime_db.split("sqlite://", 1)[1].lstrip("/")
+        raw = runtime_db.split("sqlite://", 1)[1]
+        path = "/" + raw.lstrip("/") if raw.startswith("////") else raw.lstrip("/")
         db_path = path or DB_PATH
         # ensure directory
         data_dir = Path(db_path).resolve().parent
@@ -1201,7 +1276,9 @@ def create_user(
                 {_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()},{_ph()}
             )
             """  # nosec: B608 - parameterized placeholders used
-            cur.execute(
+            _execute_with_retry(
+                con,
+                cur,
                 sql,
                 (
                     email,
@@ -1237,7 +1314,9 @@ def create_user(
                                             {_ph()},{_ph()},{_ph()},{_ph()}, datetime('now')
                                         )
                     """  # nosec: B608 - parameterized placeholders used
-                    cur.execute(
+                    _execute_with_retry(
+                        con,
+                        cur,
                         sql,
                         (
                             email,
