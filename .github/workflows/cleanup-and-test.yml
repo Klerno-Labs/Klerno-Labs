@@ -24,6 +24,7 @@ jobs:
             - name: Install test dependencies
               run: |
                   pip install pytest==7.4.0
+                  pip install prometheus-client PyJWT pytest-asyncio
 
             - name: Cleanup tmp DBs (cross-platform)
               run: python scripts/cleanup_tmpdbs.py
